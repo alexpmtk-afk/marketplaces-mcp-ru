@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.ilyautov/marketplaces-mcp-ru",
   "title": "Marketplaces MCP (RU) — Wildberries & Ozon",
-  "description": "Wildberries and Ozon Seller APIs in your AI assistant: sales, stock, prices, finance, reviews — schema-driven and safety-gated.",
+  "description": "Wildberries & Ozon Seller APIs in your AI assistant — schema-driven, safety-gated.",
   "version": "0.3.2",
   "repository": {
     "url": "https://github.com/ilyautov/marketplaces-mcp-ru",
