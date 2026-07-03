@@ -3,6 +3,31 @@
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.3.2] — 2026-07-03
+
+Дистрибуция: четыре канала установки поверх одного репозитория, все на общем
+объединённом сервере. Логика продукта не менялась — только упаковка и доставка.
+
+### Добавлено
+- **Объединённый сервер** (`core/combined.py`): WB + Ozon + Ozon Performance на
+  одном FastMCP — 58 инструментов, имена инструментов разведены по префиксам, так
+  что объединение без коллизий. Стоит за `.mcpb` и за `uvx`. Отдельные серверы
+  `wb` / `ozon` / `ozon-perf` работают как прежде.
+- **`.mcpb`-бандл для Claude Desktop**: установка в один двойной клик без
+  терминала и Gatekeeper. Манифест проходит официальный валидатор `@anthropic-ai/mcpb`,
+  ключи собираются в окне настроек и прокидываются как переменные окружения.
+  Собирается `scripts/package_mcpb.py`, прикладывается к каждому релизу.
+- **PyPI / `uvx`**: `uvx marketplaces-mcp-ru` запускает объединённый сервер прямо
+  из PyPI. Публикация через OIDC Trusted Publishing (`publish-pypi.yml`, без
+  токенов). Новый console-script `marketplaces-mcp-ru`.
+- **MCP Registry**: `server.json` для листинга + маркер владения в README.
+- **Лендинг** `marketplaces-mcp-ru.aifrontier.tech` (GitHub Pages из `docs/`).
+- **`docs/DISTRIBUTION.md`** — release-runbook по всем каналам.
+
+### Исправлено
+- **CI**: `gitleaks-action` получает `GITHUB_TOKEN` (падал на каждом PR); включён
+  Dependency Graph для `dependency-review`; `actions/checkout` поднят до v7.0.0.
+
 ## [0.3.1] — 2026-07-02
 
 Патч безопасности и надёжности по итогам полного код-ревью. Каждое исправление
