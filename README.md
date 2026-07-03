@@ -1,5 +1,7 @@
 # marketplaces-mcp-ru: Wildberries и Ozon в вашем ИИ-ассистенте
 
+<!-- mcp-name: io.github.ilyautov/marketplaces-mcp-ru -->
+
 > 🇬🇧 [English version](README.en.md)
 
 Подключает ИИ-ассистента (Claude, Cursor, Codex, Cowork и др.) напрямую к вашим кабинетам Wildberries и Ozon. Вы спрашиваете обычными словами, агент берёт продажи, остатки, цены, финансы и отзывы прямо из API маркетплейса, а не выдумывает цифры.
