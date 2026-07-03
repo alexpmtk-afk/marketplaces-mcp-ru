@@ -45,11 +45,13 @@
 
 ## Установка
 
-Подробный гайд под любую аудиторию лежит в [QUICKSTART.md](QUICKSTART.md). Три способа, результат один.
+Подробный гайд под любую аудиторию лежит в [QUICKSTART.md](QUICKSTART.md). Несколько способов, результат один.
 
-1. **Попросить своего ИИ (без терминала).** Откройте Claude или Cowork и скажите: «установи WB + Ozon MCP». Агент проведёт по встроенному скиллу `install-skill/`. В песочнице Cowork финальный клик остаётся за вами; в Claude Code установка проходит полностью сама.
-2. **Скачать и кликнуть.** Возьмите `marketplaces-mcp-ru-v<версия>.zip` из [GitHub Releases](https://github.com/ilyautov/marketplaces-mcp-ru/releases), распакуйте, дважды кликните `install.command` (macOS) или `install.bat` (Windows), вставьте ключи. На macOS при первом запуске: правый клик → «Открыть» → «Открыть» (так обходится Gatekeeper для скачанного файла).
-3. **Через терминал.** `git clone https://github.com/ilyautov/marketplaces-mcp-ru`, затем `python3 install.py --client <ваш-клиент>`.
+1. **Claude Desktop в один клик (`.mcpb`).** Возьмите `marketplaces-mcp-ru-v<версия>.mcpb` из [GitHub Releases](https://github.com/ilyautov/marketplaces-mcp-ru/releases) и дважды кликните — Claude Desktop сам поставит расширение и спросит ключи в окне настроек. Без терминала и без Gatekeeper. Один бандл поднимает WB + Ozon + Ozon Performance сразу.
+2. **Попросить своего ИИ (без терминала).** Откройте Claude или Cowork и скажите: «установи WB + Ozon MCP». Агент проведёт по встроенному скиллу `install-skill/`. В песочнице Cowork финальный клик остаётся за вами; в Claude Code установка проходит полностью сама.
+3. **Скачать и кликнуть.** Возьмите `marketplaces-mcp-ru-v<версия>.zip` из [GitHub Releases](https://github.com/ilyautov/marketplaces-mcp-ru/releases), распакуйте, дважды кликните `install.command` (macOS) или `install.bat` (Windows), вставьте ключи. На macOS при первом запуске: правый клик → «Открыть» → «Открыть» (так обходится Gatekeeper для скачанного файла).
+4. **Через терминал.** `git clone https://github.com/ilyautov/marketplaces-mcp-ru`, затем `python3 install.py --client <ваш-клиент>`.
+5. **Для разработчиков (`uvx`).** `uvx marketplaces-mcp-ru` запускает объединённый сервер прямо из PyPI; отдельные серверы — консольными командами `wb-mcp` / `ozon-mcp` / `ozon-perf-mcp`. Ключи — через переменные окружения или те же `*_add_cabinet` из чата.
 
 Установщик копирует приложение в стабильную папку (`~/.marketplace-mcp/app`) и привязывает конфиг туда, так что исходную папку потом можно перемещать или удалять, ничего не сломается. Ни `pip install`, ни ручной правки JSON: зависимости ставятся сами при первом запуске. От вас нужны только ключи. Поддерживается 4 клиента через `--client`: `claude-desktop` и `opencode` получают готовый конфиг, `claude-code` и `codex` получают готовые команды `mcp add`.
 

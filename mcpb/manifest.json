@@ -1,0 +1,79 @@
+{
+  "manifest_version": "0.3",
+  "name": "marketplaces-mcp-ru",
+  "display_name": "Wildberries и Ozon (marketplaces-mcp-ru)",
+  "version": "0.3.1",
+  "description": "Wildberries и Ozon Seller API прямо в Claude: продажи, остатки, цены, финансы, отзывы. Спрашивайте по-русски.",
+  "long_description": "Подключает ассистента напрямую к кабинетам Wildberries и Ozon через Seller API. Цифры берутся из ответа маркетплейса с указанием источника, а не выдумываются. Перед изменением цены или остатка агент просит подтверждение. Один сервер объединяет WB + Ozon + Ozon Performance (58 инструментов). Заполните только те ключи, которые у вас есть — остальные можно оставить пустыми.",
+  "author": {
+    "name": "Ilya Utov",
+    "url": "https://github.com/ilyautov"
+  },
+  "homepage": "https://github.com/ilyautov/marketplaces-mcp-ru",
+  "documentation": "https://github.com/ilyautov/marketplaces-mcp-ru/blob/main/README.md",
+  "support": "https://github.com/ilyautov/marketplaces-mcp-ru/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ilyautov/marketplaces-mcp-ru"
+  },
+  "license": "MIT",
+  "keywords": ["wildberries", "ozon", "marketplace", "seller-api", "ecommerce", "ru"],
+  "server": {
+    "type": "python",
+    "entry_point": "server/serve.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["${__dirname}/server/serve.py", "all"],
+      "env": {
+        "MARKETPLACE_MCP_HOME": "${HOME}/.marketplace-mcp",
+        "WB_API_TOKEN": "${user_config.wb_api_token}",
+        "OZON_CLIENT_ID": "${user_config.ozon_client_id}",
+        "OZON_API_KEY": "${user_config.ozon_api_key}",
+        "OZON_PERF_CLIENT_ID": "${user_config.ozon_perf_client_id}",
+        "OZON_PERF_CLIENT_SECRET": "${user_config.ozon_perf_client_secret}"
+      }
+    }
+  },
+  "user_config": {
+    "wb_api_token": {
+      "type": "string",
+      "title": "Wildberries API-токен",
+      "description": "seller.wildberries.ru → Настройки → Доступ к API. Один токен, выберите нужные категории. Оставьте пустым, если не торгуете на WB.",
+      "sensitive": true,
+      "required": false
+    },
+    "ozon_client_id": {
+      "type": "string",
+      "title": "Ozon Client ID",
+      "description": "seller.ozon.ru → Настройки → API-ключи. Оставьте пустым, если не торгуете на Ozon.",
+      "sensitive": false,
+      "required": false
+    },
+    "ozon_api_key": {
+      "type": "string",
+      "title": "Ozon API-ключ",
+      "description": "Пара к Ozon Client ID из того же раздела API-ключей.",
+      "sensitive": true,
+      "required": false
+    },
+    "ozon_perf_client_id": {
+      "type": "string",
+      "title": "Ozon Performance Client ID",
+      "description": "Только для рекламного API Ozon (performance.ozon.ru). Опционально.",
+      "sensitive": false,
+      "required": false
+    },
+    "ozon_perf_client_secret": {
+      "type": "string",
+      "title": "Ozon Performance Client Secret",
+      "description": "Пара к Performance Client ID. Опционально.",
+      "sensitive": true,
+      "required": false
+    }
+  },
+  "compatibility": {
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  }
+}

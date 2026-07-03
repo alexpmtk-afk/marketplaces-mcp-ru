@@ -11,6 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
+marketplaces-mcp-ru = "core.combined:main"
 wb-mcp = "wb_mcp.server:main"
 ozon-mcp = "ozon_mcp.server:main"
 ozon-perf-mcp = "ozon_perf_mcp.server:main"

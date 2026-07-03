@@ -32,6 +32,9 @@ VENV = Path(os.environ.get("MARKETPLACE_MCP_VENV", HERE / ".venv"))
 DEPS = ["mcp>=1.2,<2", "httpx>=0.27,<1", "pyyaml>=6.0,<7"]
 SERVICES = {"wb": "wb_mcp.server", "ozon": "ozon_mcp.server",
             "ozon-perf": "ozon_perf_mcp.server"}
+# "all" mounts every service's tools onto a single MCP server so one process
+# (one Claude Desktop / .mcpb entry) exposes WB + Ozon + Ozon-Perf at once.
+COMBINED = "all"
 
 
 def _log(msg: str) -> None:
@@ -147,8 +150,9 @@ def main() -> None:
     args = [a for a in sys.argv[1:]]
     selfcheck = "--selfcheck" in args
     positional = [a for a in args if not a.startswith("-")]
-    if not positional or positional[0] not in SERVICES:
-        _log(f"usage: python serve.py [{'|'.join(SERVICES)}] [--selfcheck]")
+    valid = set(SERVICES) | {COMBINED}
+    if not positional or positional[0] not in valid:
+        _log(f"usage: python serve.py [{'|'.join(SERVICES)}|{COMBINED}] [--selfcheck]")
         sys.exit(2)
     service = positional[0]
 
@@ -159,7 +163,11 @@ def main() -> None:
         sys.exit(1)
 
     import importlib
-    server = importlib.import_module(SERVICES[service])
+
+    if service == COMBINED:
+        server = _build_combined(importlib)
+    else:
+        server = importlib.import_module(SERVICES[service])
 
     if selfcheck:
         import asyncio
@@ -169,6 +177,24 @@ def main() -> None:
         return
 
     server.main()
+
+
+class _Combined:
+    """Wraps the combined FastMCP so the caller sees the same ``.mcp`` /
+    ``.main()`` surface the per-service modules expose."""
+
+    def __init__(self, mcp):
+        self.mcp = mcp
+
+    def main(self) -> None:
+        self.mcp.run()
+
+
+def _build_combined(importlib):
+    """Build the WB + Ozon + Ozon-Perf combined server. The merge logic lives
+    in ``core.combined`` so the console script and this launcher share it."""
+    combined = importlib.import_module("core.combined")
+    return _Combined(combined.build())
 
 
 if __name__ == "__main__":

@@ -18,7 +18,9 @@ jobs:
           python-version: "3.12"
       - name: Build release zip
         run: python scripts/package_release.py
-      - name: Upload zip to the GitHub Release
+      - name: Build Claude Desktop bundle (.mcpb)
+        run: python scripts/package_mcpb.py
+      - name: Upload artifacts to the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/*.zip --clobber
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.zip dist/*.mcpb --clobber
