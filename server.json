@@ -1,0 +1,54 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ilyautov/marketplaces-mcp-ru",
+  "title": "Marketplaces MCP (RU) — Wildberries & Ozon",
+  "description": "Wildberries and Ozon Seller APIs in your AI assistant: sales, stock, prices, finance, reviews — schema-driven and safety-gated.",
+  "version": "0.3.1",
+  "repository": {
+    "url": "https://github.com/ilyautov/marketplaces-mcp-ru",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/ilyautov/marketplaces-mcp-ru",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "marketplaces-mcp-ru",
+      "version": "0.3.1",
+      "runtimeHint": "uvx",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "WB_API_TOKEN",
+          "description": "Wildberries Seller API token (seller.wildberries.ru → Settings → API access). Leave unset if you do not sell on WB.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "OZON_CLIENT_ID",
+          "description": "Ozon Seller Client ID (seller.ozon.ru → Settings → API keys).",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "OZON_API_KEY",
+          "description": "Ozon Seller API key paired with the Client ID.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "OZON_PERF_CLIENT_ID",
+          "description": "Ozon Performance (ads) API Client ID. Optional.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "OZON_PERF_CLIENT_SECRET",
+          "description": "Ozon Performance API Client Secret. Optional.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
