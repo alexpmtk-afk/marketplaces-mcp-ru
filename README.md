@@ -6,13 +6,15 @@
 
 Подключает ИИ-ассистента (Claude, Cursor, Codex, Cowork и др.) напрямую к вашим кабинетам Wildberries и Ozon. Вы спрашиваете обычными словами, агент берёт продажи, остатки, цены, финансы и отзывы прямо из API маркетплейса, а не выдумывает цифры.
 
+[![PyPI](https://img.shields.io/pypi/v/marketplaces-mcp-ru?label=pypi&color=B5491F)](https://pypi.org/project/marketplaces-mcp-ru/)
+[![MCP Registry](https://img.shields.io/badge/MCP-Registry-2D7D4F)](https://registry.modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Версия](https://img.shields.io/badge/%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F-0.3.2-B5491F)](https://github.com/ilyautov/marketplaces-mcp-ru/commits/main)
 [![Методов](https://img.shields.io/badge/%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D0%BE%D0%B2-793-2D7D4F)](#как-это-устроено)
-[![Клиентов](https://img.shields.io/badge/%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D0%BE%D0%B2-4-D97757)](#установка)
+[![Сайт](https://img.shields.io/badge/%D1%81%D0%B0%D0%B9%D1%82-aifrontier.tech-9A3E1A)](https://marketplaces-mcp-ru.aifrontier.tech/)
+[![Звёзды](https://img.shields.io/github/stars/ilyautov/marketplaces-mcp-ru?style=flat&label=%D0%B7%D0%B2%D1%91%D0%B7%D0%B4%D1%8B&color=B5491F&logo=github&logoColor=white)](https://github.com/ilyautov/marketplaces-mcp-ru/stargazers)
 
 <!-- social preview: assets/social-preview.png → Settings → Social preview.
-     TODO: сайт marketplaces-mcp-ru.aifrontier.tech (как у humanizer-ru / small-business-ru) -->
+     Сайт: marketplaces-mcp-ru.aifrontier.tech (GitHub Pages из docs/). -->
 
 ## Зачем
 
