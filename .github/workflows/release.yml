@@ -20,7 +20,16 @@ jobs:
         run: python scripts/package_release.py
       - name: Build Claude Desktop bundle (.mcpb)
         run: python scripts/package_mcpb.py
-      - name: Upload artifacts to the GitHub Release
+      - name: Publish artifacts to the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/*.zip dist/*.mcpb --clobber
+        # Create the Release on first run for the tag; upload to it on re-runs.
+        # `gh release upload` alone fails with "release not found" when the tag
+        # was pushed via git without a Release object existing yet.
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.zip dist/*.mcpb --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.zip dist/*.mcpb \
+              --title "$GITHUB_REF_NAME" --generate-notes
+          fi
