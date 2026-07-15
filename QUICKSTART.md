@@ -109,3 +109,38 @@ python3 install.py --print
   см. модель безопасности в `README.md`).
 
 Подробности про инструменты, безопасность и каталог API — в **`README.md`**.
+
+---
+
+## Если на Windows сервер не запускается
+
+Самая частая причина — **заглушка Python из Microsoft Store**. Windows кладёт в
+`PATH` фальшивый `python.exe` (App Execution Alias из
+`...\AppData\Local\Microsoft\WindowsApps`), который ничего не запускает и молча
+падает. Если он стоит в `PATH` раньше настоящего Python, сервер не стартует.
+
+Проверьте, какой Python находит система:
+
+```powershell
+where python
+```
+
+Если первой строкой идёт путь с `\WindowsApps\` — это заглушка. Как починить:
+
+1. **Отключить алиасы:** Параметры → Приложения → Дополнительные параметры
+   приложения → Псевдонимы выполнения приложения → выключить `python.exe`
+   и `python3.exe`.
+2. **Или** поставить настоящий Python с [python.org](https://www.python.org/downloads/)
+   (обязательно отметьте «Add python.exe to PATH») и убедиться, что его папка
+   идёт в `PATH` **раньше** `WindowsApps`.
+
+После правки `PATH` **полностью перезапустите Claude Desktop** — уже запущенные
+процессы держат старое окружение и новый `PATH` не увидят.
+
+Проверить, что всё живо:
+
+```powershell
+python serve.py all --selfcheck
+```
+
+Ожидаемый ответ: `OK: all ready, 58 tools.`

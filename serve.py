@@ -52,10 +52,17 @@ def _venv_site_packages() -> list[Path]:
 
 
 def _deps_importable() -> bool:
+    """True when everything the servers actually import is importable HERE.
+
+    Reaches for the concrete submodule instead of a bare ``import mcp``: a venv
+    left half-deleted by an interrupted rebuild keeps an empty ``mcp/`` folder,
+    which Python treats as a namespace package — ``import mcp`` then succeeds
+    while every real import under it still fails.
+    """
     try:
         import httpx  # noqa: F401
-        import mcp  # noqa: F401
         import yaml  # noqa: F401
+        from mcp.server.fastmcp import FastMCP  # noqa: F401
         return True
     except ImportError:
         return False
@@ -81,10 +88,45 @@ def _write_stamp() -> None:
 
 
 def _inject_site_packages() -> None:
-    """Put the venv's site-packages onto sys.path of THIS interpreter."""
+    """Put the venv's site-packages onto sys.path of THIS interpreter.
+
+    site.addsitedir() rather than a bare sys.path.insert(), because only the
+    former processes .pth files. That is load-bearing on Windows: mcp depends on
+    pywin32, whose pywin32.pth adds the win32/ subdirs and runs the bootstrap
+    that registers pywin32's DLL directory. Skipping .pth leaves
+    ``import pywintypes`` — and therefore ``import mcp`` — broken, which used to
+    send this launcher down the reinstall path on every start.
+
+    The insert comes first so the venv still outranks the host interpreter's own
+    packages; addsitedir then sees the entry as known and adds no duplicate.
+    """
+    import site
+
     for sp in _venv_site_packages():
         if sp.is_dir() and str(sp) not in sys.path:
             sys.path.insert(0, str(sp))
+            site.addsitedir(str(sp))
+
+
+def _create_venv(clear: bool = False) -> bool:
+    """Create — or rebuild, with ``clear`` — the venv in a SUBPROCESS.
+
+    Never venv.EnvBuilder(clear=True) in-process: clearing is an rmtree, and on
+    Windows a native extension (.pyd) this process already imported is locked by
+    the OS. An in-process clear dies part-way down site-packages and leaves a
+    half-deleted venv — strictly worse than the one it set out to repair.
+    """
+    cmd = [sys.executable, "-m", "venv"]
+    if clear:
+        cmd.append("--clear")
+    cmd.append(str(VENV))
+    try:
+        subprocess.run(cmd, check=True,
+                       stdout=sys.stderr.fileno(), stderr=sys.stderr.fileno())
+        return True
+    except (subprocess.CalledProcessError, OSError) as exc:
+        _log(f"could not create the virtual environment at {VENV}: {exc}")
+        return False
 
 
 def _pip_install() -> bool:
@@ -110,10 +152,10 @@ def _ensure_deps() -> bool:
     if _deps_importable() and (not _venv_python().exists() or _stamp_current()):
         return True  # ready venv (or system-wide deps) — no pip, works offline
 
-    import venv
     if not _venv_python().exists():
         _log(f"first run — creating virtual environment at {VENV} …")
-        venv.EnvBuilder(with_pip=True).create(VENV)
+        if not _create_venv():
+            return False
         _log("installing dependencies (one-time) …")
     else:
         _log("refreshing dependencies …")
@@ -132,7 +174,8 @@ def _ensure_deps() -> bool:
     # Install didn't help — the venv likely belongs to another Python
     # version. Recreate it once and try again.
     _log(f"recreating virtual environment at {VENV} …")
-    venv.EnvBuilder(with_pip=True, clear=True).create(VENV)
+    if not _create_venv(clear=True):
+        return False
     if not _pip_install():
         return False
     _inject_site_packages()

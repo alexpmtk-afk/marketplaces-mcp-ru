@@ -3,7 +3,7 @@
   "name": "io.github.ilyautov/marketplaces-mcp-ru",
   "title": "Marketplaces MCP (RU) — Wildberries & Ozon",
   "description": "Wildberries & Ozon Seller APIs in your AI assistant — schema-driven, safety-gated.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "repository": {
     "url": "https://github.com/ilyautov/marketplaces-mcp-ru",
     "source": "github"
@@ -14,7 +14,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "marketplaces-mcp-ru",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "runtimeHint": "uvx",
       "transport": { "type": "stdio" },
       "environmentVariables": [

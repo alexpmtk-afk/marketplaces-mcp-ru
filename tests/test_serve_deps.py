@@ -129,34 +129,61 @@ def test_offline_reinstall_failure_tolerated_when_deps_import(tmp_path, monkeypa
     assert serve._ensure_deps() is True
 
 
+def _is_venv_clear(cmd: list[str]) -> bool:
+    """True for a `python -m venv --clear <dir>` rebuild command."""
+    return "venv" in cmd and "--clear" in cmd
+
+
 def test_broken_venv_is_recreated_once(tmp_path, monkeypatch):
     """venv from another Python version: install 'succeeds' but import still
-    fails -> recreate the venv (clear=True) and install again."""
+    fails -> rebuild the venv (`python -m venv --clear`) and install again."""
     venv_dir, sp = _make_venv(tmp_path)
     monkeypatch.setattr(serve, "VENV", venv_dir)
     state = {"cleared": False, "pip_after_clear": False}
     monkeypatch.setattr(serve, "_deps_importable",
                         lambda: state["pip_after_clear"])
 
-    class FakeBuilder:
-        def __init__(self, with_pip=False, clear=False, **kw):
-            self.clear = clear
-
-        def create(self, path):
-            path = Path(path)
-            if self.clear:
-                state["cleared"] = True
-            _write_layout(path)
-
-    monkeypatch.setattr(venv_module, "EnvBuilder", FakeBuilder)
-
     def fake_run(cmd, **kw):
-        if state["cleared"]:
+        cmd = [str(c) for c in cmd]
+        if _is_venv_clear(cmd):
+            state["cleared"] = True
+            _write_layout(Path(cmd[-1]))
+        elif state["cleared"]:
             state["pip_after_clear"] = True
 
     monkeypatch.setattr(serve.subprocess, "run", fake_run)
     assert serve._ensure_deps() is True
-    assert state["cleared"], "venv must be recreated with clear=True"
+    assert state["cleared"], "venv must be rebuilt with --clear"
+
+
+def test_recreate_never_clears_the_venv_in_process(tmp_path, monkeypatch):
+    """REGRESSION: the rebuild must shell out, never call venv.EnvBuilder here.
+
+    EnvBuilder(clear=True) rmtree's site-packages from inside the very process
+    that has already imported native extensions out of it. On Windows a loaded
+    .pyd is locked by the OS, so the clear dies part-way down the tree and leaves
+    a half-deleted venv — strictly worse than the one it tried to repair.
+    """
+    venv_dir, sp = _make_venv(tmp_path)
+    monkeypatch.setattr(serve, "VENV", venv_dir)
+    monkeypatch.setattr(serve, "_deps_importable", lambda: False)
+
+    def boom(*a, **k):
+        raise AssertionError("venv.EnvBuilder must never be used in-process")
+
+    monkeypatch.setattr(venv_module, "EnvBuilder", boom)
+    cmds: list[list[str]] = []
+
+    def fake_run(cmd, **kw):
+        cmd = [str(c) for c in cmd]
+        cmds.append(cmd)
+        if "venv" in cmd:
+            _write_layout(Path(cmd[-1]))
+
+    monkeypatch.setattr(serve.subprocess, "run", fake_run)
+    serve._ensure_deps()
+    assert any(_is_venv_clear(c) for c in cmds), \
+        "the rebuild must run `python -m venv --clear` in a subprocess"
 
 
 def test_gives_up_after_one_recreate(tmp_path, monkeypatch):
@@ -164,18 +191,38 @@ def test_gives_up_after_one_recreate(tmp_path, monkeypatch):
     venv_dir, sp = _make_venv(tmp_path)
     monkeypatch.setattr(serve, "VENV", venv_dir)
     monkeypatch.setattr(serve, "_deps_importable", lambda: False)
-    creates = {"clear": 0}
+    clears = {"n": 0}
 
-    class FakeBuilder:
-        def __init__(self, with_pip=False, clear=False, **kw):
-            self.clear = clear
+    def fake_run(cmd, **kw):
+        cmd = [str(c) for c in cmd]
+        if _is_venv_clear(cmd):
+            clears["n"] += 1
+            _write_layout(Path(cmd[-1]))
 
-        def create(self, path):
-            if self.clear:
-                creates["clear"] += 1
-            _write_layout(Path(path))
-
-    monkeypatch.setattr(venv_module, "EnvBuilder", FakeBuilder)
-    monkeypatch.setattr(serve.subprocess, "run", lambda *a, **k: None)
+    monkeypatch.setattr(serve.subprocess, "run", fake_run)
     assert serve._ensure_deps() is False
-    assert creates["clear"] <= 1
+    assert clears["n"] <= 1
+
+
+def test_inject_site_packages_processes_pth_files(tmp_path, monkeypatch):
+    """CRITICAL (Windows): .pth files inside the venv must be processed.
+
+    mcp depends on pywin32 on Windows, and pywin32.pth is what puts pywintypes
+    on the path and registers pywin32's DLL directory. A bare sys.path.insert()
+    ignores .pth entirely, so `import mcp` fails on every Windows box — the
+    launcher then concludes the deps are broken and reinstalls on every start.
+    """
+    venv_dir, sp = _make_venv(tmp_path)
+    extra = sp / "win32" / "lib"
+    extra.mkdir(parents=True)
+    (sp / "fake-pywin32.pth").write_text("win32/lib\n", encoding="utf-8")
+    monkeypatch.setattr(serve, "VENV", venv_dir)
+
+    original = list(sys.path)
+    try:
+        serve._inject_site_packages()
+        assert str(sp) in sys.path, "site-packages itself must go on sys.path"
+        assert any(Path(p) == extra for p in sys.path), \
+            ".pth contents must reach sys.path (site.addsitedir, not a raw insert)"
+    finally:
+        sys.path[:] = original
