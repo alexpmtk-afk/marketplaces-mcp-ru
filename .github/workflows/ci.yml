@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pyyaml httpx "mcp>=1.2.0"
+          pip install pytest pyyaml httpx "mcp>=1.2.0,<2"
       - name: Run tests (offline, no tokens)
         # -u clears any inherited creds so tests run in a clean env.
         # Includes the safety-catalog lint: fails if any PUT/PATCH/DELETE is
