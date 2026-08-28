@@ -42,3 +42,6 @@ jobs:
           python serve.py wb --selfcheck
           python serve.py ozon --selfcheck
           python serve.py ozon-perf --selfcheck
+      - name: Build remote MCP container
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: docker build --tag marketplaces-mcp-ru:test .
