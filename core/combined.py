@@ -13,15 +13,21 @@ internal surface is stable within the pinned ``mcp>=1.2,<2`` range.
 from __future__ import annotations
 
 import importlib
+from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
 
 
-def build() -> FastMCP:
-    """Return one FastMCP carrying every service's tools."""
-    combined = FastMCP("marketplaces-mcp-ru")
+def build(**fastmcp_kwargs: Any) -> FastMCP:
+    """Return one FastMCP carrying every service's tools.
+
+    Keyword arguments are passed only to the combined FastMCP constructor. This
+    keeps the local stdio server unchanged while allowing the remote entry point
+    to supply its HTTP host and port.
+    """
+    combined = FastMCP("marketplaces-mcp-ru", **fastmcp_kwargs)
     for mod_name in SERVICE_MODULES:
         mod = importlib.import_module(mod_name)
         combined._tool_manager._tools.update(mod.mcp._tool_manager._tools)
