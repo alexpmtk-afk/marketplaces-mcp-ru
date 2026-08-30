@@ -1,17 +1,13 @@
 """Process-wide and host-wide marketplace request scheduling.
 
 Every HTTP attempt reserves its send time here before it reaches WB/Ozon.
-SQLite coordinates all MCP processes on one host. When
-``MARKETPLACE_MCP_REDIS_URL`` is set, an atomic Redis Lua script coordinates
-all processes and all application replicas (the production/Yandex Cloud mode).
-
-The scheduler deliberately uses an evenly-spaced GCRA/leaky-bucket queue rather
-than bursts. It is more conservative than the marketplaces' token buckets and
-therefore leaves useful headroom for manual calls from the seller cabinet.
+SQLite coordinates all MCP processes on one host. When shared Redis/Valkey is
+configured, atomic Lua scripts coordinate all processes and all replicas.
 """
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import os
 import re
@@ -21,6 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
+from urllib.parse import quote
 
 
 _RATE_RE = re.compile(
@@ -39,6 +36,67 @@ class RateLimitUnavailable(RuntimeError):
     """The configured shared controller cannot safely reserve a request."""
 
 
+def redis_url_from_env() -> str:
+    """Build a Redis/Valkey URL from deployment components.
+
+    ``MARKETPLACE_MCP_REDIS_URL`` wins for backwards compatibility. Production
+    may instead inject host/port/password separately from Lockbox so the secret
+    password never has to appear in Terraform source or a GitHub secret URL.
+    """
+    explicit = os.environ.get("MARKETPLACE_MCP_REDIS_URL", "").strip()
+    if explicit:
+        return explicit
+    host = os.environ.get("MARKETPLACE_MCP_REDIS_HOST", "").strip()
+    if not host:
+        return ""
+    tls = os.environ.get("MARKETPLACE_MCP_REDIS_TLS", "1").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    scheme = "rediss" if tls else "redis"
+    default_port = "6380" if tls else "6379"
+    port = os.environ.get("MARKETPLACE_MCP_REDIS_PORT", default_port).strip() or default_port
+    password = os.environ.get("MARKETPLACE_MCP_REDIS_PASSWORD", "")
+    auth = f":{quote(password, safe='')}@" if password else ""
+    db = os.environ.get("MARKETPLACE_MCP_REDIS_DB", "0").strip() or "0"
+    return f"{scheme}://{auth}{host}:{port}/{db}"
+
+
+def redis_connection_kwargs(url: str) -> dict:
+    if not str(url).lower().startswith("rediss://"):
+        return {}
+    ca = os.environ.get("MARKETPLACE_MCP_REDIS_CA_CERT", "").strip()
+    return {"ssl_ca_certs": ca} if ca else {}
+
+
+def verify_shared_redis() -> None:
+    """Fail fast if the production Redis/Valkey backend cannot be reached."""
+    url = redis_url_from_env()
+    if not url:
+        raise RateLimitUnavailable("shared Redis/Valkey is not configured")
+    try:
+        from redis import Redis
+    except ImportError as exc:
+        raise RateLimitUnavailable("package 'redis' is not installed") from exc
+    client = None
+    try:
+        client = Redis.from_url(
+            url,
+            decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+            **redis_connection_kwargs(url),
+        )
+        client.ping()
+    except Exception as exc:  # noqa: BLE001
+        raise RateLimitUnavailable(
+            f"shared Redis/Valkey preflight failed: {type(exc).__name__}"
+        ) from exc
+    finally:
+        if client is not None:
+            with contextlib.suppress(Exception):
+                client.close()
+
+
 @dataclass(frozen=True)
 class RateRule:
     key: str
@@ -46,7 +104,6 @@ class RateRule:
 
 
 def parse_rate_limit(value: str) -> Optional[float]:
-    """Convert catalog strings such as ``10 req/6s`` to seconds/request."""
     match = _RATE_RE.match(value or "")
     if not match:
         return None
@@ -66,21 +123,13 @@ def key_prefix(service: str, cabinet_key: str) -> str:
     return f"marketplace-rate:v1:{service.lower().strip()}:{cabinet_key}"
 
 
-def build_rules(
-    *,
-    service: str,
-    cabinet_key: str,
-    host: str,
-    operation_id: Optional[str] = None,
-    scope: str = "",
-    catalog_rate_limit: str = "",
-) -> list[RateRule]:
-    """Build global and endpoint/group constraints for one HTTP attempt."""
+def build_rules(*, service: str, cabinet_key: str, host: str,
+                operation_id: Optional[str] = None, scope: str = "",
+                catalog_rate_limit: str = "") -> list[RateRule]:
     service = service.lower().strip()
     default_rps = {"wb": 5.0, "ozon": 20.0, "ozon_perf": 10.0}.get(service, 5.0)
     env_name = {
-        "wb": "WB_GLOBAL_RPS",
-        "ozon": "OZON_GLOBAL_RPS",
+        "wb": "WB_GLOBAL_RPS", "ozon": "OZON_GLOBAL_RPS",
         "ozon_perf": "OZON_PERF_GLOBAL_RPS",
     }.get(service, "MARKETPLACE_GLOBAL_RPS")
     try:
@@ -88,10 +137,8 @@ def build_rules(
     except ValueError:
         global_rps = default_rps
     global_rps = max(0.01, global_rps)
-
     prefix = key_prefix(service, cabinet_key)
     rules = [RateRule(f"{prefix}:global", 1.0 / global_rps)]
-
     interval = parse_rate_limit(catalog_rate_limit)
     if interval is not None:
         group = "|".join((host.lower(), scope.lower(), catalog_rate_limit.lower()))
@@ -133,20 +180,14 @@ return blocked_until
 
 
 class GlobalRateController:
-    """Reserve marketplace request slots in a shared durable queue."""
-
     def __init__(self, *, redis_url: Optional[str] = None,
                  sqlite_path: Optional[str | Path] = None):
-        self.redis_url = redis_url if redis_url is not None else os.environ.get(
-            "MARKETPLACE_MCP_REDIS_URL", "")
+        self.redis_url = redis_url if redis_url is not None else redis_url_from_env()
         self.require_redis = os.environ.get(
-            "MARKETPLACE_REQUIRE_REDIS", "").strip().lower() in {
-                "1", "true", "yes", "on",
-            }
+            "MARKETPLACE_REQUIRE_REDIS", "").strip().lower() in {"1", "true", "yes", "on"}
         if self.require_redis and not self.redis_url:
             raise RateLimitUnavailable(
-                "MARKETPLACE_REQUIRE_REDIS is enabled, but "
-                "MARKETPLACE_MCP_REDIS_URL is empty"
+                "MARKETPLACE_REQUIRE_REDIS is enabled, but shared Redis/Valkey is not configured"
             )
         default_db = Path.home() / ".marketplace-mcp" / "rate_limits.sqlite3"
         self.sqlite_path = Path(sqlite_path or os.environ.get(
@@ -158,7 +199,6 @@ class GlobalRateController:
         return "redis" if self.redis_url else "sqlite"
 
     async def acquire(self, rules: Iterable[RateRule]) -> float:
-        """Atomically reserve a slot and sleep until its assigned send time."""
         normalized = [r for r in rules if r.interval_seconds > 0]
         if not normalized:
             return 0.0
@@ -168,16 +208,12 @@ class GlobalRateController:
         total_delay = 0.0
         for group in stages:
             try:
-                if self.redis_url:
-                    delay = await self._reserve_redis(group)
-                else:
-                    delay = await asyncio.to_thread(self._reserve_sqlite, group)
+                delay = await self._reserve_redis(group) if self.redis_url else await asyncio.to_thread(self._reserve_sqlite, group)
             except RateLimitUnavailable:
                 raise
             except Exception as exc:
                 raise RateLimitUnavailable(
-                    f"{self.backend} rate-limit backend unavailable: "
-                    f"{type(exc).__name__}: {exc}"
+                    f"{self.backend} rate-limit backend unavailable: {type(exc).__name__}: {exc}"
                 ) from exc
             if delay > 0:
                 await asyncio.sleep(delay)
@@ -185,7 +221,6 @@ class GlobalRateController:
         return total_delay
 
     async def defer(self, rules: Iterable[RateRule], seconds: float) -> None:
-        """Persist a marketplace-requested cooldown (normally after HTTP 429)."""
         keys = [r.key for r in rules]
         seconds = max(0.0, seconds)
         if not keys or seconds <= 0:
@@ -197,12 +232,10 @@ class GlobalRateController:
                 await asyncio.to_thread(self._defer_sqlite, keys, seconds)
         except Exception as exc:
             raise RateLimitUnavailable(
-                f"{self.backend} rate-limit backend unavailable: "
-                f"{type(exc).__name__}: {exc}"
+                f"{self.backend} rate-limit backend unavailable: {type(exc).__name__}: {exc}"
             ) from exc
 
     async def snapshot(self, prefix: str) -> dict:
-        """Return non-secret queue timing for one service/cabinet prefix."""
         try:
             if self.redis_url:
                 rows, now = await self._snapshot_redis(prefix)
@@ -212,28 +245,22 @@ class GlobalRateController:
             raise
         except Exception as exc:
             raise RateLimitUnavailable(
-                f"{self.backend} rate-limit backend unavailable: "
-                f"{type(exc).__name__}: {exc}"
+                f"{self.backend} rate-limit backend unavailable: {type(exc).__name__}: {exc}"
             ) from exc
         queues = []
         for key, next_at in sorted(rows, key=lambda item: item[0]):
             suffix = key[len(prefix) + 1:] if key.startswith(prefix + ":") else key
             if suffix == "global":
-                queue = "global"
-                queue_id = None
+                queue, queue_id = "global", None
             elif suffix.startswith("catalog:"):
-                queue = "catalog_group"
-                queue_id = suffix.split(":", 1)[1][:8]
+                queue, queue_id = "catalog_group", suffix.split(":", 1)[1][:8]
             elif suffix == "raw":
-                queue = "raw"
-                queue_id = None
+                queue, queue_id = "raw", None
             else:
-                queue = "other"
-                queue_id = _safe_component(suffix)[:8]
+                queue, queue_id = "other", _safe_component(suffix)[:8]
             item = {
                 "queue": queue,
-                "next_allowed_at_utc": datetime.fromtimestamp(
-                    next_at, tz=timezone.utc).isoformat(),
+                "next_allowed_at_utc": datetime.fromtimestamp(next_at, tz=timezone.utc).isoformat(),
                 "wait_seconds": round(max(0.0, next_at - now), 3),
             }
             if queue_id:
@@ -241,8 +268,7 @@ class GlobalRateController:
             queues.append(item)
         return {
             "backend": self.backend,
-            "observed_at_utc": datetime.fromtimestamp(
-                now, tz=timezone.utc).isoformat(),
+            "observed_at_utc": datetime.fromtimestamp(now, tz=timezone.utc).isoformat(),
             "active_queues": queues,
         }
 
@@ -254,19 +280,13 @@ class GlobalRateController:
         if not keys:
             return [], now
         values = await client.mget(keys)
-        rows = [
-            (str(key), float(value) / 1000.0)
-            for key, value in zip(keys, values)
-            if value is not None
-        ]
-        return rows, now
+        return [(str(key), float(value) / 1000.0) for key, value in zip(keys, values) if value is not None], now
 
     def _snapshot_sqlite(self, prefix: str) -> tuple[list[tuple[str, float]], float]:
         conn = self._connect_sqlite()
         try:
             rows = conn.execute(
-                "SELECT limiter_key, next_at FROM rate_slots "
-                "WHERE limiter_key LIKE ?",
+                "SELECT limiter_key, next_at FROM rate_slots WHERE limiter_key LIKE ?",
                 (prefix + ":%",),
             ).fetchall()
             return [(str(key), float(next_at)) for key, next_at in rows], time.time()
@@ -278,12 +298,13 @@ class GlobalRateController:
             try:
                 import redis.asyncio as redis_async
             except ImportError as exc:
-                raise RateLimitUnavailable(
-                    "Redis backend configured but package 'redis' is not installed"
-                ) from exc
+                raise RateLimitUnavailable("Redis backend configured but package 'redis' is not installed") from exc
             self._redis = redis_async.from_url(
-                self.redis_url, decode_responses=True,
-                socket_connect_timeout=5, socket_timeout=5,
+                self.redis_url,
+                decode_responses=True,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+                **redis_connection_kwargs(self.redis_url),
             )
         return self._redis
 
@@ -291,23 +312,18 @@ class GlobalRateController:
         client = await self._redis_client()
         keys = [r.key for r in rules]
         intervals_ms = [max(1, round(r.interval_seconds * 1000)) for r in rules]
-        delay_ms = await client.eval(
-            _REDIS_RESERVE_LUA, len(keys), *keys, *intervals_ms)
+        delay_ms = await client.eval(_REDIS_RESERVE_LUA, len(keys), *keys, *intervals_ms)
         return float(delay_ms) / 1000.0
 
     async def _defer_redis(self, keys: list[str], seconds: float) -> None:
         client = await self._redis_client()
-        await client.eval(
-            _REDIS_DEFER_LUA, len(keys), *keys, max(1, round(seconds * 1000)))
+        await client.eval(_REDIS_DEFER_LUA, len(keys), *keys, max(1, round(seconds * 1000)))
 
     def _connect_sqlite(self) -> sqlite3.Connection:
         self.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.sqlite_path), timeout=30.0)
         conn.execute("PRAGMA busy_timeout=30000")
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS rate_slots ("
-            " limiter_key TEXT PRIMARY KEY, next_at REAL NOT NULL)"
-        )
+        conn.execute("CREATE TABLE IF NOT EXISTS rate_slots (limiter_key TEXT PRIMARY KEY, next_at REAL NOT NULL)")
         return conn
 
     def _reserve_sqlite(self, rules: list[RateRule]) -> float:
@@ -317,16 +333,12 @@ class GlobalRateController:
             now = time.time()
             grant_at = now
             for rule in rules:
-                row = conn.execute(
-                    "SELECT next_at FROM rate_slots WHERE limiter_key = ?",
-                    (rule.key,),
-                ).fetchone()
+                row = conn.execute("SELECT next_at FROM rate_slots WHERE limiter_key = ?", (rule.key,)).fetchone()
                 if row:
                     grant_at = max(grant_at, float(row[0]))
             for rule in rules:
                 conn.execute(
-                    "INSERT INTO rate_slots(limiter_key, next_at) VALUES(?, ?) "
-                    "ON CONFLICT(limiter_key) DO UPDATE SET next_at=excluded.next_at",
+                    "INSERT INTO rate_slots(limiter_key, next_at) VALUES(?, ?) ON CONFLICT(limiter_key) DO UPDATE SET next_at=excluded.next_at",
                     (rule.key, grant_at + rule.interval_seconds),
                 )
             conn.commit()
@@ -343,13 +355,10 @@ class GlobalRateController:
             conn.execute("BEGIN IMMEDIATE")
             blocked_until = time.time() + seconds
             for key in keys:
-                row = conn.execute(
-                    "SELECT next_at FROM rate_slots WHERE limiter_key = ?", (key,)
-                ).fetchone()
+                row = conn.execute("SELECT next_at FROM rate_slots WHERE limiter_key = ?", (key,)).fetchone()
                 target = max(blocked_until, float(row[0]) if row else 0.0)
                 conn.execute(
-                    "INSERT INTO rate_slots(limiter_key, next_at) VALUES(?, ?) "
-                    "ON CONFLICT(limiter_key) DO UPDATE SET next_at=excluded.next_at",
+                    "INSERT INTO rate_slots(limiter_key, next_at) VALUES(?, ?) ON CONFLICT(limiter_key) DO UPDATE SET next_at=excluded.next_at",
                     (key, target),
                 )
             conn.commit()
