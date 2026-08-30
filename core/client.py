@@ -258,7 +258,7 @@ class MarketplaceClient:
             ttl = float(body.get("expires_in", 1800))
         except (TypeError, ValueError):
             ttl = 1800.0
-        self._tokens[key] = (token, time.monotonic() + max(0.0, ttl - TOKEN_EXPIRY_SKEW"))
+        self._tokens[key] = (token, time.monotonic() + max(0.0, ttl - TOKEN_EXPIRY_SKEW))
         return token, None
 
     def _invalidate_token(self, creds: dict[str, str]) -> None:
