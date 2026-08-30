@@ -23,13 +23,7 @@ def _run_middleware(headers: list[tuple[bytes, bytes]], path: str = "/mcp"):
         messages.append(message)
 
     middleware = remote.BearerAuthMiddleware(downstream, token="expected-token")
-    asyncio.run(
-        middleware(
-            {"type": "http", "path": path, "headers": headers},
-            receive,
-            send,
-        )
-    )
+    asyncio.run(middleware({"type": "http", "path": path, "headers": headers}, receive, send))
     return called, messages
 
 
@@ -61,3 +55,20 @@ def test_remote_refuses_to_start_without_bearer(monkeypatch):
     monkeypatch.delenv(remote.BEARER_ENV, raising=False)
     with pytest.raises(RuntimeError, match=remote.BEARER_ENV):
         remote._remote_app()
+
+
+def test_remote_refuses_to_start_without_lockbox_cabinets(monkeypatch):
+    monkeypatch.setenv(remote.BEARER_ENV, "x")
+    monkeypatch.delenv(remote.ENV_CABINETS, raising=False)
+    with pytest.raises(RuntimeError, match=remote.ENV_CABINETS):
+        remote._remote_app()
+
+
+def test_remote_preflights_shared_redis(monkeypatch):
+    monkeypatch.setenv(remote.BEARER_ENV, "x")
+    monkeypatch.setenv(remote.ENV_CABINETS, "{}")
+    called = {"redis": False}
+    monkeypatch.setattr(remote, "verify_shared_redis", lambda: called.__setitem__("redis", True))
+    app = remote._remote_app()
+    assert app is not None
+    assert called["redis"] is True
