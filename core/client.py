@@ -25,6 +25,12 @@ import httpx
 
 from .credentials import CredentialStore
 from .errors import classify_status, error_from_exception, make_error
+from .rate_limit import (
+    GlobalRateController,
+    RateLimitUnavailable,
+    build_rules,
+    key_prefix,
+)
 from .registry import EndpointSpec
 
 DEFAULT_TIMEOUT = 30.0
@@ -116,14 +122,26 @@ def _parse_retry_after(value: Optional[str]) -> Optional[float]:
     return max(0.0, dt.timestamp() - time.time())
 
 
+def _marketplace_retry_delay(resp: httpx.Response, attempt: int) -> float:
+    """Read standard and WB-specific cooldown headers, then fall back safely."""
+    candidates = [
+        _parse_retry_after(resp.headers.get("Retry-After")),
+        _parse_retry_after(resp.headers.get("X-Ratelimit-Retry")),
+    ]
+    valid = [value for value in candidates if value is not None]
+    return max(valid) if valid else BACKOFF_BASE * (2**attempt)
+
+
 # Refresh a cached bearer this many seconds BEFORE it actually expires, so an
 # in-flight request never races the expiry boundary.
 TOKEN_EXPIRY_SKEW = 60.0
 
 
 class MarketplaceClient:
-    def __init__(self, config: ServiceConfig):
+    def __init__(self, config: ServiceConfig,
+                 rate_controller: Optional[GlobalRateController] = None):
         self.config = config
+        self.rate_controller = rate_controller or GlobalRateController()
         # OAuth token cache (only used when config.token_url is set). Keyed per
         # credential set so switching cabinets never reuses another cabinet's
         # bearer: {creds_key: (token, monotonic_expiry)}.
@@ -150,7 +168,7 @@ class MarketplaceClient:
             )
         return creds, None
 
-    # --- OAuth2 client_credentials ------------------------------------------
+    # --- OAuth2 client_credentials ---------------------------------------
     # NOTE: the Ozon Performance token contract below is DOCUMENTED but NOT yet
     # verified against the live API (no perf credentials available at build time).
     # Documented contract:
@@ -180,22 +198,33 @@ class MarketplaceClient:
             return await self._fetch_token(creds, key)
 
     async def _fetch_token(self, creds: dict[str, str],
-                           key: str) -> tuple[Optional[str], Optional[dict]]:
+                             key: str) -> tuple[Optional[str], Optional[dict]]:
         cfg = self.config
         payload = {
             "client_id": creds.get(cfg.oauth_id_field, ""),
             "client_secret": creds.get(cfg.oauth_secret_field, ""),
             "grant_type": "client_credentials",
         }
+        rules = build_rules(
+            service=cfg.name, cabinet_key=key, host=cfg.token_url,
+            operation_id="oauth_token",
+        )
         try:
+            await self.rate_controller.acquire(rules)
             async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
                 resp = await client.post(
-                    cfg.token_url,
-                    json=payload,
-                    headers={"User-Agent": cfg.user_agent,
-                             "Content-Type": "application/json",
-                             "Accept": "application/json"},
-                )
+                cfg.token_url,
+                json=payload,
+                headers={"User-Agent": cfg.user_agent,
+                         "Content-Type": "application/json",
+                         "Accept": "application/json"},
+            )
+        except RateLimitUnavailable as exc:
+            return None, make_error(
+                "rate_limit", f"Global request controller unavailable: {exc}",
+                operation_id="oauth_token", endpoint=cfg.token_url,
+                retryable=True,
+            )
         except Exception as exc:  # noqa: BLE001
             return None, error_from_exception(
                 exc, operation_id="oauth_token", endpoint=cfg.token_url)
@@ -229,7 +258,7 @@ class MarketplaceClient:
             ttl = float(body.get("expires_in", 1800))
         except (TypeError, ValueError):
             ttl = 1800.0
-        self._tokens[key] = (token, time.monotonic() + max(0.0, ttl - TOKEN_EXPIRY_SKEW))
+        self._tokens[key] = (token, time.monotonic() + max(0.0, ttl - TOKEN_EXPIRY_SKEW"))
         return token, None
 
     def _invalidate_token(self, creds: dict[str, str]) -> None:
@@ -253,6 +282,8 @@ class MarketplaceClient:
         query: Optional[dict[str, Any]] = None,
         json_body: Optional[Any] = None,
         operation_id: Optional[str] = None,
+        rate_limit: str = "",
+        rate_scope: str = "",
         timeout: float = DEFAULT_TIMEOUT,
         creds_override: Optional[dict[str, str]] = None,
     ) -> dict:
@@ -285,6 +316,15 @@ class MarketplaceClient:
             creds, err = self._creds_or_error()
         if err:
             return err
+        cabinet_key = self._creds_key(self.config, creds or {})
+        rules = build_rules(
+            service=self.config.name,
+            cabinet_key=cabinet_key,
+            host=host,
+            operation_id=operation_id,
+            scope=rate_scope,
+            catalog_rate_limit=rate_limit,
+        )
         headers = {
             "User-Agent": self.config.user_agent,
             "Accept": "application/json",
@@ -304,6 +344,17 @@ class MarketplaceClient:
 
         attempt = 0
         while True:
+            try:
+                await self.rate_controller.acquire(rules)
+            except RateLimitUnavailable as exc:
+                return make_error(
+                    "rate_limit",
+                    f"Global request controller unavailable; HTTP request was "
+                    f"not sent: {exc}",
+                    operation_id=operation_id,
+                    endpoint=path,
+                    retryable=True,
+                )
             try:
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     resp = await client.request(
@@ -335,9 +386,17 @@ class MarketplaceClient:
                 self._invalidate_token(creds or {})
 
             if resp.status_code == 429 and attempt < MAX_RETRIES:
-                retry_after = _parse_retry_after(resp.headers.get("Retry-After"))
-                delay = retry_after if retry_after is not None else BACKOFF_BASE * (2**attempt)
-                await asyncio.sleep(min(delay, 60.0))
+                delay = min(_marketplace_retry_delay(resp, attempt), 3600.0)
+                try:
+                    await self.rate_controller.defer(rules, delay)
+                except RateLimitUnavailable as exc:
+                    return make_error(
+                        "rate_limit",
+                        f"Marketplace returned 429 and the shared cooldown could "
+                        f"not be stored: {exc}",
+                        code=429, operation_id=operation_id, endpoint=path,
+                        retryable=True, retry_after_seconds=delay,
+                    )
                 attempt += 1
                 continue
 
@@ -357,9 +416,49 @@ class MarketplaceClient:
                 operation_id=operation_id,
                 endpoint=path,
                 retryable=retryable,
-                retry_after_seconds=_parse_retry_after(resp.headers.get("Retry-After")),
+                retry_after_seconds=(
+                    _marketplace_retry_delay(resp, attempt)
+                    if resp.status_code == 429 else
+                    _parse_retry_after(resp.headers.get("Retry-After"))
+                ),
                 details=_capped_details(resp),
             )
+
+    async def rate_limit_status(self) -> dict:
+        """Return shared queue state without exposing credentials or key hashes."""
+        creds, source = self.config.resolve_creds()
+        missing = [field for field in self.config.fields if not creds.get(field)]
+        if missing:
+            return make_error(
+                "auth",
+                f"Missing credentials for fields: {', '.join(missing)}.",
+                operation_id="rate_limit_status",
+                retryable=False,
+            )
+        cabinet_key = self._creds_key(self.config, creds)
+        global_rule = build_rules(
+            service=self.config.name,
+            cabinet_key=cabinet_key,
+            host="",
+            operation_id="rate_limit_status",
+        )[0]
+        try:
+            state = await self.rate_controller.snapshot(
+                key_prefix(self.config.name, cabinet_key))
+        except RateLimitUnavailable as exc:
+            return make_error(
+                "rate_limit",
+                f"Global request controller unavailable: {exc}",
+                operation_id="rate_limit_status",
+                retryable=True,
+            )
+        return {
+            "ok": True,
+            "service": self.config.name,
+            "credential_source": source,
+            "configured_global_rps": round(1.0 / global_rule.interval_seconds, 3),
+            **state,
+        }
 
     async def call_spec(
         self,
@@ -387,6 +486,8 @@ class MarketplaceClient:
             query=query,
             json_body=json_body,
             operation_id=spec.operation_id,
+            rate_limit=spec.rate_limit,
+            rate_scope=spec.scope,
             creds_override=creds_override,
         )
 
