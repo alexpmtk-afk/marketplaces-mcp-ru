@@ -23,7 +23,7 @@ PORT = int(os.environ.get("PORT", "8080"))
 HOST = os.environ.get("MCP_HOST", "0.0.0.0")
 BEARER_ENV = "MARKETPLACE_MCP_BEARER_TOKEN"
 
-mcp = build(host=HOST, port=PORT)
+mcp = build(host=HOST, port=PORT, stateless_http=True)
 
 
 @mcp.custom_route("/healthz", methods=["GET"])
