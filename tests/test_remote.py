@@ -29,3 +29,4 @@ def test_remote_defaults_to_serverless_port_and_all_interfaces():
     assert remote.mcp.settings.host == "0.0.0.0"
     assert remote.mcp.settings.port == 8080
     assert remote.mcp.settings.streamable_http_path == "/mcp"
+    assert remote.mcp.settings.stateless_http is True
