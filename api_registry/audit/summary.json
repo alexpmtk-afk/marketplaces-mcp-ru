@@ -1,0 +1,607 @@
+{
+  "generated_at": "2026-09-01T14:56:29.199387+00:00",
+  "baseline_app_commit": "07a3408eab9a2abe4ba1e9dbcfdd8c67bed0458d",
+  "baseline_total": 793,
+  "current_snapshot_total": 798,
+  "current_active_total": 783,
+  "wildberries_official_snapshot_date": "2026-08-26",
+  "diffs": {
+    "wildberries": {
+      "baseline_count": 307,
+      "current_snapshot_count": 287,
+      "current_active_count": 287,
+      "current_deprecated_count": 0,
+      "current_not_in_baseline": [
+        {
+          "method": "GET",
+          "path": "/api/advert/v1/config"
+        },
+        {
+          "method": "GET",
+          "path": "/api/common/v1/tariff-constructor/options"
+        },
+        {
+          "method": "GET",
+          "path": "/api/marketplace/v3/fbs/settings/autoreturns"
+        },
+        {
+          "method": "GET",
+          "path": "/api/marketplace/v3/fbs/settings/autoreturns/subcategories/restricted"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/marketplace/v3/fbs/settings/autoreturns"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/marketplace/v3/fbs/settings/autoreturns/items"
+        },
+        {
+          "method": "POST",
+          "path": "/api/advert/v1/normquery/bids"
+        },
+        {
+          "method": "POST",
+          "path": "/api/analytics/v1/order-feed"
+        },
+        {
+          "method": "POST",
+          "path": "/api/analytics/v1/stocks-report/seller-warehouses"
+        },
+        {
+          "method": "POST",
+          "path": "/api/analytics/v2/item-rating"
+        },
+        {
+          "method": "POST",
+          "path": "/api/marketplace/v3/click-collect/orders/final-price"
+        },
+        {
+          "method": "POST",
+          "path": "/api/marketplace/v3/click-collect/orders/meta/customs-declaration"
+        },
+        {
+          "method": "POST",
+          "path": "/api/marketplace/v3/dbs/orders/final-price"
+        },
+        {
+          "method": "POST",
+          "path": "/api/marketplace/v3/fbs/settings/autoreturns/items"
+        }
+      ],
+      "baseline_not_in_current": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/keys-api/keys"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/analytics/banned-products/shadowed"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/content/author"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/content/author/{content_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/content/download/{uri}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/keys-api/keys/redeemed"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/offer/keys/{offer_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/offer/keys/{offer_id}/list"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/offers/author"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/offers/{offer_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/supplier/incomes"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/supplier/stocks"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/dbw/orders/{orderId}/meta"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v5/supplier/reportDetailByPeriod"
+        },
+        {
+          "method": "POST",
+          "path": "/adv/v2/fullstats"
+        },
+        {
+          "method": "POST",
+          "path": "/api/analytics/v1/item-rating"
+        },
+        {
+          "method": "POST",
+          "path": "/api/marketplace/v3/click-collect/orders/meta/info"
+        },
+        {
+          "method": "POST",
+          "path": "/api/marketplace/v3/dbs/orders/meta/info"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/content/author/{content_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/content/delete"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/content/gallery"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/content/illustration"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/content/upload/chunk"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/content/upload/init"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/keys-api/keys"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/offer/price/{offer_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/offer/{offer_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/offers"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/offers/thumb"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/offers/{offer_id}"
+        }
+      ]
+    },
+    "ozon_seller": {
+      "baseline_count": 441,
+      "current_snapshot_count": 463,
+      "current_active_count": 451,
+      "current_deprecated_count": 12,
+      "current_not_in_baseline": [
+        {
+          "method": "POST",
+          "path": "/v1/actions/auto-add/products/candidates"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/actions/auto-add/products/delete"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/actions/auto-add/products/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/actions/auto-add/products/update"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/label/transport-by-order/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/label/transport-by-order/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/label/transport/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/label/transport/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/supplies/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/transport/activate"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/transport/activate/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/transport/bind"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/transport/bind/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/transport/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/transport/create/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/approve"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/cancel"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/document/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/fill"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/label/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/place-into"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/remove-from"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/remove-postings"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/status/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/container/task/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/courier-contact/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/carriage/courier-contact/set"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/finance/accrual/by-day"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/finance/accrual/postings"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/finance/accrual/types"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/posting/fbp/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/posting/fbp/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/product/info/stocks-by-warehouse/fbo"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/product/visibility/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/report/realization/posting/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/supply-order/act/accept"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/supply-order/act/accept/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/supply-order/act/product/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/supply-order/act/summary/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/cargoes/delete"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/cargoes/delete/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/cargoes/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/posting/digital/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/product/certificate/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/product/certification/options"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/product/certification/params"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/review/change-status"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/review/comment/delete"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/review/count"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/review/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/review/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/supply-order/timeslot/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v3/posting/fbo/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v4/posting/fbs/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v4/posting/fbs/unfulfilled/list"
+        }
+      ],
+      "baseline_not_in_current": [
+        {
+          "method": "GET",
+          "path": "/v1/draft/timeslot/info"
+        },
+        {
+          "method": "GET",
+          "path": "/v1/supply-order/bundle"
+        },
+        {
+          "method": "GET",
+          "path": "/v1/supply-order/pass/status"
+        },
+        {
+          "method": "GET",
+          "path": "/v1/supply-order/status/counter"
+        },
+        {
+          "method": "GET",
+          "path": "/v1/supply-order/timeslot/get"
+        },
+        {
+          "method": "GET",
+          "path": "/v1/supply-order/timeslot/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/analytics/average-delivery-time"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/analytics/average-delivery-time/details"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/analytics/average-delivery-time/summary"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/cargoes/create/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/chat/updates"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/conditional-cancellation/approve"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/conditional-cancellation/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/conditional-cancellation/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/conditional-cancellation/reject"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/draft/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/draft/create/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/draft/supply/create"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/draft/supply/create/status"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/draft/timeslot/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/product/import/stocks"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/product/upload_digital_codes"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/product/upload_digital_codes/info"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/quant/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/quant/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/quant/ship"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/chat/list"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/fbs/posting/sent-by-seller"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/posting/fbs/product/change"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/returns/rfbs/compensate"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/returns/rfbs/receive-return"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/returns/rfbs/reject"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/returns/rfbs/return-money"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/returns/rfbs/verify"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/supply-order/get"
+        },
+        {
+          "method": "POST",
+          "path": "/v2/supply-order/list"
+        }
+      ]
+    },
+    "ozon_performance": {
+      "baseline_count": 45,
+      "current_snapshot_count": 48,
+      "current_active_count": 45,
+      "current_deprecated_count": 3,
+      "current_not_in_baseline": [
+        {
+          "method": "GET",
+          "path": "/api/client/campaign/all_sku_promo/set_bid"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/client/campaign/{campaignId}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/client/statistics/products/sku"
+        }
+      ],
+      "baseline_not_in_current": []
+    }
+  }
+}

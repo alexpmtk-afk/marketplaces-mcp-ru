@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-09-01T14:56:29.199387+00:00",
+  "policy": "public mirror used for enumeration; official notices/runtime remain authority for migrations",
+  "sources": {
+    "wildberries": {
+      "official_origin": "dev.wildberries.ru OpenAPI/Swagger",
+      "mirror": "ZloyDeDD/wb-api-skill",
+      "mirror_snapshot_date": "2026-08-26",
+      "index_url": "https://raw.githubusercontent.com/ZloyDeDD/wb-api-skill/main/swagger/_index.json",
+      "index_sha256": "64446633fc769bd09c27d1caf56be9f498ef577a27ea52d48be19bd646bdfcf8",
+      "meta_url": "https://raw.githubusercontent.com/ZloyDeDD/wb-api-skill/main/swagger/_meta.json",
+      "meta_sha256": "5ba404c51e4dbe456e36b3a453944ee9ec5eeaa81431001d70dfaa4639ab29be"
+    },
+    "ozon_seller": {
+      "official_origin": "https://docs.ozon.ru/api/seller/swagger.json",
+      "mirror": "MissiaL/ozon-api",
+      "url": "https://raw.githubusercontent.com/MissiaL/ozon-api/main/references/ozon-seller-openapi.json",
+      "sha256": "603ddb21a57d93cca07e16f4228508165a7d5a24bca7718f77bbf5974e57802f"
+    },
+    "ozon_performance": {
+      "official_origin": "https://docs.ozon.ru/api/performance/swagger.json",
+      "mirror": "MissiaL/ozon-api",
+      "url": "https://raw.githubusercontent.com/MissiaL/ozon-api/main/references/ozon-performance-openapi.json",
+      "sha256": "a07a008831744a4a148de1f9200b7202b3d18b77cf1375000d6770035c693007"
+    }
+  }
+}

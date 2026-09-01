@@ -1,0 +1,5559 @@
+[
+  {
+    "marketplace": "ozon_seller",
+    "method": "GET",
+    "path": "/v1/actions",
+    "hosts": [],
+    "operation_id": "Promos",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/auto-add/products/candidates",
+    "hosts": [],
+    "operation_id": "ActionsAutoAddProductsCandidates",
+    "tags": [
+      "PromosBeta",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/auto-add/products/delete",
+    "hosts": [],
+    "operation_id": "ActionsAutoAddProductsDelete",
+    "tags": [
+      "PromosBeta",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/auto-add/products/list",
+    "hosts": [],
+    "operation_id": "ActionsAutoAddProductsList",
+    "tags": [
+      "PromosBeta",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/auto-add/products/update",
+    "hosts": [],
+    "operation_id": "ActionsAutoAddProductsUpdate",
+    "tags": [
+      "PromosBeta",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/candidates",
+    "hosts": [],
+    "operation_id": "PromosCandidates",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/discounts-task/approve",
+    "hosts": [],
+    "operation_id": "promos_task_approve",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/discounts-task/decline",
+    "hosts": [],
+    "operation_id": "promos_task_decline",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/discounts-task/list",
+    "hosts": [],
+    "operation_id": "promos_task_list",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/products",
+    "hosts": [],
+    "operation_id": "PromosProducts",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/products/activate",
+    "hosts": [],
+    "operation_id": "PromosProductsActivate",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/actions/products/deactivate",
+    "hosts": [],
+    "operation_id": "PromosProductsDeactivate",
+    "tags": [
+      "Promos",
+      "Акции Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/analytics/data",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_AnalyticsGetData",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/analytics/manage/stocks",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_ManageStocks",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/analytics/product-queries",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_AnalyticsProductQueries",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/analytics/product-queries/details",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_AnalyticsProductQueriesDetails",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/analytics/stocks",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_AnalyticsStocks",
+    "tags": [
+      "AnalyticsAPI",
+      "Аналитические отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/analytics/turnover/stocks",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_StocksTurnover",
+    "tags": [
+      "AnalyticsAPI",
+      "Аналитические отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/assembly/carriage/posting/list",
+    "hosts": [],
+    "operation_id": "AssemblyCarriagePostingList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/assembly/carriage/product/list",
+    "hosts": [],
+    "operation_id": "AssemblyCarriageProductList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/assembly/fbs/posting/list",
+    "hosts": [],
+    "operation_id": "AssemblyFbsPostingList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/assembly/fbs/product/list",
+    "hosts": [],
+    "operation_id": "AssemblyFbsProductList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/barcode/add",
+    "hosts": [],
+    "operation_id": "add-barcode",
+    "tags": [
+      "BarcodeAPI",
+      "Штрихкоды товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/barcode/generate",
+    "hosts": [],
+    "operation_id": "generate-barcode",
+    "tags": [
+      "BarcodeAPI",
+      "Штрихкоды товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/brand/company-certification/list",
+    "hosts": [],
+    "operation_id": "BrandAPI_BrandCompanyCertificationList",
+    "tags": [
+      "BrandAPI",
+      "Сертификаты брендов"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cancel-reason/list",
+    "hosts": [],
+    "operation_id": "CancelReasonList",
+    "tags": [
+      "CancelReasonAPI",
+      "Причины отмены"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cancel-reason/list-by-order",
+    "hosts": [],
+    "operation_id": "CancelReasonListByOrder",
+    "tags": [
+      "CancelReasonAPI",
+      "Причины отмены"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cancel-reason/list-by-posting",
+    "hosts": [],
+    "operation_id": "CancelReasonAPI_CancelReasonListByPosting",
+    "tags": [
+      "CancelReasonAPI",
+      "Причины отмены"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes-label/create",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesLabelCreate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "GET",
+    "path": "/v1/cargoes-label/file/{file_guid}",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesLabelFile",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes-label/get",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesLabelGet",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/create",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesCreate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/delete",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesDelete",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/delete/status",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesDeleteStatus",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/get",
+    "hosts": [],
+    "operation_id": "CargoesGet",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/label/transport-by-order/create",
+    "hosts": [],
+    "operation_id": "CargoesLabelTransportByOrderCreate",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/label/transport-by-order/status",
+    "hosts": [],
+    "operation_id": "CargoesLabelTransportByOrderStatus",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/label/transport/create",
+    "hosts": [],
+    "operation_id": "CargoesLabelTransportCreate",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/label/transport/status",
+    "hosts": [],
+    "operation_id": "CargoesLabelTransportStatus",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/rules/get",
+    "hosts": [],
+    "operation_id": "CargoesAPI_CargoesRulesGet",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/supplies/get",
+    "hosts": [],
+    "operation_id": "CargoesSuppliesGet",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/transport/activate",
+    "hosts": [],
+    "operation_id": "CargoesTransportActivate",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/transport/activate/status",
+    "hosts": [],
+    "operation_id": "CargoesTransportActivateStatus",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/transport/bind",
+    "hosts": [],
+    "operation_id": "CargoesTransportBind",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/transport/bind/status",
+    "hosts": [],
+    "operation_id": "CargoesTransportBindStatus",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/transport/create",
+    "hosts": [],
+    "operation_id": "CargoesTransportCreate",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cargoes/transport/create/status",
+    "hosts": [],
+    "operation_id": "CargoesTransportCreateStatus",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/act-discrepancy/pdf",
+    "hosts": [],
+    "operation_id": "CarriageActDiscrepancyPDF",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/approve",
+    "hosts": [],
+    "operation_id": "CarriageAPI_CarriageApprove",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/cancel",
+    "hosts": [],
+    "operation_id": "CarriageAPI_CarriageCancel",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/approve",
+    "hosts": [],
+    "operation_id": "CarriageContainerApprove",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/cancel",
+    "hosts": [],
+    "operation_id": "CarriageContainerCancel",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/create",
+    "hosts": [],
+    "operation_id": "CarriageContainerCreate",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/document/get",
+    "hosts": [],
+    "operation_id": "CarriageContainerDocumentGet",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/fill",
+    "hosts": [],
+    "operation_id": "CarriageContainerFill",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/get",
+    "hosts": [],
+    "operation_id": "CarriageContainerGet",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/label/get",
+    "hosts": [],
+    "operation_id": "CarriageContainerLabelGet",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/list",
+    "hosts": [],
+    "operation_id": "CarriageContainerList",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/place-into",
+    "hosts": [],
+    "operation_id": "CarriageContainerPlaceInto",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/remove-from",
+    "hosts": [],
+    "operation_id": "CarriageContainerRemoveFrom",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/remove-postings",
+    "hosts": [],
+    "operation_id": "CarriageContainerRemovePostings",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/status/get",
+    "hosts": [],
+    "operation_id": "CarriageContainerStatusGet",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/container/task/info",
+    "hosts": [],
+    "operation_id": "CarriageContainerTaskInfo",
+    "tags": [
+      "CarriageAPI",
+      "Работа с грузоместами FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/courier-contact/get",
+    "hosts": [],
+    "operation_id": "CarriageCourierContactGet",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/courier-contact/set",
+    "hosts": [],
+    "operation_id": "CarriageCourierContactSet",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/create",
+    "hosts": [],
+    "operation_id": "CarriageAPI_CarriageCreate",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/delivery/list",
+    "hosts": [],
+    "operation_id": "CarriageAPI_CarriageDeliveryList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/ettn/status",
+    "hosts": [],
+    "operation_id": "CarriageEttnStatus",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/get",
+    "hosts": [],
+    "operation_id": "CarriageGet",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/pass/create",
+    "hosts": [],
+    "operation_id": "carriagePassCreate",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/pass/delete",
+    "hosts": [],
+    "operation_id": "carriagePassDelete",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/pass/update",
+    "hosts": [],
+    "operation_id": "carriagePassUpdate",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/carriage/set-postings",
+    "hosts": [],
+    "operation_id": "CarriageAPI_SetPostings",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/chat/send/file",
+    "hosts": [],
+    "operation_id": "ChatAPI_ChatSendFile",
+    "tags": [
+      "ChatAPI",
+      "Чаты с покупателями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/chat/send/message",
+    "hosts": [],
+    "operation_id": "ChatAPI_ChatSendMessage",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/chat/start",
+    "hosts": [],
+    "operation_id": "ChatAPI_ChatStart",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/cluster/list",
+    "hosts": [],
+    "operation_id": "SupplyDraftAPI_DraftClusterList",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/delivery-method/list",
+    "hosts": [],
+    "operation_id": "WarehouseAPI_DeliveryMethodList",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/delivery-method/return/settings/get",
+    "hosts": [],
+    "operation_id": "GetDeliveryMethodReturnSettingsV1",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/delivery/check",
+    "hosts": [],
+    "operation_id": "DeliveryCheck",
+    "tags": [
+      "DeliveryAPI",
+      "Доставка"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/delivery/map",
+    "hosts": [],
+    "operation_id": "DeliveryMap",
+    "tags": [
+      "DeliveryAPI",
+      "Доставка"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/delivery/point/info",
+    "hosts": [],
+    "operation_id": "DeliveryPointInfo",
+    "tags": [
+      "DeliveryAPI",
+      "Доставка"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/delivery/point/list",
+    "hosts": [],
+    "operation_id": "DeliveryAPI_DeliveryPointList",
+    "tags": [
+      "DeliveryAPI",
+      "Доставка"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/description-category/attribute",
+    "hosts": [],
+    "operation_id": "DescriptionCategoryAPI_GetAttributes",
+    "tags": [
+      "CategoryAPI",
+      "Атрибуты и характеристики Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/description-category/attribute/values",
+    "hosts": [],
+    "operation_id": "DescriptionCategoryAPI_GetAttributeValues",
+    "tags": [
+      "CategoryAPI",
+      "Атрибуты и характеристики Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/description-category/attribute/values/search",
+    "hosts": [],
+    "operation_id": "DescriptionCategoryAPI_SearchAttributeValues",
+    "tags": [
+      "CategoryAPI",
+      "Атрибуты и характеристики Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/description-category/tree",
+    "hosts": [],
+    "operation_id": "DescriptionCategoryAPI_GetTree",
+    "tags": [
+      "CategoryAPI",
+      "Атрибуты и характеристики Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/draft/crossdock/create",
+    "hosts": [],
+    "operation_id": "DraftCrossdockCreate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/draft/direct/create",
+    "hosts": [],
+    "operation_id": "DraftDirectCreate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/draft/multi-cluster/create",
+    "hosts": [],
+    "operation_id": "DraftMultiClusterCreate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/act-from/create",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpCreateAct",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/act-from/get",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpCheckActState",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/act-to/create",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpCreateConsignmentNote",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/act-to/get",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpCheckConsignmentNoteState",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/archive/get",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpArchiveGet",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/archive/list",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpArchiveList",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/create",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectCreate",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/delete",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectDelete",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/product/validate",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectProductValidate",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/registrate",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectRegistrate",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/seller-dlv/create",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectSellerDlvCreate",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/seller-dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectSellerDlvEdit",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/timeslot/edit",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectTimeslotEdit",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/timeslot/get",
+    "hosts": [],
+    "operation_id": "FbpDraftDirectGetTimeslot",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/tpl-dlv/create",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftDirectTplDlvCreate",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/direct/tpl-dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftDirectTplDlvEdit",
+    "tags": [
+      "DraftDirectFBP",
+      "Работа с FBP-черновиками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/create",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffCreate",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/delete",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffDelete",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffDlvEdit",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/point/list",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffPointList",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/point/timetable",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffPointTimetable",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/product/validate",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffProductValidate",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/province/list",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffProvinceList",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/drop-off/registrate",
+    "hosts": [],
+    "operation_id": "FbpDraftDropOffRegistrate",
+    "tags": [
+      "DraftDropOffFBP",
+      "Работа с FBP-черновиками c доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/get",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftGet",
+    "tags": [
+      "DeliveryFBPDraft",
+      "Работа с FBP-черновиками"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/list",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftList",
+    "tags": [
+      "DeliveryFBPDraft",
+      "Работа с FBP-черновиками"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/pick-up/create",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftPickupCreate",
+    "tags": [
+      "DraftPickupFBP",
+      "Работа с FBP-черновиками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/pick-up/delete",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftPickUpDelete",
+    "tags": [
+      "DraftPickupFBP",
+      "Работа с FBP-черновиками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/pick-up/dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftPickupDlvEdit",
+    "tags": [
+      "DraftPickupFBP",
+      "Работа с FBP-черновиками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/pick-up/product/validate",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpDraftPickUpProductValidate",
+    "tags": [
+      "DraftPickupFBP",
+      "Работа с FBP-черновиками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/draft/pick-up/registrate",
+    "hosts": [],
+    "operation_id": "FbpDraftPickUpRegistrate",
+    "tags": [
+      "DraftPickupFBP",
+      "Работа с FBP-черновиками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/label/create",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpCreateLabel",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/label/get",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpGetLabel",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/direct/cancel",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderDirectCancel",
+    "tags": [
+      "OrderDirectFBP",
+      "Работа с FBP-поставками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/direct/seller-dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderDirectSellerDlvEdit",
+    "tags": [
+      "OrderDirectFBP",
+      "Работа с FBP-поставками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/direct/timeslot/edit",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpEditTimeslot",
+    "tags": [
+      "OrderDirectFBP",
+      "Работа с FBP-поставками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/direct/timeslot/list",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpAvailableTimeslotList",
+    "tags": [
+      "OrderDirectFBP",
+      "Работа с FBP-поставками с доставкой direct"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/drop-off/cancel",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderDropOffCancel",
+    "tags": [
+      "OrderDropOffFBP",
+      "Работа с FBP-поставками с доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/drop-off/dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderDropOffDlvEdit",
+    "tags": [
+      "OrderDropOffFBP",
+      "Работа с FBP-поставками с доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/drop-off/timetable",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderDropOffTimetable",
+    "tags": [
+      "OrderDropOffFBP",
+      "Работа с FBP-поставками с доставкой drop-off"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/get",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderGet",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/list",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderList",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/pick-up/cancel",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderPickUpCancel",
+    "tags": [
+      "OrderPickupFBP",
+      "Работа с FBP-поставками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/order/pick-up/dlv/edit",
+    "hosts": [],
+    "operation_id": "FbpAPI_FbpOrderPickUpDlvEdit",
+    "tags": [
+      "OrderPickupFBP",
+      "Работа с FBP-поставками с доставкой pick-up"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbp/warehouse/list",
+    "hosts": [],
+    "operation_id": "FbpWarehouseList",
+    "tags": [
+      "DeliveryFBPDraft",
+      "Работа с FBP-черновиками"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/fbs/posting/product/exemplar/update",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingProductExemplarUpdate",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/accrual/by-day",
+    "hosts": [],
+    "operation_id": "GetFinanceAccrualByDay",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/accrual/postings",
+    "hosts": [],
+    "operation_id": "GetFinanceAccrualPostings",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/accrual/types",
+    "hosts": [],
+    "operation_id": "GetFinanceAccrualTypes",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/balance",
+    "hosts": [],
+    "operation_id": "GetFinanceBalanceV1",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/cash-flow-statement/list",
+    "hosts": [],
+    "operation_id": "FinanceAPI_FinanceCashFlowStatementList",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/compensation",
+    "hosts": [],
+    "operation_id": "ReportAPI_GetCompensationReport",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/decompensation",
+    "hosts": [],
+    "operation_id": "ReportAPI_GetDecompensationReport",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/document-b2b-sales",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateDocumentB2BSalesReport",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/document-b2b-sales/json",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateDocumentB2BSalesJSONReport",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/mutual-settlement",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateMutualSettlementReport",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/products/buyout",
+    "hosts": [],
+    "operation_id": "GetFinanceProductsBuyout",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/realization/by-day",
+    "hosts": [],
+    "operation_id": "FinanceAPI_GetRealizationByDayReportV1",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/finance/realization/posting",
+    "hosts": [],
+    "operation_id": "FinanceAPI_GetRealizationReportV1",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/invoice/delete",
+    "hosts": [],
+    "operation_id": "invoice_delete",
+    "tags": [
+      "SupplierAPI",
+      "Накладные"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/invoice/file/upload",
+    "hosts": [],
+    "operation_id": "invoice_upload",
+    "tags": [
+      "SupplierAPI",
+      "Накладные"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/check",
+    "hosts": [],
+    "operation_id": "CheckNotification",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/delete",
+    "hosts": [],
+    "operation_id": "DeleteNotification",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/enable",
+    "hosts": [],
+    "operation_id": "EnableNotification",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/list",
+    "hosts": [],
+    "operation_id": "NotificationList",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/push-type/list",
+    "hosts": [],
+    "operation_id": "GetNotificationPushTypeList",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/set",
+    "hosts": [],
+    "operation_id": "SetNotification",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/notification/update",
+    "hosts": [],
+    "operation_id": "UpdateNotification",
+    "tags": [
+      "Notification",
+      "Работа с пуш-уведомлениями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/order/cancel",
+    "hosts": [],
+    "operation_id": "OrderAPI_OrderCancel",
+    "tags": [
+      "OrderAPI",
+      "Заказы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/order/cancel/check",
+    "hosts": [],
+    "operation_id": "OrderAPI_OrderCancelCheck",
+    "tags": [
+      "OrderAPI",
+      "Заказы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/order/cancel/status",
+    "hosts": [],
+    "operation_id": "OrderAPI_OrderCancelStatus",
+    "tags": [
+      "OrderAPI",
+      "Заказы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pass/list",
+    "hosts": [],
+    "operation_id": "PassList",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/polygon/bind",
+    "hosts": [],
+    "operation_id": "PolygonAPI_BindPolygon",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/polygon/create",
+    "hosts": [],
+    "operation_id": "PolygonAPI_CreatePolygon",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/polygon/delete",
+    "hosts": [],
+    "operation_id": "PolygonDelete",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/polygon/list",
+    "hosts": [],
+    "operation_id": "PolygonList",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/polygon/time/coordinates/update",
+    "hosts": [],
+    "operation_id": "PolygonTimeCoordinatesUpdate",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/polygon/time/set",
+    "hosts": [],
+    "operation_id": "PolygonTimeSet",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/cancel",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingCancel",
+    "tags": [
+      "FboPostingAPI",
+      "Отправления"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/cancel/status",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingCancelStatus",
+    "tags": [
+      "FboPostingAPI",
+      "Отправления"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/carriage-available/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetCarriageAvailableList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/cutoff/set",
+    "hosts": [],
+    "operation_id": "PostingAPI_SetPostingCutoff",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/digital/codes/upload",
+    "hosts": [],
+    "operation_id": "UploadPostingCodes",
+    "tags": [
+      "Digital",
+      "Работа с цифровыми товарами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/digital/list",
+    "hosts": [],
+    "operation_id": "ListPostingCodes",
+    "tags": [
+      "Digital",
+      "Работа с цифровыми товарами"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbo/cancel-reason/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetPostingFboCancelReasonList",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbp/get",
+    "hosts": [],
+    "operation_id": "GetFbpPosting",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbp/list",
+    "hosts": [],
+    "operation_id": "PostingFbpList",
+    "tags": [
+      "DeliveryFBP",
+      "Работа с созданной поставкой FBP"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/cancel-reason",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetPostingFbsCancelReasonV1",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/package-label/create",
+    "hosts": [],
+    "operation_id": "PostingAPI_CreateLabelBatch",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/package-label/get",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetLabelBatch",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/pick-up-code/verify",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSPickupCodeVerify",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/product/traceable/attribute",
+    "hosts": [],
+    "operation_id": "PostingFbsProductTraceableAttribute",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/restrictions",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetRestrictions",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/split",
+    "hosts": [],
+    "operation_id": "FbsSplit",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/timeslot/change-restrictions",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingTimeslotChangeRestrictions",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/timeslot/set",
+    "hosts": [],
+    "operation_id": "PostingAPI_SetPostingTimeslot",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/fbs/traceable/split",
+    "hosts": [],
+    "operation_id": "PostingFbsTraceableSplit",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/global/etgb",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetEtgb",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/marks",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingMarks",
+    "tags": [
+      "FboPostingAPI",
+      "Отправления"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/posting/unpaid-legal/product/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_UnpaidLegalProductList",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/competitors/list",
+    "hosts": [],
+    "operation_id": "pricing_competitors",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/create",
+    "hosts": [],
+    "operation_id": "pricing_create",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/delete",
+    "hosts": [],
+    "operation_id": "pricing_delete",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/info",
+    "hosts": [],
+    "operation_id": "pricing_info",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/list",
+    "hosts": [],
+    "operation_id": "pricing_list",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/product/info",
+    "hosts": [],
+    "operation_id": "pricing_items-info",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/products/add",
+    "hosts": [],
+    "operation_id": "pricing_items-add",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/products/delete",
+    "hosts": [],
+    "operation_id": "pricing_items-delete",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/products/list",
+    "hosts": [],
+    "operation_id": "pricing_items-list",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/status",
+    "hosts": [],
+    "operation_id": "pricing_status",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/strategy-ids-by-product-ids",
+    "hosts": [],
+    "operation_id": "pricing_ids",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/pricing-strategy/update",
+    "hosts": [],
+    "operation_id": "pricing_update",
+    "tags": [
+      "PricingStrategyAPI",
+      "Стратегии ценообразования"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/action/timer/status",
+    "hosts": [],
+    "operation_id": "ProductAPI_ActionTimerStatus",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/action/timer/update",
+    "hosts": [],
+    "operation_id": "ProductAPI_ActionTimerUpdate",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/archive",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductArchive",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/attributes/update",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductUpdateAttributes",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "GET",
+    "path": "/v1/product/certificate/accordance-types",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductCertificateAccordanceTypes",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/bind",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductCertificateBind",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/create",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductCertificateCreate",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/delete",
+    "hosts": [],
+    "operation_id": "CertificateDelete",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/info",
+    "hosts": [],
+    "operation_id": "CertificateInfo",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/list",
+    "hosts": [],
+    "operation_id": "CertificateList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/product_status/list",
+    "hosts": [],
+    "operation_id": "ProductStatusList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/products/list",
+    "hosts": [],
+    "operation_id": "CertificateProductsList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/rejection_reasons/list",
+    "hosts": [],
+    "operation_id": "RejectionReasonsList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/status/list",
+    "hosts": [],
+    "operation_id": "CertificateStatusList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "GET",
+    "path": "/v1/product/certificate/types",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductCertificateTypes",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certificate/unbind",
+    "hosts": [],
+    "operation_id": "CertificateUnbind",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/certification/list",
+    "hosts": [],
+    "operation_id": "ProductAPI_V1ProductCertificationList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/digital/stocks/import",
+    "hosts": [],
+    "operation_id": "DigitalProductAPI_StocksImport",
+    "tags": [
+      "Digital",
+      "Работа с цифровыми товарами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/import-by-sku",
+    "hosts": [],
+    "operation_id": "ProductAPI_ImportProductsBySKU",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/import/info",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetImportProductsInfo",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/import/prices",
+    "hosts": [],
+    "operation_id": "ProductAPI_ImportProductsPrices",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/description",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoDescription",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/discounted",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoDiscounted",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/stocks-by-warehouse/fbo",
+    "hosts": [],
+    "operation_id": "GetProductInfoStocksByWarehouseFbo",
+    "tags": [
+      "ProductAPI",
+      "BetaMethod",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/stocks-by-warehouse/fbs",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductStocksByWarehouseFbs",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/subscription",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoSubscription",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/warehouse/stocks",
+    "hosts": [],
+    "operation_id": "ProductInfoWarehouseStocks",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/info/wrong-volume",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductInfoWrongVolume",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/pictures/import",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductImportPictures",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/placement-zone/info",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductPlacementZoneInfo",
+    "tags": [
+      "CategoryAPI",
+      "Атрибуты и характеристики Ozon"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/prices/details",
+    "hosts": [],
+    "operation_id": "ProductPricesDetails",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/quant/info",
+    "hosts": [],
+    "operation_id": "QuantGetInfo",
+    "tags": [
+      "Quants",
+      "Работа с квантами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/quant/list",
+    "hosts": [],
+    "operation_id": "QuantProductList",
+    "tags": [
+      "Quants",
+      "Работа с квантами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/rating-by-sku",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductRatingBySku",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/related-sku/get",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductGetRelatedSKU",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/stairway-discount/by-quantity/get",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductStairwayDiscountByQuantity",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/stairway-discount/by-quantity/set",
+    "hosts": [],
+    "operation_id": "ProductAPI_SetProductStairwayDiscountByQuantity",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/unarchive",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductUnarchive",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/update/discount",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductUpdateDiscount",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/update/offer-id",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductUpdateOfferID",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/visibility/info",
+    "hosts": [],
+    "operation_id": "ProductVisibilityInfo",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/product/visibility/set",
+    "hosts": [],
+    "operation_id": "ProductVisibilitySet",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/answer/create",
+    "hosts": [],
+    "operation_id": "QuestionAnswer_Create",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/answer/delete",
+    "hosts": [],
+    "operation_id": "QuestionAnswer_Delete",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/answer/list",
+    "hosts": [],
+    "operation_id": "QuestionAnswer_List",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/change-status",
+    "hosts": [],
+    "operation_id": "Question_ChangeStatus",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/count",
+    "hosts": [],
+    "operation_id": "Question_Count",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/info",
+    "hosts": [],
+    "operation_id": "Question_Info",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/list",
+    "hosts": [],
+    "operation_id": "Question_List",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/question/top-sku",
+    "hosts": [],
+    "operation_id": "Question_TopSku",
+    "tags": [
+      "Questions&Answers",
+      "Работа с вопросами и ответами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/rating/history",
+    "hosts": [],
+    "operation_id": "RatingAPI_RatingHistoryV1",
+    "tags": [
+      "SellerRating",
+      "Рейтинг продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/rating/index/fbs/info",
+    "hosts": [],
+    "operation_id": "RatingAPI_GetFBSRatingIndexInfoV1",
+    "tags": [
+      "SellerRating",
+      "Рейтинг продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/rating/index/fbs/posting/list",
+    "hosts": [],
+    "operation_id": "RatingAPI_ListFBSRatingIndexPostingsV1",
+    "tags": [
+      "SellerRating",
+      "Рейтинг продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/rating/summary",
+    "hosts": [],
+    "operation_id": "RatingAPI_RatingSummaryV1",
+    "tags": [
+      "SellerRating",
+      "Рейтинг продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/receipts/get",
+    "hosts": [],
+    "operation_id": "GetReceipt",
+    "tags": [
+      "Receipt",
+      "Чеки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/receipts/seller/list",
+    "hosts": [],
+    "operation_id": "ReceiptsSellerList",
+    "tags": [
+      "Receipt",
+      "Чеки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/receipts/upload",
+    "hosts": [],
+    "operation_id": "UploadReceipt",
+    "tags": [
+      "Receipt",
+      "Чеки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/removal/from-stock/list",
+    "hosts": [],
+    "operation_id": "GetSupplierReturnsSummaryReport",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/removal/from-supply/list",
+    "hosts": [],
+    "operation_id": "GetSupplyReturnsSummaryReport",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/discounted/create",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateDiscountedReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/info",
+    "hosts": [],
+    "operation_id": "ReportAPI_ReportInfo",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/list",
+    "hosts": [],
+    "operation_id": "ReportAPI_ReportList",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/marked-products-sales/create",
+    "hosts": [],
+    "operation_id": "CreateCompanyMarkedProductsSalesReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/placement/by-products/create",
+    "hosts": [],
+    "operation_id": "CreatePlacementByProductsReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/placement/by-supplies/create",
+    "hosts": [],
+    "operation_id": "CreatePlacementBySuppliesReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/postings/create",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateCompanyPostingsReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/products/create",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateCompanyProductsReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/realization/posting/create",
+    "hosts": [],
+    "operation_id": "CreateCompanyFinanceRealizationPostingReport",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/report/warehouse/stock",
+    "hosts": [],
+    "operation_id": "ReportAPI_CreateStockByWarehouseReport",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/barcode",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutGetBarcode",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/barcode-reset",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutBarcodeReset",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/get-pdf",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutGetPDF",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/get-png",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutGetPNG",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/info",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutInfo",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/is-enabled",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutIsEnabled",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/giveout/list",
+    "hosts": [],
+    "operation_id": "ReturnAPI_GiveoutList",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/pass/create",
+    "hosts": [],
+    "operation_id": "returnPassCreate",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/pass/delete",
+    "hosts": [],
+    "operation_id": "returnPassDelete",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/return/pass/update",
+    "hosts": [],
+    "operation_id": "returnPassUpdate",
+    "tags": [
+      "Pass",
+      "Пропуски"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/returns/company/fbs/info",
+    "hosts": [],
+    "operation_id": "returnsCompanyFBSInfo",
+    "tags": [
+      "ReturnAPI",
+      "Возвратные отгрузки"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/returns/list",
+    "hosts": [],
+    "operation_id": "returnsList",
+    "tags": [
+      "ReturnsAPI",
+      "Возвраты товаров FBO и FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/returns/rfbs/action/set",
+    "hosts": [],
+    "operation_id": "ReturnsAPI_ReturnsRfbsActionSet",
+    "tags": [
+      "RFBSReturnsAPI",
+      "Возвраты товаров rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/returns/settings/utilization/history",
+    "hosts": [],
+    "operation_id": "UtilizationHistory",
+    "tags": [
+      "ReturnsAPI",
+      "Возвраты товаров FBO и FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/returns/settings/utilization/info",
+    "hosts": [],
+    "operation_id": "UtilizationInfo",
+    "tags": [
+      "ReturnsAPI",
+      "Возвраты товаров FBO и FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/returns/settings/utilization/update",
+    "hosts": [],
+    "operation_id": "UtilizationUpdate",
+    "tags": [
+      "ReturnsAPI",
+      "Возвраты товаров FBO и FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/change-status",
+    "hosts": [],
+    "operation_id": "ReviewAPI_ReviewChangeStatus",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/comment/create",
+    "hosts": [],
+    "operation_id": "ReviewAPI_CommentCreate",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/comment/delete",
+    "hosts": [],
+    "operation_id": "ReviewAPI_CommentDelete",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/comment/list",
+    "hosts": [],
+    "operation_id": "ReviewAPI_CommentList",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/count",
+    "hosts": [],
+    "operation_id": "ReviewAPI_ReviewCount",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/info",
+    "hosts": [],
+    "operation_id": "ReviewAPI_ReviewInfo",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/review/list",
+    "hosts": [],
+    "operation_id": "ReviewAPI_ReviewList",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/roles",
+    "hosts": [],
+    "operation_id": "AccessAPI_RolesByToken",
+    "tags": [
+      "APIkey",
+      "Информация по API-ключу"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/search-queries/text",
+    "hosts": [],
+    "operation_id": "SearchQueriesAPI_SearchQueriesText",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/search-queries/top",
+    "hosts": [],
+    "operation_id": "SearchQueriesAPI_SearchQueriesTop",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/archive",
+    "hosts": [],
+    "operation_id": "SellerActionsArchive",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/change-activity",
+    "hosts": [],
+    "operation_id": "SellerActionsChangeActivity",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/create/discount",
+    "hosts": [],
+    "operation_id": "SellerActionsCreateDiscount",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/create/discount-with-condition",
+    "hosts": [],
+    "operation_id": "SellerActionsCreateDiscountWithCondition",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/create/installment",
+    "hosts": [],
+    "operation_id": "SellerActionsCreateInstallment",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/create/multi-level-discount",
+    "hosts": [],
+    "operation_id": "SellerActionsCreateMultiLevelDiscount",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/create/voucher",
+    "hosts": [],
+    "operation_id": "SellerActionsCreateVoucher",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/list",
+    "hosts": [],
+    "operation_id": "SellerActionsList",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/products/add",
+    "hosts": [],
+    "operation_id": "SellerActionsProductsAdd",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/products/candidates",
+    "hosts": [],
+    "operation_id": "SellerActionsProductsCandidates",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/products/delete",
+    "hosts": [],
+    "operation_id": "SellerActionsProductsDelete",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/products/list",
+    "hosts": [],
+    "operation_id": "SellerActionsProductsList",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/update/discount",
+    "hosts": [],
+    "operation_id": "SellerActionsUpdateDiscount",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/update/discount-with-condition",
+    "hosts": [],
+    "operation_id": "SellerActionsUpdateDiscountWithCondition",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/update/installment",
+    "hosts": [],
+    "operation_id": "SellerActionsUpdateInstallment",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/update/multi-level-discount",
+    "hosts": [],
+    "operation_id": "SellerActionsUpdateMultiLevelDiscount",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/update/voucher",
+    "hosts": [],
+    "operation_id": "SellerActionsUpdateVoucher",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller-actions/voucher/get",
+    "hosts": [],
+    "operation_id": "SellerActionsVoucherGet",
+    "tags": [
+      "SellerActions",
+      "Акции продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller/info",
+    "hosts": [],
+    "operation_id": "SellerAPI_SellerInfo",
+    "tags": [
+      "SellerInfo",
+      "Информация по кабинету продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/seller/ozon-logistics/info",
+    "hosts": [],
+    "operation_id": "SellerAPI_SellerOzonLogisticsInfo",
+    "tags": [
+      "SellerInfo",
+      "Информация по кабинету продавца"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "GET",
+    "path": "/v1/supplier/available_warehouses",
+    "hosts": [],
+    "operation_id": "SupplierAPI_SupplierAvailableWarehouses",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/act/accept",
+    "hosts": [],
+    "operation_id": "SupplyOrderActAccept",
+    "tags": [
+      "SupplyOrderAPI",
+      "Работа с актами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/act/accept/status",
+    "hosts": [],
+    "operation_id": "SupplyOrderActAcceptStatus",
+    "tags": [
+      "SupplyOrderAPI",
+      "Работа с актами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/act/product/get",
+    "hosts": [],
+    "operation_id": "SupplyOrderActProductGet",
+    "tags": [
+      "SupplyOrderAPI",
+      "Работа с актами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/act/summary/get",
+    "hosts": [],
+    "operation_id": "SupplyOrderActSummaryGet",
+    "tags": [
+      "SupplyOrderAPI",
+      "Работа с актами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/bundle",
+    "hosts": [],
+    "operation_id": "SupplyOrderBundle",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/cancel",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderCancel",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/cancel/status",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderCancelStatus",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/content/update",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderContentUpdate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/content/update/status",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderContentUpdateStatus",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/content/update/validation",
+    "hosts": [],
+    "operation_id": "SupplyOrderContentUpdateValidation",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/details",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderDetails",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/pass/create",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderPassCreate",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/pass/status",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderPassStatus",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/status/counter",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_SupplyOrderStatusCounter",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/timeslot/get",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_GetSupplyOrderTimeslots",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/timeslot/status",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_GetSupplyOrderTimeslotStatus",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/supply-order/timeslot/update",
+    "hosts": [],
+    "operation_id": "SupplyOrderAPI_UpdateSupplyOrderTimeslot",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/archive",
+    "hosts": [],
+    "operation_id": "ArchiveWarehouseFBS",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/erfbs/aggregator/create",
+    "hosts": [],
+    "operation_id": "WarehouseERFBSAggregatorCreate",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/erfbs/aggregator/delivery-method/update",
+    "hosts": [],
+    "operation_id": "WarehouseERFBSAggregatorDeliveryMethodUpdate",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/erfbs/non-integrated/create",
+    "hosts": [],
+    "operation_id": "WarehouseERFBSNonIntegratedCreate",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/erfbs/non-integrated/delivery-method/update",
+    "hosts": [],
+    "operation_id": "WarehouseERFBSNonIntegratedDeliveryMethodUpdate",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/erfbs/update",
+    "hosts": [],
+    "operation_id": "WarehouseERFBSUpdate",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbo/list",
+    "hosts": [],
+    "operation_id": "SupplyDraftAPI_DraftGetWarehouseFboList",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbo/seller/list",
+    "hosts": [],
+    "operation_id": "WarehouseFboSellerList",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/create",
+    "hosts": [],
+    "operation_id": "WarehouseAPI_CreateWarehouseFBS",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/create/drop-off/list",
+    "hosts": [],
+    "operation_id": "WarehouseAPI_ListDropOffPointsForCreateFBSWarehouse",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/create/drop-off/timeslot/list",
+    "hosts": [],
+    "operation_id": "WarehouseFbsCreateDropOffTimeslotList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/create/pick-up/timeslot/list",
+    "hosts": [],
+    "operation_id": "WarehouseFbsCreatePickUpTimeslotList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/create/return-point/list",
+    "hosts": [],
+    "operation_id": "WarehouseFBSCreateReturnPointList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/first-mile/update",
+    "hosts": [],
+    "operation_id": "UpdateWarehouseFBSFirstMile",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/pickup/courier/cancel",
+    "hosts": [],
+    "operation_id": "WarehouseFbsPickUpCourierCancel",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/pickup/courier/create",
+    "hosts": [],
+    "operation_id": "WarehouseFbsPickUpCourierCreate",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/pickup/history/list",
+    "hosts": [],
+    "operation_id": "WarehouseFbsPickUpHistoryList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/pickup/planning/list",
+    "hosts": [],
+    "operation_id": "WarehouseFbsPickUpPlanningList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/return-mile/check",
+    "hosts": [],
+    "operation_id": "WarehouseFbsReturnMileCheck",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/return-mile/info",
+    "hosts": [],
+    "operation_id": "WarehouseFBSReturnMileInfo",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/update",
+    "hosts": [],
+    "operation_id": "UpdateWarehouseFBS",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/update/drop-off/list",
+    "hosts": [],
+    "operation_id": "WarehouseAPI_ListDropOffPointsForUpdateFBSWarehouse",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/update/drop-off/timeslot/list",
+    "hosts": [],
+    "operation_id": "WarehouseFbsUpdateDropOffTimeslotList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/update/pick-up/timeslot/list",
+    "hosts": [],
+    "operation_id": "WarehouseFbsUpdatePickUpTimeslotList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/fbs/update/return-point/list",
+    "hosts": [],
+    "operation_id": "WarehouseFBSUpdateReturnPointList",
+    "tags": [
+      "FBSWarehouseSetup",
+      "Создание FBS-складов и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/invalid-products/get",
+    "hosts": [],
+    "operation_id": "WarehouseInvalidProductsGet",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/list",
+    "hosts": [],
+    "operation_id": "WarehouseAPI_WarehouseList",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/operation/status",
+    "hosts": [],
+    "operation_id": "GetWarehouseFBSOperationStatus",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/ozon/list",
+    "hosts": [],
+    "operation_id": "WarehouseOZONList",
+    "tags": [
+      "FBOWarehouse",
+      "Склады FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/rfbs/pause",
+    "hosts": [],
+    "operation_id": "WarehouseRfbsPause",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/rfbs/unpause",
+    "hosts": [],
+    "operation_id": "WarehouseRfbsUnpause",
+    "tags": [
+      "rFBSWarehouseSetup",
+      "Создание складов rFBS Express и управление ими"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/unarchive",
+    "hosts": [],
+    "operation_id": "UnarchiveWarehouseFBS",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v1/warehouse/warehouses-with-invalid-products",
+    "hosts": [],
+    "operation_id": "WarehouseWithInvalidProducts",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/actions/discounts-task/list",
+    "hosts": [],
+    "operation_id": "GetDiscountTaskListV2",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/analytics/stock_on_warehouses",
+    "hosts": [],
+    "operation_id": "AnalyticsAPI_AnalyticsGetStockOnWarehousesV2",
+    "tags": [
+      "AnalyticsAPI",
+      "Аналитические отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/cargoes/create/info",
+    "hosts": [],
+    "operation_id": "CargoesCreateInfoV2",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/cargoes/delete",
+    "hosts": [],
+    "operation_id": "CargoesDeleteV2",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/cargoes/delete/status",
+    "hosts": [],
+    "operation_id": "CargoesDeleteStatusV2",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/cargoes/get",
+    "hosts": [],
+    "operation_id": "CargoesGetV2",
+    "tags": [
+      "FBOTransport",
+      "Работа с транспортными грузоместами FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/carriage/delivery/list",
+    "hosts": [],
+    "operation_id": "CarriageAPI_CarriageDeliveryListV2",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/chat/read",
+    "hosts": [],
+    "operation_id": "ChatAPI_ChatReadV2",
+    "tags": [
+      "Premium",
+      "Premium-методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/cluster/list",
+    "hosts": [],
+    "operation_id": "DraftClusterList",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/conditional-cancellation/approve",
+    "hosts": [],
+    "operation_id": "CancellationAPI_ConditionalCancellationApproveV2",
+    "tags": [
+      "CancellationAPI",
+      "Отмены заказов"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/conditional-cancellation/list",
+    "hosts": [],
+    "operation_id": "CancellationAPI_GetConditionalCancellationListV2",
+    "tags": [
+      "CancellationAPI",
+      "Отмены заказов"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/conditional-cancellation/reject",
+    "hosts": [],
+    "operation_id": "CancellationAPI_ConditionalCancellationRejectV2",
+    "tags": [
+      "CancellationAPI",
+      "Отмены заказов"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/delivery-method/list",
+    "hosts": [],
+    "operation_id": "WarehouseAPI_DeliveryMethodListV2",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/delivery/checkout",
+    "hosts": [],
+    "operation_id": "DeliveryCheckout",
+    "tags": [
+      "DeliveryAPI",
+      "Доставка"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/draft/create/info",
+    "hosts": [],
+    "operation_id": "DraftCreateInfo",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/draft/supply/create",
+    "hosts": [],
+    "operation_id": "DraftSupplyCreate",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/draft/supply/create/status",
+    "hosts": [],
+    "operation_id": "DraftSupplyCreateStatus",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/draft/timeslot/info",
+    "hosts": [],
+    "operation_id": "DraftTimeslotInfo",
+    "tags": [
+      "FboSupplyRequest",
+      "Создание и управление заявками на поставку FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/fbs/posting/delivered",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingDelivered",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/fbs/posting/delivering",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingDelivering",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/fbs/posting/last-mile",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingLastMile",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/fbs/posting/tracking-number/set",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingTrackingNumberSet",
+    "tags": [
+      "DeliveryrFBS",
+      "Доставка rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/finance/realization",
+    "hosts": [],
+    "operation_id": "FinanceAPI_GetRealizationReportV2",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/invoice/create-or-update",
+    "hosts": [],
+    "operation_id": "InvoiceAPI_InvoiceCreateOrUpdateV2",
+    "tags": [
+      "SupplierAPI",
+      "Накладные"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/invoice/get",
+    "hosts": [],
+    "operation_id": "invoice_getV2",
+    "tags": [
+      "SupplierAPI",
+      "Накладные"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/order/create",
+    "hosts": [],
+    "operation_id": "OrderAPI_OrderCreate",
+    "tags": [
+      "OrderAPI",
+      "Заказы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/polygon/bind",
+    "hosts": [],
+    "operation_id": "PolygonBind",
+    "tags": [
+      "PolygonAPI",
+      "Полигоны"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/digital/list",
+    "hosts": [],
+    "operation_id": "PostingDigitalList",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbo/get",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetFboPosting",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbo/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetFboPostingList",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/check-status",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSActCheckStatus",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/create",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSActCreate",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/get-barcode",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSGetBarcode",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/get-barcode/text",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSGetBarcodeText",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/get-container-labels",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSActGetContainerLabels",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/get-pdf",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSGetAct",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/get-postings",
+    "hosts": [],
+    "operation_id": "PostingAPI_ActPostingList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/act/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsActList",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/arbitration",
+    "hosts": [],
+    "operation_id": "PostingAPI_MoveFbsPostingToArbitration",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/awaiting-delivery",
+    "hosts": [],
+    "operation_id": "PostingAPI_MoveFbsPostingToAwaitingDelivery",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/cancel",
+    "hosts": [],
+    "operation_id": "PostingAPI_CancelFbsPosting",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/cancel-reason/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetPostingFbsCancelReasonList",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/digital/act/check-status",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSDigitalActCheckStatus",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/digital/act/get-pdf",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSGetDigitalAct",
+    "tags": [
+      "DeliveryFBS",
+      "Доставка FBS"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/get-by-barcode",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetFbsPostingByBarcode",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/package-label",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingFBSPackageLabel",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/package-label/create",
+    "hosts": [],
+    "operation_id": "PostingAPI_CreateLabelBatchV2",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/product/cancel",
+    "hosts": [],
+    "operation_id": "PostingAPI_CancelFbsPostingProduct",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/product/country/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_ListCountryProductFbsPostingV2",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/posting/fbs/product/country/set",
+    "hosts": [],
+    "operation_id": "PostingAPI_SetCountryProductFbsPostingV2",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "GET",
+    "path": "/v2/product/certificate/accordance-types/list",
+    "hosts": [],
+    "operation_id": "CertificateAccordanceTypes",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/product/certificate/create",
+    "hosts": [],
+    "operation_id": "ProductCertificateCreate",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/product/certification/list",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductCertificationList",
+    "tags": [
+      "CertificationAPI",
+      "Сертификаты качества"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/product/certification/options",
+    "hosts": [],
+    "operation_id": "ProductCertificateOptions",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/product/certification/params",
+    "hosts": [],
+    "operation_id": "ProductCertificateParams",
+    "tags": [
+      "BetaMethod",
+      "Прочие методы"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/product/info/stocks-by-warehouse/fbs",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoStocksByWarehouseFbsV2",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/product/pictures/info",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductInfoPicturesV2",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/products/delete",
+    "hosts": [],
+    "operation_id": "ProductAPI_DeleteProducts",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/products/stocks",
+    "hosts": [],
+    "operation_id": "ProductAPI_ProductsStocksV2",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/report/returns/create",
+    "hosts": [],
+    "operation_id": "ReportAPI_ReportReturnsCreate",
+    "tags": [
+      "ReportAPI",
+      "Отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/returns/rfbs/get",
+    "hosts": [],
+    "operation_id": "RFBSReturnsAPI_ReturnsRfbsGetV2",
+    "tags": [
+      "RFBSReturnsAPI",
+      "Возвраты товаров rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/returns/rfbs/list",
+    "hosts": [],
+    "operation_id": "RFBSReturnsAPI_ReturnsRfbsListV2",
+    "tags": [
+      "RFBSReturnsAPI",
+      "Возвраты товаров rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/review/change-status",
+    "hosts": [],
+    "operation_id": "ReviewChangeStatusV2",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/review/comment/delete",
+    "hosts": [],
+    "operation_id": "ReviewCommentDeleteV2",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/review/count",
+    "hosts": [],
+    "operation_id": "ReviewCountV2",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/review/info",
+    "hosts": [],
+    "operation_id": "ReviewInfoV2",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/review/list",
+    "hosts": [],
+    "operation_id": "ReviewListV2",
+    "tags": [
+      "ReviewAPI",
+      "Работа с отзывами"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/supply-order/timeslot/list",
+    "hosts": [],
+    "operation_id": "SupplyOrderTimeslotList",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v2/warehouse/list",
+    "hosts": [],
+    "operation_id": "WarehouseListV2",
+    "tags": [
+      "WarehouseAPI",
+      "Работа со складами FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/chat/history",
+    "hosts": [],
+    "operation_id": "ChatAPI_ChatHistoryV3",
+    "tags": [
+      "ChatAPI",
+      "Чаты с покупателями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/chat/list",
+    "hosts": [],
+    "operation_id": "ChatAPI_ChatListV3",
+    "tags": [
+      "ChatAPI",
+      "Чаты с покупателями"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/finance/transaction/list",
+    "hosts": [],
+    "operation_id": "FinanceAPI_FinanceTransactionListV3",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/finance/transaction/totals",
+    "hosts": [],
+    "operation_id": "FinanceAPI_FinanceTransactionTotalV3",
+    "tags": [
+      "FinanceAPI",
+      "Финансовые отчёты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/posting/fbo/list",
+    "hosts": [],
+    "operation_id": "PostingFboList",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/posting/fbs/get",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetFbsPostingV3",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/posting/fbs/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetFbsPostingListV3",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/posting/fbs/unfulfilled/list",
+    "hosts": [],
+    "operation_id": "PostingAPI_GetFbsPostingUnfulfilledList",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/posting/multiboxqty/set",
+    "hosts": [],
+    "operation_id": "PostingAPI_PostingMultiBoxQtySetV3",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/product/import",
+    "hosts": [],
+    "operation_id": "ProductAPI_ImportProductsV3",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/product/info/list",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoList",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/product/list",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductList",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/supply-order/get",
+    "hosts": [],
+    "operation_id": "SupplyOrderGet",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v3/supply-order/list",
+    "hosts": [],
+    "operation_id": "SupplyOrderList",
+    "tags": [
+      "FBO",
+      "Доставка FBO"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/posting/fbs/list",
+    "hosts": [],
+    "operation_id": "PostingFbsList",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/posting/fbs/ship",
+    "hosts": [],
+    "operation_id": "PostingAPI_ShipFbsPostingV4",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/posting/fbs/ship/package",
+    "hosts": [],
+    "operation_id": "PostingAPI_ShipFbsPostingPackage",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/posting/fbs/unfulfilled/list",
+    "hosts": [],
+    "operation_id": "PostingFbsUnfulfilledList",
+    "tags": [
+      "FBS",
+      "Обработка заказов FBS и rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/product/info/attributes",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductAttributesV4",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/product/info/limit",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetUploadQuota",
+    "tags": [
+      "ProductAPI",
+      "Загрузка и обновление товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v4/product/info/stocks",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoStocks",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v5/fbs/posting/product/exemplar/status",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingProductExemplarStatusV5",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v5/fbs/posting/product/exemplar/validate",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingProductExemplarValidateV5",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v5/product/info/prices",
+    "hosts": [],
+    "operation_id": "ProductAPI_GetProductInfoPrices",
+    "tags": [
+      "Prices&StocksAPI",
+      "Цены и остатки товаров"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v6/fbs/posting/product/exemplar/create-or-get",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingProductExemplarCreateOrGetV6",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_seller",
+    "method": "POST",
+    "path": "/v6/fbs/posting/product/exemplar/set",
+    "hosts": [],
+    "operation_id": "PostingAPI_FbsPostingProductExemplarSetV6",
+    "tags": [
+      "FBS&rFBSMarks",
+      "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
+    ],
+    "deprecated": false
+  }
+]

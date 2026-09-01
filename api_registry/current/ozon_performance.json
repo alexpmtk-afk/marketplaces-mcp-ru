@@ -1,0 +1,677 @@
+[
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ListCampaigns",
+    "tags": [
+      "Campaign",
+      "Кампании и рекламируемые объекты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign/all_sku_promo/activate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ActivateAllSkuPromoCampaign",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign/all_sku_promo/deactivate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "DeactivateAllSkuPromoCampaign",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign/all_sku_promo/set_bid",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "SetAllSkuPromoCampaignBid2",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/cpc/v2/product",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "CreateProductCampaignCPCV2",
+    "tags": [
+      "Ad",
+      "Оплата за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/search_promo/carrots/disable",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_BatchDisableCarrots4",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/search_promo/carrots/enable",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_BatchEnableCarrots4",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/search_promo/v2/bids/delete",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_DeleteSearchPromoBidsV2",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/search_promo/v2/bids/set",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_SetSearchPromoBidsV2",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/search_promo/v2/products",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_ListSearchPromoProductsV2",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "PATCH",
+    "path": "/api/client/campaign/{campaignId}",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "PatchProductCampaign",
+    "tags": [
+      "Ad",
+      "Edit",
+      "Оплата за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/{campaignId}/activate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ActivateCampaign",
+    "tags": [
+      "Ad",
+      "Edit",
+      "Оплата за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/{campaignId}/deactivate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "DeactivateCampaign",
+    "tags": [
+      "Ad",
+      "Edit",
+      "Оплата за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign/{campaignId}/objects",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ListCampaignObjects",
+    "tags": [
+      "Campaign",
+      "Кампании и рекламируемые объекты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/{campaignId}/products",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "AddProducts",
+    "tags": [
+      "Product",
+      "Товары в Оплате за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "PUT",
+    "path": "/api/client/campaign/{campaignId}/products",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "UpdateProducts",
+    "tags": [
+      "Product",
+      "Товары в Оплате за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign/{campaignId}/products/bids/competitive",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GetProductsCompetitiveBids",
+    "tags": [
+      "Product",
+      "Товары в Оплате за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/campaign/{campaignId}/products/delete",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "DeleteProducts",
+    "tags": [
+      "Product",
+      "Товары в Оплате за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/campaign/{campaignId}/v2/products",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GetProductsV2",
+    "tags": [
+      "Product",
+      "Товары в Оплате за клик"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/limits/list",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GetLimitsList",
+    "tags": [
+      "Campaign",
+      "Кампании и рекламируемые объекты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/min/sku",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_BidBySKU",
+    "tags": [
+      "Campaign",
+      "Кампании и рекламируемые объекты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/organisation/vendor_tag",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GetVendorTag",
+    "tags": [
+      "Vendor",
+      "Аналитика внешнего трафика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/products_with_bonuses",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_ListProductsWithBonuses2",
+    "tags": [
+      "Campaign",
+      "Кампании и рекламируемые объекты"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/search_promo/bids/recommendation",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_GetProductsRecommendedBids",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": true
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/search_promo/get_cpo_min_bids",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_GetCPOMinBids",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/search_promo/product/disable",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_BatchDisableProducts",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/search_promo/product/enable",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalCampaign_BatchEnableProducts",
+    "tags": [
+      "Search-Promo",
+      "Оплата за заказ"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistic/orders/generate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "SearchPromoOrdersReportSubmitRequest",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistic/products/generate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "SearchPromoProductsReportSubmitRequest",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistics",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "SubmitRequest",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/all_sku_promo/orders/generate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GenerateAllSkuPromoOrdersReport",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/all_sku_promo/products/generate",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GenerateAllSkuPromoProductsReport",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistics/attribution",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "AttributionSubmitRequest",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/campaign/media",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "MediaCampaignList",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/campaign/product",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ProductCampaignList",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/daily",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GetCampaignDailyStats",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/expense",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "GetCampaignExpense",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/externallist",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ListReportsExternal",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/list",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ListReports",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistics/phrases",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "ExternalStatistics_StatisticsPhrasesSubmitRequest2",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistics/products/sku",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "SearchPromoProductsSKUStatistics2",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/report",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "DownloadStatistics",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/statistics/video",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "VideoCampaignsSubmitRequest",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/statistics/{UUID}",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "StatisticsCheck",
+    "tags": [
+      "Statistics",
+      "Статистика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/api/client/vendors/statistics",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "VendorStatisticsSubmitRequest",
+    "tags": [
+      "Vendor",
+      "Аналитика внешнего трафика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/vendors/statistics/list",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "VendorStatisticsListReports",
+    "tags": [
+      "Vendor",
+      "Аналитика внешнего трафика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "GET",
+    "path": "/api/client/vendors/statistics/{UUID}",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "VendorStatisticsCheck",
+    "tags": [
+      "Vendor",
+      "Аналитика внешнего трафика"
+    ],
+    "deprecated": false
+  },
+  {
+    "marketplace": "ozon_performance",
+    "method": "POST",
+    "path": "/external/api/dynamic_budget",
+    "hosts": [
+      "api-performance.ozon.ru:443"
+    ],
+    "operation_id": "CalculateDynamicBudget",
+    "tags": [
+      "Ad",
+      "Оплата за клик"
+    ],
+    "deprecated": true
+  }
+]

@@ -1,0 +1,4375 @@
+[
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/adv/v0/auction/nms",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "patchV0AuctionNms",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/adv/v0/auction/placements",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "putV0AuctionPlacements",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v0/delete",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV0Delete",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/adv/v0/normquery/bids",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "deleteV0NormqueryBids",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/normquery/bids",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0NormqueryBids",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/normquery/get-bids",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0NormqueryGetBids",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/normquery/get-minus",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0NormqueryGetMinus",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/normquery/list",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0NormqueryList",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/normquery/set-minus",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0NormquerySetMinus",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/normquery/stats",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0NormqueryStats",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v0/pause",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV0Pause",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v0/rename",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV0Rename",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v0/start",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV0Start",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v0/stop",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV0Stop",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/advert",
+    "hosts": [
+      "advert-media-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Advert",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/adverts",
+    "hosts": [
+      "advert-media-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Adverts",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/balance",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Balance",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/budget",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Budget",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v1/budget/deposit",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV1BudgetDeposit",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/count",
+    "hosts": [
+      "advert-media-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Count",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v1/normquery/stats",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV1NormqueryStats",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/payments",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Payments",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/promotion/count",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1PromotionCount",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v1/stats",
+    "hosts": [
+      "advert-media-api.wildberries.ru"
+    ],
+    "operation_id": "postV1Stats",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/supplier/subjects",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SupplierSubjects",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v1/upd",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Upd",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v2/seacat/save-ad",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SeacatSaveAd",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/adv/v2/supplier/nms",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SupplierNms",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/adv/v3/fullstats",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV3Fullstats",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/advert/v0/bids/recommendations",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV0BidsRecommendations",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/advert/v1/bids",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "patchV1Bids",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/advert/v1/bids/min",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV1BidsMin",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/advert/v1/config",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Config",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/advert/v1/normquery/bids",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "postV1NormqueryBids",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/advert/v2/adverts",
+    "hosts": [
+      "advert-api.wildberries.ru"
+    ],
+    "operation_id": "getV2Adverts",
+    "section": "Маркетинг и продвижение",
+    "category": "advert",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/analytics/v1/deductions",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Deductions",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/analytics/v1/measurement-penalties",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1MeasurementPenalties",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v1/order-feed",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV1OrderFeed",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v1/stocks-report/seller-warehouses",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postAnalyticsV1StocksReportSellerWarehouses",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v1/stocks-report/wb-warehouses",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV1StocksReportWbWarehouses",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [
+      "personal",
+      "service",
+      "base-with-secret"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/analytics/v1/warehouse-measurements",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1WarehouseMeasurements",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v2/item-rating",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2ItemRating",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v3/sales-funnel/grouped/history",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV3SalesFunnelGroupedHistory",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v3/sales-funnel/products",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV3SalesFunnelProducts",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/analytics/v3/sales-funnel/products/history",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV3SalesFunnelProductsHistory",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/common/v1/rating",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Rating",
+    "section": "Общее",
+    "category": "questionsandfeedback",
+    "tokens": [
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/common/v1/subscriptions",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Subscriptions",
+    "section": "Общее",
+    "category": "commonapi",
+    "tokens": [
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/common/v1/tariff-constructor/options",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1TariffConstructorOptions",
+    "section": "Общее",
+    "category": "commonapi",
+    "tokens": [
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/communications/v2/news",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV2News",
+    "section": "Общее",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/content/v1/brands",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/content/v1/recommendations/list",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "postV1RecommendationsList",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/content/v1/recommendations/set",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "postV1RecommendationsSet",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/discounts-prices/v1/upload/task/b2b/wholesale",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "postV1UploadTaskB2bWholesale",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/feedbacks/v1/pins",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "deleteFeedbacksV1Pins",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/feedbacks/v1/pins",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getFeedbacksV1Pins",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/feedbacks/v1/pins",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "postFeedbacksV1Pins",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/feedbacks/v1/pins/count",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getFeedbacksV1PinsCount",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/feedbacks/v1/pins/limits",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getFeedbacksV1PinsLimits",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/finance/v1/acquiring/detailed",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "postV1AcquiringDetailed",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/finance/v1/acquiring/detailed/{reportId}",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "postV1AcquiringDetailedReportId",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/finance/v1/acquiring/list",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "postV1AcquiringList",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/finance/v1/sales-reports/detailed",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "postV1SalesReportsDetailed",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/finance/v1/sales-reports/detailed/{reportId}",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "postV1SalesReportsDetailedReportId",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/finance/v1/sales-reports/list",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "postV1SalesReportsList",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [
+      "personal",
+      "service"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/final-price",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersFinalPrice",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/customs-declaration",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaCustomsDeclaration",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/delete",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaDelete",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/details",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaDetails",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/gtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaGtin",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/imei",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaImei",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/sgtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaSgtin",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/meta/uin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersMetaUin",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/status/cancel",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersStatusCancel",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/status/confirm",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersStatusConfirm",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/status/info",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersStatusInfo",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/status/prepare",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersStatusPrepare",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/status/receive",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersStatusReceive",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/click-collect/orders/status/reject",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersStatusReject",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/b2b/info",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersB2bInfo",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/final-price",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersFinalPrice",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/customs-declaration",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaCustomsDeclaration",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/delete",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaDelete",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/details",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaDetails",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/gtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaGtin",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/imei",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaImei",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/sgtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaSgtin",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/meta/uin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersMetaUin",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/status/cancel",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStatusCancel",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/status/confirm",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStatusConfirm",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/status/deliver",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStatusDeliver",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/status/info",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStatusInfo",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/status/receive",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStatusReceive",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/status/reject",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStatusReject",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbs/orders/stickers",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersStickers",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [
+      "personal",
+      "service",
+      "base-with-secret"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbw/orders/client",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersClient",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbw/orders/meta/delete",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersMetaDelete",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbw/orders/meta/details",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersMetaDetails",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbw/orders/meta/sgtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersMetaSgtin",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/dbw/orders/status/deliver",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersStatusDeliver",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/marketplace/v3/fbs/orders/archive",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/marketplace/v3/fbs/settings/autoreturns",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getMarketplaceV3FbsSettingsAutoreturns",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/marketplace/v3/fbs/settings/autoreturns",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "patchMarketplaceV3FbsSettingsAutoreturns",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/marketplace/v3/fbs/settings/autoreturns/items",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "patchMarketplaceV3FbsSettingsAutoreturnsItems",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/fbs/settings/autoreturns/items",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postMarketplaceV3FbsSettingsAutoreturnsItems",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/marketplace/v3/fbs/settings/autoreturns/subcategories/restricted",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getMarketplaceV3FbsSettingsAutoreturnsSubcategoriesRestricted",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/marketplace/v3/orders/meta",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/marketplace/v3/orders/{orderId}/meta/customs-declaration",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/marketplace/v3/supplies/{supplyId}/order-ids",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/marketplace/v3/supplies/{supplyId}/orders",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/tariffs/v1/acceptance/coefficients",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AcceptanceCoefficients",
+    "section": "Тарифы",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "10-rates.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/acceptance/options",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "postV1AcceptanceOptions",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/acceptance_report",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AcceptanceReport",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/acceptance_report/tasks/{task_id}/download",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AcceptanceReportTasksTaskIdDownload",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/acceptance_report/tasks/{task_id}/status",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AcceptanceReportTasksTaskIdStatus",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/account/balance",
+    "hosts": [
+      "finance-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AccountBalance",
+    "section": "Документы и бухгалтерия",
+    "category": "finance",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/antifraud-details",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsAntifraudDetails",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/banned-products/blocked",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsBannedProducsBlocked",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/brand-share",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsBrandShare",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/brand-share/brands",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsBrandShareBrands",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/brand-share/parent-subjects",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsBrandShareParentSubjects",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/analytics/excise-report",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV1AnalyticsExciseReport",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/goods-labeling",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsGoodsLabeling",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/goods-return",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsGoodsReturn",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/analytics/region-sale",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1AnalyticsRegionSale",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/calendar/promotions",
+    "hosts": [
+      "dp-calendar-api.wildberries.ru"
+    ],
+    "operation_id": "getV1CalendarPromotions",
+    "section": "Маркетинг и продвижение",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/calendar/promotions/details",
+    "hosts": [
+      "dp-calendar-api.wildberries.ru"
+    ],
+    "operation_id": "getV1CalendarPromotionsDetails",
+    "section": "Маркетинг и продвижение",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/calendar/promotions/nomenclatures",
+    "hosts": [
+      "dp-calendar-api.wildberries.ru"
+    ],
+    "operation_id": "getV1CalendarPromotionsNomenclatures",
+    "section": "Маркетинг и продвижение",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/calendar/promotions/upload",
+    "hosts": [
+      "dp-calendar-api.wildberries.ru"
+    ],
+    "operation_id": "postV1CalendarPromotionsUpload",
+    "section": "Маркетинг и продвижение",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "08-promotion.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v1/claim",
+    "hosts": [
+      "returns-api.wildberries.ru"
+    ],
+    "operation_id": "patchV1Claim",
+    "section": "Общение с покупателями",
+    "category": "returns",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/claims",
+    "hosts": [
+      "returns-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Claims",
+    "section": "Общение с покупателями",
+    "category": "returns",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/documents/categories",
+    "hosts": [
+      "documents-api.wildberries.ru"
+    ],
+    "operation_id": "getV1DocumentsCategories",
+    "section": "Документы и бухгалтерия",
+    "category": "documents",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/documents/download",
+    "hosts": [
+      "documents-api.wildberries.ru"
+    ],
+    "operation_id": "getV1DocumentsDownload",
+    "section": "Документы и бухгалтерия",
+    "category": "documents",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/documents/download/all",
+    "hosts": [
+      "documents-api.wildberries.ru"
+    ],
+    "operation_id": "postV1DocumentsDownloadAll",
+    "section": "Документы и бухгалтерия",
+    "category": "documents",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/documents/list",
+    "hosts": [
+      "documents-api.wildberries.ru"
+    ],
+    "operation_id": "getV1DocumentsList",
+    "section": "Документы и бухгалтерия",
+    "category": "documents",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "13-finances.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/feedback",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Feedback",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/feedbacks",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Feedbacks",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v1/feedbacks/answer",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "patchV1FeedbacksAnswer",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/feedbacks/answer",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "postV1FeedbacksAnswer",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/feedbacks/archive",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1FeedbacksArchive",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/feedbacks/count",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1FeedbacksCount",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/feedbacks/count-unanswered",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1FeedbacksCountUnanswered",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/feedbacks/order/return",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "postV1FeedbacksOrderReturn",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/invite",
+    "hosts": [
+      "user-management-api.wildberries.ru"
+    ],
+    "operation_id": "postV1Invite",
+    "section": "Общее",
+    "category": "usermanagement",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/new-feedbacks-questions",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1NewFeedbacksQuestions",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/paid_storage",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1PaidStorage",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/paid_storage/tasks/{task_id}/download",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1PaidStorageTasksTaskIdDownload",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/paid_storage/tasks/{task_id}/status",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1PaidStorageTasksTaskIdStatus",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/question",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Question",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/questions",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Questions",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v1/questions",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "patchV1Questions",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/questions/count",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1QuestionsCount",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/questions/count-unanswered",
+    "hosts": [
+      "feedbacks-api.wildberries.ru"
+    ],
+    "operation_id": "getV1QuestionsCountUnanswered",
+    "section": "Общение с покупателями",
+    "category": "questionsandfeedback",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/seller-info",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SellerInfo",
+    "section": "Общее",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/seller/chats",
+    "hosts": [
+      "buyer-chat-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SellerChats",
+    "section": "Общение с покупателями",
+    "category": "buyerchat",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/seller/download/{id}",
+    "hosts": [
+      "buyer-chat-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SellerDownloadId",
+    "section": "Общение с покупателями",
+    "category": "buyerchat",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/seller/events",
+    "hosts": [
+      "buyer-chat-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SellerEvents",
+    "section": "Общение с покупателями",
+    "category": "buyerchat",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/seller/message",
+    "hosts": [
+      "buyer-chat-api.wildberries.ru"
+    ],
+    "operation_id": "postV1SellerMessage",
+    "section": "Общение с покупателями",
+    "category": "buyerchat",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "09-communications.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/supplier/orders",
+    "hosts": [
+      "statistics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SupplierOrders",
+    "section": "Отчёты",
+    "category": "statistics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/supplier/sales",
+    "hosts": [
+      "statistics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SupplierSales",
+    "section": "Отчёты",
+    "category": "statistics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v1/supplies",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "postV1Supplies",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/supplies/{ID}",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SuppliesId",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/supplies/{ID}/goods",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SuppliesIdGoods",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/supplies/{ID}/package",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "getV1SuppliesIdPackage",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/tariffs/box",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1TariffsBox",
+    "section": "Тарифы",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "10-rates.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/tariffs/commission",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1TariffsCommission",
+    "section": "Тарифы",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "10-rates.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/tariffs/pallet",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1TariffsPallet",
+    "section": "Тарифы",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "10-rates.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/tariffs/return",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getV1TariffsReturn",
+    "section": "Тарифы",
+    "category": "commonapi",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "10-rates.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/transit-tariffs",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "getV1TransitTariffs",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v1/user",
+    "hosts": [
+      "user-management-api.wildberries.ru"
+    ],
+    "operation_id": "deleteV1User",
+    "section": "Общее",
+    "category": "usermanagement",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/users",
+    "hosts": [
+      "user-management-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Users",
+    "section": "Общее",
+    "category": "usermanagement",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v1/users/access",
+    "hosts": [
+      "user-management-api.wildberries.ru"
+    ],
+    "operation_id": "putV1UsersAccess",
+    "section": "Общее",
+    "category": "usermanagement",
+    "tokens": [
+      "personal"
+    ],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/warehouse_remains",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1WarehouseRemains",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/warehouse_remains/tasks/{task_id}/download",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1WarehouseRemainsTasksTaskIdDownload",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/warehouse_remains/tasks/{task_id}/status",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV1WarehouseRemainsTasksTaskIdStatus",
+    "section": "Отчёты",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "12-reports.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v1/warehouses",
+    "hosts": [
+      "supplies-api.wildberries.ru"
+    ],
+    "operation_id": "getV1Warehouses",
+    "section": "Поставки FBW",
+    "category": "supplies",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "07-orders-fbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/buffer/goods/task",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/buffer/tasks",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/history/goods/task",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/history/tasks",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/list/goods/filter",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/list/goods/filter",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/list/goods/size/nm",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/nm-report/downloads",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV2NmReportDownloads",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/nm-report/downloads",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2NmReportDownloads",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/nm-report/downloads/file/{downloadId}",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "getV2NmReportDownloadsFileDownloadId",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/nm-report/downloads/retry",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2NmReportDownloadsRetry",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v2/quarantine/goods",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/search-report/product/orders",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SearchReportProductOrders",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/search-report/product/search-texts",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SearchReportProductSearchTexts",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/search-report/report",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SearchReportReport",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/search-report/table/details",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SearchReportTableDetails",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/search-report/table/groups",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2SearchReportTableGroups",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/stocks-report/offices",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2StocksReportOffices",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/stocks-report/products/groups",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2StocksReportProductsGroups",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/stocks-report/products/products",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2StocksReportProductsProducts",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/stocks-report/products/sizes",
+    "hosts": [
+      "seller-analytics-api.wildberries.ru"
+    ],
+    "operation_id": "postV2StocksReportProductsSizes",
+    "section": "Аналитика и данные",
+    "category": "contentanalytics",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "11-analytics.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/upload/task",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/upload/task/club-discount",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v2/upload/task/size",
+    "hosts": [
+      "discounts-prices-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "discountsandprices",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/click-collect/orders",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getV3ClickCollectOrders",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/click-collect/orders/client",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersClient",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/click-collect/orders/client/identity",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3ClickCollectOrdersClientIdentity",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/click-collect/orders/new",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getV3ClickCollectOrdersNew",
+    "section": "Самовывоз",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "06-in-store-pickup.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbs/groups/info",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsGroupsInfo",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/dbs/orders",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getV3DbsOrders",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbs/orders/client",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersClient",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbs/orders/delivery-date",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbsOrdersDeliveryDate",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/dbs/orders/new",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getV3DbsOrdersNew",
+    "section": "DBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "05-dbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/dbw/orders",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getV3DbwOrders",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbw/orders/courier",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersCourier",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbw/orders/delivery-date",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersDeliveryDate",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/dbw/orders/new",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "getV3DbwOrdersNew",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbw/orders/status",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersStatus",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/dbw/orders/stickers",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "postV3DbwOrdersStickers",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v3/dbw/orders/{orderId}/cancel",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "patchV3DbwOrdersOrderIdCancel",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v3/dbw/orders/{orderId}/confirm",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "patchV3DbwOrdersOrderIdConfirm",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/dbw/orders/{orderId}/meta/gtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "putV3DbwOrdersOrderIdMetaGtin",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/dbw/orders/{orderId}/meta/imei",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "putV3DbwOrdersOrderIdMetaImei",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/dbw/orders/{orderId}/meta/uin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "putV3DbwOrdersOrderIdMetaUin",
+    "section": "Заказы DBW",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "04-orders-dbw.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/dbw/warehouses/{warehouseId}/contacts",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/dbw/warehouses/{warehouseId}/contacts",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/offices",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/orders",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/orders/client",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/orders/new",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/orders/status",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/orders/status/history",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/orders/stickers",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/orders/stickers/cross-border",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v3/orders/{orderId}/cancel",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v3/orders/{orderId}/meta",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/orders/{orderId}/meta/expiration",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/orders/{orderId}/meta/gtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/orders/{orderId}/meta/imei",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/orders/{orderId}/meta/sgtin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/orders/{orderId}/meta/uin",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/passes",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/passes",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/passes/offices",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v3/passes/{passId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/passes/{passId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v3/stocks/{warehouseId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/stocks/{warehouseId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/stocks/{warehouseId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/supplies",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/supplies",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/supplies/orders/reshipment",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v3/supplies/{supplyId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/supplies/{supplyId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/supplies/{supplyId}/barcode",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/api/v3/supplies/{supplyId}/deliver",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v3/supplies/{supplyId}/trbx",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/supplies/{supplyId}/trbx",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/supplies/{supplyId}/trbx",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/supplies/{supplyId}/trbx/stickers",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Заказы FBS",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "03-orders-fbs.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/api/v3/warehouses",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/api/v3/warehouses",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/api/v3/warehouses/{warehouseId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PUT",
+    "path": "/api/v3/warehouses/{warehouseId}",
+    "hosts": [
+      "marketplace-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "marketplace",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/barcodes",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/delete/trash",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/error/list",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/cards/limits",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/moveNm",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/recover",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/update",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/upload",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/cards/upload/add",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/directory/colors",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/directory/countries",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/directory/kinds",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/directory/seasons",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/directory/tnved",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/directory/vat",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/get/cards/list",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/get/cards/trash",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/object/all",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/object/charcs/{subjectId}",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/object/parent/all",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/tag",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v2/tag/nomenclature/link",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "DELETE",
+    "path": "/content/v2/tag/{id}",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "PATCH",
+    "path": "/content/v2/tag/{id}",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/content/v2/tags",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v3/media/file",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "POST",
+    "path": "/content/v3/media/save",
+    "hosts": [
+      "content-api.wildberries.ru"
+    ],
+    "operation_id": "",
+    "section": "Работа с товарами",
+    "category": "content",
+    "tokens": [],
+    "readonly": false,
+    "deprecated": false,
+    "source_file": "02-items.yaml"
+  },
+  {
+    "marketplace": "wildberries",
+    "method": "GET",
+    "path": "/ping",
+    "hosts": [
+      "common-api.wildberries.ru"
+    ],
+    "operation_id": "getPing",
+    "section": "Общее",
+    "category": "all",
+    "tokens": [],
+    "readonly": true,
+    "deprecated": false,
+    "source_file": "01-general.yaml"
+  }
+]
