@@ -7,6 +7,12 @@ on:
     paths:
       - scripts/build_api_registry_snapshot.py
       - .github/workflows/api-registry-refresh.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/build_api_registry_snapshot.py
+      - .github/workflows/api-registry-refresh.yml
 
 permissions:
   contents: write
@@ -64,6 +70,7 @@ jobs:
           git diff --check
 
       - name: Commit generated registry snapshot
+        if: github.event_name == 'push'
         run: |
           git config user.name 'api-registry-bot'
           git config user.email 'api-registry-bot@users.noreply.github.com'
