@@ -245,7 +245,7 @@ def operation_record(*, spec: dict, path: str, path_item: dict, method: str, op:
 def build_wb(files: list[dict] | dict, baseline_index: dict) -> tuple[list[dict], dict[str, str]]:
     rows = []
     hashes = {}
-    file_entries = list(files.values()) if isinstance(files, dict) else list(files)
+    file_entries = list(files.keys()) if isinstance(files, dict) else list(files)
     for file_info in file_entries:
         filename = file_info["file"] if isinstance(file_info, dict) else str(file_info)
         spec, sha = fetch_yaml(f"{WB_REPO}/{filename}")
