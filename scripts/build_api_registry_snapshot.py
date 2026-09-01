@@ -242,11 +242,12 @@ def operation_record(*, spec: dict, path: str, path_item: dict, method: str, op:
     }
 
 
-def build_wb(files: list[dict], baseline_index: dict) -> tuple[list[dict], dict[str, str]]:
+def build_wb(files: list[dict] | dict, baseline_index: dict) -> tuple[list[dict], dict[str, str]]:
     rows = []
     hashes = {}
-    for file_info in files:
-        filename = file_info["file"]
+    file_entries = list(files.values()) if isinstance(files, dict) else list(files)
+    for file_info in file_entries:
+        filename = file_info["file"] if isinstance(file_info, dict) else str(file_info)
         spec, sha = fetch_yaml(f"{WB_REPO}/{filename}")
         hashes[filename] = sha
         for path, path_item in (spec.get("paths") or {}).items():
@@ -346,7 +347,8 @@ def main() -> None:
         rows, index = baseline_inventory(path, name)
         baseline_rows[name], baseline_indexes[name] = rows, index
 
-    wb, wb_file_hashes = build_wb(wb_index.get("files") or [], baseline_indexes["wildberries"])
+    wb_files = wb_meta.get("files") or wb_index.get("files") or []
+    wb, wb_file_hashes = build_wb(wb_files, baseline_indexes["wildberries"])
     current = {
         "wildberries": wb,
         "ozon_seller": build_ozon(ozon_seller_spec, "ozon_seller", baseline_indexes["ozon_seller"], "ozon-seller-openapi.json"),
