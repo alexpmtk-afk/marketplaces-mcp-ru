@@ -1,0 +1,54 @@
+registry_version: 0.1-research
+marketplace: wildberries
+verification_date: 2026-09-01
+source_note: Lifecycle and replacement facts are cross-checked against the pinned browser-captured WB OpenAPI snapshot (MissiaL/wildberries-api commit 6f56592666e423bf587da06fe204d287094c3a38) and official WB documentation references preserved by that snapshot. Production is not changed by this file.
+
+high_priority:
+  - current_project_operation_id: wb_stats_stocks
+    current_path: /api/v1/supplier/stocks
+    current_project_status: implemented_and_generic_callable
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-06-23
+      priority: critical
+    replacement:
+      current_project_operation_id: wb_post_api_analytics_stocks_report_wb_warehouses
+      method: POST
+      host: seller-analytics-api.wildberries.ru
+      path: /api/analytics/v1/stocks-report/wb-warehouses
+      present_in_project: true
+      documented_rate_limit:
+        requests: 1
+        period_seconds: 20
+      documented_row_limit: 250000
+      pagination: offset
+      token_scope: analytics
+    action: block_retired_operation_from_generic_selection_then_route_to_replacement
+
+  - current_project_operation_id: wb_report_realization
+    current_path: /api/v5/supplier/reportDetailByPeriod
+    current_project_status: implemented_and_generic_callable
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-07-15
+      priority: critical
+    replacement_family:
+      - current_project_operation_id: wb_post_api_finance_sales_reports_list
+        path: /api/finance/v1/sales-reports/list
+        present_in_project: true
+      - current_project_operation_id: wb_post_api_finance_sales_reports_detailed
+        path: /api/finance/v1/sales-reports/detailed
+        present_in_project: true
+      - current_project_operation_id: wb_post_api_finance_sales_reports_detailed_reportid
+        path: /api/finance/v1/sales-reports/detailed/{reportId}
+        present_in_project: true
+    contract_notes:
+      finance_token_required: true
+      detailed_methods_documented_limit: 1_request_per_minute_burst_1
+      semantic_one_to_one_replacement: false
+    action: block_retired_operation_from_generic_selection_and_validate_finance_route_semantics
+
+rules:
+  - Shutdown-passed WB operations must not remain eligible for generic tool selection merely because they still exist in endpoints.yaml.
+  - Do not delete historical catalog evidence before replacement coverage and migration tests are complete; lifecycle-block first, then remove or archive in a controlled production change.
+  - Replacement token scopes and pagination must be validated before automatic routing.
