@@ -40,11 +40,35 @@ jobs:
           python - <<'PY'
           import csv
           import json
+          from collections import Counter
           from pathlib import Path
           summary = json.loads(Path('api_registry/audit/summary.json').read_text(encoding='utf-8'))
           catalog = json.loads(Path('api_registry/api_catalog.json').read_text(encoding='utf-8'))
           with Path('api_registry/api_catalog.csv').open(encoding='utf-8-sig', newline='') as fh:
               csv_rows = list(csv.DictReader(fh))
+
+          missing_contract = [
+              f"{row.get('marketplace')} {row.get('http_method')} {row.get('path')}"
+              for row in catalog if not row.get('contract')
+          ]
+          missing_lifecycle = [
+              f"{row.get('marketplace')} {row.get('http_method')} {row.get('path')}"
+              for row in catalog if not row.get('lifecycle')
+          ]
+          print('=== VALIDATION DIAGNOSTICS ===')
+          print(json.dumps({
+              'summary': summary,
+              'catalog_json_rows': len(catalog),
+              'catalog_csv_rows': len(csv_rows),
+              'marketplace_counts': dict(Counter(row.get('marketplace') for row in catalog)),
+              'lifecycle_counts_from_catalog': dict(Counter((row.get('lifecycle') or {}).get('status') for row in catalog)),
+              'contract_present_count': sum(1 for row in catalog if row.get('contract')),
+              'missing_contract_count': len(missing_contract),
+              'missing_contract': missing_contract[:100],
+              'missing_lifecycle_count': len(missing_lifecycle),
+              'missing_lifecycle': missing_lifecycle[:100],
+          }, ensure_ascii=False, indent=2, default=str))
+
           assert summary['baseline_total'] == 793, summary
           assert summary['current_snapshot_total'] == 798, summary
           assert len(catalog) == 798, len(catalog)
