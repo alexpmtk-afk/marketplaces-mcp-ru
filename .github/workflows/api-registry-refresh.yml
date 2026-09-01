@@ -29,20 +29,27 @@ jobs:
       - name: Build current registry and diff
         run: python scripts/build_api_registry_snapshot.py
 
-      - name: Validate generated JSON
+      - name: Validate generated registry
         run: |
           python - <<'PY'
+          import csv
           import json
           from pathlib import Path
           summary = json.loads(Path('api_registry/audit/summary.json').read_text(encoding='utf-8'))
+          catalog = json.loads(Path('api_registry/api_catalog.json').read_text(encoding='utf-8'))
+          with Path('api_registry/api_catalog.csv').open(encoding='utf-8-sig', newline='') as fh:
+              csv_rows = list(csv.DictReader(fh))
           assert summary['baseline_total'] == 793, summary
-          assert summary['current_snapshot_total'] > 0, summary
+          assert summary['current_snapshot_total'] == 798, summary
+          assert len(catalog) == 798, len(catalog)
+          assert len(csv_rows) == 798, len(csv_rows)
+          assert sum(summary['effective_status_counts'].values()) == 798, summary
           for name in ('wildberries', 'ozon_seller', 'ozon_performance'):
               assert summary['diffs'][name]['current_snapshot_count'] > 0, (name, summary)
           print(json.dumps({
               'baseline_total': summary['baseline_total'],
               'current_snapshot_total': summary['current_snapshot_total'],
-              'current_active_total': summary['current_active_total'],
+              'effective_status_counts': summary['effective_status_counts'],
               'counts': {k: v['current_snapshot_count'] for k, v in summary['diffs'].items()},
               'new_vs_baseline': {k: len(v['current_not_in_baseline']) for k, v in summary['diffs'].items()},
               'baseline_not_in_current': {k: len(v['baseline_not_in_current']) for k, v in summary['diffs'].items()},
@@ -54,7 +61,7 @@ jobs:
         run: |
           git config user.name 'api-registry-bot'
           git config user.email 'api-registry-bot@users.noreply.github.com'
-          git add api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/sources/SOURCES.json
+          git add api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/api_catalog.csv api_registry/sources/SOURCES.json
           if git diff --cached --quiet; then
             echo 'Registry snapshot unchanged.'
             exit 0
