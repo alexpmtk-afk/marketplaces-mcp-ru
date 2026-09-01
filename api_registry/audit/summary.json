@@ -1,16 +1,23 @@
 {
-  "generated_at": "2026-09-01T14:56:29.199387+00:00",
+  "generated_at": "2026-09-01T14:58:41.597005+00:00",
   "baseline_app_commit": "07a3408eab9a2abe4ba1e9dbcfdd8c67bed0458d",
   "baseline_total": 793,
   "current_snapshot_total": 798,
-  "current_active_total": 783,
+  "effective_status_counts": {
+    "CURRENT": 781,
+    "DEPRECATED": 13,
+    "SHUTDOWN": 4
+  },
   "wildberries_official_snapshot_date": "2026-08-26",
   "diffs": {
     "wildberries": {
       "baseline_count": 307,
       "current_snapshot_count": 287,
-      "current_active_count": 287,
-      "current_deprecated_count": 0,
+      "current_status_counts": {
+        "CURRENT": 287,
+        "DEPRECATED": 0,
+        "SHUTDOWN": 0
+      },
       "current_not_in_baseline": [
         {
           "method": "GET",
@@ -199,8 +206,11 @@
     "ozon_seller": {
       "baseline_count": 441,
       "current_snapshot_count": 463,
-      "current_active_count": 451,
-      "current_deprecated_count": 12,
+      "current_status_counts": {
+        "CURRENT": 449,
+        "DEPRECATED": 10,
+        "SHUTDOWN": 4
+      },
       "current_not_in_baseline": [
         {
           "method": "POST",
@@ -585,8 +595,11 @@
     "ozon_performance": {
       "baseline_count": 45,
       "current_snapshot_count": 48,
-      "current_active_count": 45,
-      "current_deprecated_count": 3,
+      "current_status_counts": {
+        "CURRENT": 45,
+        "DEPRECATED": 3,
+        "SHUTDOWN": 0
+      },
       "current_not_in_baseline": [
         {
           "method": "GET",

@@ -12,7 +12,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -27,7 +31,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -42,7 +50,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -57,7 +69,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -72,7 +88,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -87,7 +107,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -102,7 +126,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -117,7 +145,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -132,7 +164,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -147,7 +183,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -162,7 +202,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -177,7 +221,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -192,7 +240,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -207,7 +259,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -222,7 +278,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -237,7 +297,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -252,7 +316,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -267,7 +335,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -282,7 +354,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -297,7 +373,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -312,7 +392,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -327,7 +411,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -342,7 +430,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -357,7 +449,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -372,7 +468,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -387,7 +487,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -402,7 +506,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -417,7 +525,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -432,7 +544,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -447,7 +563,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -462,7 +582,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -477,7 +601,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -495,7 +623,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -513,7 +645,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -528,7 +664,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -543,7 +683,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -558,7 +702,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -573,7 +721,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -591,7 +743,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -610,7 +766,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -625,7 +785,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -643,7 +807,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -658,7 +826,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -673,7 +845,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -688,7 +864,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -705,7 +885,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -722,7 +906,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -739,7 +927,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -754,7 +946,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -769,7 +965,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -787,7 +987,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -805,7 +1009,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -823,7 +1031,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -838,7 +1050,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -853,7 +1069,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -868,7 +1088,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -883,7 +1107,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -898,7 +1126,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -916,7 +1148,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -934,7 +1170,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -952,7 +1192,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -967,7 +1211,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -985,7 +1233,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1003,7 +1255,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1018,7 +1274,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1033,7 +1293,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1048,7 +1312,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1063,7 +1331,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1078,7 +1350,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1093,7 +1369,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1108,7 +1388,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1123,7 +1407,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1138,7 +1426,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1153,7 +1445,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1168,7 +1464,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1183,7 +1483,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1198,7 +1502,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1213,7 +1521,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1228,7 +1540,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1243,7 +1559,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1258,7 +1578,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1273,7 +1597,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1288,7 +1616,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1303,7 +1635,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1318,7 +1654,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1333,7 +1673,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1348,7 +1692,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1363,7 +1711,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1378,7 +1730,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1393,7 +1749,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1408,7 +1768,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1423,7 +1787,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1438,7 +1806,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1457,7 +1829,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1472,7 +1848,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1487,7 +1867,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1502,7 +1886,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1517,7 +1905,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1532,7 +1924,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1547,7 +1943,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1564,7 +1964,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1581,7 +1985,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1598,7 +2006,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1615,7 +2027,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1632,7 +2048,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1647,7 +2067,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1662,7 +2086,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1677,7 +2105,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1692,7 +2124,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1707,7 +2143,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "10-rates.yaml"
+    "source_file": "10-rates.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1722,7 +2162,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1737,7 +2181,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1752,7 +2200,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1767,7 +2219,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1782,7 +2238,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1797,7 +2257,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1812,7 +2276,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1827,7 +2295,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1842,7 +2314,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1857,7 +2333,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1872,7 +2352,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1887,7 +2371,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1902,7 +2390,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1917,7 +2409,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1932,7 +2428,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1947,7 +2447,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1962,7 +2466,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1977,7 +2485,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "08-promotion.yaml"
+    "source_file": "08-promotion.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -1992,7 +2504,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2007,7 +2523,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2022,7 +2542,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2037,7 +2561,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2052,7 +2580,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2067,7 +2599,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "13-finances.yaml"
+    "source_file": "13-finances.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2082,7 +2618,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2097,7 +2637,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2112,7 +2656,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2127,7 +2675,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2142,7 +2694,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2157,7 +2713,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2172,7 +2732,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2187,7 +2751,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2204,7 +2772,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2219,7 +2791,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2234,7 +2810,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2249,7 +2829,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2264,7 +2848,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2279,7 +2867,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2294,7 +2886,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2309,7 +2905,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2324,7 +2924,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2339,7 +2943,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2354,7 +2962,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2369,7 +2981,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2384,7 +3000,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2399,7 +3019,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2414,7 +3038,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "09-communications.yaml"
+    "source_file": "09-communications.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2429,7 +3057,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2444,7 +3076,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2459,7 +3095,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2474,7 +3114,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2489,7 +3133,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2504,7 +3152,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2519,7 +3171,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "10-rates.yaml"
+    "source_file": "10-rates.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2534,7 +3190,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "10-rates.yaml"
+    "source_file": "10-rates.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2549,7 +3209,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "10-rates.yaml"
+    "source_file": "10-rates.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2564,7 +3228,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "10-rates.yaml"
+    "source_file": "10-rates.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2579,7 +3247,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2596,7 +3268,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2613,7 +3289,11 @@
     ],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2630,7 +3310,11 @@
     ],
     "readonly": false,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2645,7 +3329,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2660,7 +3348,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2675,7 +3367,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "12-reports.yaml"
+    "source_file": "12-reports.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2690,7 +3386,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "07-orders-fbw.yaml"
+    "source_file": "07-orders-fbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2705,7 +3405,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2720,7 +3424,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2735,7 +3443,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2750,7 +3462,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2765,7 +3481,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2780,7 +3500,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2795,7 +3519,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2810,7 +3538,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2825,7 +3557,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2840,7 +3576,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2855,7 +3595,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2870,7 +3614,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2885,7 +3633,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2900,7 +3652,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2915,7 +3671,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2930,7 +3690,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2945,7 +3709,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2960,7 +3728,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2975,7 +3747,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -2990,7 +3766,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3005,7 +3785,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "11-analytics.yaml"
+    "source_file": "11-analytics.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3020,7 +3804,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3035,7 +3823,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3050,7 +3842,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3065,7 +3861,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3080,7 +3880,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3095,7 +3899,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3110,7 +3918,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "06-in-store-pickup.yaml"
+    "source_file": "06-in-store-pickup.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3125,7 +3937,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3140,7 +3956,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3155,7 +3975,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3170,7 +3994,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3185,7 +4013,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "05-dbs.yaml"
+    "source_file": "05-dbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3200,7 +4032,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3215,7 +4051,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3230,7 +4070,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3245,7 +4089,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3260,7 +4108,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3275,7 +4127,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3290,7 +4146,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3305,7 +4165,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3320,7 +4184,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3335,7 +4203,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3350,7 +4222,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "04-orders-dbw.yaml"
+    "source_file": "04-orders-dbw.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3365,7 +4241,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3380,7 +4260,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3395,7 +4279,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3410,7 +4298,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3425,7 +4317,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3440,7 +4336,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3455,7 +4355,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3470,7 +4374,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3485,7 +4393,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3500,7 +4412,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3515,7 +4431,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3530,7 +4450,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3545,7 +4469,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3560,7 +4488,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3575,7 +4507,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3590,7 +4526,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3605,7 +4545,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3620,7 +4564,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3635,7 +4583,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3650,7 +4602,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3665,7 +4621,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3680,7 +4640,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3695,7 +4659,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3710,7 +4678,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3725,7 +4697,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3740,7 +4716,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3755,7 +4735,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3770,7 +4754,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3785,7 +4773,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3800,7 +4792,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3815,7 +4811,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3830,7 +4830,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3845,7 +4849,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3860,7 +4868,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3875,7 +4887,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3890,7 +4906,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "03-orders-fbs.yaml"
+    "source_file": "03-orders-fbs.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3905,7 +4925,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3920,7 +4944,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3935,7 +4963,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3950,7 +4982,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3965,7 +5001,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3980,7 +5020,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -3995,7 +5039,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4010,7 +5058,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4025,7 +5077,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4040,7 +5096,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4055,7 +5115,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4070,7 +5134,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4085,7 +5153,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4100,7 +5172,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4115,7 +5191,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4130,7 +5210,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4145,7 +5229,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4160,7 +5248,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4175,7 +5267,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4190,7 +5286,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4205,7 +5305,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4220,7 +5324,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4235,7 +5343,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4250,7 +5362,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4265,7 +5381,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4280,7 +5400,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4295,7 +5419,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4310,7 +5438,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4325,7 +5457,11 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4340,7 +5476,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4355,7 +5495,11 @@
     "tokens": [],
     "readonly": false,
     "deprecated": false,
-    "source_file": "02-items.yaml"
+    "source_file": "02-items.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "wildberries",
@@ -4370,6 +5514,10 @@
     "tokens": [],
     "readonly": true,
     "deprecated": false,
-    "source_file": "01-general.yaml"
+    "source_file": "01-general.yaml",
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   }
 ]

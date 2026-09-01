@@ -11,7 +11,11 @@
       "Campaign",
       "Кампании и рекламируемые объекты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -25,7 +29,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -39,7 +47,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -53,7 +65,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -67,7 +83,11 @@
       "Ad",
       "Оплата за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -81,7 +101,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -95,7 +119,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -109,7 +137,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -123,7 +155,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -137,7 +173,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -152,7 +192,11 @@
       "Edit",
       "Оплата за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -167,7 +211,11 @@
       "Edit",
       "Оплата за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -182,7 +230,11 @@
       "Edit",
       "Оплата за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -196,7 +248,11 @@
       "Campaign",
       "Кампании и рекламируемые объекты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -210,7 +266,11 @@
       "Product",
       "Товары в Оплате за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -224,7 +284,11 @@
       "Product",
       "Товары в Оплате за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -238,7 +302,11 @@
       "Product",
       "Товары в Оплате за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -252,7 +320,11 @@
       "Product",
       "Товары в Оплате за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -266,7 +338,11 @@
       "Product",
       "Товары в Оплате за клик"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -280,7 +356,11 @@
       "Campaign",
       "Кампании и рекламируемые объекты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -294,7 +374,11 @@
       "Campaign",
       "Кампании и рекламируемые объекты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -308,7 +392,11 @@
       "Vendor",
       "Аналитика внешнего трафика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -322,7 +410,11 @@
       "Campaign",
       "Кампании и рекламируемые объекты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -336,7 +428,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -350,7 +446,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -364,7 +464,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -378,7 +482,11 @@
       "Search-Promo",
       "Оплата за заказ"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -392,7 +500,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -406,7 +518,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -420,7 +536,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -434,7 +554,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -448,7 +572,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -462,7 +590,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -476,7 +608,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -490,7 +626,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -504,7 +644,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -518,7 +662,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -532,7 +680,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -546,7 +698,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -560,7 +716,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -574,7 +734,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -588,7 +752,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -602,7 +770,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -616,7 +788,11 @@
       "Statistics",
       "Статистика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -630,7 +806,11 @@
       "Vendor",
       "Аналитика внешнего трафика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -644,7 +824,11 @@
       "Vendor",
       "Аналитика внешнего трафика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -658,7 +842,11 @@
       "Vendor",
       "Аналитика внешнего трафика"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_performance",
@@ -672,6 +860,10 @@
       "Ad",
       "Оплата за клик"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   }
 ]

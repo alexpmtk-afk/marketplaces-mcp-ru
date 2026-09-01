@@ -9,7 +9,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -21,7 +25,11 @@
       "PromosBeta",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -33,7 +41,11 @@
       "PromosBeta",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -45,7 +57,11 @@
       "PromosBeta",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -57,7 +73,11 @@
       "PromosBeta",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -69,7 +89,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -81,7 +105,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -93,7 +121,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -105,7 +137,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -117,7 +153,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -129,7 +169,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -141,7 +185,11 @@
       "Promos",
       "Акции Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -153,7 +201,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -165,7 +217,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -177,7 +233,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -189,7 +249,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -201,7 +265,11 @@
       "AnalyticsAPI",
       "Аналитические отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -213,7 +281,11 @@
       "AnalyticsAPI",
       "Аналитические отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -225,7 +297,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -237,7 +313,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -249,7 +329,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -261,7 +345,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -273,7 +361,11 @@
       "BarcodeAPI",
       "Штрихкоды товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -285,7 +377,11 @@
       "BarcodeAPI",
       "Штрихкоды товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -297,7 +393,11 @@
       "BrandAPI",
       "Сертификаты брендов"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -309,7 +409,11 @@
       "CancelReasonAPI",
       "Причины отмены"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -321,7 +425,11 @@
       "CancelReasonAPI",
       "Причины отмены"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -333,7 +441,11 @@
       "CancelReasonAPI",
       "Причины отмены"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -345,7 +457,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -357,7 +473,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -369,7 +489,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -381,7 +505,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -393,7 +521,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -405,7 +537,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -417,7 +553,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -429,7 +569,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -441,7 +585,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -453,7 +601,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -465,7 +617,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -477,7 +633,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -489,7 +649,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -501,7 +665,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -513,7 +681,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -525,7 +697,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -537,7 +713,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -549,7 +729,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -561,7 +745,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -573,7 +761,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -585,7 +777,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -597,7 +793,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -609,7 +809,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -621,7 +825,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -633,7 +841,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -645,7 +857,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -657,7 +873,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -669,7 +889,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -681,7 +905,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -693,7 +921,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -705,7 +937,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -717,7 +953,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -729,7 +969,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -741,7 +985,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -753,7 +1001,11 @@
       "CarriageAPI",
       "Работа с грузоместами FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -765,7 +1017,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -777,7 +1033,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -789,7 +1049,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -801,7 +1065,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -813,7 +1081,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -825,7 +1097,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -837,7 +1113,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -849,7 +1129,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -861,7 +1145,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -873,7 +1161,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -885,7 +1177,11 @@
       "ChatAPI",
       "Чаты с покупателями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -897,7 +1193,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -909,7 +1209,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -921,7 +1225,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -933,7 +1241,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -945,7 +1257,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -957,7 +1273,11 @@
       "DeliveryAPI",
       "Доставка"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -969,7 +1289,11 @@
       "DeliveryAPI",
       "Доставка"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -981,7 +1305,11 @@
       "DeliveryAPI",
       "Доставка"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -993,7 +1321,11 @@
       "DeliveryAPI",
       "Доставка"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1005,7 +1337,11 @@
       "CategoryAPI",
       "Атрибуты и характеристики Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1017,7 +1353,11 @@
       "CategoryAPI",
       "Атрибуты и характеристики Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1029,7 +1369,11 @@
       "CategoryAPI",
       "Атрибуты и характеристики Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1041,7 +1385,11 @@
       "CategoryAPI",
       "Атрибуты и характеристики Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1053,7 +1401,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1065,7 +1417,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1077,7 +1433,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1089,7 +1449,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1101,7 +1465,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1113,7 +1481,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1125,7 +1497,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1137,7 +1513,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1149,7 +1529,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1161,7 +1545,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1173,7 +1561,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1185,7 +1577,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1197,7 +1593,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1209,7 +1609,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1221,7 +1625,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1233,7 +1641,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1245,7 +1657,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1257,7 +1673,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1269,7 +1689,11 @@
       "DraftDirectFBP",
       "Работа с FBP-черновиками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1281,7 +1705,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1293,7 +1721,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1305,7 +1737,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1317,7 +1753,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1329,7 +1769,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1341,7 +1785,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1353,7 +1801,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1365,7 +1817,11 @@
       "DraftDropOffFBP",
       "Работа с FBP-черновиками c доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1377,7 +1833,11 @@
       "DeliveryFBPDraft",
       "Работа с FBP-черновиками"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1389,7 +1849,11 @@
       "DeliveryFBPDraft",
       "Работа с FBP-черновиками"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1401,7 +1865,11 @@
       "DraftPickupFBP",
       "Работа с FBP-черновиками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1413,7 +1881,11 @@
       "DraftPickupFBP",
       "Работа с FBP-черновиками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1425,7 +1897,11 @@
       "DraftPickupFBP",
       "Работа с FBP-черновиками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1437,7 +1913,11 @@
       "DraftPickupFBP",
       "Работа с FBP-черновиками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1449,7 +1929,11 @@
       "DraftPickupFBP",
       "Работа с FBP-черновиками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1461,7 +1945,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1473,7 +1961,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1485,7 +1977,11 @@
       "OrderDirectFBP",
       "Работа с FBP-поставками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1497,7 +1993,11 @@
       "OrderDirectFBP",
       "Работа с FBP-поставками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1509,7 +2009,11 @@
       "OrderDirectFBP",
       "Работа с FBP-поставками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1521,7 +2025,11 @@
       "OrderDirectFBP",
       "Работа с FBP-поставками с доставкой direct"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1533,7 +2041,11 @@
       "OrderDropOffFBP",
       "Работа с FBP-поставками с доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1545,7 +2057,11 @@
       "OrderDropOffFBP",
       "Работа с FBP-поставками с доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1557,7 +2073,11 @@
       "OrderDropOffFBP",
       "Работа с FBP-поставками с доставкой drop-off"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1569,7 +2089,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1581,7 +2105,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1593,7 +2121,11 @@
       "OrderPickupFBP",
       "Работа с FBP-поставками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1605,7 +2137,11 @@
       "OrderPickupFBP",
       "Работа с FBP-поставками с доставкой pick-up"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1617,7 +2153,11 @@
       "DeliveryFBPDraft",
       "Работа с FBP-черновиками"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1629,7 +2169,11 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1641,7 +2185,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1653,7 +2201,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1665,7 +2217,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1677,7 +2233,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1689,7 +2249,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1701,7 +2265,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1713,7 +2281,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1725,7 +2297,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1737,7 +2313,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1749,7 +2329,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1761,7 +2345,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1773,7 +2361,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1785,7 +2377,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1797,7 +2393,11 @@
       "SupplierAPI",
       "Накладные"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1809,7 +2409,11 @@
       "SupplierAPI",
       "Накладные"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1821,7 +2425,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1833,7 +2441,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1845,7 +2457,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1857,7 +2473,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1869,7 +2489,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1881,7 +2505,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1893,7 +2521,11 @@
       "Notification",
       "Работа с пуш-уведомлениями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1905,7 +2537,11 @@
       "OrderAPI",
       "Заказы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1917,7 +2553,11 @@
       "OrderAPI",
       "Заказы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1929,7 +2569,11 @@
       "OrderAPI",
       "Заказы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1941,7 +2585,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1953,7 +2601,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1965,7 +2617,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1977,7 +2633,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -1989,7 +2649,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2001,7 +2665,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2013,7 +2681,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2025,7 +2697,11 @@
       "FboPostingAPI",
       "Отправления"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2037,7 +2713,11 @@
       "FboPostingAPI",
       "Отправления"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2049,7 +2729,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2061,7 +2745,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2073,7 +2761,11 @@
       "Digital",
       "Работа с цифровыми товарами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2085,7 +2777,16 @@
       "Digital",
       "Работа с цифровыми товарами"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "SHUTDOWN",
+    "shutdown_date": "2026-08-31",
+    "replacement": {
+      "method": "POST",
+      "path": "/v2/posting/digital/list"
+    },
+    "status_evidence": [
+      "https://t.me/s/OzonSellerAPI?before=667"
+    ]
   },
   {
     "marketplace": "ozon_seller",
@@ -2097,7 +2798,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2109,7 +2814,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2121,7 +2830,11 @@
       "DeliveryFBP",
       "Работа с созданной поставкой FBP"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2133,7 +2846,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2145,7 +2862,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2157,7 +2878,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2169,7 +2894,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2181,7 +2910,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2193,7 +2926,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2205,7 +2942,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2217,7 +2958,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2229,7 +2974,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2241,7 +2990,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2253,7 +3006,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2265,7 +3022,11 @@
       "FboPostingAPI",
       "Отправления"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2277,7 +3038,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2289,7 +3054,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2301,7 +3070,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2313,7 +3086,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2325,7 +3102,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2337,7 +3118,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2349,7 +3134,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2361,7 +3150,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2373,7 +3166,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2385,7 +3182,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2397,7 +3198,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2409,7 +3214,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2421,7 +3230,11 @@
       "PricingStrategyAPI",
       "Стратегии ценообразования"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2433,7 +3246,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2445,7 +3262,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2457,7 +3278,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2469,7 +3294,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2481,7 +3310,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2493,7 +3326,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2505,7 +3342,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2517,7 +3358,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2529,7 +3374,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2541,7 +3390,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2553,7 +3406,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2565,7 +3422,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2577,7 +3438,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2589,7 +3454,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2601,7 +3470,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2613,7 +3486,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2625,7 +3502,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2637,7 +3518,11 @@
       "Digital",
       "Работа с цифровыми товарами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2649,7 +3534,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2661,7 +3550,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2673,7 +3566,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2685,7 +3582,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2697,7 +3598,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2710,7 +3615,11 @@
       "BetaMethod",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2722,7 +3631,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2734,7 +3647,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2746,7 +3663,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2758,7 +3679,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2770,7 +3695,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2782,7 +3711,11 @@
       "CategoryAPI",
       "Атрибуты и характеристики Ozon"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2794,7 +3727,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2806,7 +3743,11 @@
       "Quants",
       "Работа с квантами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2818,7 +3759,11 @@
       "Quants",
       "Работа с квантами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2830,7 +3775,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2842,7 +3791,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2854,7 +3807,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2866,7 +3823,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2878,7 +3839,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2890,7 +3855,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2902,7 +3871,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2914,7 +3887,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2926,7 +3903,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2938,7 +3919,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2950,7 +3935,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2962,7 +3951,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2974,7 +3967,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2986,7 +3983,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -2998,7 +3999,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3010,7 +4015,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3022,7 +4031,11 @@
       "Questions&Answers",
       "Работа с вопросами и ответами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3034,7 +4047,11 @@
       "SellerRating",
       "Рейтинг продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3046,7 +4063,11 @@
       "SellerRating",
       "Рейтинг продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3058,7 +4079,11 @@
       "SellerRating",
       "Рейтинг продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3070,7 +4095,11 @@
       "SellerRating",
       "Рейтинг продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3082,7 +4111,11 @@
       "Receipt",
       "Чеки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3094,7 +4127,11 @@
       "Receipt",
       "Чеки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3106,7 +4143,11 @@
       "Receipt",
       "Чеки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3118,7 +4159,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3130,7 +4175,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3142,7 +4191,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3154,7 +4207,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3166,7 +4223,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3178,7 +4239,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3190,7 +4255,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3202,7 +4271,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3214,7 +4287,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3226,7 +4303,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3238,7 +4319,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3250,7 +4335,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3262,7 +4351,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3274,7 +4367,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3286,7 +4383,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3298,7 +4399,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3310,7 +4415,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3322,7 +4431,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3334,7 +4447,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3346,7 +4463,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3358,7 +4479,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3370,7 +4495,11 @@
       "Pass",
       "Пропуски"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3382,7 +4511,11 @@
       "ReturnAPI",
       "Возвратные отгрузки"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3394,7 +4527,11 @@
       "ReturnsAPI",
       "Возвраты товаров FBO и FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3406,7 +4543,11 @@
       "RFBSReturnsAPI",
       "Возвраты товаров rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3418,7 +4559,11 @@
       "ReturnsAPI",
       "Возвраты товаров FBO и FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3430,7 +4575,11 @@
       "ReturnsAPI",
       "Возвраты товаров FBO и FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3442,7 +4591,11 @@
       "ReturnsAPI",
       "Возвраты товаров FBO и FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3454,7 +4607,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3466,7 +4623,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3478,7 +4639,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3490,7 +4655,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3502,7 +4671,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3514,7 +4687,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3526,7 +4703,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3538,7 +4719,11 @@
       "APIkey",
       "Информация по API-ключу"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3550,7 +4735,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3562,7 +4751,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3574,7 +4767,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3586,7 +4783,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3598,7 +4799,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3610,7 +4815,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3622,7 +4831,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3634,7 +4847,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3646,7 +4863,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3658,7 +4879,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3670,7 +4895,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3682,7 +4911,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3694,7 +4927,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3706,7 +4943,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3718,7 +4959,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3730,7 +4975,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3742,7 +4991,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3754,7 +5007,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3766,7 +5023,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3778,7 +5039,11 @@
       "SellerActions",
       "Акции продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3790,7 +5055,11 @@
       "SellerInfo",
       "Информация по кабинету продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3802,7 +5071,11 @@
       "SellerInfo",
       "Информация по кабинету продавца"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3814,7 +5087,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3826,7 +5103,11 @@
       "SupplyOrderAPI",
       "Работа с актами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3838,7 +5119,11 @@
       "SupplyOrderAPI",
       "Работа с актами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3850,7 +5135,11 @@
       "SupplyOrderAPI",
       "Работа с актами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3862,7 +5151,11 @@
       "SupplyOrderAPI",
       "Работа с актами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3874,7 +5167,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3886,7 +5183,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3898,7 +5199,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3910,7 +5215,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3922,7 +5231,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3934,7 +5247,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3946,7 +5263,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3958,7 +5279,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3970,7 +5295,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3982,7 +5311,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -3994,7 +5327,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4006,7 +5343,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4018,7 +5359,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4030,7 +5375,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4042,7 +5391,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4054,7 +5407,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4066,7 +5423,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4078,7 +5439,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4090,7 +5455,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4102,7 +5471,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4114,7 +5487,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4126,7 +5503,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4138,7 +5519,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4150,7 +5535,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4162,7 +5551,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4174,7 +5567,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4186,7 +5583,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4198,7 +5599,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4210,7 +5615,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4222,7 +5631,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4234,7 +5647,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4246,7 +5663,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4258,7 +5679,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4270,7 +5695,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4282,7 +5711,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4294,7 +5727,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4306,7 +5743,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4318,7 +5759,11 @@
       "FBSWarehouseSetup",
       "Создание FBS-складов и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4330,7 +5775,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4342,7 +5791,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4354,7 +5807,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4366,7 +5823,11 @@
       "FBOWarehouse",
       "Склады FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4378,7 +5839,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4390,7 +5855,11 @@
       "rFBSWarehouseSetup",
       "Создание складов rFBS Express и управление ими"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4402,7 +5871,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4414,7 +5887,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4426,7 +5903,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4438,7 +5919,11 @@
       "AnalyticsAPI",
       "Аналитические отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4450,7 +5935,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4462,7 +5951,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4474,7 +5967,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4486,7 +5983,11 @@
       "FBOTransport",
       "Работа с транспортными грузоместами FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4498,7 +5999,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4510,7 +6015,11 @@
       "Premium",
       "Premium-методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4522,7 +6031,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4534,7 +6047,11 @@
       "CancellationAPI",
       "Отмены заказов"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4546,7 +6063,11 @@
       "CancellationAPI",
       "Отмены заказов"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4558,7 +6079,11 @@
       "CancellationAPI",
       "Отмены заказов"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4570,7 +6095,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4582,7 +6111,11 @@
       "DeliveryAPI",
       "Доставка"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4594,7 +6127,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4606,7 +6143,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4618,7 +6159,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4630,7 +6175,11 @@
       "FboSupplyRequest",
       "Создание и управление заявками на поставку FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4642,7 +6191,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4654,7 +6207,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4666,7 +6223,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4678,7 +6239,11 @@
       "DeliveryrFBS",
       "Доставка rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4690,7 +6255,11 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4702,7 +6271,11 @@
       "SupplierAPI",
       "Накладные"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4714,7 +6287,11 @@
       "SupplierAPI",
       "Накладные"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4726,7 +6303,11 @@
       "OrderAPI",
       "Заказы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4738,7 +6319,11 @@
       "PolygonAPI",
       "Полигоны"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4750,7 +6335,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4762,7 +6351,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4774,7 +6367,16 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "SHUTDOWN",
+    "shutdown_date": "2026-08-31",
+    "replacement": {
+      "method": "POST",
+      "path": "/v3/posting/fbo/list"
+    },
+    "status_evidence": [
+      "https://t.me/s/OzonSellerAPI?before=667"
+    ]
   },
   {
     "marketplace": "ozon_seller",
@@ -4786,7 +6388,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4798,7 +6404,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4810,7 +6420,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4822,7 +6436,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4834,7 +6452,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4846,7 +6468,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4858,7 +6484,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4870,7 +6500,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4882,7 +6516,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4894,7 +6532,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4906,7 +6548,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4918,7 +6564,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4930,7 +6580,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4942,7 +6596,11 @@
       "DeliveryFBS",
       "Доставка FBS"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "DEPRECATED",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4954,7 +6612,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4966,7 +6628,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4978,7 +6644,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -4990,7 +6660,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5002,7 +6676,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5014,7 +6692,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5026,7 +6708,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5038,7 +6724,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5050,7 +6740,11 @@
       "CertificationAPI",
       "Сертификаты качества"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5062,7 +6756,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5074,7 +6772,11 @@
       "BetaMethod",
       "Прочие методы"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5086,7 +6788,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5098,7 +6804,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5110,7 +6820,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5122,7 +6836,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5134,7 +6852,11 @@
       "ReportAPI",
       "Отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5146,7 +6868,11 @@
       "RFBSReturnsAPI",
       "Возвраты товаров rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5158,7 +6884,11 @@
       "RFBSReturnsAPI",
       "Возвраты товаров rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5170,7 +6900,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5182,7 +6916,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5194,7 +6932,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5206,7 +6948,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5218,7 +6964,11 @@
       "ReviewAPI",
       "Работа с отзывами"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5230,7 +6980,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5242,7 +6996,11 @@
       "WarehouseAPI",
       "Работа со складами FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5254,7 +7012,11 @@
       "ChatAPI",
       "Чаты с покупателями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5266,7 +7028,11 @@
       "ChatAPI",
       "Чаты с покупателями"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5278,7 +7044,26 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "DEPRECATED",
+    "shutdown_date": "2026-09-08",
+    "replacement": [
+      {
+        "method": "POST",
+        "path": "/v1/finance/accrual/postings"
+      },
+      {
+        "method": "POST",
+        "path": "/v1/finance/accrual/types"
+      },
+      {
+        "method": "POST",
+        "path": "/v1/finance/accrual/by-day"
+      }
+    ],
+    "status_evidence": [
+      "https://t.me/s/OzonSellerAPI"
+    ]
   },
   {
     "marketplace": "ozon_seller",
@@ -5290,7 +7075,26 @@
       "FinanceAPI",
       "Финансовые отчёты"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "DEPRECATED",
+    "shutdown_date": "2026-09-08",
+    "replacement": [
+      {
+        "method": "POST",
+        "path": "/v1/finance/accrual/postings"
+      },
+      {
+        "method": "POST",
+        "path": "/v1/finance/accrual/types"
+      },
+      {
+        "method": "POST",
+        "path": "/v1/finance/accrual/by-day"
+      }
+    ],
+    "status_evidence": [
+      "https://t.me/s/OzonSellerAPI"
+    ]
   },
   {
     "marketplace": "ozon_seller",
@@ -5302,7 +7106,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5314,7 +7122,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5326,7 +7138,16 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "SHUTDOWN",
+    "shutdown_date": "2026-08-31",
+    "replacement": {
+      "method": "POST",
+      "path": "/v4/posting/fbs/list"
+    },
+    "status_evidence": [
+      "https://t.me/s/OzonSellerAPI?before=667"
+    ]
   },
   {
     "marketplace": "ozon_seller",
@@ -5338,7 +7159,16 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": true
+    "deprecated": true,
+    "status": "SHUTDOWN",
+    "shutdown_date": "2026-08-31",
+    "replacement": {
+      "method": "POST",
+      "path": "/v4/posting/fbs/unfulfilled/list"
+    },
+    "status_evidence": [
+      "https://t.me/s/OzonSellerAPI?before=667"
+    ]
   },
   {
     "marketplace": "ozon_seller",
@@ -5350,7 +7180,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5362,7 +7196,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5374,7 +7212,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5386,7 +7228,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5398,7 +7244,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5410,7 +7260,11 @@
       "FBO",
       "Доставка FBO"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5422,7 +7276,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5434,7 +7292,11 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5446,7 +7308,11 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5458,7 +7324,11 @@
       "FBS",
       "Обработка заказов FBS и rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5470,7 +7340,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5482,7 +7356,11 @@
       "ProductAPI",
       "Загрузка и обновление товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5494,7 +7372,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5506,7 +7388,11 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5518,7 +7404,11 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5530,7 +7420,11 @@
       "Prices&StocksAPI",
       "Цены и остатки товаров"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5542,7 +7436,11 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   },
   {
     "marketplace": "ozon_seller",
@@ -5554,6 +7452,10 @@
       "FBS&rFBSMarks",
       "Управление кодами маркировки и сборкой заказов для FBS/rFBS"
     ],
-    "deprecated": false
+    "deprecated": false,
+    "status": "CURRENT",
+    "shutdown_date": "",
+    "replacement": "",
+    "status_evidence": []
   }
 ]
