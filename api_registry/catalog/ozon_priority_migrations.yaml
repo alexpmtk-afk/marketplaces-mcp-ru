@@ -1,14 +1,46 @@
 registry_version: 0.1-research
 marketplace: ozon
 verification_date: 2026-09-01
-source_access_note: Official Seller API page currently enters redirect loop for this research client; deprecation dates are taken from Ozon Seller API notification channel and must be cross-checked against the current official Swagger export before production migration.
+source_access_note: Official Seller API page is protected by anti-bot/redirect behavior for this research client. Structural checks below are pinned to a 2026-08-19 mirror snapshot that states it was built from the official Ozon Seller OpenAPI; lifecycle dates that came from the official Ozon Seller API notification channel remain marked separately.
+
+pinned_secondary_snapshot:
+  repository: MissiaL/ozon-api
+  commit: 1953152c36955225b459cf55963a2c3a7a234661
+  snapshot_date: 2026-08-19
+  seller_operations: 463
+  seller_sections: 57
+  performance_operations: 48
 
 high_priority:
+  - current_project_operation_id: ozon_fbs_unfulfilled
+    current_path: /v3/posting/fbs/unfulfilled/list
+    current_project_status: implemented
+    evidence:
+      mirror_index_status: deprecated
+      current_snapshot_replacement_present: /v4/posting/fbs/unfulfilled/list
+    lifecycle:
+      status: deprecated
+      shutdown_date_from_snapshot_readme: 2026-08-31
+    replacements:
+      - /v4/posting/fbs/unfulfilled/list
+    action: immediate_contract_migration_audit
+    reason: Current project still points at v3 on 2026-09-01, one day after the shutdown date stated by the pinned snapshot.
+
+  - current_project_operation_id: ozon_fbs_list
+    current_path: /v3/posting/fbs/list
+    current_project_status: implemented
+    evidence:
+      mirror_index_status: deprecated
+      current_snapshot_replacement_present: /v4/posting/fbs/list
+    replacements:
+      - /v4/posting/fbs/list
+    action: immediate_contract_migration_audit
+
   - current_project_operation_id: ozon_finance_transactions
     current_path: /v3/finance/transaction/list
     current_project_status: implemented
     lifecycle:
-      status: deprecated_announced
+      status: shutdown_announced
       shutdown_date: 2026-09-08
       notice_date: 2026-07-14
     replacements:
@@ -21,7 +53,7 @@ high_priority:
     current_path: /v3/finance/transaction/totals
     current_project_status: implemented
     lifecycle:
-      status: deprecated_announced
+      status: shutdown_announced
       shutdown_date: 2026-09-08
       notice_date: 2026-07-14
     replacements:
@@ -45,7 +77,14 @@ replacement_observations:
         change: request descriptions for date/last_id updated; response added accruals.container_fees and updated last_id/accrued_category descriptions
     verification_status: secondary_mirror_plus_official_change_notifications
 
+project_catalog_quality_findings:
+  - finding: Several auto-imported Ozon operations are explicitly marked UNVERIFIED in ozon_mcp/endpoints.yaml.
+    implication: They must not be promoted to authoritative API-registry records until matched to the pinned/current OpenAPI operation and request schema.
+  - finding: HTTP POST is not evidence of a mutating Ozon operation.
+    implication: Ozon OpenAPI contains many read-only operations implemented as POST; safety classification must be derived from operation semantics, not HTTP verb alone.
+
 rules:
   - Do not automatically replace old finance methods one-for-one: new accrual API returns different semantics and requires explicit aggregation/mapping validation.
   - Keep unknown accrual identifiers fail-visible; never silently drop them from totals.
-  - Before production migration capture the current official Ozon Swagger/OpenAPI source and pin its checksum/retrieval date.
+  - Before production migration, prefer a current official Ozon Swagger browser export; if unavailable, pin exact mirror commit/checksum and mark the migration provisional until official capture is stored.
+  - Do not infer read/write safety from POST. Verify each Ozon operation from OpenAPI description and semantics.
