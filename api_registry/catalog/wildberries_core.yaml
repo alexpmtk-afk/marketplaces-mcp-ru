@@ -1,0 +1,115 @@
+registry_version: 0.1-research
+marketplace: wildberries
+verification_date: 2026-09-01
+records:
+  - operation_id: wb_stats_orders
+    http_method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/orders
+    category: statistics
+    safety: read
+    source:
+      type: official_docs
+      url: https://dev.wildberries.ru/ru/openapi/reports
+      status: verified_from_official_search_index
+    rate_limit:
+      scope: seller_account_method
+      period_seconds: 60
+      requests_per_period: 1
+      interval_seconds: 60
+      burst: 1
+    freshness:
+      update_interval_minutes: 30
+    retention:
+      order_history_days_max: 90
+    request:
+      parameters:
+        dateFrom:
+          required: true
+          type: RFC3339_date_time
+          timezone: Europe/Moscow
+        flag:
+          required: false
+          default: 0
+          type: integer
+      modes:
+        flag_0:
+          semantics: lastChangeDate >= dateFrom
+          response_row_soft_limit: 80000
+          pagination:
+            required_if_limit_reached: true
+            continuation_parameter: dateFrom
+            continuation_value: full_lastChangeDate_of_last_row
+        flag_1:
+          semantics: exact_date_mode
+          notes: Keep exact semantics under separate verification when optimizing daily tool.
+    optimization:
+      specialized_mcp_tool: wb_get_orders_summary
+      multi_day_single_request_candidate: true
+      condition: Use flag=0 and backend filter/group by actual order date only when completeness can be proven; detect 80000-row pagination boundary.
+      generic_fallback_for_daily_summary: forbidden
+
+  - operation_id: wb_stats_sales
+    http_method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/sales
+    category: statistics
+    safety: read
+    source:
+      type: project_catalog_plus_official_section
+      url: https://dev.wildberries.ru/ru/openapi/reports
+      status: pending_endpoint_detail_verification
+    rate_limit:
+      declared_in_project_catalog: 1 req/min
+    pagination: lastChangeDate
+
+  - operation_id: wb_stats_stocks
+    http_method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/stocks
+    category: statistics
+    safety: read
+    source:
+      type: project_catalog_plus_official_section
+      url: https://dev.wildberries.ru/ru/openapi/reports
+      status: pending_endpoint_detail_verification
+    rate_limit:
+      declared_in_project_catalog: 1 req/min
+    notes: Official reports page states statistics service does not store stock history; current snapshot only.
+
+  - operation_id: wb_stats_incomes
+    http_method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/incomes
+    category: statistics
+    safety: read
+    source:
+      type: project_catalog_plus_official_section
+      url: https://dev.wildberries.ru/ru/openapi/reports
+      status: pending_endpoint_detail_verification
+    rate_limit:
+      declared_in_project_catalog: 1 req/min
+
+category_rate_limit_examples:
+  marketplace:
+    source: https://dev.wildberries.ru/ru/openapi/api-information
+    scope: all_methods_in_category
+    period_seconds: 60
+    requests_per_period: 300
+    interval_ms: 200
+    burst: 20
+    notes: Official docs explicitly mark this example as category-wide. Do not infer the same scope for statistics methods without endpoint-specific proof.
+  content:
+    source: https://dev.wildberries.ru/openapi/work-with-products
+    scope: all_methods_in_category_with_documented_exceptions
+    period_seconds: 60
+    requests_per_period: 100
+    interval_ms: 600
+    burst: 5
+  prices_discounts:
+    source: https://dev.wildberries.ru/openapi/work-with-products
+    scope: all_methods_in_category
+    period_seconds: 6
+    requests_per_period: 10
+    interval_ms: 600
+    burst: 5
