@@ -1,0 +1,70 @@
+registry_version: 0.1-research
+marketplace: ozon
+source:
+  kind: official_change_notifications
+  channel: https://t.me/OzonSellerAPI
+  verification_date: 2026-09-01
+
+changes:
+  - notice_date: 2026-06-09
+    operations:
+      - /v1/finance/accrual/by-day
+    change: response field accruals.type_id renamed to accruals.accrual_id
+    priority: high
+
+  - notice_date: 2026-07-10
+    operations:
+      - /v2/posting/fbo/list
+      - /v3/posting/fbs/unfulfilled/list
+      - /v3/posting/fbs/list
+      - /v1/posting/digital/list
+    lifecycle:
+      status: deprecated
+      shutdown_date: 2026-08-31
+    replacements:
+      /v2/posting/fbo/list: /v3/posting/fbo/list
+      /v3/posting/fbs/unfulfilled/list: /v4/posting/fbs/unfulfilled/list
+      /v3/posting/fbs/list: /v4/posting/fbs/list
+      /v1/posting/digital/list: /v2/posting/digital/list
+    priority: critical
+
+  - notice_date: 2026-07-14
+    operations:
+      - /v3/finance/transaction/list
+      - /v3/finance/transaction/totals
+    lifecycle:
+      status: deprecated
+      shutdown_date: 2026-09-08
+    replacement_family:
+      - /v1/finance/accrual/postings
+      - /v1/finance/accrual/types
+      - /v1/finance/accrual/by-day
+    priority: critical
+
+  - notice_date: 2026-07-21
+    operations:
+      - /v1/finance/accrual/by-day
+    change: updated response description for accruals.posting.products.delivery.services
+    priority: medium
+
+  - notice_date: 2026-07-22
+    operations:
+      - /v3/posting/fbs/list
+      - /v4/posting/fbs/list
+      - /v3/posting/fbs/get
+      - /v3/posting/fbs/unfulfilled/list
+      - /v4/posting/fbs/unfulfilled/list
+    change: integration_type_flow and sorting_center fields added/updated across FBS list responses; v4 list also gained filter.integration_type_flow
+    priority: medium
+
+  - notice_date: 2026-07-30
+    operations:
+      - /v1/finance/accrual/by-day
+    change: request descriptions for date/last_id updated; response added accruals.container_fees and updated accruals.accrued_category/last_id descriptions
+    priority: high
+
+  - effective_date: 2026-08-17
+    operations:
+      - /v1/analytics/stocks
+    change: switched from twice-daily refresh to real-time stock information
+    priority: high
