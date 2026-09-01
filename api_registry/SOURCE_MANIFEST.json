@@ -9,8 +9,8 @@
       "kind": "official_docs",
       "url": "https://dev.wildberries.ru/ru/openapi/api-information",
       "trust": "authoritative",
-      "access_status": "search_index_accessible_direct_fetch_blocked",
-      "notes": "Contains general token-bucket/rate-limit semantics and category-wide examples."
+      "access_status": "anti_bot_blocks_plain_http",
+      "notes": "General token/rate-limit semantics. Official site remains primary authority."
     },
     {
       "id": "wb_official_reports",
@@ -18,8 +18,23 @@
       "kind": "official_docs",
       "url": "https://dev.wildberries.ru/ru/openapi/reports",
       "trust": "authoritative",
-      "access_status": "search_index_accessible_direct_fetch_blocked",
-      "notes": "Authoritative source for supplier/orders and statistics/report methods."
+      "access_status": "anti_bot_blocks_plain_http",
+      "notes": "Primary authority for supplier/orders and statistics/report methods."
+    },
+    {
+      "id": "wb_browser_capture_missial_20260819",
+      "marketplace": "wildberries",
+      "kind": "browser_captured_official_openapi_mirror",
+      "repository": "MissiaL/wildberries-api",
+      "commit": "6f56592666e423bf587da06fe204d287094c3a38",
+      "captured_at": "2026-08-19T18:12:37.448Z",
+      "trust": "secondary_pinned_snapshot",
+      "coverage": {
+        "official_pages": 13,
+        "operations": 286
+      },
+      "provenance_note": "Repository manifest records browser-redoc-openapi extraction from dev.wildberries.ru and per-page fetch/rate-limit verification timestamps.",
+      "access_status": "accessible"
     },
     {
       "id": "wb_project_catalog",
@@ -35,8 +50,25 @@
       "kind": "official_docs",
       "url": "https://docs.ozon.ru/api/seller/",
       "trust": "authoritative",
-      "access_status": "direct_fetch_redirect_loop",
-      "notes": "Need current official Swagger/OpenAPI export for exhaustive verification."
+      "access_status": "anti_bot_or_redirect_loop_for_research_client",
+      "notes": "Current official browser export remains the preferred source for final production verification."
+    },
+    {
+      "id": "ozon_swagger_mirror_missial_20260819",
+      "marketplace": "ozon",
+      "kind": "browser_captured_official_openapi_mirror",
+      "repository": "MissiaL/ozon-api",
+      "commit": "1953152c36955225b459cf55963a2c3a7a234661",
+      "snapshot_date": "2026-08-19",
+      "trust": "secondary_pinned_snapshot",
+      "coverage": {
+        "seller_operations": 463,
+        "seller_sections": 57,
+        "performance_operations": 48,
+        "performance_sections": 6
+      },
+      "provenance_note": "Repository states the bundled specs are rebuilt from official docs.ozon.ru Seller/Performance Swagger browser downloads; direct plain HTTP is blocked by anti-bot/CDN behavior.",
+      "access_status": "accessible"
     },
     {
       "id": "ozon_project_catalog",
@@ -47,27 +79,27 @@
       "source_revision": "07a3408eab9a2abe4ba1e9dbcfdd8c67bed0458d"
     },
     {
+      "id": "ozon_project_performance_catalog",
+      "marketplace": "ozon_performance",
+      "kind": "project_implementation_catalog",
+      "path": "ozon_mcp/perf_endpoints.yaml",
+      "trust": "implementation_inventory_only",
+      "source_revision": "07a3408eab9a2abe4ba1e9dbcfdd8c67bed0458d"
+    },
+    {
       "id": "ozon_api_notifications",
       "marketplace": "ozon",
       "kind": "official_change_notifications",
       "url": "https://t.me/OzonSellerAPI",
       "trust": "official_notification_channel",
       "access_status": "web_index_accessible",
-      "notes": "Use for deprecation/change dates; verify structural details against Swagger when available."
-    },
-    {
-      "id": "ozon_swagger_mirror_missial",
-      "marketplace": "ozon",
-      "kind": "third_party_swagger_mirror",
-      "url": "https://github.com/MissiaL/ozon-api",
-      "trust": "provisional_secondary",
-      "access_status": "accessible",
-      "notes": "Claims snapshot from official docs.ozon.ru/api/seller/swagger.json; never overrides official Swagger."
+      "notes": "Use for lifecycle/change dates; structural semantics still require Swagger verification."
     }
   ],
   "known_gaps": [
-    "Direct machine download of official WB Swagger not yet captured.",
-    "Direct machine download of current official Ozon Seller Swagger not yet captured.",
-    "Full endpoint-by-endpoint normalization is in progress."
+    "A current official browser export of Wildberries OpenAPI after 2026-08-19 is not yet stored inside this project.",
+    "A current official browser export of Ozon Seller/Performance Swagger after 2026-08-19 is not yet stored inside this project.",
+    "Full endpoint-by-endpoint diff between production catalogs and pinned external snapshots is not yet generated.",
+    "Ozon auto-imported UNVERIFIED operations require safety/semantic reclassification against OpenAPI."
   ]
 }
