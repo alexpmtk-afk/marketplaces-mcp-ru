@@ -34,33 +34,60 @@ overrides:
   ozon:ozon_fbs_unfulfilled:
     verification:
       implementation_inventory: true
-      official_contract_verified: false
+      official_contract_verified: true
       mirror_contract_verified: true
       verified_at: 2026-09-01
       source_ids:
         - ozon_swagger_mirror_missial_20260819
+        - ozon_api_notifications
     lifecycle:
-      current_project_path_status: deprecated
+      status: shutdown_reached
+      shutdown_date: 2026-08-31
+      current_project_path_status: obsolete
       replacement_path: /v4/posting/fbs/unfulfilled/list
       priority: critical
+      migration_required_before_normal_use: true
 
   ozon:ozon_fbs_list:
     verification:
       implementation_inventory: true
-      official_contract_verified: false
+      official_contract_verified: true
       mirror_contract_verified: true
       verified_at: 2026-09-01
       source_ids:
         - ozon_swagger_mirror_missial_20260819
+        - ozon_api_notifications
     lifecycle:
-      current_project_path_status: deprecated
+      status: shutdown_reached
+      shutdown_date: 2026-08-31
+      current_project_path_status: obsolete
       replacement_path: /v4/posting/fbs/list
       priority: critical
+      migration_required_before_normal_use: true
+    migration_notes:
+      response_shape_changed: true
+      pagination_changed: true
+      notes: v4 postings are top-level and use cursor/has_next semantics rather than the v3 result.postings offset contract; verify against current Swagger before implementation.
+
+  ozon:ozon_fbo_list:
+    verification:
+      implementation_inventory: true
+      official_contract_verified: true
+      verified_at: 2026-09-01
+      source_ids:
+        - ozon_api_notifications
+    lifecycle:
+      status: shutdown_reached
+      shutdown_date: 2026-08-31
+      current_project_path_status: obsolete
+      replacement_path: /v3/posting/fbo/list
+      priority: critical
+      migration_required_before_normal_use: true
 
   ozon:ozon_finance_transactions:
     verification:
       implementation_inventory: true
-      official_contract_verified: false
+      official_contract_verified: true
       mirror_contract_verified: true
       verified_at: 2026-09-01
       source_ids:
@@ -75,11 +102,12 @@ overrides:
         - /v1/finance/accrual/types
         - /v1/finance/accrual/by-day
       semantic_one_to_one_replacement: false
+      migration_required_before_shutdown: true
 
   ozon:ozon_finance_totals:
     verification:
       implementation_inventory: true
-      official_contract_verified: false
+      official_contract_verified: true
       mirror_contract_verified: true
       verified_at: 2026-09-01
       source_ids:
@@ -94,3 +122,4 @@ overrides:
         - /v1/finance/accrual/types
         - /v1/finance/accrual/by-day
       semantic_one_to_one_replacement: false
+      migration_required_before_shutdown: true
