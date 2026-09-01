@@ -1,0 +1,121 @@
+registry_version: 0.1-research
+verification_date: 2026-09-01
+purpose: Research candidate list of shutdown-passed or documentation-removed operations that should become ineligible for generic MCP selection before production deletion.
+production_effect: none
+
+wildberries:
+  - operation_id: wb_stats_stocks
+    path: /api/v1/supplier/stocks
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-06-23
+    replacement_present: true
+    replacement_operation_id: wb_post_api_analytics_stocks_report_wb_warehouses
+  - operation_id: wb_report_realization
+    path: /api/v5/supplier/reportDetailByPeriod
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-07-15
+    replacement_present: true
+    replacement_family:
+      - wb_post_api_finance_sales_reports_list
+      - wb_post_api_finance_sales_reports_detailed
+      - wb_post_api_finance_sales_reports_detailed_reportid
+
+ozon:
+  - operation_id: ozon_create_supply_draft
+    path: /v1/draft/create
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-03-16
+  - operation_id: ozon_get_supply_draft_info
+    path: /v1/draft/create/info
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-03-16
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_draft_create_info
+  - operation_id: ozon_get_draft_timeslots
+    path: /v1/draft/timeslot/info
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-03-16
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_draft_timeslot_info
+  - operation_id: ozon_post_v1_draft_timeslot_info
+    path: /v1/draft/timeslot/info
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-03-16
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_draft_timeslot_info
+  - operation_id: ozon_create_supply_from_draft
+    path: /v1/draft/supply/create
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-03-16
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_draft_supply_create
+  - operation_id: ozon_post_v1_draft_supply_create_status
+    path: /v1/draft/supply/create/status
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-03-16
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_draft_supply_create_status
+  - operation_id: ozon_stocks_by_warehouse_fbs
+    path: /v1/product/info/stocks-by-warehouse/fbs
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-04-07
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_product_info_stocks_by_warehouse_fbs
+  - operation_id: ozon_get_list_of_delivery_methods
+    path: /v1/delivery-method/list
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-04-07
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_delivery_method_list
+  - operation_id: ozon_get_list_of_warehouses
+    path: /v1/warehouse/list
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-04-07
+    replacement_present: true
+    replacement_operation_id: ozon_post_v2_warehouse_list
+  - operation_id: ozon_list_4
+    path: /v2/chat/list
+    lifecycle: removed_from_documentation
+    removal_notice_date: 2026-06-09
+    replacement_present: true
+    replacement_operation_id: ozon_post_v3_chat_list
+  - operation_id: ozon_fbo_list
+    path: /v2/posting/fbo/list
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-08-31
+    replacement_present: false
+    replacement_path: /v3/posting/fbo/list
+  - operation_id: ozon_fbs_unfulfilled
+    path: /v3/posting/fbs/unfulfilled/list
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-08-31
+    replacement_present: false
+    replacement_path: /v4/posting/fbs/unfulfilled/list
+  - operation_id: ozon_fbs_list
+    path: /v3/posting/fbs/list
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-08-31
+    replacement_present: false
+    replacement_path: /v4/posting/fbs/list
+  - operation_id: ozon_post_v1_posting_digital_list
+    path: /v1/posting/digital/list
+    lifecycle: shutdown_passed
+    shutdown_date: 2026-08-31
+    replacement_present: false
+    replacement_path: /v2/posting/digital/list
+
+pending_shutdown_not_blocked_yet:
+  - operation_id: ozon_finance_transactions
+    path: /v3/finance/transaction/list
+    shutdown_date: 2026-09-08
+    action: migrate_before_shutdown_then_block
+  - operation_id: ozon_finance_totals
+    path: /v3/finance/transaction/totals
+    shutdown_date: 2026-09-08
+    action: migrate_before_shutdown_then_block
+
+policy_candidate:
+  - Generic schema-driven tools should reject a blocklisted operation_id with a structured retired_endpoint response and replacement metadata rather than attempt an upstream request.
+  - Specialized tools must not route through a blocklisted endpoint.
+  - A retired entry may remain in historical inventory for provenance, but must not be executable after its shutdown/removal is verified.
+  - Production adoption requires tests and an explicit canonical app change after the active limiter/range task is complete.
