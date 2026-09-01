@@ -23,10 +23,10 @@ high_priority:
     lifecycle:
       status: shutdown_date_passed
       shutdown_date: 2026-08-31
-    replacements:
-      - /v4/posting/fbs/unfulfilled/list
+    replacement:
+      path: /v4/posting/fbs/unfulfilled/list
+      present_in_project_catalog: false
     action: immediate_contract_migration_audit
-    reason: Current project still points at v3 on 2026-09-01, after the officially announced shutdown date.
 
   - current_project_operation_id: ozon_fbs_list
     current_path: /v3/posting/fbs/list
@@ -39,9 +39,155 @@ high_priority:
     lifecycle:
       status: shutdown_date_passed
       shutdown_date: 2026-08-31
-    replacements:
-      - /v4/posting/fbs/list
+    replacement:
+      path: /v4/posting/fbs/list
+      present_in_project_catalog: false
+      response_shape_changed: true
+      pagination_changed: true
     action: immediate_contract_migration_audit
+
+  - current_project_operation_id: ozon_fbo_list
+    current_path: /v2/posting/fbo/list
+    current_project_status: implemented
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-08-31
+      verification: official_OzonSellerAPI_notification
+    replacement:
+      path: /v3/posting/fbo/list
+      present_in_project_catalog: false
+    action: immediate_contract_migration_audit
+
+  - current_project_operation_id: ozon_post_v1_posting_digital_list
+    current_path: /v1/posting/digital/list
+    current_project_status: implemented
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-08-31
+      verification: official_OzonSellerAPI_notification
+    replacement:
+      path: /v2/posting/digital/list
+      present_in_project_catalog: false
+    action: immediate_contract_migration_audit
+
+  - current_project_operation_id: ozon_stocks_by_warehouse_fbs
+    current_path: /v1/product/info/stocks-by-warehouse/fbs
+    current_project_status: implemented
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-04-07
+      verification: official_OzonSellerAPI_notification
+    replacement:
+      current_project_operation_id: ozon_post_v2_product_info_stocks_by_warehouse_fbs
+      path: /v2/product/info/stocks-by-warehouse/fbs
+      present_in_project_catalog: true
+    action: block_old_version_and_route_to_existing_v2_contract
+
+  - current_project_operation_id: ozon_get_list_of_delivery_methods
+    current_path: /v1/delivery-method/list
+    current_project_status: auto_imported_unverified
+    current_project_safety: write
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-04-07
+      verification: official_OzonSellerAPI_notification
+    replacement:
+      current_project_operation_id: ozon_post_v2_delivery_method_list
+      path: /v2/delivery-method/list
+      present_in_project_catalog: true
+      safety: read
+    action: block_old_version_and_fix_semantic_safety_inventory
+
+  - current_project_operation_id: ozon_get_list_of_warehouses
+    current_path: /v1/warehouse/list
+    current_project_status: auto_imported_unverified
+    lifecycle:
+      status: shutdown_date_passed
+      shutdown_date: 2026-04-07
+      verification: official_OzonSellerAPI_notification
+    replacement:
+      current_project_operation_id: ozon_post_v2_warehouse_list
+      path: /v2/warehouse/list
+      present_in_project_catalog: true
+      safety: read
+    action: block_old_version_and_route_to_existing_v2_contract
+
+  - current_project_operation_id: ozon_list_4
+    current_path: /v2/chat/list
+    current_project_status: auto_imported_unverified
+    current_project_safety: write
+    lifecycle:
+      status: removed_from_documentation
+      official_notification_date: 2026-06-09
+      verification: official_OzonSellerAPI_notification
+    replacement:
+      current_project_operation_id: ozon_post_v3_chat_list
+      path: /v3/chat/list
+      present_in_project_catalog: true
+      safety: read
+      pagination: cursor
+    action: block_v2_and_fix_semantic_safety_inventory
+
+  - current_project_operation_id: ozon_create_supply_draft
+    current_path: /v1/draft/create
+    lifecycle: &draft_v1_retired
+      status: shutdown_date_passed
+      shutdown_date: 2026-03-16
+      verification: official_OzonSellerAPI_notification
+    replacement_family:
+      - /v1/draft/crossdock/create
+      - /v1/draft/direct/create
+      - /v1/draft/multi-cluster/create
+      - /v2/draft/create/info
+      - /v2/draft/timeslot/info
+      - /v2/draft/supply/create
+      - /v2/draft/supply/create/status
+    action: block_v1_legacy_flow_and_map_intent_to_current_fbo_flow
+
+  - current_project_operation_id: ozon_get_supply_draft_info
+    current_path: /v1/draft/create/info
+    lifecycle: *draft_v1_retired
+    replacement:
+      current_project_operation_id: ozon_post_v2_draft_create_info
+      path: /v2/draft/create/info
+      present_in_project_catalog: true
+    action: block_v1_and_route_to_existing_v2_contract
+
+  - current_project_operation_id: ozon_get_draft_timeslots
+    current_path: /v1/draft/timeslot/info
+    lifecycle: *draft_v1_retired
+    replacement:
+      current_project_operation_id: ozon_post_v2_draft_timeslot_info
+      path: /v2/draft/timeslot/info
+      present_in_project_catalog: true
+    action: block_v1_and_route_to_existing_v2_contract
+
+  - current_project_operation_id: ozon_post_v1_draft_timeslot_info
+    current_path: /v1/draft/timeslot/info
+    lifecycle: *draft_v1_retired
+    replacement:
+      current_project_operation_id: ozon_post_v2_draft_timeslot_info
+      path: /v2/draft/timeslot/info
+      present_in_project_catalog: true
+    action: block_duplicate_v1_contract
+
+  - current_project_operation_id: ozon_create_supply_from_draft
+    current_path: /v1/draft/supply/create
+    lifecycle: *draft_v1_retired
+    replacement:
+      current_project_operation_id: ozon_post_v2_draft_supply_create
+      path: /v2/draft/supply/create
+      present_in_project_catalog: true
+    action: block_v1_and_route_to_existing_v2_contract
+
+  - current_project_operation_id: ozon_post_v1_draft_supply_create_status
+    current_path: /v1/draft/supply/create/status
+    lifecycle: *draft_v1_retired
+    replacement:
+      current_project_operation_id: ozon_post_v2_draft_supply_create_status
+      path: /v2/draft/supply/create/status
+      present_in_project_catalog: true
+    action: block_v1_and_route_to_existing_v2_contract
 
   - current_project_operation_id: ozon_finance_transactions
     current_path: /v3/finance/transaction/list
@@ -55,6 +201,8 @@ high_priority:
       - /v1/finance/accrual/postings
       - /v1/finance/accrual/types
       - /v1/finance/accrual/by-day
+    current_replacement_presence:
+      by_day: false
     action: urgent_schema_and_semantics_migration_audit
 
   - current_project_operation_id: ozon_finance_totals
@@ -76,9 +224,7 @@ replacement_observations:
     method: POST
     provisional_operation_id: GetFinanceAccrualByDay
     pagination: last_id
-    request_fields:
-      - date
-      - last_id
+    request_fields: [date, last_id]
     known_2026_changes:
       - date: 2026-06-09
         change: response field accruals.type_id renamed to accruals.accrual_id
@@ -92,12 +238,16 @@ replacement_observations:
 
 project_catalog_quality_findings:
   - finding: Several auto-imported Ozon operations are explicitly marked UNVERIFIED in ozon_mcp/endpoints.yaml.
-    implication: They must not be promoted to authoritative API-registry records until matched to the pinned/current OpenAPI operation and request schema.
+    implication: They must not be treated as authoritative contracts until matched to current OpenAPI.
   - finding: HTTP POST is not evidence of a mutating Ozon operation.
-    implication: Ozon OpenAPI contains many read-only operations implemented as POST; safety classification must be derived from operation semantics, not HTTP verb alone.
+    examples:
+      - old /v1/delivery-method/list is classified write while its v2 replacement is read
+      - old /v2/chat/list is classified write while /v3/chat/list is read
+      - v2 draft info/timeslot/status methods are read-semantic although some implementation entries are classified write
+    implication: safety classification needs a semantic audit, not HTTP-verb inference.
 
 rules:
-  - Do not automatically replace old finance methods one-for-one: new accrual API returns different semantics and requires explicit aggregation/mapping validation.
+  - Shutdown-passed endpoints must become ineligible for generic selection before any production deletion.
+  - Do not automatically replace old finance methods one-for-one: accrual API semantics require explicit aggregation validation.
   - Keep unknown accrual identifiers fail-visible; never silently drop them from totals.
-  - Before production migration, prefer a current official Ozon Swagger browser export; if unavailable, pin exact mirror commit/checksum and mark schema details provisional until official capture is stored.
-  - Do not infer read/write safety from POST. Verify each Ozon operation from OpenAPI description and semantics.
+  - Prefer a current official Ozon Swagger browser export before final production schema migration; otherwise retain pinned mirror provenance.
