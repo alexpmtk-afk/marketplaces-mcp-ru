@@ -178,6 +178,23 @@ end
 return blocked_until
 """
 
+_REDIS_TRY_RESERVE_LUA = r"""
+local now_parts = redis.call('TIME')
+local now_ms = tonumber(now_parts[1]) * 1000 + math.floor(tonumber(now_parts[2]) / 1000)
+local next_ms = now_ms
+for i, key in ipairs(KEYS) do
+  local current = tonumber(redis.call('GET', key) or '0')
+  if current > next_ms then next_ms = current end
+end
+if next_ms > now_ms then return {0, next_ms - now_ms} end
+for i, key in ipairs(KEYS) do
+  local interval_ms = tonumber(ARGV[i])
+  local ttl_ms = math.max(60000, interval_ms * 11)
+  redis.call('SET', key, tostring(now_ms + interval_ms), 'PX', math.floor(ttl_ms))
+end
+return {1, 0}
+"""
+
 
 class GlobalRateController:
     def __init__(self, *, redis_url: Optional[str] = None,
@@ -219,6 +236,42 @@ class GlobalRateController:
                 await asyncio.sleep(delay)
                 total_delay += delay
         return total_delay
+
+    async def try_acquire(self, rules: Iterable[RateRule]) -> tuple[bool, float]:
+        """Reserve all slots now, or return the retry delay without queueing.
+
+        This is for interactive paths where sleeping until a marketplace window
+        opens would make an MCP request appear hung.
+        """
+        normalized = [rule for rule in rules if rule.interval_seconds > 0]
+        if not normalized:
+            return True, 0.0
+        try:
+            if self.redis_url:
+                return await self._try_reserve_redis(normalized)
+            return await asyncio.to_thread(self._try_reserve_sqlite, normalized)
+        except RateLimitUnavailable:
+            raise
+        except Exception as exc:
+            raise RateLimitUnavailable(
+                f"{self.backend} rate-limit backend unavailable: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
+
+    async def cache_get(self, key: str) -> Optional[str]:
+        """Fetch an optional shared result cache entry without exposing keys."""
+        if not self.redis_url:
+            return None
+        client = await self._redis_client()
+        value = await client.get(key)
+        return str(value) if value is not None else None
+
+    async def cache_set(self, key: str, value: str, ttl_seconds: int) -> None:
+        """Store an optional shared result cache entry with an explicit TTL."""
+        if not self.redis_url:
+            return
+        client = await self._redis_client()
+        await client.set(key, value, ex=max(1, int(ttl_seconds)))
 
     async def defer(self, rules: Iterable[RateRule], seconds: float) -> None:
         keys = [r.key for r in rules]
@@ -319,6 +372,15 @@ class GlobalRateController:
         client = await self._redis_client()
         await client.eval(_REDIS_DEFER_LUA, len(keys), *keys, max(1, round(seconds * 1000)))
 
+    async def _try_reserve_redis(self, rules: list[RateRule]) -> tuple[bool, float]:
+        client = await self._redis_client()
+        result = await client.eval(
+            _REDIS_TRY_RESERVE_LUA, len(rules),
+            *[rule.key for rule in rules],
+            *[max(1, round(rule.interval_seconds * 1000)) for rule in rules],
+        )
+        return bool(int(result[0])), float(result[1]) / 1000.0
+
     def _connect_sqlite(self) -> sqlite3.Connection:
         self.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.sqlite_path), timeout=30.0)
@@ -362,6 +424,32 @@ class GlobalRateController:
                     (key, target),
                 )
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def _try_reserve_sqlite(self, rules: list[RateRule]) -> tuple[bool, float]:
+        conn = self._connect_sqlite()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            now = time.time()
+            rows = [conn.execute(
+                "SELECT next_at FROM rate_slots WHERE limiter_key = ?", (rule.key,)
+            ).fetchone() for rule in rules]
+            next_at = max([now] + [float(row[0]) for row in rows if row])
+            if next_at > now:
+                conn.rollback()
+                return False, next_at - now
+            for rule in rules:
+                conn.execute(
+                    "INSERT INTO rate_slots(limiter_key, next_at) VALUES(?, ?) "
+                    "ON CONFLICT(limiter_key) DO UPDATE SET next_at=excluded.next_at",
+                    (rule.key, now + rule.interval_seconds),
+                )
+            conn.commit()
+            return True, 0.0
         except Exception:
             conn.rollback()
             raise

@@ -285,6 +285,19 @@ class CredentialStore:
         source = str(active) if active in cabs else ("env" if any(env_creds.values()) else "none")
         return merged, source
 
+    def resolve_named(self, service: str, fields: list[str],
+                      env_map: dict[str, str], name: str = "") -> tuple[dict, str]:
+        """Resolve one named cabinet without changing the shared active cabinet."""
+        if not name.strip():
+            return self.resolve(service, fields, env_map)
+        data = self._load()
+        svc = data.get(service, {}) if isinstance(data, dict) else {}
+        cabs = svc.get("cabinets", {}) if isinstance(svc, dict) else {}
+        stored = cabs.get(name) if isinstance(cabs, dict) else None
+        if not isinstance(stored, dict):
+            return {}, ""
+        return {field: stored.get(field, "") for field in fields}, name
+
     def missing(self, service: str, fields: list[str],
                 env_map: dict[str, str]) -> list[str]:
         creds, _ = self.resolve(service, fields, env_map)

@@ -286,6 +286,9 @@ class MarketplaceClient:
         rate_scope: str = "",
         timeout: float = DEFAULT_TIMEOUT,
         creds_override: Optional[dict[str, str]] = None,
+        rate_limit_preacquired: bool = False,
+        retry_on_transport: bool = True,
+        retry_on_429: bool = True,
     ) -> dict:
         """Execute one HTTP request with 429 backoff. Returns a dict:
         success -> {"ok": True, "status": int, "data": <parsed json|text>}
@@ -344,17 +347,18 @@ class MarketplaceClient:
 
         attempt = 0
         while True:
-            try:
-                await self.rate_controller.acquire(rules)
-            except RateLimitUnavailable as exc:
-                return make_error(
-                    "rate_limit",
-                    f"Global request controller unavailable; HTTP request was "
-                    f"not sent: {exc}",
-                    operation_id=operation_id,
-                    endpoint=path,
-                    retryable=True,
-                )
+            if not rate_limit_preacquired:
+                try:
+                    await self.rate_controller.acquire(rules)
+                except RateLimitUnavailable as exc:
+                    return make_error(
+                        "rate_limit",
+                        f"Global request controller unavailable; HTTP request was "
+                        f"not sent: {exc}",
+                        operation_id=operation_id,
+                        endpoint=path,
+                        retryable=True,
+                    )
             try:
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     resp = await client.request(
@@ -373,7 +377,7 @@ class MarketplaceClient:
                     exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout))
                 read_phase = isinstance(exc, (httpx.ReadTimeout, httpx.WriteTimeout))
                 safe_verb = method.upper() in ("GET", "HEAD")
-                if attempt < MAX_RETRIES and (connect_phase or (read_phase and safe_verb)):
+                if retry_on_transport and attempt < MAX_RETRIES and (connect_phase or (read_phase and safe_verb)):
                     await asyncio.sleep(BACKOFF_BASE * (2**attempt))
                     attempt += 1
                     continue
@@ -385,7 +389,7 @@ class MarketplaceClient:
             if resp.status_code == 401 and self.config.is_oauth:
                 self._invalidate_token(creds or {})
 
-            if resp.status_code == 429 and attempt < MAX_RETRIES:
+            if resp.status_code == 429 and retry_on_429 and attempt < MAX_RETRIES:
                 delay = min(_marketplace_retry_delay(resp, attempt), 3600.0)
                 try:
                     await self.rate_controller.defer(rules, delay)
@@ -468,6 +472,9 @@ class MarketplaceClient:
         query: Optional[dict[str, Any]] = None,
         json_body: Optional[Any] = None,
         creds_override: Optional[dict[str, str]] = None,
+        rate_limit_preacquired: bool = False,
+        retry_on_transport: bool = True,
+        retry_on_429: bool = True,
     ) -> dict:
         try:
             path = spec.render_path(path_values or {})
@@ -489,6 +496,9 @@ class MarketplaceClient:
             rate_limit=spec.rate_limit,
             rate_scope=spec.scope,
             creds_override=creds_override,
+            rate_limit_preacquired=rate_limit_preacquired,
+            retry_on_transport=retry_on_transport,
+            retry_on_429=retry_on_429,
         )
 
 
