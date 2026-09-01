@@ -1,0 +1,51 @@
+registry_version: 0.1-research
+marketplace: ozon
+verification_date: 2026-09-01
+source_access_note: Official Seller API page currently enters redirect loop for this research client; deprecation dates are taken from Ozon Seller API notification channel and must be cross-checked against the current official Swagger export before production migration.
+
+high_priority:
+  - current_project_operation_id: ozon_finance_transactions
+    current_path: /v3/finance/transaction/list
+    current_project_status: implemented
+    lifecycle:
+      status: deprecated_announced
+      shutdown_date: 2026-09-08
+      notice_date: 2026-07-14
+    replacements:
+      - /v1/finance/accrual/postings
+      - /v1/finance/accrual/types
+      - /v1/finance/accrual/by-day
+    action: urgent_schema_and_semantics_migration_audit
+
+  - current_project_operation_id: ozon_finance_totals
+    current_path: /v3/finance/transaction/totals
+    current_project_status: implemented
+    lifecycle:
+      status: deprecated_announced
+      shutdown_date: 2026-09-08
+      notice_date: 2026-07-14
+    replacements:
+      - /v1/finance/accrual/postings
+      - /v1/finance/accrual/types
+      - /v1/finance/accrual/by-day
+    action: urgent_schema_and_semantics_migration_audit
+
+replacement_observations:
+  - path: /v1/finance/accrual/by-day
+    method: POST
+    provisional_operation_id: GetFinanceAccrualByDay
+    pagination: last_id
+    request_fields:
+      - date
+      - last_id
+    known_2026_changes:
+      - date: 2026-06-09
+        change: response field accruals.type_id renamed to accruals.accrual_id
+      - date: 2026-07-30
+        change: request descriptions for date/last_id updated; response added accruals.container_fees and updated last_id/accrued_category descriptions
+    verification_status: secondary_mirror_plus_official_change_notifications
+
+rules:
+  - Do not automatically replace old finance methods one-for-one: new accrual API returns different semantics and requires explicit aggregation/mapping validation.
+  - Keep unknown accrual identifiers fail-visible; never silently drop them from totals.
+  - Before production migration capture the current official Ozon Swagger/OpenAPI source and pin its checksum/retrieval date.
