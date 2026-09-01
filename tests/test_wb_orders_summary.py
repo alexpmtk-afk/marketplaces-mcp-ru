@@ -12,7 +12,7 @@ from wb_mcp import server
 
 class FakeStore:
     def resolve_named(self, service, fields, env_map, name):
-        if service == "wb" and name == "DTE":
+        if service == "wb" and name == "wb_dmitrieva":
             return {"token": "very-secret-wb-token"}, "DTE"
         return {}, ""
 
@@ -124,6 +124,29 @@ class OrdersSummaryTests(unittest.TestCase):
         encoded = json.dumps(result)
         self.assertNotIn("very-secret-wb-token", encoded)
         self.assertNotIn("very-secret-wb-token", controller.cache_get_key)
+
+    def test_known_dte_without_credentials_skips_upstream_request(self):
+        class NoCredentialsStore:
+            def resolve_named(self, service, fields, env_map, name):
+                self.requested_name = name
+                return {}, ""
+
+        controller = FakeRateController()
+        fake = FakeClient([], controller)
+        fake.config.store = NoCredentialsStore()
+        with patch.object(server, "client", fake):
+            raw = asyncio.run(server.wb_get_orders_summary(
+                "DTE", "2026-08-31", "2026-08-31"
+            ))
+        result = json.loads(raw)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "seller_known_but_not_configured")
+        self.assertEqual(result["details"]["business_entity"], "ИП Дмитриева")
+        self.assertEqual(result["details"]["cabinet"], "wb_dmitrieva")
+        self.assertEqual(result["details"]["credentials_status"], "not_configured")
+        self.assertFalse(result["details"]["upstream_request_sent"])
+        self.assertEqual(fake.config.store.requested_name, "wb_dmitrieva")
+        self.assertEqual(fake.calls, [])
 
 
 if __name__ == "__main__":

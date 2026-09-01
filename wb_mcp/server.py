@@ -24,6 +24,7 @@ from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
+from core.business_registry import resolve_business_cabinet
 from core.client import MarketplaceClient, ServiceConfig
 from core.entities import EntityIndex
 from core.errors import make_error
@@ -228,10 +229,27 @@ async def wb_get_orders_summary(seller: str, date_from: str, date_to: str) -> st
             retryable=False,
         ))
 
+    business_cabinet = resolve_business_cabinet("wb", seller)
+    credential_name = business_cabinet.cabinet if business_cabinet else seller
     creds, resolved_seller = client.config.store.resolve_named(
-        "wb", client.config.fields, client.config.env_map, seller
+        "wb", client.config.fields, client.config.env_map, credential_name
     )
     if not resolved_seller or any(not creds.get(field) for field in client.config.fields):
+        if business_cabinet:
+            return _j(make_error(
+                "seller_known_but_not_configured",
+                f"Кабинет {business_cabinet.business_entity} известен, но доступ "
+                "Wildberries для него ещё не настроен.",
+                operation_id="wb_get_orders_summary",
+                retryable=False,
+                details={
+                    "seller": seller,
+                    "business_entity": business_cabinet.business_entity,
+                    "cabinet": business_cabinet.cabinet,
+                    "credentials_status": "not_configured",
+                    "upstream_request_sent": False,
+                },
+            ))
         return _j(make_error(
             "invalid_params", f"WB cabinet {seller!r} was not found or is incomplete.",
             operation_id="wb_get_orders_summary", retryable=False,

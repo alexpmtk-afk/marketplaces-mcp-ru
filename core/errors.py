@@ -22,6 +22,7 @@ ERROR_TYPES = (
     "timeout",         # network timeout
     "network",         # connection failure
     "safety_gate",     # blocked locally before the call left the machine
+    "seller_known_but_not_configured",  # business cabinet exists but has no credentials
     "unknown",
 )
 
