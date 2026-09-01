@@ -52,12 +52,12 @@ jobs:
 
       - name: Commit generated registry snapshot
         run: |
-          if git diff --quiet -- api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/sources/SOURCES.json; then
-            echo 'Registry snapshot unchanged.'
-            exit 0
-          fi
           git config user.name 'api-registry-bot'
           git config user.email 'api-registry-bot@users.noreply.github.com'
           git add api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/sources/SOURCES.json
+          if git diff --cached --quiet; then
+            echo 'Registry snapshot unchanged.'
+            exit 0
+          fi
           git commit -m 'api-registry: refresh current endpoint snapshot [skip ci]'
           git push origin HEAD:api-map/2026-09-01
