@@ -1,0 +1,63 @@
+name: API registry refresh
+
+on:
+  push:
+    branches:
+      - api-map/2026-09-01
+    paths:
+      - scripts/build_api_registry_snapshot.py
+      - .github/workflows/api-registry-refresh.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install registry parser dependency
+        run: python -m pip install 'pyyaml>=6,<7'
+
+      - name: Build current registry and diff
+        run: python scripts/build_api_registry_snapshot.py
+
+      - name: Validate generated JSON
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          summary = json.loads(Path('api_registry/audit/summary.json').read_text(encoding='utf-8'))
+          assert summary['baseline_total'] == 793, summary
+          assert summary['current_snapshot_total'] > 0, summary
+          for name in ('wildberries', 'ozon_seller', 'ozon_performance'):
+              assert summary['diffs'][name]['current_snapshot_count'] > 0, (name, summary)
+          print(json.dumps({
+              'baseline_total': summary['baseline_total'],
+              'current_snapshot_total': summary['current_snapshot_total'],
+              'current_active_total': summary['current_active_total'],
+              'counts': {k: v['current_snapshot_count'] for k, v in summary['diffs'].items()},
+              'new_vs_baseline': {k: len(v['current_not_in_baseline']) for k, v in summary['diffs'].items()},
+              'baseline_not_in_current': {k: len(v['baseline_not_in_current']) for k, v in summary['diffs'].items()},
+          }, ensure_ascii=False, indent=2))
+          PY
+          git diff --check
+
+      - name: Commit generated registry snapshot
+        run: |
+          if git diff --quiet -- api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/sources/SOURCES.json; then
+            echo 'Registry snapshot unchanged.'
+            exit 0
+          fi
+          git config user.name 'api-registry-bot'
+          git config user.email 'api-registry-bot@users.noreply.github.com'
+          git add api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/sources/SOURCES.json
+          git commit -m 'api-registry: refresh current endpoint snapshot [skip ci]'
+          git push origin HEAD:api-map/2026-09-01
