@@ -1,0 +1,96 @@
+registry_version: 0.1-research
+
+# Только сведения, которые прошли отдельную проверку по официальному источнику
+# или по пинованному зеркалу официального OpenAPI. Значения здесь дополняют
+# implementation inventory, но не меняют production-код.
+overrides:
+  wildberries:wb_stats_orders:
+    verification:
+      implementation_inventory: true
+      official_contract_verified: true
+      verified_at: 2026-09-01
+      source_ids:
+        - wb_official_reports
+        - wb_browser_capture_missial_20260819
+    contract:
+      retention_days_max: 90
+      freshness_minutes_approx: 30
+      rate_limit:
+        scope: seller_account_method
+        requests: 1
+        period_seconds: 60
+        interval_seconds: 60
+        burst: 1
+      flag_0:
+        selection_basis: lastChangeDate
+        row_limit: 80000
+        continuation: dateFrom=full lastChangeDate of last returned row
+      optimization:
+        multi_day_single_upstream_candidate: true
+        completeness_guard_required: true
+        preferred_mcp_tool: wb_get_orders_summary
+        generic_fallback_for_daily_summary: false
+
+  ozon:ozon_fbs_unfulfilled:
+    verification:
+      implementation_inventory: true
+      official_contract_verified: false
+      mirror_contract_verified: true
+      verified_at: 2026-09-01
+      source_ids:
+        - ozon_swagger_mirror_missial_20260819
+    lifecycle:
+      current_project_path_status: deprecated
+      replacement_path: /v4/posting/fbs/unfulfilled/list
+      priority: critical
+
+  ozon:ozon_fbs_list:
+    verification:
+      implementation_inventory: true
+      official_contract_verified: false
+      mirror_contract_verified: true
+      verified_at: 2026-09-01
+      source_ids:
+        - ozon_swagger_mirror_missial_20260819
+    lifecycle:
+      current_project_path_status: deprecated
+      replacement_path: /v4/posting/fbs/list
+      priority: critical
+
+  ozon:ozon_finance_transactions:
+    verification:
+      implementation_inventory: true
+      official_contract_verified: false
+      mirror_contract_verified: true
+      verified_at: 2026-09-01
+      source_ids:
+        - ozon_swagger_mirror_missial_20260819
+        - ozon_api_notifications
+    lifecycle:
+      status: shutdown_announced
+      shutdown_date: 2026-09-08
+      priority: critical
+      replacement_family:
+        - /v1/finance/accrual/postings
+        - /v1/finance/accrual/types
+        - /v1/finance/accrual/by-day
+      semantic_one_to_one_replacement: false
+
+  ozon:ozon_finance_totals:
+    verification:
+      implementation_inventory: true
+      official_contract_verified: false
+      mirror_contract_verified: true
+      verified_at: 2026-09-01
+      source_ids:
+        - ozon_swagger_mirror_missial_20260819
+        - ozon_api_notifications
+    lifecycle:
+      status: shutdown_announced
+      shutdown_date: 2026-09-08
+      priority: critical
+      replacement_family:
+        - /v1/finance/accrual/postings
+        - /v1/finance/accrual/types
+        - /v1/finance/accrual/by-day
+      semantic_one_to_one_replacement: false
