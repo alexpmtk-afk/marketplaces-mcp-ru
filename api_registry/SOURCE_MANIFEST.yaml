@@ -1,0 +1,66 @@
+registry_version: 0.1-research
+updated_at: 2026-09-04
+
+sources:
+  - id: wb_official_docs
+    marketplace: wildberries
+    type: official_documentation
+    url: https://dev.wildberries.ru/
+    trust: authoritative
+    access_status: partial
+    notes: >-
+      Public documentation is authoritative. Automated retrieval is not always stable,
+      so every imported fact must retain its specific page URL and verification date.
+
+  - id: wb_project_catalog
+    marketplace: wildberries
+    type: implemented_catalog
+    repository_path: wb_mcp/endpoints.yaml
+    trust: inventory_only
+    access_status: available
+    notes: >-
+      Shows what the current MCP implements. It is not sufficient proof that the
+      endpoint, limit or lifecycle is still current.
+
+  - id: ozon_official_docs
+    marketplace: ozon
+    type: official_documentation
+    url: https://docs.ozon.ru/api/seller/
+    trust: authoritative
+    access_status: restricted_for_research_client
+    notes: >-
+      Direct automated retrieval currently redirects/blocks intermittently. Prefer an
+      official Swagger/OpenAPI export when obtainable.
+
+  - id: ozon_official_notifications
+    marketplace: ozon
+    type: official_change_log
+    url: https://t.me/s/OzonSellerAPI
+    trust: authoritative_for_announced_changes
+    access_status: available
+    notes: >-
+      Useful for deprecations and schema-change dates. It does not replace the full
+      current Swagger schema.
+
+  - id: ozon_project_catalog
+    marketplace: ozon
+    type: implemented_catalog
+    repository_path: ozon_mcp/endpoints.yaml
+    trust: inventory_only
+    access_status: available
+    notes: >-
+      Current MCP inventory; must be drift-checked against official sources.
+
+verification_policy:
+  production_eligible:
+    - official_openapi_or_swagger
+    - official_documentation
+    - official_change_notification
+  provisional_only:
+    - project_catalog_without_external_verification
+    - third_party_mirror
+  required_fields_per_fact:
+    - source_id
+    - source_locator
+    - verified_at
+    - verification_status
