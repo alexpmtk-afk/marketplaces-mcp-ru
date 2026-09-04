@@ -1,0 +1,139 @@
+registry_version: 0.1-research
+marketplace: ozon
+updated_at: 2026-09-04
+
+operations:
+  - operation_id: ozon_product_list
+    method: POST
+    host: api-seller.ozon.ru
+    path: /v3/product/list
+    section: products
+    safety: read
+    project_catalog:
+      pagination: last_id
+      params:
+        - filter
+        - limit
+        - last_id
+    verification:
+      status: project_inventory_pending_official_swagger
+      source: ozon_project_catalog
+      verified_at: 2026-09-04
+
+  - operation_id: ozon_fbs_list
+    method: POST
+    host: api-seller.ozon.ru
+    path: /v3/posting/fbs/list
+    section: orders_fbs
+    safety: read
+    project_catalog:
+      pagination: offset
+      period_note: <=1yr
+      params:
+        - filter.since
+        - filter.to
+        - filter.status
+        - limit
+        - offset
+    official_change_log:
+      - date: 2026-07-22
+        change: >-
+          Added filter.integration_type_flow to request and integration_type_flow /
+          sorting_center fields to response.
+        source: ozon_official_notifications
+    verification:
+      status: official_change_log_plus_project_inventory
+      verified_at: 2026-09-04
+
+  - operation_id: ozon_analytics_data
+    method: POST
+    host: api-seller.ozon.ru
+    path: /v1/analytics/data
+    section: analytics
+    safety: read
+    project_catalog:
+      pagination: offset
+      params:
+        - date_from
+        - date_to
+        - dimension[]
+        - metrics[]
+        - limit
+        - offset
+    optimization:
+      notes: >-
+        Strong candidate for multi-metric aggregation in one upstream request because
+        the contract accepts arrays of dimensions and metrics plus an explicit date range.
+        Exact metric compatibility and response limits must be confirmed from the current
+        official Swagger before MCP planner rules are generated.
+    verification:
+      status: project_inventory_pending_official_swagger
+      verified_at: 2026-09-04
+      source: ozon_project_catalog
+
+  - operation_id: ozon_finance_transactions
+    method: POST
+    host: api-seller.ozon.ru
+    path: /v3/finance/transaction/list
+    section: finance
+    safety: read
+    lifecycle:
+      status: deprecated_announced
+      shutdown_date: 2026-09-08
+      notice_date: 2026-07-14
+    replacements:
+      - /v1/finance/accrual/postings
+      - /v1/finance/accrual/types
+      - /v1/finance/accrual/by-day
+    verification:
+      status: official_change_log_verified
+      verified_at: 2026-09-04
+      source: ozon_official_notifications
+
+  - operation_id: ozon_finance_totals
+    method: POST
+    host: api-seller.ozon.ru
+    path: /v3/finance/transaction/totals
+    section: finance
+    safety: read
+    lifecycle:
+      status: deprecated_announced
+      shutdown_date: 2026-09-08
+      notice_date: 2026-07-14
+    replacements:
+      - /v1/finance/accrual/postings
+      - /v1/finance/accrual/types
+      - /v1/finance/accrual/by-day
+    verification:
+      status: official_change_log_verified
+      verified_at: 2026-09-04
+      source: ozon_official_notifications
+
+  - provisional_operation_id: ozon_finance_accrual_by_day
+    method: POST
+    host: api-seller.ozon.ru
+    path: /v1/finance/accrual/by-day
+    section: finance
+    safety: read
+    known_change_log:
+      - date: 2026-06-09
+        change: accruals.type_id renamed to accruals.accrual_id
+      - date: 2026-07-21
+        change: response documentation for delivery services updated
+      - date: 2026-07-30
+        change: >-
+          request descriptions for date/last_id updated; response added
+          accruals.container_fees and updated last_id/accrued_category descriptions
+    migration_rule: >-
+      Do not treat this as a one-for-one replacement for transaction totals until the
+      current official Swagger schema and financial aggregation semantics are pinned.
+    verification:
+      status: official_change_log_verified_schema_incomplete
+      verified_at: 2026-09-04
+      source: ozon_official_notifications
+
+priority_actions:
+  - before: 2026-09-08
+    action: obtain_current_official_ozon_swagger_and_validate_finance_migration
+  - action: build_metric_batching_matrix_for_ozon_analytics_data
+  - action: drift_check_project_catalog_against_official_swagger
