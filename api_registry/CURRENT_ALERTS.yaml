@@ -1,0 +1,58 @@
+updated_at: 2026-09-04
+
+alerts:
+  - marketplace: ozon
+    severity: critical
+    type: deprecation_deadline
+    effective_date: 2026-09-08
+    affected:
+      - /v3/finance/transaction/list
+      - /v3/finance/transaction/totals
+    replacements:
+      - /v1/finance/accrual/postings
+      - /v1/finance/accrual/types
+      - /v1/finance/accrual/by-day
+    source: ozon_official_notifications
+    verification_status: official_change_log_verified
+
+  - marketplace: ozon
+    severity: high
+    type: credential_lifecycle_change
+    effective_date: 2026-09-03
+    change: New Seller API keys have a 3-month lifetime.
+    source: ozon_official_notifications
+    verification_status: official_change_log_verified
+    impact: >-
+      Credential rotation/expiry monitoring should be represented in the MCP operational
+      runbook. This is not an endpoint-schema change but can cause sudden authentication
+      failures if ignored.
+
+  - marketplace: ozon
+    severity: medium
+    type: data_freshness_change
+    effective_date: 2026-08-17
+    affected:
+      - /v1/analytics/stocks
+    change: Method now returns stock information in real time instead of twice-daily updates.
+    source: ozon_official_notifications
+    verification_status: official_change_log_verified
+
+  - marketplace: ozon
+    severity: medium
+    type: pagination_change_announced
+    affected:
+      - /v1/product/certificate/products/list
+    change: page and page_size pagination parameters are becoming deprecated.
+    source: ozon_official_notifications
+    verification_status: official_change_log_verified
+    action: obtain_current_official_swagger_for_replacement_cursor_contract
+
+  - marketplace: ozon
+    severity: informational
+    type: maintenance
+    effective_window: 2026-09-04T10:00:00+03:00/2026-09-04T12:00:00+03:00
+    affected:
+      - /v1/product/digital/stocks/import
+    change: Planned maintenance; digital stock import temporarily unavailable.
+    source: ozon_official_notifications
+    verification_status: official_change_log_verified
