@@ -1,0 +1,122 @@
+registry_version: 0.1-research
+marketplace: wildberries
+updated_at: 2026-09-04
+
+operations:
+  - operation_id: wb_stats_orders
+    method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/orders
+    section: statistics
+    safety: read
+    project_catalog:
+      rate_limit: 1 req/min
+      pagination: lastchangedate
+      params:
+        - dateFrom
+        - flag
+    semantics:
+      flag_1: exact_calendar_date_mode
+      flag_0: incremental_from_lastChangeDate
+      max_rows_observed_from_official_docs: 80000
+      retention_days: 90
+      freshness_minutes_approx: 30
+    optimization:
+      single_day: flag_1
+      short_multi_day: >-
+        Prefer one flag=0 upstream request from the range start and aggregate by the
+        actual order date when the response is complete and below the continuation
+        boundary. Do not silently return partial totals.
+    mcp:
+      preferred_tool: wb_get_orders_summary
+      generic_fallback_for_daily_summary: forbidden
+    verification:
+      status: official_docs_verified_for_core_semantics
+      verified_at: 2026-09-04
+      source: wb_official_docs
+
+  - operation_id: wb_stats_sales
+    method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/sales
+    section: statistics
+    safety: read
+    project_catalog:
+      rate_limit: 1 req/min
+      pagination: lastchangedate
+      params:
+        - dateFrom
+        - flag
+    verification:
+      status: project_inventory_pending_full_official_recheck
+      verified_at: 2026-09-04
+      source: wb_project_catalog
+
+  - operation_id: wb_stats_stocks
+    method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/stocks
+    section: statistics
+    safety: read
+    project_catalog:
+      rate_limit: 1 req/min
+      pagination: lastchangedate
+      params:
+        - dateFrom
+    verification:
+      status: project_inventory_pending_full_official_recheck
+      verified_at: 2026-09-04
+      source: wb_project_catalog
+
+  - operation_id: wb_stats_incomes
+    method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v1/supplier/incomes
+    section: statistics
+    safety: read
+    project_catalog:
+      rate_limit: 1 req/min
+      pagination: lastchangedate
+      params:
+        - dateFrom
+    verification:
+      status: project_inventory_pending_full_official_recheck
+      verified_at: 2026-09-04
+      source: wb_project_catalog
+
+  - operation_id: wb_report_realization
+    method: GET
+    host: statistics-api.wildberries.ru
+    path: /api/v5/supplier/reportDetailByPeriod
+    section: statistics
+    safety: read
+    project_catalog:
+      rate_limit: 1 req/min
+      pagination: rrdid
+      params:
+        - dateFrom
+        - dateTo
+        - limit
+        - rrdid
+    optimization:
+      notes: >-
+        This method is structurally different from Statistics Orders because it has
+        an explicit dateTo and a financial-report cursor. Do not reuse the orders
+        range strategy blindly.
+    verification:
+      status: project_inventory_pending_full_official_recheck
+      verified_at: 2026-09-04
+      source: wb_project_catalog
+
+rate_limit_audit:
+  issue: >-
+    The current MCP limiter must not assume that operations with the same host,
+    scope and textual rate limit necessarily share one quota. Quota grouping must
+    be derived from explicit official documentation.
+  operations_requiring_group_scope_verification:
+    - wb_stats_orders
+    - wb_stats_sales
+    - wb_stats_stocks
+    - wb_stats_incomes
+    - wb_report_realization
+  expected_safe_default_until_verified: per_operation_id
