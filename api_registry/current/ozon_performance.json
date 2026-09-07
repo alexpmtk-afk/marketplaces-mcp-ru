@@ -1,869 +1,3563 @@
 [
   {
     "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign",
-    "hosts": [
-      "api-performance.ozon.ru:443"
-    ],
     "operation_id": "ListCampaigns",
-    "tags": [
-      "Campaign",
-      "Кампании и рекламируемые объекты"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign/all_sku_promo/activate",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign",
+    "section": "Campaign",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список кампаний",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "page",
+      "confidence": "parameter_detected"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignIds",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uint64"
+            }
+          }
+        },
+        {
+          "name": "advObjectType",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "state",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "CAMPAIGN_STATE_UNKNOWN",
+              "CAMPAIGN_STATE_RUNNING",
+              "CAMPAIGN_STATE_PLANNED",
+              "CAMPAIGN_STATE_STOPPED",
+              "CAMPAIGN_STATE_INACTIVE",
+              "CAMPAIGN_STATE_ARCHIVED",
+              "CAMPAIGN_STATE_MODERATION_DRAFT",
+              "CAMPAIGN_STATE_MODERATION_IN_PROGRESS",
+              "CAMPAIGN_STATE_MODERATION_FAILED",
+              "CAMPAIGN_STATE_FINISHED"
+            ]
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCampaignsList"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ActivateAllSkuPromoCampaign",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign/all_sku_promo/deactivate",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/all_sku_promo/activate",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Включить продвижение в оплате за заказ — все товары",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignActivateAllSkuPromoCampaignResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "DeactivateAllSkuPromoCampaign",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign/all_sku_promo/set_bid",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/all_sku_promo/deactivate",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Выключить продвижение в оплате за заказ — все товары",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "SetAllSkuPromoCampaignBid2",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/cpc/v2/product",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/all_sku_promo/set_bid",
+    "section": "Search-Promo",
+    "scope": "performance",
+    "safety": "UNVERIFIED",
+    "summary": "Установить ставку для продвижения в Оплате за заказ — все товары",
+    "params": {},
+    "pagination": "none_or_response_driven",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "bid",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": false,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "not_in_runtime_baseline",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "CreateProductCampaignCPCV2",
-    "tags": [
-      "Ad",
-      "Оплата за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/search_promo/carrots/disable",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/cpc/v2/product",
+    "section": "Ad",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Создать кампанию с оплатой за клики",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignCreateProductCampaignRequestV2CPC"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignCreateProductCampaignRequestV2CPC"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCampaignID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_BatchDisableCarrots4",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/search_promo/carrots/enable",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/search_promo/carrots/disable",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Отключить продвижение товаров в акции «Морковск»",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignBatchDisableCarrotsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignBatchDisableCarrotsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignBatchDisableCarrotsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_BatchEnableCarrots4",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/search_promo/v2/bids/delete",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/search_promo/carrots/enable",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Включить продвижение товаров в акции «Морковск»",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignBatchEnableCarrotsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignBatchEnableCarrotsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignBatchEnableCarrotsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_DeleteSearchPromoBidsV2",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/search_promo/v2/bids/set",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/search_promo/v2/bids/delete",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "destructive",
+    "summary": "Удалить товар из продвижения в оплате за заказ",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignDeleteSearchPromoBidsRequestV2"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "type": "object"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_SetSearchPromoBidsV2",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": true,
-    "status": "DEPRECATED",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/search_promo/v2/products",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/search_promo/v2/bids/set",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Установить ставку на товар",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": true,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignSetSearchPromoBidsRequestV2"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignSetSearchPromoBidsResponseV2extcampaignSetSearchPromoBidsResponseV2"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "DEPRECATED",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "DEPRECATED"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_ListSearchPromoProductsV2",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "PATCH",
-    "path": "/api/client/campaign/{campaignId}",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/search_promo/v2/products",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список товаров в продвижении в оплате за заказ",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignListSearchPromoProductsRequestV2"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignListSearchPromoProductsResponseV2"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "PatchProductCampaign",
-    "tags": [
-      "Ad",
-      "Edit",
-      "Оплата за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/{campaignId}/activate",
+    "http_method": "PATCH",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}",
+    "section": "Ad",
+    "scope": "performance",
+    "safety": "UNVERIFIED",
+    "summary": "Параметры кампании",
+    "params": {},
+    "pagination": "none_or_response_driven",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignPatchProductCampaignRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCampaignID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": false,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "not_in_runtime_baseline",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ActivateCampaign",
-    "tags": [
-      "Ad",
-      "Edit",
-      "Оплата за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/{campaignId}/deactivate",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/activate",
+    "section": "Ad",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Активировать кампанию",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/Empty"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignCampaignID"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCampaign"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "DeactivateCampaign",
-    "tags": [
-      "Ad",
-      "Edit",
-      "Оплата за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign/{campaignId}/objects",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/deactivate",
+    "section": "Ad",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Выключить кампанию",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/Empty"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignCampaignID"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCampaign"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ListCampaignObjects",
-    "tags": [
-      "Campaign",
-      "Кампании и рекламируемые объекты"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/{campaignId}/products",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/objects",
+    "section": "Campaign",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список продвигаемых объектов в кампании",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCampaignObjectsList"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "AddProducts",
-    "tags": [
-      "Product",
-      "Товары в Оплате за клик"
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
+    "hosts": [
+      "api-performance.ozon.ru:443"
     ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "PUT",
     "path": "/api/client/campaign/{campaignId}/products",
-    "hosts": [
-      "api-performance.ozon.ru:443"
-    ],
+    "section": "Product",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Добавить товары в кампанию",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignAddProductsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignAddProductsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "UpdateProducts",
-    "tags": [
-      "Product",
-      "Товары в Оплате за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign/{campaignId}/products/bids/competitive",
+    "http_method": "PUT",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/products",
+    "section": "Product",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Обновить ставки товаров",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignUpdateProductsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignUpdateProductsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GetProductsCompetitiveBids",
-    "tags": [
-      "Product",
-      "Товары в Оплате за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/campaign/{campaignId}/products/delete",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/products/bids/competitive",
+    "section": "Product",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Конкурентные ставки для товара",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "skus",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignGetProductsCompetitiveBidsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "DeleteProducts",
-    "tags": [
-      "Product",
-      "Товары в Оплате за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/campaign/{campaignId}/v2/products",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/products/delete",
+    "section": "Product",
+    "scope": "perf",
+    "safety": "destructive",
+    "summary": "Удалить товары из кампании",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignDeleteProductsRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GetProductsV2",
-    "tags": [
-      "Product",
-      "Товары в Оплате за клик"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/limits/list",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/campaign/{campaignId}/v2/products",
+    "section": "Product",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список товаров кампании",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "page",
+      "confidence": "parameter_detected"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignGetProductsResponseV2"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GetLimitsList",
-    "tags": [
-      "Campaign",
-      "Кампании и рекламируемые объекты"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/min/sku",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/limits/list",
+    "section": "Campaign",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Лимиты ставок для инструментов продвижения",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignListLimitsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_BidBySKU",
-    "tags": [
-      "Campaign",
-      "Кампании и рекламируемые объекты"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/organisation/vendor_tag",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/min/sku",
+    "section": "Campaign",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Минимальная ставка для товаров по SKU",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignBidBySKURequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extcampaignBidBySKURequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignBidBySKUResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GetVendorTag",
-    "tags": [
-      "Vendor",
-      "Аналитика внешнего трафика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/products_with_bonuses",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/organisation/vendor_tag",
+    "section": "Vendor",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Метка организации для внешних рекламных кампаний",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "orgId",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extorganisationGetVendorTagResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_ListProductsWithBonuses2",
-    "tags": [
-      "Campaign",
-      "Кампании и рекламируемые объекты"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/search_promo/bids/recommendation",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/products_with_bonuses",
+    "section": "Campaign",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список товаров с бонусами",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignListProductsWithBonusesResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_GetProductsRecommendedBids",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": true,
-    "status": "DEPRECATED",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/search_promo/get_cpo_min_bids",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/search_promo/bids/recommendation",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Рекомендованные ставки для товаров",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": true,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignGetProductsRecommendedBidsRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignGetProductsRecommendedBidsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "DEPRECATED",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "DEPRECATED"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_GetCPOMinBids",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/search_promo/product/disable",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/search_promo/get_cpo_min_bids",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Получить фиксированные ставки для товаров",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignGetProductsRecommendedBidsRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignGetCPOMinBidsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_BatchDisableProducts",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/search_promo/product/enable",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/search_promo/product/disable",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Отключить продвижение товара в оплате за заказ",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignBatchDisableProductsRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "type": "object"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalCampaign_BatchEnableProducts",
-    "tags": [
-      "Search-Promo",
-      "Оплата за заказ"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistic/orders/generate",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/search_promo/product/enable",
+    "section": "Search-Promo",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Включить продвижение товара в оплате за заказ",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignBatchEnableProductsRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignBatchEnableProductsResponseextcampaignBatchEnableProductsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "SearchPromoOrdersReportSubmitRequest",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistic/products/generate",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistic/orders/generate",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Получить отчёт по заказам в оплате за заказ — выбранные товары",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatisticsSearchPromoOrdersReportRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "SearchPromoProductsReportSubmitRequest",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistics",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistic/products/generate",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Получить отчёт по товарам в оплате за заказ — выбранные товары",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatisticsSearchPromoOrdersReportRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "SubmitRequest",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/all_sku_promo/orders/generate",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Статистика по кампании",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extstatStatisticsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatStatisticsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GenerateAllSkuPromoOrdersReport",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/all_sku_promo/products/generate",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/all_sku_promo/orders/generate",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Получить отчёт по заказам в оплате за заказ — все товары",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "timeBounds.from",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "timeBounds.to",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatisticsGenerateAllSkuPromoOrdersReportResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GenerateAllSkuPromoProductsReport",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistics/attribution",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/all_sku_promo/products/generate",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Получить отчёт по товарам в оплате за заказ — все товары",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "timeBounds.from",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "timeBounds.to",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatisticsGenerateAllSkuPromoProductsReportResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "AttributionSubmitRequest",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/campaign/media",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/attribution",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Отчёт по заказам",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extstatStatisticsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatStatisticsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "MediaCampaignList",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/campaign/product",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/campaign/media",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Статистика по медийным кампаниям",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignIds",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uint64"
+            }
+          }
+        },
+        {
+          "name": "from",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "dateFrom",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "dateTo",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsReport"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ProductCampaignList",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/daily",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/campaign/product",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Статистика по кампании Оплата за клик",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignIds",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uint64"
+            }
+          }
+        },
+        {
+          "name": "from",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "dateFrom",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "dateTo",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsReport"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GetCampaignDailyStats",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/expense",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/daily",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Дневная статистика по кампаниям",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignIds",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uint64"
+            }
+          }
+        },
+        {
+          "name": "dateFrom",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "dateTo",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsReport"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "GetCampaignExpense",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/externallist",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/expense",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Статистика по расходу кампаний",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "campaignIds",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uint64"
+            }
+          }
+        },
+        {
+          "name": "dateFrom",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "dateTo",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsReport"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ListReportsExternal",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/list",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/externallist",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список отчётов, сгенерированных через API",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "page",
+      "confidence": "parameter_detected"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsReportsList"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ListReports",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistics/phrases",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/list",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список отчётов, сгенерированных через интерфейс",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "page",
+      "confidence": "parameter_detected"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsReportsList"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "ExternalStatistics_StatisticsPhrasesSubmitRequest2",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistics/products/sku",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/phrases",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Отчёт по поисковым запросам",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extstatisticsStatisticsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatisticsStatisticsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatisticsStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "SearchPromoProductsSKUStatistics2",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/report",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/products/sku",
+    "section": "Statistics",
+    "scope": "performance",
+    "safety": "UNVERIFIED",
+    "summary": "Получить статистику по товарам в оплате за клик",
+    "params": {},
+    "pagination": "none_or_response_driven",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extstatisticsSearchPromoProductsSKUStatisticsRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatisticsSearchPromoProductsSKUStatisticsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": false,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "not_in_runtime_baseline",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "DownloadStatistics",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/statistics/video",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/report",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Получить отчёты",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "UUID",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "text/csv": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "VideoCampaignsSubmitRequest",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/statistics/{UUID}",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/video",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Статистика по показам видеобаннера",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extstatStatisticsVideobannerRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatStatisticsVideobannerRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "StatisticsCheck",
-    "tags": [
-      "Statistics",
-      "Статистика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/api/client/vendors/statistics",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/statistics/{UUID}",
+    "section": "Statistics",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Cтатус отчёта",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "UUID",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "VendorStatisticsSubmitRequest",
-    "tags": [
-      "Vendor",
-      "Аналитика внешнего трафика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/vendors/statistics/list",
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/vendors/statistics",
+    "section": "Vendor",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Отчёт с аналитикой внешнего трафика",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extstatVendorStatisticsRequest"
+          }
+        },
+        "source_ref": "#/components/requestBodies/extstatVendorStatisticsRequest"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatStatisticsRequestID"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "VendorStatisticsListReports",
-    "tags": [
-      "Vendor",
-      "Аналитика внешнего трафика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "GET",
-    "path": "/api/client/vendors/statistics/{UUID}",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/vendors/statistics/list",
+    "section": "Vendor",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Список запрошенных отчётов с аналитикой внешнего трафика",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "page",
+      "confidence": "parameter_detected"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatVendorStatisticsReportsList"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "VendorStatisticsCheck",
-    "tags": [
-      "Vendor",
-      "Аналитика внешнего трафика"
-    ],
-    "deprecated": false,
-    "status": "CURRENT",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
-  },
-  {
-    "marketplace": "ozon_performance",
-    "method": "POST",
-    "path": "/external/api/dynamic_budget",
+    "http_method": "GET",
+    "host": "api-performance.ozon.ru:443",
     "hosts": [
       "api-performance.ozon.ru:443"
     ],
+    "path": "/api/client/vendors/statistics/{UUID}",
+    "section": "Vendor",
+    "scope": "perf",
+    "safety": "read",
+    "summary": "Информация об отчёте по UUID",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
+    "deprecated": false,
+    "contract": {
+      "parameters": [
+        {
+          "name": "UUID",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "vendor",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "request_body": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extstatVendorStatisticsResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "CURRENT",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "CURRENT"
+  },
+  {
+    "marketplace": "ozon_performance",
     "operation_id": "CalculateDynamicBudget",
-    "tags": [
-      "Ad",
-      "Оплата за клик"
+    "http_method": "POST",
+    "host": "api-performance.ozon.ru:443",
+    "hosts": [
+      "api-performance.ozon.ru:443"
     ],
+    "path": "/external/api/dynamic_budget",
+    "section": "Ad",
+    "scope": "perf",
+    "safety": "write",
+    "summary": "Рассчитать минимальный бюджет кампании",
+    "params": {},
+    "pagination": "none",
+    "pagination_inference": {
+      "mode": "none_or_response_driven",
+      "confidence": "not_inferred"
+    },
+    "items_path": "",
+    "rate_limit": "",
+    "documentation": "",
+    "keywords": [],
     "deprecated": true,
-    "status": "DEPRECATED",
-    "shutdown_date": "",
-    "replacement": "",
-    "status_evidence": []
+    "contract": {
+      "parameters": [],
+      "request_body": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/extcampaignCalculateDynamicBudgetRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/extcampaignCalculateDynamicBudgetResponse"
+            }
+          }
+        },
+        "default": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/rpcStatus"
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "implementation_inventory": true,
+      "current_openapi_snapshot": true,
+      "official_contract_verified": false,
+      "mirror_contract_verified": true
+    },
+    "implementation_source": "runtime baseline 07a3408",
+    "openapi_source_file": "ozon-performance-openapi.json",
+    "lifecycle": {
+      "status": "DEPRECATED",
+      "shutdown_date": "",
+      "replacement": "",
+      "evidence": []
+    },
+    "status": "DEPRECATED"
   }
 ]

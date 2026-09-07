@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-01T14:58:41.597005+00:00",
-  "policy": "public mirror used for enumeration; official notices/runtime remain authority for migrations",
+  "generated_at": "2026-09-07T10:22:13.141251+00:00",
+  "policy": "mirror snapshots enumerate official OpenAPI contracts; official notices/runtime are authoritative for lifecycle-critical changes",
   "sources": {
     "wildberries": {
       "official_origin": "dev.wildberries.ru OpenAPI/Swagger",
@@ -9,7 +9,22 @@
       "index_url": "https://raw.githubusercontent.com/ZloyDeDD/wb-api-skill/main/swagger/_index.json",
       "index_sha256": "64446633fc769bd09c27d1caf56be9f498ef577a27ea52d48be19bd646bdfcf8",
       "meta_url": "https://raw.githubusercontent.com/ZloyDeDD/wb-api-skill/main/swagger/_meta.json",
-      "meta_sha256": "5ba404c51e4dbe456e36b3a453944ee9ec5eeaa81431001d70dfaa4639ab29be"
+      "meta_sha256": "5ba404c51e4dbe456e36b3a453944ee9ec5eeaa81431001d70dfaa4639ab29be",
+      "swagger_file_sha256": {
+        "01-general.yaml": "0a0067a9d168eeec1f31158a22e5847a95e4d3f6cdc6cfe8d9ba26f07c6c0443",
+        "02-items.yaml": "eabad07add4c06514d28252e68dd8effb9684db05f904bf63c7102085180ebb4",
+        "03-orders-fbs.yaml": "354f33ccf95f1bcaca8afb70c2a670b16723ebf6e8668abf22a1858a489dcdef",
+        "04-orders-dbw.yaml": "968bd0823e1df86a5aef65609fe47a46dd0a06c2ff0c0976d6f24d92c07e47f9",
+        "05-dbs.yaml": "df47207784728e4edad70524cbde8209af6093ad8797c45961a88c9398cfdf5e",
+        "06-in-store-pickup.yaml": "a21cfcacb0d844bd64091707514cd0c804ac843f7c2632385161c92067070d8f",
+        "07-orders-fbw.yaml": "ed21497a8108e01b9bfcd9881bd6d745298715b0c25afc4e5cc12e10c36542bc",
+        "08-promotion.yaml": "482c6dd9101eec0b8773a8e3eac18d9a2d59c7dd80878d3d3718e36b79d0766b",
+        "09-communications.yaml": "e0547e42dd25200d2494cbc5463e423e3f7cd5e02007626c9548a935e002a5b3",
+        "10-rates.yaml": "48716be16bfb84ecbd8f287a15e54429b01c1824d3fafe920e1a73229f8e0bdf",
+        "11-analytics.yaml": "9374c39e62622ca0975e6cc219f909922211109442153b42ffd66b2921b267c9",
+        "12-reports.yaml": "07f737cd6cc5888d124e3b29dcc171fbcbcd7bde9b61978df432a6fcdd245bc0",
+        "13-finances.yaml": "27350fecfae8968f4ffc156c6b0b8bff615712aa773eed4325c472c43e5d0d5e"
+      }
     },
     "ozon_seller": {
       "official_origin": "https://docs.ozon.ru/api/seller/swagger.json",
