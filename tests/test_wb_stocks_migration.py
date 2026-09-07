@@ -88,6 +88,7 @@ def test_wb_get_stocks_base_token_uses_async_report_fallback(monkeypatch):
         return None
 
     monkeypatch.setattr(server, "_wb_active_token_type", lambda: "base")
+    monkeypatch.setattr(server.client.config, "resolve_creds", lambda: ({"token": "offline-test"}, "test"))
     monkeypatch.setattr(server.client, "request", fake_request)
     monkeypatch.setattr(server.asyncio, "sleep", no_sleep)
 
@@ -134,6 +135,7 @@ def test_wb_get_stocks_additional_requirements_triggers_fallback(monkeypatch):
         return None
 
     monkeypatch.setattr(server, "_wb_active_token_type", lambda: "unknown")
+    monkeypatch.setattr(server.client.config, "resolve_creds", lambda: ({"token": "offline-test"}, "test"))
     monkeypatch.setattr(server.client, "request", fake_request)
     monkeypatch.setattr(server.asyncio, "sleep", no_sleep)
 
