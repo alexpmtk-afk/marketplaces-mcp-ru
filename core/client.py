@@ -205,8 +205,13 @@ class MarketplaceClient:
             "client_secret": creds.get(cfg.oauth_secret_field, ""),
             "grant_type": "client_credentials",
         }
+        # Token issuance is a separate HTTP channel from marketplace API calls.
+        # Keep it under the same service rate policy, but isolate its reservation
+        # namespace so a successful token refresh cannot consume the immediately
+        # following API request slot. This remains fail-fast: no future slot is
+        # reserved when the token channel is busy.
         rules = build_rules(
-            service=cfg.name, cabinet_key=key, host=cfg.token_url,
+            service=cfg.name, cabinet_key=f"{key}:oauth", host=cfg.token_url,
             operation_id="oauth_token",
         )
         try:
