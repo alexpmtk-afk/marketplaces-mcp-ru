@@ -1,15 +1,4 @@
-"""Combined MCP server: Wildberries + Ozon + Ozon-Perf on one FastMCP.
-
-One process, one stdio channel, every tool. This backs both the `.mcpb`
-Claude Desktop bundle (`serve.py all`) and the `marketplaces-mcp-ru` console
-script (`uvx marketplaces-mcp-ru`).
-
-Tool names are already namespaced per service (``wb_*`` / ``ozon_*`` /
-``ozon_perf_*``), so merging the three servers' tool sets can never collide.
-Each service module builds its FastMCP as an import side effect; we copy the
-already-registered tools onto a single parent via FastMCP's tool manager. That
-internal surface is stable within the pinned ``mcp>=1.2,<2`` range.
-"""
+"""Combined MCP server: Wildberries + Ozon + Ozon-Perf + public card monitor."""
 from __future__ import annotations
 
 import asyncio
@@ -20,6 +9,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from .card_monitor import register_tools as register_card_monitor_tools
 from .rate_limit import RateLimitUnavailable, verify_shared_redis
 
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
@@ -51,11 +41,7 @@ def _rate_status_tool(client: Any):
 
 
 def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
-    """Register high-signal read-only finance tools on the combined server.
-
-    They intentionally delegate to the same schema catalog/client as generic
-    call_method, so there is only one HTTP contract and one rate-limit path.
-    """
+    """Register high-signal read-only finance tools on the combined server."""
     wb = modules["wb"]
     ozon = modules["ozon"]
 
@@ -70,13 +56,7 @@ def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
         limit: int = 100000,
         rrdid: int = 0,
     ) -> str:
-        """Get WB realization report rows for an inclusive date range.
-
-        Args:
-            date_from/date_to: ISO dates YYYY-MM-DD.
-            limit: page size, 1..100000.
-            rrdid: pagination cursor; use 0 for the first page.
-        """
+        """Get WB realization report rows for an inclusive date range."""
         start = date.fromisoformat(date_from[:10])
         end = date.fromisoformat(date_to[:10])
         if start > end:
@@ -139,12 +119,7 @@ def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
 
 
 def build(**fastmcp_kwargs: Any) -> FastMCP:
-    """Return one FastMCP carrying every service's tools.
-
-    Keyword arguments are passed only to the combined FastMCP constructor. This
-    keeps the local stdio server unchanged while allowing the remote entry point
-    to supply its HTTP host and port.
-    """
+    """Return one FastMCP carrying seller API and public-card monitor tools."""
     combined = FastMCP("marketplaces-mcp-ru", **fastmcp_kwargs)
     modules: dict[str, Any] = {}
     for mod_name in SERVICE_MODULES:
@@ -161,6 +136,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
             },
         )(_rate_status_tool(mod.client))
     _register_finance_tools(combined, modules)
+    register_card_monitor_tools(combined)
     return combined
 
 
