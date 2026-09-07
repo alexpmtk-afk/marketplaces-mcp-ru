@@ -174,18 +174,72 @@ async def wb_get_sales(date_from: str, flag: int = 0) -> str:
     annotations={"title": "WB current stocks", "readOnlyHint": True,
                  "openWorldHint": True},
 )
-async def wb_get_stocks(date_from: str = "2020-01-01") -> str:
-    """Get the current Wildberries stock snapshot (Statistics API, 1 req/min).
+async def wb_get_stocks(
+    nm_ids: Optional[list[int]] = None,
+    chrt_ids: Optional[list[int]] = None,
+    limit: int = 250000,
+    offset: int = 0,
+) -> str:
+    """Get current stock on Wildberries warehouses through Seller Analytics.
 
-    Stocks have no history — this is a point-in-time snapshot. Use an early
-    date_from to get the full current set.
+    This uses the current replacement for the retired Statistics endpoint:
+    POST /api/analytics/v1/stocks-report/wb-warehouses. Data is refreshed by WB
+    about every 30 minutes; one row represents one size on one WB warehouse.
+
+    The active WB token must include the Analytics category. The method is
+    read-only even though WB exposes it as HTTP POST.
 
     Args:
-        date_from: RFC3339 date; default "2020-01-01" returns everything in stock now.
-    Returns JSON: {"ok": true, "data": [ stock rows ]} with quantity, warehouseName, nmId.
+        nm_ids: optional WB article ids (nmId), maximum 1000. Empty means all.
+        chrt_ids: optional size ids; meaningful only together with nm_ids.
+        limit: rows per page, 1..250000 (default 250000).
+        offset: number of rows to skip for offset pagination.
+    Returns JSON: {"ok": true, "data": {"data": {"items": [...]}}} or the
+    canonical error envelope. Rows include nmId, chrtId, warehouseId,
+    warehouseName, regionName, quantity, inWayToClient and inWayFromClient.
     """
-    spec = catalog.get("wb_stats_stocks")
-    return _j(await client.call_spec(spec, query={"dateFrom": date_from}))
+    if nm_ids is not None and len(nm_ids) > 1000:
+        return _j(make_error(
+            "invalid_params", "nm_ids may contain at most 1000 WB articles.",
+            operation_id="wb_analytics_stocks_wb_warehouses", retryable=False,
+        ))
+    if chrt_ids and not nm_ids:
+        return _j(make_error(
+            "invalid_params", "chrt_ids can only be used together with nm_ids.",
+            operation_id="wb_analytics_stocks_wb_warehouses", retryable=False,
+        ))
+    if offset < 0:
+        return _j(make_error(
+            "invalid_params", "offset must be >= 0.",
+            operation_id="wb_analytics_stocks_wb_warehouses", retryable=False,
+        ))
+
+    body: dict[str, object] = {
+        "limit": max(1, min(int(limit), 250000)),
+        "offset": int(offset),
+    }
+    if nm_ids is not None:
+        body["nmIds"] = nm_ids
+    if chrt_ids is not None:
+        body["chrtIds"] = chrt_ids
+
+    result = await client.request(
+        "POST",
+        "seller-analytics-api.wildberries.ru",
+        "/api/analytics/v1/stocks-report/wb-warehouses",
+        json_body=body,
+        operation_id="wb_analytics_stocks_wb_warehouses",
+        rate_limit="3 req/min",
+        rate_scope="analytics",
+    )
+    if int(result.get("code", 0) or 0) == 403:
+        result["message"] = (
+            "WB denied access to the current inventory Analytics API. The active "
+            "WB token must include the Analytics category (Personal or Service "
+            "token). No deprecated Statistics endpoint was used."
+        )
+        result["required_token_category"] = "analytics"
+    return _j(result)
 
 
 @mcp.tool(
