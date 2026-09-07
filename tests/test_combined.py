@@ -1,13 +1,4 @@
-"""Combined server (.mcpb / `uvx marketplaces-mcp-ru`) mounts every service.
-
-The combined FastMCP is built by copying each service's already-registered
-tools via FastMCP's internal tool manager (``_tool_manager._tools``). That
-surface is private, so this test locks it: if an ``mcp`` upgrade moves it, the
-combined tool count drops and this fails loudly instead of shipping an empty
-Claude Desktop bundle. Tool names are namespaced per service. The remote-capable
-combined server additionally exposes a small approved set of cross-service
-infrastructure diagnostics and high-signal finance convenience tools.
-"""
+"""Combined server mounts every seller API service plus approved cross-service tools."""
 from __future__ import annotations
 
 import asyncio
@@ -42,6 +33,10 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "ozon_get_accrual_types",
         "ozon_get_accruals_by_day",
         "ozon_get_realization",
+        "card_monitor_status",
+        "card_monitor_get_latest",
+        "card_monitor_get_history",
+        "card_monitor_compare_prices",
     }
     got = _tool_names(combined.build())
     assert got == per_service | approved_combined, (
