@@ -1,7 +1,7 @@
 registry_version: 0.1-research
 marketplace: ozon
-verification_date: 2026-09-01
-source_access_note: Official Seller API Swagger is protected by anti-bot/redirect behavior for this research client. Endpoint structure is cross-checked against pinned OpenAPI mirror commit 1953152c36955225b459cf55963a2c3a7a234661; lifecycle dates below are verified against the official Ozon Seller API notification channel.
+verification_date: 2026-09-07
+source_access_note: Official Seller API Swagger is protected by anti-bot/redirect behavior for this research client. Endpoint structure is cross-checked against pinned OpenAPI mirror commit 1953152c36955225b459cf55963a2c3a7a234661; lifecycle dates below are verified against the official Ozon Seller API notification channel. Runtime migration is verified in commit 8c0ac46e489e1f847a321d7692732c99e14f8d2c.
 
 pinned_secondary_snapshot:
   repository: MissiaL/ozon-api
@@ -11,74 +11,132 @@ pinned_secondary_snapshot:
   seller_sections: 57
   performance_operations: 48
 
+runtime_migration:
+  repository: alexpmtk-afk/marketplaces-mcp-ru
+  branch: api-map/2026-09-01
+  commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+  validation: targeted_runtime_tests_and_git_diff_check_passed
+
 high_priority:
   - current_project_operation_id: ozon_fbs_unfulfilled
-    current_path: /v3/posting/fbs/unfulfilled/list
-    current_project_status: implemented
+    old_path: /v3/posting/fbs/unfulfilled/list
+    current_path: /v4/posting/fbs/unfulfilled/list
+    current_project_status: migrated
+    pagination: cursor
+    items_path: postings
     evidence:
       mirror_index_status: deprecated
       official_notification_date: 2026-07-10
       official_shutdown_date: 2026-08-31
       official_replacement: /v4/posting/fbs/unfulfilled/list
     lifecycle:
-      status: shutdown_date_passed
+      status: shutdown_route_removed_from_runtime
       shutdown_date: 2026-08-31
     replacements:
       - /v4/posting/fbs/unfulfilled/list
-    action: immediate_contract_migration_audit
-    reason: Current project still points at v3 on 2026-09-01, after the officially announced shutdown date.
+    action: completed_contract_and_pagination_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
 
   - current_project_operation_id: ozon_fbs_list
-    current_path: /v3/posting/fbs/list
-    current_project_status: implemented
+    old_path: /v3/posting/fbs/list
+    current_path: /v4/posting/fbs/list
+    current_project_status: migrated
+    pagination: cursor
+    items_path: postings
     evidence:
       mirror_index_status: deprecated
       official_notification_date: 2026-07-10
       official_shutdown_date: 2026-08-31
       official_replacement: /v4/posting/fbs/list
     lifecycle:
-      status: shutdown_date_passed
+      status: shutdown_route_removed_from_runtime
       shutdown_date: 2026-08-31
     replacements:
       - /v4/posting/fbs/list
-    action: immediate_contract_migration_audit
+    action: completed_contract_and_pagination_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
 
-  - current_project_operation_id: ozon_finance_transactions
-    current_path: /v3/finance/transaction/list
-    current_project_status: implemented
+  - current_project_operation_id: ozon_fbo_list
+    old_path: /v2/posting/fbo/list
+    current_path: /v3/posting/fbo/list
+    current_project_status: migrated
+    pagination: cursor
+    items_path: postings
+    evidence:
+      official_shutdown_date: 2026-08-31
+      official_replacement: /v3/posting/fbo/list
     lifecycle:
-      status: shutdown_announced
+      status: shutdown_route_removed_from_runtime
+      shutdown_date: 2026-08-31
+    replacements:
+      - /v3/posting/fbo/list
+    action: completed_contract_and_pagination_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+
+  - retired_project_operation_id: ozon_finance_transactions
+    retired_path: /v3/finance/transaction/list
+    current_project_status: removed_from_runtime_catalog
+    lifecycle:
+      status: migrated_before_shutdown
       shutdown_date: 2026-09-08
       notice_date: 2026-07-14
       verification: official_OzonSellerAPI_notification
+    replacement_operation_ids:
+      - ozon_finance_accrual_postings
+      - ozon_finance_accrual_types
+      - ozon_finance_accrual_by_day
     replacements:
       - /v1/finance/accrual/postings
       - /v1/finance/accrual/types
       - /v1/finance/accrual/by-day
-    action: urgent_schema_and_semantics_migration_audit
+    action: completed_explicit_accrual_runtime_migration
+    semantic_note: No one-to-one field mapping is assumed; aggregation and type decoding remain explicit.
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
 
-  - current_project_operation_id: ozon_finance_totals
-    current_path: /v3/finance/transaction/totals
-    current_project_status: implemented
+  - retired_project_operation_id: ozon_finance_totals
+    retired_path: /v3/finance/transaction/totals
+    current_project_status: removed_from_runtime_catalog
     lifecycle:
-      status: shutdown_announced
+      status: migrated_before_shutdown
       shutdown_date: 2026-09-08
       notice_date: 2026-07-14
       verification: official_OzonSellerAPI_notification
+    replacement_operation_ids:
+      - ozon_finance_accrual_postings
+      - ozon_finance_accrual_types
+      - ozon_finance_accrual_by_day
     replacements:
       - /v1/finance/accrual/postings
       - /v1/finance/accrual/types
       - /v1/finance/accrual/by-day
-    action: urgent_schema_and_semantics_migration_audit
+    action: completed_explicit_accrual_runtime_migration
+    semantic_note: No one-to-one totals replacement is assumed; callers must aggregate accrual data explicitly.
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
 
 replacement_observations:
+  - path: /v1/finance/accrual/postings
+    method: POST
+    runtime_operation_id: ozon_finance_accrual_postings
+    pagination: none
+    request_fields:
+      - posting_numbers
+    response_items_path: posting_accruals
+
+  - path: /v1/finance/accrual/types
+    method: POST
+    runtime_operation_id: ozon_finance_accrual_types
+    pagination: none
+    request_fields: []
+    response_items_path: accrual_types
+
   - path: /v1/finance/accrual/by-day
     method: POST
-    provisional_operation_id: GetFinanceAccrualByDay
-    pagination: last_id
+    runtime_operation_id: ozon_finance_accrual_by_day
+    pagination: last_id_no_limit
     request_fields:
       - date
       - last_id
+    response_items_path: accruals
     known_2026_changes:
       - date: 2026-06-09
         change: response field accruals.type_id renamed to accruals.accrual_id
@@ -99,5 +157,5 @@ project_catalog_quality_findings:
 rules:
   - Do not automatically replace old finance methods one-for-one: new accrual API returns different semantics and requires explicit aggregation/mapping validation.
   - Keep unknown accrual identifiers fail-visible; never silently drop them from totals.
-  - Before production migration, prefer a current official Ozon Swagger browser export; if unavailable, pin exact mirror commit/checksum and mark schema details provisional until official capture is stored.
+  - Before production migration, prefer a current official Ozon Swagger browser export; if unavailable, pin exact mirror commit/checksum and keep provenance explicit.
   - Do not infer read/write safety from POST. Verify each Ozon operation from OpenAPI description and semantics.
