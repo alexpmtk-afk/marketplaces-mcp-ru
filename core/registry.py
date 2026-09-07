@@ -88,21 +88,49 @@ class Catalog:
         self.entities: Optional[Any] = entities  # EntityIndex | None — used by search()
         self._by_id: dict[str, EndpointSpec] = {}
         for s in specs:
-            if not s.host:
-                s.host = default_host
-            if entities is not None:
-                s.entity = entities.entity_of(s)
-            self._by_id[s.operation_id] = s
+            self.upsert(s)
 
     @classmethod
     def from_yaml(cls, path: str | Path, default_host: str = "",
                   entities: Optional[Any] = None) -> "Catalog":
-        raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+        source_path = Path(path)
+        raw = yaml.safe_load(source_path.read_text(encoding="utf-8")) or {}
         default_host = raw.get("default_host", default_host)
         specs: list[EndpointSpec] = []
         for rec in raw.get("endpoints", []):
             specs.append(EndpointSpec(**rec))
-        return cls(specs, default_host=default_host, entities=entities)
+        catalog = cls(specs, default_host=default_host, entities=entities)
+
+        # A service may carry a small runtime_overrides.yaml beside endpoints.yaml.
+        # This is intentionally separate from generated/audit inventories: when an
+        # upstream endpoint is retired between registry refreshes, the live MCP must
+        # stop surfacing it immediately without falsifying the historical snapshot.
+        overlay_path = source_path.with_name("runtime_overrides.yaml")
+        if overlay_path.exists():
+            overlay = yaml.safe_load(overlay_path.read_text(encoding="utf-8")) or {}
+            for operation_id in overlay.get("remove", []):
+                catalog.remove(str(operation_id))
+            for rec in overlay.get("endpoints", []):
+                catalog.upsert(EndpointSpec(**rec))
+        return catalog
+
+    def upsert(self, spec: EndpointSpec) -> None:
+        """Add or replace one runtime endpoint specification.
+
+        Service modules can use this for a narrowly-scoped live migration when
+        an upstream API retires an endpoint before the generated inventory is
+        refreshed. Entity tagging and default-host handling stay identical to
+        normal YAML-loaded records.
+        """
+        if not spec.host:
+            spec.host = self.default_host
+        if self.entities is not None:
+            spec.entity = self.entities.entity_of(spec)
+        self._by_id[spec.operation_id] = spec
+
+    def remove(self, operation_id: str) -> Optional[EndpointSpec]:
+        """Remove a runtime endpoint so search/describe/call cannot surface it."""
+        return self._by_id.pop(operation_id, None)
 
     def get(self, operation_id: str) -> Optional[EndpointSpec]:
         return self._by_id.get(operation_id)

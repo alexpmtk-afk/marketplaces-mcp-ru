@@ -1,0 +1,26 @@
+# Live-runtime corrections that must take effect before the generated API
+# inventory is refreshed. Keep this file intentionally small and evidence-based.
+remove:
+  - wb_stats_stocks
+
+endpoints:
+  - operation_id: wb_analytics_stocks_wb_warehouses
+    section: analytics
+    method: POST
+    host: seller-analytics-api.wildberries.ru
+    path: /api/analytics/v1/stocks-report/wb-warehouses
+    scope: analytics
+    safety: read
+    pagination: offset
+    rate_limit: 3 req/min
+    summary: Current inventory by item size and WB warehouse; replaces retired /api/v1/supplier/stocks.
+    params:
+      body: '{nmIds[]<=1000, chrtIds[], limit<=250000, offset}'
+    doc: https://dev.wildberries.ru/docs/openapi/analytics#tag/Istoriya-ostatkov/operation/postV1StocksReportWbWarehouses
+    keywords:
+      - остатки
+      - склад
+      - сток
+      - наличие
+      - история остатков
+    items_path: data.items

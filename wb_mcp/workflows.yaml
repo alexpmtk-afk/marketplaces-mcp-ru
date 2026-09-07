@@ -1,6 +1,6 @@
-# Wildberries analytical workflows — curated recipes over the catalog.
-# WB endpoints live-verified 2026-06-23 (stats sales/stocks/orders, prices,
-# feedbacks, questions). Field names below are grounded in real responses.
+# Wildberries analytical workflows — curated recipes over the live catalog.
+# Statistics sales/orders and manager endpoints are live-verified; current WB
+# warehouse inventory moved to Seller Analytics in June 2026.
 
 workflows:
   - name: sales_pulse
@@ -22,16 +22,18 @@ workflows:
     category: warehouse
     when_to_use: Check current stock and warehouse remains to avoid stockouts.
     steps:
-      - operation_id: wb_stats_stocks
-        why: Current stock snapshot (no history).
+      - operation_id: wb_analytics_stocks_wb_warehouses
+        why: Current inventory by size and WB warehouse; refreshed about every 30 minutes.
       - operation_id: wb_analytics_warehouse_remains
         why: Detailed warehouse-remains report (async — returns a task_id to poll).
     interpret: >
-      wb_stats_stocks is a point-in-time snapshot; there is no history, so store
-      snapshots yourself for trends. The remains report is async: create it, poll
-      status, then download.
+      wb_analytics_stocks_wb_warehouses is the current point-in-time inventory
+      source. It uses offset pagination and is limited to 3 requests/minute. The
+      separate warehouse-remains report is async: create it, poll status, then
+      download when a report-style export is needed.
     common_mistakes:
-      - Expecting stock history from the snapshot endpoint.
+      - Calling the retired /api/v1/supplier/stocks Statistics endpoint.
+      - Expecting historical daily stock from the current-inventory response.
 
   - name: price_audit
     category: pricing
@@ -51,16 +53,18 @@ workflows:
     steps:
       - operation_id: wb_stats_sales
         why: Sales over a window to compute average daily sales (ADS) per nmId.
-      - operation_id: wb_stats_stocks
-        why: Current available quantity per nmId (point-in-time snapshot).
+      - operation_id: wb_analytics_stocks_wb_warehouses
+        why: Current available quantity per nmId, size and WB warehouse.
     interpret: >
-      Per nmId: ADS = (count of sale rows in window) / (days in window). Use the
-      `nmId` field to join sales to stock. Days-of-cover = stock `quantity`
-      (available for sale) / ADS. Flag SKUs where cover < your lead time + safety
-      buffer. `inWayToClient`/`inWayFromClient` are in transit — not yet sellable,
-      don't count them as cover. Both endpoints are 1 req/min — pace with wb_fetch_all.
+      Per nmId: ADS = (count of sale rows in window) / (days in window). Join
+      sales to current inventory by nmId and aggregate `quantity` across the
+      required sizes/warehouses. Days-of-cover = sellable stock / ADS. Flag SKUs
+      where cover < lead time + safety buffer. `inWayToClient`/`inWayFromClient`
+      are in transit — not yet sellable, so do not count them as cover. Sales are
+      limited to 1 req/min; current inventory to 3 req/min with offset pagination.
     common_mistakes:
-      - Counting quantityFull or in-transit units as available cover.
+      - Counting in-transit units as available cover.
+      - Forgetting to aggregate size/warehouse rows before computing cover per nmId.
       - Using too short a sales window — ADS gets noisy under ~14 days.
 
   - name: abc_analysis
