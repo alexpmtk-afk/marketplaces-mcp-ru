@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+import types
+
 from core.rate_limit_repair import repair_legacy_wb_global_cooldowns
 
 
@@ -33,8 +36,15 @@ def test_repair_deletes_only_impossible_wb_global_slots(monkeypatch):
         legit: str((1000 + 0.2) * 1000),
     })
 
+    class _RedisFactory:
+        @staticmethod
+        def from_url(*args, **kwargs):
+            return fake
+
+    redis_module = types.ModuleType("redis")
+    redis_module.Redis = _RedisFactory
+    monkeypatch.setitem(sys.modules, "redis", redis_module)
     monkeypatch.setenv("MARKETPLACE_MCP_REDIS_URL", "redis://example/0")
-    monkeypatch.setattr("redis.Redis.from_url", lambda *a, **k: fake)
 
     repaired = repair_legacy_wb_global_cooldowns()
     assert repaired == 1
