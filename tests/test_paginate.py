@@ -91,3 +91,39 @@ def test_page_style_nonnumeric_page_count_does_not_crash():
     out = asyncio.run(fetch_all(_FakeClient(responder), spec, limit=100))
     assert out["ok"] is True
     assert out["total_fetched"] == 2
+
+
+
+def test_cursor_honours_has_next_false_without_extra_request():
+    spec = EndpointSpec(operation_id="op", method="POST", host="h", path="/x",
+                        pagination="cursor", items_path="postings")
+    calls = []
+
+    def responder(loc):
+        calls.append(dict(loc))
+        return {"postings": [1, 2], "cursor": "would-be-next", "has_next": False}
+
+    out = asyncio.run(fetch_all(_FakeClient(responder), spec, limit=100))
+    assert out["total_fetched"] == 2
+    assert len(calls) == 1
+
+
+def test_last_id_no_limit_never_injects_limit():
+    spec = EndpointSpec(operation_id="op", method="POST", host="h", path="/x",
+                        pagination="last_id_no_limit", items_path="accruals")
+    calls = []
+
+    def responder(loc):
+        calls.append(dict(loc))
+        if loc.get("last_id") == "next":
+            return {"accruals": [2], "last_id": ""}
+        return {"accruals": [1], "last_id": "next"}
+
+    out = asyncio.run(fetch_all(
+        _FakeClient(responder), spec,
+        base_body={"date": "2026-09-07", "last_id": ""}, limit=100,
+    ))
+    assert out["total_fetched"] == 2
+    assert len(calls) == 2
+    assert all("limit" not in call for call in calls)
+    assert calls[1]["last_id"] == "next"

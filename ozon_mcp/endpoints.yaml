@@ -247,13 +247,13 @@ endpoints:
   section: orders_fbs
   method: POST
   host: api-seller.ozon.ru
-  path: /v3/posting/fbs/unfulfilled/list
+  path: /v4/posting/fbs/unfulfilled/list
   scope: seller
   safety: read
-  pagination: offset
-  summary: New/unprocessed FBS shipments awaiting assembly.
+  pagination: cursor
+  summary: New/unprocessed FBS shipments awaiting assembly. Current v4 cursor contract.
   params:
-    body: '{filter:{cutoff_from, cutoff_to}, limit, offset}'
+    body: '{filter:{cutoff_from, cutoff_to, delivering_date_from, delivering_date_to, delivery_method_ids, provider_ids, statuses, warehouse_ids, last_changed_status_date}, limit<=100, cursor, sort_dir, translit, with:{}}'
   doc: https://docs.ozon.ru/api/seller/
   keywords:
   - новые заказы
@@ -265,18 +265,18 @@ endpoints:
   section: orders_fbs
   method: POST
   host: api-seller.ozon.ru
-  path: /v3/posting/fbs/list
+  path: /v4/posting/fbs/list
   scope: seller
   safety: read
-  pagination: offset
-  summary: FBS shipments for a period (<=1yr), filter by status.
+  pagination: cursor
+  summary: FBS shipments for a period. Current v4 cursor contract; filter requires since/to.
   params:
-    body: '{filter:{since, to, status}, limit, offset, with:{}}'
+    body: '{filter:{since, to, statuses, delivery_method_ids, provider_ids, warehouse_ids, order_id, order_numbers, last_changed_status_date}, limit<=100, cursor, sort_dir, translit, with:{}}'
   doc: https://docs.ozon.ru/api/seller/
   keywords:
   - заказы фбс
   - отправления
-  items_path: result.postings
+  items_path: postings
 - operation_id: ozon_fbs_get
   section: orders_fbs
   method: POST
@@ -330,18 +330,18 @@ endpoints:
   section: orders_fbo
   method: POST
   host: api-seller.ozon.ru
-  path: /v2/posting/fbo/list
+  path: /v3/posting/fbo/list
   scope: seller
   safety: read
-  pagination: offset
-  summary: FBO shipments for a period.
+  pagination: cursor
+  summary: FBO shipments for a period. Current v3 cursor contract.
   params:
-    body: '{filter:{since, to, status}, limit, offset, with:{}}'
+    body: '{filter:{since, to, statuses, posting_numbers, order_numbers}, limit<=100, cursor, sort_dir, translit, with:{analytics_data, financial_data, legal_info}}'
   doc: https://docs.ozon.ru/api/seller/
   keywords:
   - заказы фбо
   - отправления фбо
-  items_path: result
+  items_path: postings
 - operation_id: ozon_fbo_get
   section: orders_fbo
   method: POST
@@ -404,36 +404,59 @@ endpoints:
   - дни запаса
   pagination: offset
   items_path: items
-- operation_id: ozon_finance_transactions
+- operation_id: ozon_finance_accrual_postings
   section: finance
   method: POST
   host: api-seller.ozon.ru
-  path: /v3/finance/transaction/list
+  path: /v1/finance/accrual/postings
   scope: seller
   safety: read
-  pagination: page
-  summary: Detailed financial transactions (<=1 month/req). v3.
+  pagination: none
+  summary: Current Ozon accruals for 1-200 posting numbers; replaces the retired v3 transaction API for posting-scoped detail.
   params:
-    body: '{filter:{date:{from,to}, operation_type:[]}, page, page_size}'
+    body: '{posting_numbers:[1..200]}'
   doc: https://docs.ozon.ru/api/seller/
   keywords:
   - финансы
-  - транзакции
   - начисления
-  - деньги
-  items_path: result.operations
-- operation_id: ozon_finance_totals
+  - отправления
+  - posting
+  items_path: posting_accruals
+- operation_id: ozon_finance_accrual_types
   section: finance
   method: POST
   host: api-seller.ozon.ru
-  path: /v3/finance/transaction/totals
+  path: /v1/finance/accrual/types
   scope: seller
   safety: read
-  summary: Aggregated financial totals for a period. v3.
-  params:
-    body: '{date:{from,to}, transaction_type}'
-  doc: https://docs.ozon.ru/api/seller/
   pagination: none
+  summary: Current Ozon accrual type dictionary; use IDs to interpret accrual records.
+  params: {}
+  doc: https://docs.ozon.ru/api/seller/
+  keywords:
+  - финансы
+  - начисления
+  - типы начислений
+  - справочник
+  items_path: accrual_types
+- operation_id: ozon_finance_accrual_by_day
+  section: finance
+  method: POST
+  host: api-seller.ozon.ru
+  path: /v1/finance/accrual/by-day
+  scope: seller
+  safety: read
+  pagination: last_id_no_limit
+  summary: Current Ozon accruals for one calendar day. Page with last_id; the API has no limit field.
+  params:
+    body: '{date:YYYY-MM-DD, last_id:""}'
+  doc: https://docs.ozon.ru/api/seller/
+  keywords:
+  - финансы
+  - начисления
+  - день
+  - транзакции
+  items_path: accruals
 - operation_id: ozon_finance_realization
   section: finance
   method: POST
