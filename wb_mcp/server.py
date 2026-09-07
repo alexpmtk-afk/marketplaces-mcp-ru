@@ -215,6 +215,40 @@ def _wb_flatten_remains(rows: object, nm_ids: Optional[list[int]]) -> list[dict]
     return out
 
 
+async def _wb_report_request(
+    path: str, *, operation_id: str, rate_scope: str,
+) -> dict:
+    """Run one safe WB report GET while absorbing only tiny local transport pacing.
+
+    The report workflow performs several sequential GETs. Each endpoint has its
+    own 15-minute Base-token quota, but all requests also share the sub-second WB
+    transport pacing bucket. A following step can therefore be locally rejected
+    for ~0.2s even though its endpoint quota is free. Hide only that implementation
+    detail inside this bounded workflow; never wait through upstream 429s or a
+    real endpoint quota window.
+    """
+    result: dict = {}
+    for attempt in range(4):
+        result = await client.request(
+            "GET", "seller-analytics-api.wildberries.ru", path,
+            operation_id=operation_id,
+            rate_limit="4 req/hour",
+            rate_scope=rate_scope,
+        )
+        if result.get("ok"):
+            return result
+        retry_after = float(result.get("retry_after_seconds", 0) or 0)
+        is_short_local_pacing = (
+            result.get("error_type") == "rate_limit"
+            and int(result.get("code", 0) or 0) != 429
+            and 0 < retry_after <= 1.0
+        )
+        if not is_short_local_pacing or attempt >= 3:
+            return result
+        await asyncio.sleep(retry_after + 0.05)
+    return result
+
+
 async def _wb_get_stocks_via_report(
     nm_ids: Optional[list[int]], chrt_ids: Optional[list[int]], limit: int, offset: int,
 ) -> dict:
@@ -246,10 +280,9 @@ async def _wb_get_stocks_via_report(
         task_id = None
 
     if not task_id:
-        created = await client.request(
-            "GET", "seller-analytics-api.wildberries.ru", "/api/v1/warehouse_remains",
+        created = await _wb_report_request(
+            "/api/v1/warehouse_remains",
             operation_id="wb_analytics_warehouse_remains_create",
-            rate_limit="4 req/hour",
             rate_scope="analytics-warehouse-remains-create",
         )
         if not created.get("ok"):
@@ -265,11 +298,9 @@ async def _wb_get_stocks_via_report(
         except Exception:
             pass
 
-    status_result = await client.request(
-        "GET", "seller-analytics-api.wildberries.ru",
+    status_result = await _wb_report_request(
         f"/api/v1/warehouse_remains/tasks/{task_id}/status",
         operation_id="wb_analytics_warehouse_remains_status",
-        rate_limit="4 req/hour",
         rate_scope="analytics-warehouse-remains-status",
     )
     if not status_result.get("ok"):
@@ -301,11 +332,9 @@ async def _wb_get_stocks_via_report(
             "source": "wb_analytics_warehouse_remains_report",
         }
 
-    downloaded = await client.request(
-        "GET", "seller-analytics-api.wildberries.ru",
+    downloaded = await _wb_report_request(
         f"/api/v1/warehouse_remains/tasks/{task_id}/download",
         operation_id="wb_analytics_warehouse_remains_download",
-        rate_limit="4 req/hour",
         rate_scope="analytics-warehouse-remains-download",
     )
     if not downloaded.get("ok"):
