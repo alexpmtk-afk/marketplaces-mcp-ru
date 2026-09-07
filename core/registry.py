@@ -93,12 +93,26 @@ class Catalog:
     @classmethod
     def from_yaml(cls, path: str | Path, default_host: str = "",
                   entities: Optional[Any] = None) -> "Catalog":
-        raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+        source_path = Path(path)
+        raw = yaml.safe_load(source_path.read_text(encoding="utf-8")) or {}
         default_host = raw.get("default_host", default_host)
         specs: list[EndpointSpec] = []
         for rec in raw.get("endpoints", []):
             specs.append(EndpointSpec(**rec))
-        return cls(specs, default_host=default_host, entities=entities)
+        catalog = cls(specs, default_host=default_host, entities=entities)
+
+        # A service may carry a small runtime_overrides.yaml beside endpoints.yaml.
+        # This is intentionally separate from generated/audit inventories: when an
+        # upstream endpoint is retired between registry refreshes, the live MCP must
+        # stop surfacing it immediately without falsifying the historical snapshot.
+        overlay_path = source_path.with_name("runtime_overrides.yaml")
+        if overlay_path.exists():
+            overlay = yaml.safe_load(overlay_path.read_text(encoding="utf-8")) or {}
+            for operation_id in overlay.get("remove", []):
+                catalog.remove(str(operation_id))
+            for rec in overlay.get("endpoints", []):
+                catalog.upsert(EndpointSpec(**rec))
+        return catalog
 
     def upsert(self, spec: EndpointSpec) -> None:
         """Add or replace one runtime endpoint specification.
