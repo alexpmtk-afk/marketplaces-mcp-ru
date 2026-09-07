@@ -91,7 +91,12 @@ jobs:
               'baseline_not_in_current': {k: len(v['baseline_not_in_current']) for k, v in summary['diffs'].items()},
           }, ensure_ascii=False, indent=2))
           PY
-          git diff --check
+          set +e
+          git diff --check > api_registry/audit/git_diff_check.txt 2>&1
+          rc=$?
+          set -e
+          cat api_registry/audit/git_diff_check.txt
+          exit "$rc"
 
       - name: Commit generated registry snapshot
         if: always() && github.event_name == 'push'
