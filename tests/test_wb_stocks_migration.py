@@ -146,6 +146,61 @@ def test_wb_get_stocks_additional_requirements_triggers_fallback(monkeypatch):
     assert "/api/v1/warehouse_remains" in calls
 
 
+def test_wb_report_request_absorbs_only_short_local_pacing(monkeypatch):
+    calls = {"n": 0}
+    sleeps = []
+
+    async def fake_request(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return {
+                "ok": False,
+                "error": "rate_limit",
+                "error_type": "rate_limit",
+                "message": "Request is locally rate-limited",
+                "retryable": True,
+                "retry_after_seconds": 0.08,
+            }
+        return {"ok": True, "status": 200, "data": {"data": {"status": "done"}}}
+
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(server.client, "request", fake_request)
+    monkeypatch.setattr(server.asyncio, "sleep", fake_sleep)
+
+    out = asyncio.run(server._wb_report_request(
+        "/api/v1/warehouse_remains/tasks/task-1/status",
+        operation_id="wb_analytics_warehouse_remains_status",
+        rate_scope="analytics-warehouse-remains-status",
+    ))
+    assert out["ok"] is True
+    assert calls["n"] == 2
+    assert len(sleeps) == 1
+    assert 0.08 < sleeps[0] <= 0.2
+
+
+def test_wb_report_request_does_not_absorb_long_or_upstream_rate_limit(monkeypatch):
+    async def fake_request(*args, **kwargs):
+        return {
+            "ok": False,
+            "error": "rate_limit",
+            "error_type": "rate_limit",
+            "code": 429,
+            "retryable": True,
+            "retry_after_seconds": 0.1,
+        }
+
+    monkeypatch.setattr(server.client, "request", fake_request)
+    out = asyncio.run(server._wb_report_request(
+        "/api/v1/warehouse_remains/tasks/task-1/status",
+        operation_id="wb_analytics_warehouse_remains_status",
+        rate_scope="analytics-warehouse-remains-status",
+    ))
+    assert out["ok"] is False
+    assert out["code"] == 429
+
+
 def test_wb_get_stocks_fallback_rejects_chrt_filter_for_base_token(monkeypatch):
     monkeypatch.setattr(server, "_wb_active_token_type", lambda: "base")
     out = json.loads(asyncio.run(server.wb_get_stocks(nm_ids=[10], chrt_ids=[1], limit=1)))
