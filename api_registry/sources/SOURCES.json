@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-07T10:22:13.141251+00:00",
+  "generated_at": "2026-09-07T10:25:11.159382+00:00",
   "policy": "mirror snapshots enumerate official OpenAPI contracts; official notices/runtime are authoritative for lifecycle-critical changes",
   "sources": {
     "wildberries": {
