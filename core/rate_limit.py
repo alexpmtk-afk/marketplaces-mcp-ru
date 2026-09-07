@@ -274,7 +274,13 @@ class GlobalRateController:
         await client.set(key, value, ex=max(1, int(ttl_seconds)))
 
     async def defer(self, rules: Iterable[RateRule], seconds: float) -> None:
-        keys = [r.key for r in rules]
+        normalized = [r for r in rules if r.interval_seconds > 0]
+        specific = [r for r in normalized if not r.key.endswith(":global")]
+        # Upstream Retry-After belongs to the endpoint/quota bucket, not to the
+        # transport-wide pacing bucket. If a specific rule exists, never let one
+        # strict marketplace method freeze every other method for the cabinet.
+        selected = specific or normalized
+        keys = [r.key for r in selected]
         seconds = max(0.0, seconds)
         if not keys or seconds <= 0:
             return
