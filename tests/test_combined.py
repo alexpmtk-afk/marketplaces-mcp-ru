@@ -5,8 +5,8 @@ tools via FastMCP's internal tool manager (``_tool_manager._tools``). That
 surface is private, so this test locks it: if an ``mcp`` upgrade moves it, the
 combined tool count drops and this fails loudly instead of shipping an empty
 Claude Desktop bundle. Tool names are namespaced per service. The remote-capable
-combined server may additionally expose a tiny set of cross-service diagnostic
-tools used to prove shared infrastructure such as Redis/Valkey.
+combined server additionally exposes a small approved set of cross-service
+infrastructure diagnostics and high-signal finance convenience tools.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def _tool_names(mcp) -> set[str]:
     return {t.name for t in asyncio.run(mcp.list_tools())}
 
 
-def test_combined_contains_exact_services_plus_diagnostics():
+def test_combined_contains_exact_services_plus_approved_combined_tools():
     import importlib
 
     per_service: set[str] = set()
@@ -34,14 +34,18 @@ def test_combined_contains_exact_services_plus_diagnostics():
         assert not (per_service & names), f"tool name collision from {mod_name}"
         per_service |= names
 
-    expected_diagnostics = {
+    approved_combined = {
         "wb_rate_limit_status",
         "ozon_rate_limit_status",
         "ozon_perf_rate_limit_status",
+        "wb_get_realization_report",
+        "ozon_get_accrual_types",
+        "ozon_get_accruals_by_day",
+        "ozon_get_realization",
     }
     got = _tool_names(combined.build())
-    assert got == per_service | expected_diagnostics, (
-        "combined server is not the service union plus the approved diagnostics "
-        f"(missing: {(per_service | expected_diagnostics) - got}, "
-        f"extra: {got - (per_service | expected_diagnostics)})"
+    assert got == per_service | approved_combined, (
+        "combined server is not the service union plus approved combined tools "
+        f"(missing: {(per_service | approved_combined) - got}, "
+        f"extra: {got - (per_service | approved_combined)})"
     )
