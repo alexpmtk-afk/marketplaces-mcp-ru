@@ -37,19 +37,24 @@ workflows:
 
   - name: unit_economics
     category: finance
-    when_to_use: Understand real per-order profitability after Ozon fees.
+    when_to_use: Understand Ozon accruals and per-order economics using the current finance API.
     steps:
-      - operation_id: ozon_finance_transactions
-        why: Per-order accruals, commissions, logistics, returns (result.operations).
+      - operation_id: ozon_finance_accrual_by_day
+        why: Current daily accrual feed; use ozon_fetch_all with date + last_id="" for every page of one day.
+      - operation_id: ozon_finance_accrual_types
+        why: Decodes accrual type identifiers without guessing their business meaning.
       - operation_id: ozon_prices_get
-        why: Per-SKU commission percentages and current prices.
+        why: Current prices and commission reference per SKU.
     interpret: >
-      Net = sale amount − sales commission − logistics − returns − ads. Pull one
-      month at a time (API caps the window). Join transactions to SKU via
-      posting_number. Watch fbo vs fbs commission differences.
+      Pull each required calendar day separately. Sum total_amount using its currency,
+      retain unknown accrual identifiers instead of dropping them, and group posting-linked
+      rows by unit_number/SKU. Join type IDs through ozon_finance_accrual_types before
+      assigning business categories. The retired v3 transaction list/totals shapes are not
+      assumed to be equivalent to the accrual API.
     common_mistakes:
-      - Requesting more than one month per call (API rejects it).
-      - Forgetting returns and storage fees in the net.
+      - Calling the retired /v3/finance/transaction/list or /totals routes.
+      - Treating the three accrual endpoints as one-for-one field-compatible replacements.
+      - Dropping unknown accrual IDs or summing amounts across currencies.
 
   - name: catalog_sync
     category: catalog

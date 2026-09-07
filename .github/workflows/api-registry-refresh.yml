@@ -1,0 +1,86 @@
+name: API registry refresh
+
+on:
+  push:
+    branches:
+      - api-map/2026-09-01
+    paths:
+      - scripts/build_api_registry_snapshot.py
+      - .github/workflows/api-registry-refresh.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/build_api_registry_snapshot.py
+      - .github/workflows/api-registry-refresh.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install registry parser dependency
+        run: python -m pip install 'pyyaml>=6,<7'
+
+      - name: Build current registry and diff
+        run: python scripts/build_api_registry_snapshot.py
+
+      - name: Validate generated registry
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+
+          summary = json.loads(Path('api_registry/audit/summary.json').read_text(encoding='utf-8'))
+          catalog = json.loads(Path('api_registry/api_catalog.json').read_text(encoding='utf-8'))
+          with Path('api_registry/api_catalog.csv').open(encoding='utf-8-sig', newline='') as fh:
+              csv_rows = list(csv.DictReader(fh))
+
+          assert summary['baseline_total'] == 793, summary
+          assert summary['current_snapshot_total'] == 798, summary
+          assert len(catalog) == 798, len(catalog)
+          assert len(csv_rows) == 798, len(csv_rows)
+          assert sum(summary['effective_status_counts'].values()) == 798, summary
+          assert summary['records_with_full_openapi_contract'] == 798, summary
+          assert all('contract' in row and 'lifecycle' in row for row in catalog)
+          assert summary['diffs']['wildberries']['current_snapshot_count'] == 287, summary
+          assert summary['diffs']['ozon_seller']['current_snapshot_count'] == 463, summary
+          assert summary['diffs']['ozon_performance']['current_snapshot_count'] == 48, summary
+
+          print(json.dumps({
+              'baseline_total': summary['baseline_total'],
+              'current_snapshot_total': summary['current_snapshot_total'],
+              'effective_status_counts': summary['effective_status_counts'],
+              'records_with_full_openapi_contract': summary['records_with_full_openapi_contract'],
+              'records_implemented_in_baseline': summary['records_implemented_in_baseline'],
+              'records_safety_unverified': summary['records_safety_unverified'],
+              'counts': {k: v['current_snapshot_count'] for k, v in summary['diffs'].items()},
+              'new_vs_baseline': {k: len(v['current_not_in_baseline']) for k, v in summary['diffs'].items()},
+              'baseline_not_in_current': {k: len(v['baseline_not_in_current']) for k, v in summary['diffs'].items()},
+          }, ensure_ascii=False, indent=2))
+          PY
+          git diff --check
+
+      - name: Commit generated registry snapshot
+        if: github.event_name == 'push'
+        run: |
+          git config user.name 'api-registry-bot'
+          git config user.email 'api-registry-bot@users.noreply.github.com'
+          git add api_registry/current api_registry/audit api_registry/api_catalog.json api_registry/api_catalog.csv api_registry/sources/SOURCES.json
+          if git diff --cached --quiet; then
+            echo 'Registry snapshot unchanged.'
+            exit 0
+          fi
+          git commit -m 'api-registry: refresh deep endpoint contracts [skip ci]'
+          git push origin HEAD:api-map/2026-09-01

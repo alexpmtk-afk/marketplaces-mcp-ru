@@ -205,12 +205,25 @@ class MarketplaceClient:
             "client_secret": creds.get(cfg.oauth_secret_field, ""),
             "grant_type": "client_credentials",
         }
+        # Token issuance is a separate HTTP channel from marketplace API calls.
+        # Keep it under the same service rate policy, but isolate its reservation
+        # namespace so a successful token refresh cannot consume the immediately
+        # following API request slot. This remains fail-fast: no future slot is
+        # reserved when the token channel is busy.
         rules = build_rules(
-            service=cfg.name, cabinet_key=key, host=cfg.token_url,
+            service=cfg.name, cabinet_key=f"{key}:oauth", host=cfg.token_url,
             operation_id="oauth_token",
         )
         try:
-            await self.rate_controller.acquire(rules)
+            granted, retry_after = await self.rate_controller.try_acquire(rules)
+            if not granted:
+                return None, make_error(
+                    "rate_limit",
+                    "OAuth token request is locally rate-limited; retry after the "
+                    "reported delay. No future slot was reserved.",
+                    operation_id="oauth_token", endpoint=cfg.token_url,
+                    retryable=True, retry_after_seconds=retry_after,
+                )
             async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
                 resp = await client.post(
                 cfg.token_url,
@@ -349,7 +362,7 @@ class MarketplaceClient:
         while True:
             if not rate_limit_preacquired:
                 try:
-                    await self.rate_controller.acquire(rules)
+                    granted, retry_after = await self.rate_controller.try_acquire(rules)
                 except RateLimitUnavailable as exc:
                     return make_error(
                         "rate_limit",
@@ -358,6 +371,16 @@ class MarketplaceClient:
                         operation_id=operation_id,
                         endpoint=path,
                         retryable=True,
+                    )
+                if not granted:
+                    return make_error(
+                        "rate_limit",
+                        "Request is locally rate-limited; retry after the reported "
+                        "delay. No future slot was reserved and the HTTP request was not sent.",
+                        operation_id=operation_id,
+                        endpoint=path,
+                        retryable=True,
+                        retry_after_seconds=retry_after,
                     )
             try:
                 async with httpx.AsyncClient(timeout=timeout) as client:
@@ -389,7 +412,7 @@ class MarketplaceClient:
             if resp.status_code == 401 and self.config.is_oauth:
                 self._invalidate_token(creds or {})
 
-            if resp.status_code == 429 and retry_on_429 and attempt < MAX_RETRIES:
+            if resp.status_code == 429 and retry_on_429:
                 delay = min(_marketplace_retry_delay(resp, attempt), 3600.0)
                 try:
                     await self.rate_controller.defer(rules, delay)
@@ -401,8 +424,14 @@ class MarketplaceClient:
                         code=429, operation_id=operation_id, endpoint=path,
                         retryable=True, retry_after_seconds=delay,
                     )
-                attempt += 1
-                continue
+                return make_error(
+                    "rate_limit",
+                    "Marketplace returned 429. Shared cooldown was stored; retry "
+                    "after the reported delay instead of waiting inside this MCP call.",
+                    code=429, operation_id=operation_id, endpoint=path,
+                    retryable=True, retry_after_seconds=delay,
+                    details=_capped_details(resp),
+                )
 
             if resp.is_success:
                 return {"ok": True, "status": resp.status_code, "data": _parse_body(resp)}

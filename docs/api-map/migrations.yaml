@@ -1,0 +1,151 @@
+schema_version: 1
+as_of: '2026-09-07'
+source_policy:
+  authoritative:
+    - official_openapi
+    - official_change_notification
+    - verified_runtime
+  discovery_only:
+    - third_party_spec_mirror
+
+runtime_verification:
+  repository: alexpmtk-afk/marketplaces-mcp-ru
+  branch: api-map/2026-09-01
+  commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+  validation: targeted_runtime_tests_and_git_diff_check_passed
+
+migrations:
+  - id: ozon_finance_transaction_list_20260908
+    marketplace: ozon
+    removed_catalog_operation: ozon_finance_transactions
+    old:
+      method: POST
+      path: /v3/finance/transaction/list
+    status: migrated
+    cutoff_date: '2026-09-08'
+    current_catalog_operations:
+      - ozon_finance_accrual_postings
+      - ozon_finance_accrual_types
+      - ozon_finance_accrual_by_day
+    replacements:
+      - method: POST
+        path: /v1/finance/accrual/postings
+      - method: POST
+        path: /v1/finance/accrual/types
+      - method: POST
+        path: /v1/finance/accrual/by-day
+    semantics: explicit_reaggregation_required_no_one_to_one_field_mapping
+    source:
+      kind: official_change_notification
+      publisher: Ozon Seller API notification
+      published: '2026-07-14'
+    priority: P0
+    action: completed_explicit_accrual_runtime_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+
+  - id: ozon_finance_transaction_totals_20260908
+    marketplace: ozon
+    removed_catalog_operation: ozon_finance_totals
+    old:
+      method: POST
+      path: /v3/finance/transaction/totals
+    status: migrated
+    cutoff_date: '2026-09-08'
+    current_catalog_operations:
+      - ozon_finance_accrual_postings
+      - ozon_finance_accrual_types
+      - ozon_finance_accrual_by_day
+    replacements:
+      - method: POST
+        path: /v1/finance/accrual/postings
+      - method: POST
+        path: /v1/finance/accrual/types
+      - method: POST
+        path: /v1/finance/accrual/by-day
+    semantics: explicit_reaggregation_required_no_one_to_one_field_mapping
+    source:
+      kind: official_change_notification
+      publisher: Ozon Seller API notification
+      published: '2026-07-14'
+    priority: P0
+    action: completed_explicit_accrual_runtime_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+
+  - id: ozon_fbs_list_20260831
+    marketplace: ozon
+    current_catalog_operation: ozon_fbs_list
+    old:
+      method: POST
+      path: /v3/posting/fbs/list
+    current:
+      method: POST
+      path: /v4/posting/fbs/list
+      pagination: cursor
+      items_path: postings
+    status: migrated
+    cutoff_date: '2026-08-31'
+    replacements:
+      - method: POST
+        path: /v4/posting/fbs/list
+    source:
+      kind: official_change_notification
+      publisher: Ozon Seller API notification
+    priority: P0
+    action: completed_contract_and_pagination_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+
+  - id: ozon_fbo_list_20260831
+    marketplace: ozon
+    current_catalog_operation: ozon_fbo_list
+    old:
+      method: POST
+      path: /v2/posting/fbo/list
+    current:
+      method: POST
+      path: /v3/posting/fbo/list
+      pagination: cursor
+      items_path: postings
+    status: migrated
+    cutoff_date: '2026-08-31'
+    replacements:
+      - method: POST
+        path: /v3/posting/fbo/list
+    source:
+      kind: official_change_notification
+      publisher: Ozon Seller API notification
+    priority: P0
+    action: completed_contract_and_pagination_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+
+  - id: ozon_fbs_unfulfilled_list_20260831
+    marketplace: ozon
+    current_catalog_operation: ozon_fbs_unfulfilled
+    old:
+      method: POST
+      path: /v3/posting/fbs/unfulfilled/list
+    current:
+      method: POST
+      path: /v4/posting/fbs/unfulfilled/list
+      pagination: cursor
+      items_path: postings
+    status: migrated
+    cutoff_date: '2026-08-31'
+    replacements:
+      - method: POST
+        path: /v4/posting/fbs/unfulfilled/list
+    source:
+      kind: official_change_notification
+      publisher: Ozon Seller API notification
+    priority: P0
+    action: completed_contract_and_pagination_migration
+    verified_runtime_commit: 8c0ac46e489e1f847a321d7692732c99e14f8d2c
+
+controls:
+  - id: no_expired_preferred_route
+    rule: A route whose cutoff_date is before today must not remain a preferred user-facing route.
+  - id: migration_requires_schema_update
+    rule: Version migration must update request, response, items_path and pagination metadata together; path-only replacement is forbidden.
+  - id: official_confirmation_gate
+    rule: Production code changes require an authoritative source or verified runtime evidence; discovery-only mirrors are insufficient by themselves.
+  - id: finance_semantics_gate
+    rule: Retired Ozon finance transaction APIs must not be mapped one-for-one onto accrual APIs; aggregation and identifier mapping must remain explicit and fail-visible.

@@ -1,0 +1,90 @@
+verified_at: '2026-09-01'
+entries:
+  - marketplace: wildberries
+    method: GET
+    path: /api/v1/supplier/stocks
+    status: SHUTDOWN
+    shutdown_date: '2026-06-23'
+    replacement:
+      method: POST
+      path: /api/analytics/v1/stocks-report/wb-warehouses
+      token_scope: analytics
+      documented_rate_limit: 1 request / 20 seconds
+    evidence:
+      - https://dev.wildberries.ru/news/302
+      - https://dev.wildberries.ru/release-notes
+    note: Old statistics stock endpoint was explicitly replaced by the analytics warehouses stock report.
+
+  - marketplace: ozon
+    method: POST
+    path: /v3/posting/fbs/list
+    status: SHUTDOWN
+    shutdown_date: '2026-08-31'
+    replacement:
+      method: POST
+      path: /v4/posting/fbs/list
+    evidence:
+      - https://t.me/s/OzonSellerAPI?before=667
+
+  - marketplace: ozon
+    method: POST
+    path: /v3/posting/fbs/unfulfilled/list
+    status: SHUTDOWN
+    shutdown_date: '2026-08-31'
+    replacement:
+      method: POST
+      path: /v4/posting/fbs/unfulfilled/list
+    evidence:
+      - https://t.me/s/OzonSellerAPI?before=667
+
+  - marketplace: ozon
+    method: POST
+    path: /v2/posting/fbo/list
+    status: SHUTDOWN
+    shutdown_date: '2026-08-31'
+    replacement:
+      method: POST
+      path: /v3/posting/fbo/list
+    evidence:
+      - https://t.me/s/OzonSellerAPI?before=667
+
+  - marketplace: ozon
+    method: POST
+    path: /v1/posting/digital/list
+    status: SHUTDOWN
+    shutdown_date: '2026-08-31'
+    replacement:
+      method: POST
+      path: /v2/posting/digital/list
+    evidence:
+      - https://t.me/s/OzonSellerAPI?before=667
+
+  - marketplace: ozon
+    method: POST
+    path: /v3/finance/transaction/list
+    status: DEPRECATED
+    shutdown_date: '2026-09-08'
+    replacement:
+      - method: POST
+        path: /v1/finance/accrual/postings
+      - method: POST
+        path: /v1/finance/accrual/types
+      - method: POST
+        path: /v1/finance/accrual/by-day
+    evidence:
+      - https://t.me/s/OzonSellerAPI
+
+  - marketplace: ozon
+    method: POST
+    path: /v3/finance/transaction/totals
+    status: DEPRECATED
+    shutdown_date: '2026-09-08'
+    replacement:
+      - method: POST
+        path: /v1/finance/accrual/postings
+      - method: POST
+        path: /v1/finance/accrual/types
+      - method: POST
+        path: /v1/finance/accrual/by-day
+    evidence:
+      - https://t.me/s/OzonSellerAPI

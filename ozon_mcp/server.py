@@ -144,18 +144,20 @@ async def ozon_get_prices(visibility: str = "ALL", limit: int = 100,
                  "openWorldHint": True},
 )
 async def ozon_get_fbs_unfulfilled(cutoff_from: str, cutoff_to: str,
-                                   limit: int = 100, offset: int = 0) -> str:
-    """List new/unprocessed FBS shipments awaiting assembly.
+                                   limit: int = 100, cursor: str = "") -> str:
+    """List new/unprocessed FBS shipments awaiting assembly (v4).
 
     Args:
         cutoff_from: ISO datetime lower bound, e.g. "2026-06-01T00:00:00Z".
         cutoff_to: ISO datetime upper bound.
-        limit: page size.
-        offset: pagination offset.
-    Returns JSON: {"ok": true, "data": {"result": {"postings": [...]}}}.
+        limit: page size (1..100).
+        cursor: pagination cursor from a previous v4 response.
+    Returns JSON with root-level postings, cursor and has_next.
     """
     body = {"filter": {"cutoff_from": cutoff_from, "cutoff_to": cutoff_to},
-            "limit": limit, "offset": offset}
+            "limit": max(1, min(limit, 100))}
+    if cursor:
+        body["cursor"] = cursor
     spec = catalog.get("ozon_fbs_unfulfilled")
     return _j(await client.call_spec(spec, json_body=body))
 

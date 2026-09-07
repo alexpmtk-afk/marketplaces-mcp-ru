@@ -82,11 +82,29 @@ def _creds(monkeypatch):
     monkeypatch.setenv("OZON_PERF_CLIENT_SECRET", "secret-xyz")
 
 
+class _ImmediateRateController:
+    """Deterministic limiter for OAuth contract tests; records rule namespaces."""
+
+    def __init__(self):
+        self.rule_sets = []
+        self.defer_calls = []
+
+    async def try_acquire(self, rules):
+        self.rule_sets.append(tuple(rule.key for rule in rules))
+        return True, 0.0
+
+    async def acquire(self, rules):
+        raise AssertionError("interactive client must not call queue-reserving acquire()")
+
+    async def defer(self, rules, seconds):
+        self.defer_calls.append(seconds)
+
+
 def test_token_fetched_once_and_cached(monkeypatch):
     _creds(monkeypatch)
     rec = _Recorder()
     _patch_async_client(monkeypatch, rec)
-    client = MarketplaceClient(_make_config())
+    client = MarketplaceClient(_make_config(), rate_controller=_ImmediateRateController())
 
     async def run():
         r1 = await client.request("GET", API_HOST, API_PATH)
@@ -109,7 +127,7 @@ def test_token_request_payload_is_client_credentials(monkeypatch):
     _creds(monkeypatch)
     rec = _Recorder()
     _patch_async_client(monkeypatch, rec)
-    client = MarketplaceClient(_make_config())
+    client = MarketplaceClient(_make_config(), rate_controller=_ImmediateRateController())
     asyncio.run(client.request("GET", API_HOST, API_PATH))
     assert rec.token_payloads[0] == {
         "client_id": "cid-123",
@@ -123,7 +141,7 @@ def test_expired_token_triggers_one_refresh(monkeypatch):
     # expires_in tiny so the 60s skew makes it already-expired on cache.
     rec = _Recorder(expires_in=1)
     _patch_async_client(monkeypatch, rec)
-    client = MarketplaceClient(_make_config())
+    client = MarketplaceClient(_make_config(), rate_controller=_ImmediateRateController())
 
     async def run():
         await client.request("GET", API_HOST, API_PATH)  # fetch #1
@@ -150,9 +168,26 @@ def test_static_service_does_not_call_token_endpoint(monkeypatch):
     )
     monkeypatch.setenv("OZON_CLIENT_ID", "100")
     monkeypatch.setenv("OZON_API_KEY", "k")
-    client = MarketplaceClient(cfg)
+    client = MarketplaceClient(cfg, rate_controller=_ImmediateRateController())
     r = asyncio.run(client.request("GET", "api-seller.ozon.ru", "/v1/x"))
     assert r["ok"] is True
     assert rec.token_calls == 0  # no OAuth
     # static service sends no Bearer; it used Client-Id/Api-Key instead
     assert rec.seen_auth == [""]
+
+
+def test_oauth_token_and_api_use_separate_rate_limit_namespaces(monkeypatch):
+    _creds(monkeypatch)
+    rec = _Recorder()
+    _patch_async_client(monkeypatch, rec)
+    limiter = _ImmediateRateController()
+    client = MarketplaceClient(_make_config(), rate_controller=limiter)
+
+    result = asyncio.run(client.request("GET", API_HOST, API_PATH))
+
+    assert result["ok"] is True
+    assert len(limiter.rule_sets) == 2
+    token_rules, api_rules = map(set, limiter.rule_sets)
+    assert token_rules.isdisjoint(api_rules), (token_rules, api_rules)
+    assert any(key.endswith(":oauth:global") for key in token_rules)
+    assert all(":oauth:" not in key for key in api_rules)

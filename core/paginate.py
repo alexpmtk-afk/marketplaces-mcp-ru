@@ -7,6 +7,7 @@ loops. Anything exotic can still be paged manually via the generic executor.
 Supported styles (EndpointSpec.pagination):
 - offset          : limit/offset (in body for POST, query for GET); stop on short page
 - last_id         : Ozon — body filter, response result.last_id
+- last_id_no_limit: Ozon finance by-day — last_id cursor without a limit field
 - cursor          : Ozon v4/v5 — top-level "cursor" token + "total"
 - page            : body page/page_size, response result.page_count
 - lastchangedate  : WB statistics — query dateFrom = last row's lastChangeDate
@@ -86,8 +87,9 @@ async def fetch_all(
             loc.setdefault("limit", limit)
             if seen_cursor:
                 loc["cursor"] = seen_cursor
-        elif style == "last_id":
-            loc.setdefault("limit", limit)
+        elif style in ("last_id", "last_id_no_limit"):
+            if style == "last_id":
+                loc.setdefault("limit", limit)
             if seen_cursor:
                 loc["last_id"] = seen_cursor
         elif style == "page":
@@ -121,6 +123,10 @@ async def fetch_all(
             # The empty-page check above (and max_items/max_pages) terminates.
             pass
         elif style == "cursor":
+            # New Ozon posting APIs expose has_next instead of total. Honour it
+            # before advancing the cursor so we do not send a needless final request.
+            if _dig(data, "has_next") is False:
+                return _result(items, pages, truncated=False)
             cur = _dig(data, "cursor")
             total = _to_int(_dig(data, "total"))
             if total is not None and len(items) >= total:
@@ -128,7 +134,7 @@ async def fetch_all(
             if not cur or cur == seen_cursor:
                 return _result(items, pages, truncated=False)
             seen_cursor = cur
-        elif style == "last_id":
+        elif style in ("last_id", "last_id_no_limit"):
             last_id = _dig(data, "result.last_id") or _dig(data, "last_id")
             if not last_id or last_id == seen_cursor:
                 return _result(items, pages, truncated=False)
