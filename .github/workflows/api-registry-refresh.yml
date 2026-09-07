@@ -40,34 +40,12 @@ jobs:
           python - <<'PY'
           import csv
           import json
-          from collections import Counter
           from pathlib import Path
+
           summary = json.loads(Path('api_registry/audit/summary.json').read_text(encoding='utf-8'))
           catalog = json.loads(Path('api_registry/api_catalog.json').read_text(encoding='utf-8'))
           with Path('api_registry/api_catalog.csv').open(encoding='utf-8-sig', newline='') as fh:
               csv_rows = list(csv.DictReader(fh))
-
-          missing_contract = [
-              f"{row.get('marketplace')} {row.get('http_method')} {row.get('path')}"
-              for row in catalog if not row.get('contract')
-          ]
-          missing_lifecycle = [
-              f"{row.get('marketplace')} {row.get('http_method')} {row.get('path')}"
-              for row in catalog if not row.get('lifecycle')
-          ]
-          print('=== VALIDATION DIAGNOSTICS ===')
-          print(json.dumps({
-              'summary': summary,
-              'catalog_json_rows': len(catalog),
-              'catalog_csv_rows': len(csv_rows),
-              'marketplace_counts': dict(Counter(row.get('marketplace') for row in catalog)),
-              'lifecycle_counts_from_catalog': dict(Counter((row.get('lifecycle') or {}).get('status') for row in catalog)),
-              'contract_present_count': sum(1 for row in catalog if row.get('contract')),
-              'missing_contract_count': len(missing_contract),
-              'missing_contract': missing_contract[:100],
-              'missing_lifecycle_count': len(missing_lifecycle),
-              'missing_lifecycle': missing_lifecycle[:100],
-          }, ensure_ascii=False, indent=2, default=str))
 
           assert summary['baseline_total'] == 793, summary
           assert summary['current_snapshot_total'] == 798, summary
@@ -79,6 +57,7 @@ jobs:
           assert summary['diffs']['wildberries']['current_snapshot_count'] == 287, summary
           assert summary['diffs']['ozon_seller']['current_snapshot_count'] == 463, summary
           assert summary['diffs']['ozon_performance']['current_snapshot_count'] == 48, summary
+
           print(json.dumps({
               'baseline_total': summary['baseline_total'],
               'current_snapshot_total': summary['current_snapshot_total'],
@@ -91,15 +70,10 @@ jobs:
               'baseline_not_in_current': {k: len(v['baseline_not_in_current']) for k, v in summary['diffs'].items()},
           }, ensure_ascii=False, indent=2))
           PY
-          set +e
-          git diff --check > api_registry/audit/git_diff_check.txt 2>&1
-          rc=$?
-          set -e
-          cat api_registry/audit/git_diff_check.txt
-          exit "$rc"
+          git diff --check
 
       - name: Commit generated registry snapshot
-        if: always() && github.event_name == 'push'
+        if: github.event_name == 'push'
         run: |
           git config user.name 'api-registry-bot'
           git config user.email 'api-registry-bot@users.noreply.github.com'
