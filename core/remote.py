@@ -18,6 +18,7 @@ from starlette.responses import JSONResponse
 from .combined import build
 from .credentials import ENV_CABINETS
 from .rate_limit import verify_shared_redis
+from .rate_limit_repair import repair_legacy_wb_global_cooldowns
 
 PORT = int(os.environ.get("PORT", "8080"))
 HOST = os.environ.get("MCP_HOST", "0.0.0.0")
@@ -71,6 +72,7 @@ def _remote_app() -> Any:
     if not os.environ.get(ENV_CABINETS, "").strip():
         raise RuntimeError(f"{ENV_CABINETS} is required for the remote MCP; refusing to start without Lockbox cabinets")
     verify_shared_redis()
+    repair_legacy_wb_global_cooldowns()
     app = mcp.streamable_http_app()
     app.add_middleware(BearerAuthMiddleware, token=token)
     return app
