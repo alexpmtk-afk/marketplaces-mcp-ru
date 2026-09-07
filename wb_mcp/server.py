@@ -14,6 +14,8 @@ Run:
 """
 from __future__ import annotations
 
+import asyncio
+import base64
 import hashlib
 import json
 import math
@@ -147,6 +149,196 @@ def _orders_summary_from_rows(rows: object, day: date, seller: str) -> dict:
     }
 
 
+def _wb_active_token_type() -> str:
+    """Return a non-secret WB token type derived from the documented JWT `acc` claim."""
+    creds, _source = client.config.resolve_creds()
+    token = str(creds.get("token", "") or "")
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(payload.encode("ascii")).decode("utf-8"))
+        return {1: "base", 2: "test", 3: "personal", 4: "service"}.get(
+            int(claims.get("acc", 0) or 0), "unknown"
+        )
+    except (IndexError, ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError):
+        return "unknown"
+
+
+def _wb_stocks_needs_report_fallback(result: dict) -> bool:
+    if int(result.get("code", 0) or 0) != 403:
+        return False
+    text = " ".join(str(result.get(key, "")) for key in ("message", "details", "error"))
+    return "token does not satisfy additional requirements" in text.lower()
+
+
+def _wb_report_task_id(result: dict) -> Optional[str]:
+    body = result.get("data")
+    if not isinstance(body, dict):
+        return None
+    nested = body.get("data")
+    if isinstance(nested, dict) and nested.get("taskId"):
+        return str(nested["taskId"])
+    if body.get("taskId"):
+        return str(body["taskId"])
+    return None
+
+
+def _wb_flatten_remains(rows: object, nm_ids: Optional[list[int]]) -> list[dict]:
+    if rows is None:
+        return []
+    if not isinstance(rows, list):
+        raise ValueError("WB warehouse-remains report is not an array")
+    wanted = set(nm_ids or [])
+    out: list[dict] = []
+    for product in rows:
+        if not isinstance(product, dict):
+            continue
+        nm_id = product.get("nmId")
+        if wanted and nm_id not in wanted:
+            continue
+        common = {
+            key: product.get(key)
+            for key in ("nmId", "vendorCode", "barcode", "techSize")
+            if product.get(key) is not None
+        }
+        warehouses = product.get("warehouses")
+        if not isinstance(warehouses, list):
+            continue
+        for warehouse in warehouses:
+            if not isinstance(warehouse, dict):
+                continue
+            row = dict(common)
+            if warehouse.get("warehouseName") is not None:
+                row["warehouseName"] = warehouse.get("warehouseName")
+            row["quantity"] = warehouse.get("quantity", 0)
+            out.append(row)
+    return out
+
+
+async def _wb_get_stocks_via_report(
+    nm_ids: Optional[list[int]], chrt_ids: Optional[list[int]], limit: int, offset: int,
+) -> dict:
+    """Fallback for Base tokens using WB's official asynchronous warehouse-remains report."""
+    if chrt_ids:
+        return make_error(
+            "forbidden",
+            "WB Base tokens can return warehouse remains through the Analytics report, "
+            "but that report has no chrtId field, so chrt_ids filtering requires a "
+            "Personal or Service token for the fast stocks endpoint.",
+            operation_id="wb_analytics_stocks_wb_warehouses",
+            retryable=False,
+            details={"required_token_type": ["Personal", "Service"]},
+        ) | {"required_token_type": ["Personal", "Service"]}
+
+    creds, _source = client.config.resolve_creds()
+    missing = [field for field in client.config.fields if not creds.get(field)]
+    if missing:
+        return make_error(
+            "auth", f"Missing WB credentials: {', '.join(missing)}.",
+            operation_id="wb_analytics_warehouse_remains_report", retryable=False,
+        )
+    cabinet_key = client._creds_key(client.config, creds)
+    task_cache_key = f"marketplace-report:v1:wb:warehouse-remains:{cabinet_key}"
+    task_id: Optional[str] = None
+    try:
+        task_id = await client.rate_controller.cache_get(task_cache_key)
+    except Exception:
+        task_id = None
+
+    if not task_id:
+        created = await client.request(
+            "GET", "seller-analytics-api.wildberries.ru", "/api/v1/warehouse_remains",
+            operation_id="wb_analytics_warehouse_remains_create",
+            rate_limit="4 req/hour",
+            rate_scope="analytics-warehouse-remains-create",
+        )
+        if not created.get("ok"):
+            return created
+        task_id = _wb_report_task_id(created)
+        if not task_id:
+            return make_error(
+                "schema", "WB warehouse-remains creation response had no taskId.",
+                operation_id="wb_analytics_warehouse_remains_create", retryable=False,
+            )
+        try:
+            await client.rate_controller.cache_set(task_cache_key, task_id, 7200)
+        except Exception:
+            pass
+
+    status_result = await client.request(
+        "GET", "seller-analytics-api.wildberries.ru",
+        f"/api/v1/warehouse_remains/tasks/{task_id}/status",
+        operation_id="wb_analytics_warehouse_remains_status",
+        rate_limit="4 req/hour",
+        rate_scope="analytics-warehouse-remains-status",
+    )
+    if not status_result.get("ok"):
+        status_result.setdefault("source", "wb_analytics_warehouse_remains_report")
+        status_result.setdefault("report_task_id", task_id)
+        return status_result
+    status_body = status_result.get("data")
+    state = None
+    if isinstance(status_body, dict):
+        nested = status_body.get("data")
+        if isinstance(nested, dict):
+            state = nested.get("status")
+        if state is None:
+            state = status_body.get("status")
+    if str(state or "").lower() != "done":
+        return {
+            "ok": False,
+            "error": "report_pending",
+            "error_type": "report_pending",
+            "message": (
+                "WB accepted the warehouse-remains report task, but it is not ready yet. "
+                "Base-token status checks are limited to one request every 15 minutes; "
+                "call wb_get_stocks again after the reported delay."
+            ),
+            "retryable": True,
+            "retry_after_seconds": 900,
+            "report_task_id": task_id,
+            "report_status": state,
+            "source": "wb_analytics_warehouse_remains_report",
+        }
+
+    downloaded = await client.request(
+        "GET", "seller-analytics-api.wildberries.ru",
+        f"/api/v1/warehouse_remains/tasks/{task_id}/download",
+        operation_id="wb_analytics_warehouse_remains_download",
+        rate_limit="4 req/hour",
+        rate_scope="analytics-warehouse-remains-download",
+    )
+    if not downloaded.get("ok"):
+        # WB documents HTTP 204 as a valid empty report. MarketplaceClient treats
+        # every 2xx as success, but keep this guard explicit for mocked/adapted clients.
+        if int(downloaded.get("status", downloaded.get("code", 0)) or 0) == 204:
+            rows: object = []
+        else:
+            return downloaded
+    else:
+        rows = downloaded.get("data")
+    try:
+        flat = _wb_flatten_remains(rows, nm_ids)
+    except ValueError as exc:
+        return make_error(
+            "schema", str(exc), operation_id="wb_analytics_warehouse_remains_download",
+            retryable=False,
+        )
+    page_limit = max(1, min(int(limit), 250000))
+    page = flat[int(offset): int(offset) + page_limit]
+    return {
+        "ok": True,
+        "status": 200,
+        "data": {"data": {"items": page}},
+        "source": "wb_analytics_warehouse_remains_report",
+        "fallback_from": "wb_analytics_stocks_wb_warehouses",
+        "report_task_id": task_id,
+        "total_flat_rows": len(flat),
+        "offset": int(offset),
+        "limit": page_limit,
+    }
+
+
 # --------------------------------------------------------------------------
 # Typed convenience tools — the everyday manager workflows, one call each.
 # They delegate to the same client; nothing is duplicated.
@@ -182,21 +374,15 @@ async def wb_get_stocks(
 ) -> str:
     """Get current stock on Wildberries warehouses through Seller Analytics.
 
-    This uses the current replacement for the retired Statistics endpoint:
-    POST /api/analytics/v1/stocks-report/wb-warehouses. Data is refreshed by WB
-    about every 30 minutes; one row represents one size on one WB warehouse.
-
-    The active WB token must include the Analytics category. The method is
-    read-only even though WB exposes it as HTTP POST.
+    Personal/Service tokens use WB's current fast stocks endpoint. Base tokens
+    transparently use the official asynchronous warehouse-remains report instead,
+    because WB restricts the fast endpoint by token type even when Analytics is present.
 
     Args:
         nm_ids: optional WB article ids (nmId), maximum 1000. Empty means all.
-        chrt_ids: optional size ids; meaningful only together with nm_ids.
+        chrt_ids: optional size ids; requires Personal/Service fast endpoint.
         limit: rows per page, 1..250000 (default 250000).
-        offset: number of rows to skip for offset pagination.
-    Returns JSON: {"ok": true, "data": {"data": {"items": [...]}}} or the
-    canonical error envelope. Rows include nmId, chrtId, warehouseId,
-    warehouseName, regionName, quantity, inWayToClient and inWayFromClient.
+        offset: number of rows to skip for pagination.
     """
     if nm_ids is not None and len(nm_ids) > 1000:
         return _j(make_error(
@@ -213,6 +399,10 @@ async def wb_get_stocks(
             "invalid_params", "offset must be >= 0.",
             operation_id="wb_analytics_stocks_wb_warehouses", retryable=False,
         ))
+
+    token_type = _wb_active_token_type()
+    if token_type == "base":
+        return _j(await _wb_get_stocks_via_report(nm_ids, chrt_ids, limit, offset))
 
     body: dict[str, object] = {
         "limit": max(1, min(int(limit), 250000)),
@@ -232,13 +422,8 @@ async def wb_get_stocks(
         rate_limit="3 req/min",
         rate_scope="analytics",
     )
-    if int(result.get("code", 0) or 0) == 403:
-        result["message"] = (
-            "WB denied access to the current inventory Analytics API. The active "
-            "WB token must include the Analytics category (Personal or Service "
-            "token). No deprecated Statistics endpoint was used."
-        )
-        result["required_token_category"] = "analytics"
+    if _wb_stocks_needs_report_fallback(result):
+        return _j(await _wb_get_stocks_via_report(nm_ids, chrt_ids, limit, offset))
     return _j(result)
 
 
