@@ -12,6 +12,7 @@ Run:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Optional
@@ -196,7 +197,12 @@ async def ozon_set_price(offer_id: str, price: str, old_price: str = "0",
         "min_price": min_price, "currency_code": currency_code,
     }]}
     spec = catalog.get("ozon_prices_update")
-    return _j(await client.call_spec(spec, json_body=body))
+    product_hash = hashlib.sha256(offer_id.encode("utf-8")).hexdigest()
+    product_scope = f"seller:price-product:{product_hash}"
+    return _j(await client.request(
+        "POST", spec.host, spec.path, json_body=body, operation_id=spec.operation_id,
+        rate_limit="10 req/hour", rate_scope=product_scope,
+    ))
 
 
 def main() -> None:

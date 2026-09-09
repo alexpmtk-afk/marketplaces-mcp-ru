@@ -10,7 +10,7 @@ high-leverage tools:
     {svc}_search_methods    token search across the catalog (RU/EN)
     {svc}_describe_method    full spec for one operation_id
     {svc}_call_method       execute a catalog endpoint (safety-gated)
-    {svc}_call_raw          execute ANY path (full coverage, verb-gated)
+    {svc}_call_raw          fail closed until a quota contract is catalogued
     {svc}_fetch_all         auto-paginate a catalog endpoint
 
 Typed convenience tools live in each service's server.py and call the same
@@ -261,10 +261,9 @@ def register_generic_tools(
         confirm_write: bool = False,
         i_understand_this_modifies_data: bool = False,
     ) -> str:
-        """Execute ANY endpoint, even ones not in the catalog (full API coverage).
+        """Fail closed: raw paths have no proven quota contract.
 
-        Safety is inferred from the HTTP verb: GET=read, POST/PUT/PATCH=write,
-        DELETE=destructive. Same confirmation rules as {svc}_call_method.
+        Use a catalogued operation with a parseable, proven quota rule instead.
 
         Args:
             method: HTTP verb (GET/POST/PUT/PATCH/DELETE).
