@@ -25,6 +25,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .client import MarketplaceClient
 from .paginate import fetch_all as _fetch_all
+from .rate_limit import parse_rate_limit
 from .registry import Catalog
 from .safety import check_gate, infer_safety
 
@@ -32,6 +33,11 @@ from .safety import check_gate, infer_safety
 def _j(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2, default=str)
 
+
+def has_proven_quota(spec: Any) -> bool:
+    return bool(getattr(spec, "quota_proven", False)) and parse_rate_limit(
+        str(getattr(spec, "rate_limit", ""))
+    ) is not None
 
 def register_generic_tools(
     mcp: FastMCP,
@@ -42,8 +48,15 @@ def register_generic_tools(
     key_help: str = "",
     entities: Optional[Any] = None,
 ) -> None:
-    """Register the 8 generic tools under the `{svc}_` prefix.
+    def quota_error(operation_id: str, path: str = "") -> dict:
+        return {
+            "ok": False, "error": "rate_limit_rule_unproven",
+            "code": "RATE_LIMIT_RULE_UNPROVEN", "operation_id": operation_id,
+            "endpoint": path, "retryable": False,
+            "message": "Execution is refused until a provider-documented, parseable quota rule is registered.",
+        }
 
+    """Register the 8 generic tools under the `{svc}_` prefix.
     key_help: human note on where to obtain the API keys (shown by check_auth).
     entities: EntityIndex instance (optional); enables the *_map tool overview.
     """
@@ -226,6 +239,8 @@ def register_generic_tools(
         )
         if gate:
             return _j(gate)
+        if not has_proven_quota(spec):
+            return _j(quota_error(spec.operation_id, spec.path))
         resp = await client.call_spec(
             spec, path_values=path_values, query=query, json_body=body
         )
@@ -260,18 +275,8 @@ def register_generic_tools(
             confirm_write / i_understand_this_modifies_data: confirmations.
         Returns JSON: {"ok": true, "status", "data"} or the error envelope.
         """
-        safety = infer_safety(method, None)
-        gate = check_gate(
-            safety, confirm_write=confirm_write,
-            i_understand_this_modifies_data=i_understand_this_modifies_data,
-            endpoint=path,
-        )
-        if gate:
-            return _j(gate)
-        resp = await client.request(
-            method, host or catalog.default_host, path, query=query, json_body=body
-        )
-        return _j(resp)
+        # Raw paths have no catalog operation and therefore no proven quota rule.
+        return _j(quota_error("raw", path))
 
     @mcp.tool(
         name=f"{svc}_fetch_all",
@@ -309,6 +314,8 @@ def register_generic_tools(
             return _j({"error": "invalid_params",
                        "message": "fetch_all only runs read endpoints; "
                                   f"{operation_id} is a {spec.method} write."})
+        if not has_proven_quota(spec):
+            return _j(quota_error(spec.operation_id, spec.path))
         resp = await _fetch_all(
             client, spec, base_query=query, base_body=body, path_values=path_values,
             items_path=items_path, limit=limit, max_items=max_items,

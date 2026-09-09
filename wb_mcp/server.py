@@ -271,7 +271,10 @@ async def _wb_get_stocks_via_report(
             "auth", f"Missing WB credentials: {', '.join(missing)}.",
             operation_id="wb_analytics_warehouse_remains_report", retryable=False,
         )
-    cabinet_key = client._creds_key(client.config, creds)
+    try:
+        cabinet_key = client._quota_key(client.config, creds)
+    except ValueError as exc:
+        return _j(make_error("rate_limit", str(exc), operation_id="wb_get_orders_summary", retryable=False))
     task_cache_key = f"marketplace-report:v1:wb:warehouse-remains:{cabinet_key}"
     task_id: Optional[str] = None
     try:
@@ -523,7 +526,10 @@ async def wb_get_orders_summary(seller: str, date_from: str, date_to: str) -> st
             operation_id="wb_get_orders_summary", retryable=False,
         ))
 
-    cabinet_key = client._creds_key(client.config, creds)
+    try:
+        cabinet_key = client._quota_key(client.config, creds)
+    except ValueError as exc:
+        return _j(make_error("rate_limit", str(exc), operation_id="wb_get_orders_summary", retryable=False))
     cache_key = _orders_summary_cache_key(cabinet_key, start)
     try:
         cached = await client.rate_controller.cache_get(cache_key)

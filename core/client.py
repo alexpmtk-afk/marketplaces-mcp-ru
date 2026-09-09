@@ -13,6 +13,7 @@ request/backoff/pagination logic is written exactly once.
 from __future__ import annotations
 
 import asyncio
+import base64
 import email.utils
 import hashlib
 import json
@@ -150,9 +151,33 @@ class MarketplaceClient:
 
     @staticmethod
     def _creds_key(config: ServiceConfig, creds: dict[str, str]) -> str:
+        """Secret-sensitive cache identity; never use for provider quotas."""
         raw = json.dumps({f: creds.get(f, "") for f in config.fields},
                          sort_keys=True)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _quota_key(config: ServiceConfig, creds: dict[str, str]) -> str:
+        """Hash the stable provider quota owner, never the rotating secret."""
+        if config.name == "wb":
+            try:
+                payload = str(creds.get("token", "")).split(".")[1]
+                payload += "=" * (-len(payload) % 4)
+                seller_id = json.loads(base64.urlsafe_b64decode(
+                    payload.encode("ascii")).decode("utf-8")).get("sid")
+            except (IndexError, ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError):
+                seller_id = None
+            if not seller_id:
+                raise ValueError("WB seller quota identity is unavailable")
+            value = f"wb:seller:{seller_id}"
+        elif config.name == "ozon":
+            client_id = str(creds.get("client_id", "")).strip()
+            if not client_id:
+                raise ValueError("Ozon Client-Id quota identity is unavailable")
+            value = f"ozon:client:{client_id}"
+        else:
+            value = f"{config.name}:credentials:" + MarketplaceClient._creds_key(config, creds)
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
     # --- credential handling -------------------------------------------------
     def _creds_or_error(self) -> tuple[Optional[dict[str, str]], Optional[dict]]:
@@ -332,7 +357,10 @@ class MarketplaceClient:
             creds, err = self._creds_or_error()
         if err:
             return err
-        cabinet_key = self._creds_key(self.config, creds or {})
+        try:
+            cabinet_key = self._quota_key(self.config, creds or {})
+        except ValueError as exc:
+            return make_error("rate_limit", str(exc), operation_id=operation_id, retryable=False)
         rules = build_rules(
             service=self.config.name,
             cabinet_key=cabinet_key,
@@ -468,13 +496,10 @@ class MarketplaceClient:
                 operation_id="rate_limit_status",
                 retryable=False,
             )
-        cabinet_key = self._creds_key(self.config, creds)
-        global_rule = build_rules(
-            service=self.config.name,
-            cabinet_key=cabinet_key,
-            host="",
-            operation_id="rate_limit_status",
-        )[0]
+        try:
+            cabinet_key = self._quota_key(self.config, creds)
+        except ValueError as exc:
+            return make_error("rate_limit", str(exc), operation_id="rate_limit_status", retryable=False)
         try:
             state = await self.rate_controller.snapshot(
                 key_prefix(self.config.name, cabinet_key))
