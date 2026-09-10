@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import binascii
 import email.utils
 import hashlib
 import json
@@ -30,6 +31,7 @@ from .rate_limit import (
     GlobalRateController,
     RateLimitUnavailable,
     build_rules,
+    configured_global_rps,
     key_prefix,
 )
 from .registry import EndpointSpec
@@ -165,7 +167,7 @@ class MarketplaceClient:
                 payload += "=" * (-len(payload) % 4)
                 seller_id = json.loads(base64.urlsafe_b64decode(
                     payload.encode("ascii")).decode("utf-8")).get("sid")
-            except (IndexError, ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError):
+            except (IndexError, ValueError, TypeError, binascii.Error, json.JSONDecodeError, UnicodeDecodeError):
                 seller_id = None
             if not seller_id:
                 raise ValueError("WB seller quota identity is unavailable")
@@ -514,7 +516,7 @@ class MarketplaceClient:
             "ok": True,
             "service": self.config.name,
             "credential_source": source,
-            "configured_global_rps": round(1.0 / global_rule.interval_seconds, 3),
+            "configured_global_rps": configured_global_rps(self.config.name),
             **state,
         }
 

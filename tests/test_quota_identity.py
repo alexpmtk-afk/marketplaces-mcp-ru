@@ -35,3 +35,12 @@ def test_generic_catalog_requires_explicit_proven_marker():
     catalog = Catalog.from_yaml("wb_mcp/endpoints.yaml")
     assert has_proven_quota(catalog.get("wb_stats_sales"))
     assert not has_proven_quota(catalog.get("wb_get_api_feedbacks"))
+
+def test_malformed_wb_token_fails_closed_with_a_safe_error():
+    cfg = SimpleNamespace(name="wb")
+    try:
+        MarketplaceClient._quota_key(cfg, {"token": "not-a-jwt"})
+    except ValueError as exc:
+        assert "quota identity" in str(exc)
+    else:
+        raise AssertionError("malformed token must not produce a quota key")
