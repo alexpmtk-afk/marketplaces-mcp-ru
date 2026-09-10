@@ -49,6 +49,10 @@ class FakeClient:
     def _creds_key(config, creds):
         return "cabinet-hash"
 
+    @staticmethod
+    def _quota_key(config, creds):
+        return "stable-seller-hash"
+
     async def call_spec(self, spec, **kwargs):
         self.calls.append((spec.operation_id, kwargs))
         return {"ok": True, "status": 200, "data": self.data}

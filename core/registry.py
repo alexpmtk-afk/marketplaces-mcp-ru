@@ -44,6 +44,9 @@ class EndpointSpec:
     # "result.items", "items", "result.rows", "result.operations", ...
     items_path: str = "result.items"
     rate_limit: str = ""
+    # Explicitly marks a provider-documented, parseable request quota. Generic
+    # execution is fail-closed until this is true.
+    quota_proven: bool = False
     doc: str = ""
     # Russian (and other) search aliases so RU queries hit English summaries.
     keywords: list[str] = field(default_factory=list)

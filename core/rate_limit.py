@@ -123,22 +123,32 @@ def key_prefix(service: str, cabinet_key: str) -> str:
     return f"marketplace-rate:v1:{service.lower().strip()}:{cabinet_key}"
 
 
-def build_rules(*, service: str, cabinet_key: str, host: str,
-                operation_id: Optional[str] = None, scope: str = "",
-                catalog_rate_limit: str = "") -> list[RateRule]:
+def configured_global_rps(service: str) -> Optional[float]:
+    """Return the documented service-wide ceiling or an explicit override."""
     service = service.lower().strip()
-    default_rps = {"wb": 5.0, "ozon": 20.0, "ozon_perf": 10.0}.get(service, 5.0)
+    default_rps = {"wb": None, "ozon": 50.0, "ozon_perf": 10.0}.get(service, 5.0)
     env_name = {
         "wb": "WB_GLOBAL_RPS", "ozon": "OZON_GLOBAL_RPS",
         "ozon_perf": "OZON_PERF_GLOBAL_RPS",
     }.get(service, "MARKETPLACE_GLOBAL_RPS")
+    configured = os.environ.get(env_name, "").strip()
     try:
-        global_rps = float(os.environ.get(env_name, str(default_rps)))
+        return max(0.01, float(configured)) if configured else default_rps
     except ValueError:
-        global_rps = default_rps
-    global_rps = max(0.01, global_rps)
+        return default_rps
+
+
+def build_rules(*, service: str, cabinet_key: str, host: str,
+                operation_id: Optional[str] = None, scope: str = "",
+                catalog_rate_limit: str = "") -> list[RateRule]:
+    service = service.lower().strip()
+    # WB documents quotas per seller account and method/group, not a single
+    # marketplace-wide ceiling. Ozon documents a 50 RPS aggregate per Client-Id.
+    # An explicit environment value remains an operational override.
+    global_rps = configured_global_rps(service)
+
     prefix = key_prefix(service, cabinet_key)
-    rules = [RateRule(f"{prefix}:global", 1.0 / global_rps)]
+    rules = [] if global_rps is None else [RateRule(f"{prefix}:global", 1.0 / global_rps)]
     interval = parse_rate_limit(catalog_rate_limit)
     if interval is not None:
         group = "|".join((host.lower(), scope.lower(), catalog_rate_limit.lower()))

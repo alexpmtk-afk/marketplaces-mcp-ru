@@ -97,6 +97,7 @@ endpoints:
   safety: read
   pagination: offset
   rate_limit: 10 req/6s
+  quota_proven: true
   summary: Get products with current prices and discounts.
   params:
     query: limit<=1000, offset, filterNmID
@@ -115,6 +116,7 @@ endpoints:
   scope: prices
   safety: write
   rate_limit: 10 req/6s
+  quota_proven: true
   summary: Set prices and discounts (<=1000 products). Body {data:[{nmID,price,discount}]}.
   doc: https://dev.wildberries.ru/en/openapi/work-with-products
   keywords:
@@ -156,6 +158,7 @@ endpoints:
   safety: read
   pagination: lastchangedate
   rate_limit: 1 req/min
+  quota_proven: true
   summary: Sales and returns since dateFrom. Incremental by lastChangeDate.
   params:
     query: dateFrom (RFC3339), flag
@@ -174,6 +177,7 @@ endpoints:
   safety: read
   pagination: lastchangedate
   rate_limit: 1 req/min
+  quota_proven: true
   summary: Orders since dateFrom. Incremental by lastChangeDate.
   params:
     query: dateFrom (RFC3339), flag
@@ -226,6 +230,7 @@ endpoints:
   safety: read
   pagination: rrdid
   rate_limit: 1 req/min
+  quota_proven: true
   summary: Realization report (financial line items) for a period. Cursor via rrdid.
   params:
     query: dateFrom, dateTo, limit<=100000, rrdid
@@ -285,6 +290,7 @@ endpoints:
   scope: marketplace
   safety: read
   rate_limit: 300 req/min
+  quota_proven: true
   summary: New FBS assembly orders awaiting processing.
   doc: https://dev.wildberries.ru/en/openapi/orders-fbs
   keywords:

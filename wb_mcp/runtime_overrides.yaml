@@ -13,6 +13,7 @@ endpoints:
     safety: read
     pagination: offset
     rate_limit: 3 req/min
+    quota_proven: true
     summary: Current inventory by item size and WB warehouse; replaces retired /api/v1/supplier/stocks.
     params:
       body: '{nmIds[]<=1000, chrtIds[], limit<=250000, offset}'
