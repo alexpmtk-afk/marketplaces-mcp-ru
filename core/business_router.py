@@ -1,22 +1,24 @@
 """Server-side business query routing for marketplace analytics.
 
 Clients provide business intent, not provider endpoint names. Source selection,
-period suitability and aggregation therefore live on the MCP server and are
-shared by every connected ChatGPT/Codex client.
+period suitability, Historical Store coverage and aggregation live on the MCP
+server and are shared by every connected ChatGPT/Codex client.
 """
 from __future__ import annotations
 
 import json
 from datetime import date, timedelta
-from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
 
-from .business_registry import resolve_business_cabinet
 from .errors import make_error
+from .order_history import (
+    OrderHistoryStore,
+    canonical_order_totals,
+    resolve_history_cabinet,
+)
 
 # WB Statistics Orders is the approved canonical source for ORDERS. The
 # Business Metrics Contract currently treats its practical history as ~90 days.
-# Do not silently substitute Sales Funnel or Finance beyond this window.
 WB_OPERATIONAL_RETENTION_DAYS = 90
 WB_STATS_MAX_ROWS = 80_000
 
@@ -32,49 +34,6 @@ def _parse_day(value: str, field: str) -> date:
         raise ValueError(f"{field} must be an ISO calendar date (YYYY-MM-DD)") from exc
 
 
-def _num(value: Any) -> Decimal:
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, ValueError, TypeError) as exc:
-        raise ValueError(f"provider returned a non-numeric amount: {value!r}") from exc
-
-
-def _resolve_named_creds(
-    service_module: Any, seller: str,
-) -> tuple[Optional[dict[str, str]], str, Optional[dict]]:
-    service = service_module.client.config.name
-    business = resolve_business_cabinet(service, seller)
-    credential_name = business.cabinet if business else seller.strip()
-    creds, resolved = service_module.client.config.store.resolve_named(
-        service,
-        service_module.client.config.fields,
-        service_module.client.config.env_map,
-        credential_name,
-    )
-    missing = [field for field in service_module.client.config.fields if not creds.get(field)]
-    if not resolved or missing:
-        if business:
-            return None, "", make_error(
-                "seller_known_but_not_configured",
-                f"Кабинет {business.business_entity} известен, но credentials {service.upper()} не настроены.",
-                operation_id="marketplace_business_query",
-                retryable=False,
-                details={
-                    "seller": seller,
-                    "cabinet": business.cabinet,
-                    "credentials_status": "not_configured",
-                    "upstream_request_sent": False,
-                },
-            )
-        return None, "", make_error(
-            "invalid_params",
-            f"{service.upper()} cabinet {seller!r} was not found or is incomplete.",
-            operation_id="marketplace_business_query",
-            retryable=False,
-        )
-    return creds, resolved, None
-
-
 def _aggregate_statistics_orders(
     rows: object, *, start: date, end: date, seller: str,
 ) -> dict:
@@ -86,10 +45,9 @@ def _aggregate_statistics_orders(
             retryable=False,
         )
 
-    # WB documents a maximum response size for this Statistics feed. If the
-    # ceiling is reached, a continuation request by lastChangeDate is required.
-    # That endpoint is only 1 req/min, so a synchronous MCP call must not pretend
-    # the first 80k rows are complete.
+    # WB documents a response ceiling for this Statistics feed. If the ceiling
+    # is reached, a continuation by lastChangeDate is required. Never present
+    # the first page as a complete aggregate.
     if len(rows) >= WB_STATS_MAX_ROWS:
         last_change = None
         last = rows[-1] if rows else None
@@ -107,37 +65,15 @@ def _aggregate_statistics_orders(
             },
         )
 
-    count = 0
-    cancelled = 0
-    amount = Decimal("0")
-    malformed = 0
-    matched_rows = 0
-    for row in rows:
-        if not isinstance(row, dict):
-            malformed += 1
-            continue
-        try:
-            row_day = _parse_day(str(row.get("date", "")), "WB order date")
-        except ValueError:
-            malformed += 1
-            continue
-        if row_day < start or row_day > end:
-            continue
-        matched_rows += 1
-        if bool(row.get("isCancel", False)):
-            cancelled += 1
-            continue
-        try:
-            amount += _num(row.get("finishedPrice"))
-        except ValueError:
-            return make_error(
-                "provider_data_conflict",
-                "WB Statistics Orders row has no valid finishedPrice.",
-                operation_id="wb_stats_orders",
-                retryable=False,
-            )
-        count += 1
-
+    try:
+        totals = canonical_order_totals(rows, start, end)
+    except ValueError as exc:
+        return make_error(
+            "provider_data_conflict",
+            str(exc),
+            operation_id="wb_stats_orders",
+            retryable=False,
+        )
     return {
         "ok": True,
         "metric": "ORDERS",
@@ -145,13 +81,7 @@ def _aggregate_statistics_orders(
         "seller": seller,
         "date_from": start.isoformat(),
         "date_to": end.isoformat(),
-        "orders_count": count,
-        "orders_amount": float(amount),
-        "currency": "RUB",
-        "cancelled_orders_excluded": cancelled,
         "provider_rows_received": len(rows),
-        "provider_rows_in_period": matched_rows,
-        "malformed_rows_skipped": malformed,
         "route": "operational_range",
         "source": "wb_stats_orders",
         "source_operation": "wb_stats_orders",
@@ -162,6 +92,7 @@ def _aggregate_statistics_orders(
             "Canonical WB Statistics Orders semantics from the Business Metrics Contract. "
             "Rows outside the requested calendar period are filtered server-side."
         ),
+        **totals,
     }
 
 
@@ -180,20 +111,17 @@ async def _wb_orders_operational_range(
     if start < oldest_supported:
         return make_error(
             "source_not_suitable",
-            "Canonical WB Statistics Orders does not provide the requested historical depth. Sales Funnel was live-tested and is not semantically equivalent, so the server refuses to substitute it. An approved historical ORDERS source/store is required.",
+            "Canonical WB Statistics Orders does not provide the requested historical depth.",
             operation_id="marketplace_business_query",
             retryable=False,
             details={
                 "requested_date_from": start.isoformat(),
                 "oldest_operational_date": oldest_supported.isoformat(),
                 "canonical_source": "wb_stats_orders",
-                "rejected_substitute": "wb_analytics_funnel",
-                "rejected_reason": "live parity mismatch on all three TEST WB cabinets (2026-09-11)",
-                "requires": "approved historical ORDERS source or selective Historical Store",
             },
         )
 
-    creds, resolved_seller, error = _resolve_named_creds(wb, seller)
+    cabinet, creds, error = resolve_history_cabinet(wb, seller)
     if error:
         return error
     assert creds is not None
@@ -216,8 +144,134 @@ async def _wb_orders_operational_range(
     if not response.get("ok"):
         return response
     return _aggregate_statistics_orders(
-        response.get("data"), start=start, end=end, seller=resolved_seller,
+        response.get("data"), start=start, end=end, seller=cabinet,
     )
+
+
+async def _wb_orders_period_aware(
+    wb: Any,
+    history_store: OrderHistoryStore | None,
+    *,
+    seller: str,
+    start: date,
+    end: date,
+) -> dict:
+    """Use canonical live data for recent dates and durable canonical history for old dates."""
+    today = date.today()
+    if end > today:
+        return make_error("invalid_params", "date_to cannot be in the future", retryable=False)
+
+    oldest_live = today - timedelta(days=WB_OPERATIONAL_RETENTION_DAYS - 1)
+    if start >= oldest_live:
+        return await _wb_orders_operational_range(
+            wb, seller=seller, start=start, end=end,
+        )
+
+    cabinet, _creds, error = resolve_history_cabinet(wb, seller)
+    if error:
+        return error
+
+    historical_end = min(end, oldest_live - timedelta(days=1))
+    if history_store is None:
+        return make_error(
+            "source_not_suitable",
+            "The requested WB ORDERS period is older than the canonical Statistics window and the selective Historical Store is not configured.",
+            operation_id="marketplace_business_query",
+            retryable=False,
+            details={
+                "cabinet": cabinet,
+                "requested_date_from": start.isoformat(),
+                "historical_segment_to": historical_end.isoformat(),
+                "canonical_source": "wb_stats_orders",
+                "rejected_substitute": "wb_analytics_funnel",
+                "rejected_reason": "live parity mismatch on all three TEST WB cabinets (2026-09-11)",
+                "requires": "MARKETPLACE_MCP_YDB_ENDPOINT + verified WB ORDERS history coverage",
+            },
+        )
+
+    coverage = history_store.coverage(cabinet)
+    if not coverage.covers(start, historical_end):
+        return make_error(
+            "coverage_gap",
+            "The selective WB ORDERS Historical Store does not fully cover the requested old segment. The server will not fill the gap with a semantically different report.",
+            operation_id="marketplace_business_query",
+            retryable=False,
+            details={
+                "cabinet": cabinet,
+                "requested_from": start.isoformat(),
+                "required_historical_to": historical_end.isoformat(),
+                "history_status": coverage.status,
+                "covered_from": coverage.covered_from,
+                "covered_to": coverage.covered_to,
+            },
+        )
+
+    historical_rows = history_store.read_rows(cabinet, start, historical_end)
+    try:
+        historical_totals = canonical_order_totals(historical_rows, start, historical_end)
+    except ValueError as exc:
+        return make_error(
+            "provider_data_conflict",
+            f"Historical WB ORDERS data failed canonical validation: {exc}",
+            operation_id="marketplace_business_query",
+            retryable=False,
+        )
+
+    if end <= historical_end:
+        return {
+            "ok": True,
+            "metric": "ORDERS",
+            "marketplace": "WB",
+            "seller": cabinet,
+            "date_from": start.isoformat(),
+            "date_to": end.isoformat(),
+            "route": "historical_store",
+            "source": "wb_orders_history_ydb",
+            "source_validation": "approved_canonical_archive",
+            "storage_scope": history_store.storage_scope,
+            "history_covered_from": coverage.covered_from,
+            "history_covered_to": coverage.covered_to,
+            "complete": True,
+            "semantic_rule": "count rows where isCancel=false; sum finishedPrice",
+            **historical_totals,
+        }
+
+    current_start = oldest_live
+    current = await _wb_orders_operational_range(
+        wb, seller=seller, start=current_start, end=end,
+    )
+    if not current.get("ok"):
+        failed = dict(current)
+        failed["partial_history_discarded"] = True
+        failed["historical_segment"] = [start.isoformat(), historical_end.isoformat()]
+        failed["complete"] = False
+        return failed
+
+    return {
+        "ok": True,
+        "metric": "ORDERS",
+        "marketplace": "WB",
+        "seller": cabinet,
+        "date_from": start.isoformat(),
+        "date_to": end.isoformat(),
+        "route": "historical_plus_operational",
+        "source": "wb_orders_history_ydb+wb_stats_orders",
+        "source_validation": "approved_canonical_split",
+        "storage_scope": history_store.storage_scope,
+        "history_segment": [start.isoformat(), historical_end.isoformat()],
+        "operational_segment": [current_start.isoformat(), end.isoformat()],
+        "history_covered_from": coverage.covered_from,
+        "history_covered_to": coverage.covered_to,
+        "orders_count": int(historical_totals["orders_count"]) + int(current["orders_count"]),
+        "orders_amount": float(historical_totals["orders_amount"]) + float(current["orders_amount"]),
+        "currency": "RUB",
+        "cancelled_orders_excluded": (
+            int(historical_totals["cancelled_orders_excluded"])
+            + int(current["cancelled_orders_excluded"])
+        ),
+        "complete": True,
+        "semantic_rule": "count rows where isCancel=false; sum finishedPrice",
+    }
 
 
 async def execute_business_query(
@@ -230,7 +284,7 @@ async def execute_business_query(
     date_to: str,
     nm_ids: Optional[list[int]] = None,
 ) -> dict:
-    """Resolve business intent to an approved provider route or fail closed."""
+    """Resolve business intent to an approved provider/store route or fail closed."""
     marketplace_key = marketplace.strip().lower()
     metric_key = metric.strip().upper()
     try:
@@ -249,6 +303,7 @@ async def execute_business_query(
             retryable=False,
         )
     wb = modules["wb"]
+    history_store = modules.get("_order_history_store")
 
     if metric_key in {"ORDERS", "ORDER"}:
         if nm_ids:
@@ -258,7 +313,8 @@ async def execute_business_query(
                 operation_id="marketplace_business_query",
                 retryable=False,
             )
-        if start == end:
+        oldest_live = date.today() - timedelta(days=WB_OPERATIONAL_RETENTION_DAYS - 1)
+        if start == end and start >= oldest_live:
             raw = await wb.wb_get_orders_summary(seller, start.isoformat(), end.isoformat())
             try:
                 result = json.loads(raw)
@@ -274,8 +330,8 @@ async def execute_business_query(
                 result["complete"] = True
                 result["source_validation"] = "approved"
             return result
-        return await _wb_orders_operational_range(
-            wb, seller=seller, start=start, end=end,
+        return await _wb_orders_period_aware(
+            wb, history_store, seller=seller, start=start, end=end,
         )
 
     if metric_key in {"SALES", "SALE"}:
@@ -329,8 +385,8 @@ def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None
     ) -> str:
         """Primary entry point for business metrics and period-aware routing.
 
-        Clients provide business intent only. The MCP server chooses the approved
-        source, checks historical suitability and performs aggregation. It never
+        Clients provide business intent only. The MCP server chooses canonical
+        live/history sources, checks coverage and performs aggregation. It never
         silently replaces one business metric with a merely similar provider metric.
         """
         return _j(await execute_business_query(

@@ -26,6 +26,7 @@ ERROR_TYPES = (
     "source_not_suitable",       # known metric, but no approved source for this request
     "execution_pending",         # resumable/multi-step work cannot finish synchronously
     "provider_data_conflict",    # provider response contradicts the proven contract
+    "coverage_gap",              # durable history exists but completeness cannot be proven
     "unknown",
 )
 

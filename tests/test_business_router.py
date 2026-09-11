@@ -66,6 +66,7 @@ def _wb(responses, one_day_result=None):
 
 def _row(day, *, price=100, cancelled=False, last_change=None):
     return {
+        "srid": f"srid-{day.isoformat()}-{price}-{int(cancelled)}",
         "date": day.isoformat() + "T12:00:00",
         "lastChangeDate": (last_change or day).isoformat() + "T13:00:00",
         "isCancel": cancelled,

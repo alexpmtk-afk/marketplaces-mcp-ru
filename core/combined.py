@@ -10,6 +10,9 @@ from mcp.server.fastmcp import FastMCP
 
 from .business_router import register_business_query_tool
 from .card_monitor import register_tools as register_card_monitor_tools
+from .order_history_tools import register_order_history_tools
+from .ydb_order_history import build_order_history_store_from_env
+
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
 
 
@@ -32,9 +35,6 @@ def _rate_status_tool(client: Any):
                 "error": state.get("message", "Rate-limit status is unavailable."),
             }, ensure_ascii=False)
 
-        # ``snapshot`` already maps opaque Redis names to queue categories. Keep
-        # only the category and remaining time: even a shortened key hash is not
-        # useful to an operator and should not escape the service.
         queues = [{
             "queue": item.get("queue", "other"),
             "wait_seconds": item.get("wait_seconds", 0.0),
@@ -146,7 +146,7 @@ def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
 
 
 def build(**fastmcp_kwargs: Any) -> FastMCP:
-    """Return one FastMCP carrying seller API and public-card monitor tools."""
+    """Return one FastMCP carrying seller APIs and server-native business routing."""
     combined = FastMCP("marketplaces-mcp-ru", **fastmcp_kwargs)
     modules: dict[str, Any] = {}
     for mod_name in SERVICE_MODULES:
@@ -162,8 +162,13 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
                 "openWorldHint": False,
             },
         )(_rate_status_tool(mod.client))
+
+    order_history_store = build_order_history_store_from_env()
+    modules["_order_history_store"] = order_history_store
+
     _register_finance_tools(combined, modules)
     register_business_query_tool(combined, modules)
+    register_order_history_tools(combined, modules, order_history_store)
     register_card_monitor_tools(combined)
     return combined
 
