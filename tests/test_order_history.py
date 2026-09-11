@@ -101,7 +101,7 @@ def test_memory_store_newer_cancellation_replaces_old_state():
     assert totals["cancelled_orders_excluded"] == 1
 
 
-def test_initial_sync_bootstraps_exact_completed_day_coverage_and_watermark():
+def test_initial_sync_bootstraps_only_fully_safe_calendar_days_and_watermark():
     store = MemoryOrderHistoryStore()
     day = date.today() - timedelta(days=3)
     wb = _wb([{"ok": True, "data": [
@@ -117,7 +117,9 @@ def test_initial_sync_bootstraps_exact_completed_day_coverage_and_watermark():
     assert result["stored_rows"] == 2
     coverage = store.coverage("wb_dmitrieva")
     assert coverage.status == "complete"
-    assert coverage.covered_from == (date.today() - timedelta(days=30)).isoformat()
+    # A rolling 30-day retention does not prove the whole boundary day. Keep
+    # only full calendar days inside the provider window: today-29 .. today-1.
+    assert coverage.covered_from == (date.today() - timedelta(days=29)).isoformat()
     assert coverage.covered_to == (date.today() - timedelta(days=1)).isoformat()
     assert coverage.watermark_last_change_date.endswith("13:00:00")
     assert wb.client.calls[0][1]["flag"] == 0
