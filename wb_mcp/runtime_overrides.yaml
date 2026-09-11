@@ -28,29 +28,6 @@ endpoints:
       - история остатков
     items_path: data.items
 
-  # Provider-native aggregate used by the Business Query Router for long ORDERS periods.
-  # WB documents up to the last 365 days, 1000 products/page, 3 requests/min.
-  - operation_id: wb_analytics_funnel
-    section: analytics
-    method: POST
-    host: seller-analytics-api.wildberries.ru
-    path: /api/analytics/v3/sales-funnel/products
-    scope: analytics
-    safety: read
-    pagination: offset
-    rate_limit: 3 req/min
-    quota_proven: true
-    summary: Provider-native product funnel aggregate for up to the last 365 days.
-    params:
-      body: '{selectedPeriod:{start,end}, pastPeriod?, nmIds[]<=1000, brandNames[], subjectIds[], tagIds[], skipDeletedNm, orderBy?, limit<=1000, offset}'
-    doc: https://dev.wildberries.ru/docs/openapi/analytics#tag/Voronka-prodazh/operation/postV3SalesFunnelProducts
-    keywords:
-      - воронка
-      - аналитика
-      - заказы
-      - длинный период
-    items_path: data.products
-
   # Current Finance API. This replaces the retired statistics-api v5 realization route.
   - operation_id: wb_finance_sales_reports_detailed
     section: finance
