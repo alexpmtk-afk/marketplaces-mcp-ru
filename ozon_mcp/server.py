@@ -23,7 +23,7 @@ from core.client import MarketplaceClient, ServiceConfig
 from core.entities import EntityIndex
 from core.registry import Catalog
 from core.safety import check_gate
-from core.tools import register_cabinet_tools, register_generic_tools
+from core.tools import register_cabinet_tools, register_generic_tools, resolve_named_cabinet
 from core.workflows import Workflows, register_workflow_tools
 
 CATALOG_PATH = Path(__file__).with_name("endpoints.yaml")
@@ -67,6 +67,94 @@ register_workflow_tools(mcp, svc="ozon", workflows=Workflows.from_yaml(WORKFLOWS
 
 def _j(obj) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2, default=str)
+
+
+# --------------------------------------------------------------------------
+# Named-cabinet analytics — deterministic across concurrent MCP requests.
+# --------------------------------------------------------------------------
+@mcp.tool(
+    name="ozon_get_revenue_summary",
+    annotations={"title": "Ozon ordered revenue for one cabinet", "readOnlyHint": True,
+                 "openWorldHint": True},
+)
+async def ozon_get_revenue_summary(cabinet: str, date_from: str, date_to: str = "") -> str:
+    """Return Ozon ordered revenue for one explicitly named cabinet and date range.
+
+    This tool never changes the shared active cabinet. It is therefore safe when
+    several chats query different Ozon shops at the same time.
+
+    Args:
+        cabinet: exact cabinet name from ozon_list_cabinets.
+        date_from: first calendar day, YYYY-MM-DD.
+        date_to: last calendar day, YYYY-MM-DD (defaults to date_from).
+    Returns JSON with revenue in RUB or the standard provider error envelope.
+    """
+    creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
+    if cabinet_error:
+        return _j(cabinet_error)
+    assert creds_override is not None
+    end = date_to or date_from
+    spec = catalog.get("ozon_analytics_data")
+    if spec is None:
+        return _j({
+            "ok": False, "error": "rate_limit_rule_unproven",
+            "code": "RATE_LIMIT_RULE_UNPROVEN", "retryable": False,
+            "message": "The Ozon analytics quota contract is absent from the runtime catalog.",
+        })
+    body = {
+        "date_from": date_from, "date_to": end,
+        "metrics": ["revenue"], "dimension": ["day"],
+        "filters": [], "sort": [], "limit": 100, "offset": 0,
+    }
+    response = await client.call_spec(spec, json_body=body, creds_override=creds_override)
+    if not response.get("ok"):
+        return _j(response)
+    result = ((response.get("data") or {}).get("result") or {})
+    totals = result.get("totals") or []
+    revenue = totals[0] if totals else 0
+    return _j({
+        "ok": True,
+        "cabinet": cabinet,
+        "date_from": date_from,
+        "date_to": end,
+        "revenue": revenue,
+        "currency": "RUB",
+        "source": "ozon_analytics_data",
+    })
+
+
+@mcp.tool(
+    name="ozon_quota_scope_status",
+    annotations={"title": "Ozon cabinet quota scope status", "readOnlyHint": True,
+                 "openWorldHint": False},
+)
+async def ozon_quota_scope_status() -> str:
+    """Show which configured Ozon cabinets share a quota owner, without IDs or keys.
+
+    Cabinet names in one group use the same provider quota identity. Raw
+    Client-Ids, API keys and internal hashes are never returned.
+    """
+    info = client.config.store.list_cabinets(client.config.name)
+    groups: dict[str, list[str]] = {}
+    incomplete: list[str] = []
+    for cabinet in info["cabinets"]:
+        creds, resolved = client.config.store.resolve_named(
+            client.config.name, client.config.fields, client.config.env_map, cabinet
+        )
+        if not resolved or any(not creds.get(field) for field in client.config.fields):
+            incomplete.append(cabinet)
+            continue
+        try:
+            scope = client._quota_key(client.config, creds)
+        except ValueError:
+            incomplete.append(cabinet)
+            continue
+        groups.setdefault(scope, []).append(cabinet)
+    return _j({
+        "ok": not incomplete,
+        "quota_scope_groups": sorted(sorted(group) for group in groups.values()),
+        "incomplete_cabinets": sorted(incomplete),
+    })
 
 
 # --------------------------------------------------------------------------
