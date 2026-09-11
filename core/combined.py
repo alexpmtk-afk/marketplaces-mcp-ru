@@ -4,10 +4,11 @@ from __future__ import annotations
 import importlib
 import json
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 
 from mcp.server.fastmcp import FastMCP
 
+from .business_router import register_business_query_tool
 from .card_monitor import register_tools as register_card_monitor_tools
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
 
@@ -49,6 +50,7 @@ def _rate_status_tool(client: Any):
         }, ensure_ascii=False)
     return status
 
+
 def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
     """Register high-signal read-only finance tools on the combined server."""
     wb = modules["wb"]
@@ -64,20 +66,36 @@ def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
         date_to: str,
         limit: int = 100000,
         rrdid: int = 0,
+        period: str = "weekly",
+        fields: Optional[list[str]] = None,
     ) -> str:
-        """Get WB realization report rows for an inclusive date range."""
+        """Get one page of WB realization rows from the current Finance API.
+
+        This keeps the established tool name for client compatibility, but the
+        server now calls POST /api/finance/v1/sales-reports/detailed instead of
+        the retired statistics-api v5 endpoint. Continue with the last row's
+        rrdId until WB returns HTTP 204 when a report exceeds one page.
+        """
         start = date.fromisoformat(date_from[:10])
         end = date.fromisoformat(date_to[:10])
         if start > end:
             raise ValueError("date_from must be <= date_to")
         limit = max(1, min(100000, int(limit)))
-        spec = wb.catalog.get("wb_report_realization")
+        if period not in {"weekly", "daily"}:
+            raise ValueError("period must be 'weekly' or 'daily'")
+        spec = wb.catalog.get("wb_finance_sales_reports_detailed")
         if spec is None:
-            raise RuntimeError("wb_report_realization contract is missing")
-        return _j(await wb.client.call_spec(spec, query={
-            "dateFrom": start.isoformat(), "dateTo": end.isoformat(),
-            "limit": limit, "rrdid": int(rrdid),
-        }))
+            raise RuntimeError("wb_finance_sales_reports_detailed contract is missing")
+        body: dict[str, Any] = {
+            "dateFrom": start.isoformat(),
+            "dateTo": end.isoformat(),
+            "limit": limit,
+            "rrdId": int(rrdid),
+            "period": period,
+        }
+        if fields:
+            body["fields"] = fields
+        return _j(await wb.client.call_spec(spec, json_body=body))
 
     @combined.tool(
         name="ozon_get_accrual_types",
@@ -145,6 +163,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
             },
         )(_rate_status_tool(mod.client))
     _register_finance_tools(combined, modules)
+    register_business_query_tool(combined, modules)
     register_card_monitor_tools(combined)
     return combined
 

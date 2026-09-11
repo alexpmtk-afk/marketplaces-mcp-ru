@@ -2,6 +2,8 @@
 # inventory is refreshed. Keep this file intentionally small and evidence-based.
 remove:
   - wb_stats_stocks
+  # WB disabled GET /api/v5/supplier/reportDetailByPeriod on 2026-07-15.
+  - wb_report_realization
 
 endpoints:
   - operation_id: wb_analytics_stocks_wb_warehouses
@@ -25,3 +27,68 @@ endpoints:
       - наличие
       - история остатков
     items_path: data.items
+
+  # Provider-native aggregate used by the Business Query Router for long ORDERS periods.
+  # WB documents up to the last 365 days, 1000 products/page, 3 requests/min.
+  - operation_id: wb_analytics_funnel
+    section: analytics
+    method: POST
+    host: seller-analytics-api.wildberries.ru
+    path: /api/analytics/v3/sales-funnel/products
+    scope: analytics
+    safety: read
+    pagination: offset
+    rate_limit: 3 req/min
+    quota_proven: true
+    summary: Provider-native product funnel aggregate for up to the last 365 days.
+    params:
+      body: '{selectedPeriod:{start,end}, pastPeriod?, nmIds[]<=1000, brandNames[], subjectIds[], tagIds[], skipDeletedNm, orderBy?, limit<=1000, offset}'
+    doc: https://dev.wildberries.ru/docs/openapi/analytics#tag/Voronka-prodazh/operation/postV3SalesFunnelProducts
+    keywords:
+      - воронка
+      - аналитика
+      - заказы
+      - длинный период
+    items_path: data.products
+
+  # Current Finance API. This replaces the retired statistics-api v5 realization route.
+  - operation_id: wb_finance_sales_reports_detailed
+    section: finance
+    method: POST
+    host: finance-api.wildberries.ru
+    path: /api/finance/v1/sales-reports/detailed
+    scope: finance
+    safety: read
+    pagination: none
+    rate_limit: 1 req/min
+    quota_proven: true
+    summary: Detailed sales-realization rows for a requested period; data available since 2024-01-29.
+    params:
+      body: '{dateFrom, dateTo, limit<=100000, rrdId=0, period:weekly|daily, fields[]?}'
+    doc: https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting#tag/Finansovye-otchety
+    keywords:
+      - реализация
+      - финотчёт
+      - финансовый отчёт
+      - детализация
+      - продажи за период
+
+  - operation_id: wb_finance_sales_reports_list
+    section: finance
+    method: POST
+    host: finance-api.wildberries.ru
+    path: /api/finance/v1/sales-reports/list
+    scope: finance
+    safety: read
+    pagination: offset
+    rate_limit: 1 req/min
+    quota_proven: true
+    summary: Sales-realization report summaries for a requested period; data available since 2025-01-01.
+    params:
+      body: '{dateFrom, dateTo, limit<=1000, offset, period:weekly|daily}'
+    doc: https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting#tag/Finansovye-otchety
+    keywords:
+      - список отчётов реализации
+      - финансы
+      - агрегированный отчёт
+      - длинный период
