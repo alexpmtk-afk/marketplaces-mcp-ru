@@ -62,6 +62,7 @@ async def fetch_all(
     limit: int = 1000,
     max_items: int = DEFAULT_MAX_ITEMS,
     max_pages: int = DEFAULT_MAX_PAGES,
+    creds_override: Optional[dict[str, str]] = None,
 ) -> dict:
     """Walk pages until exhausted, truncated, or limits hit.
 
@@ -97,7 +98,8 @@ async def fetch_all(
             body["page"] = pages + 1
 
         resp = await client.call_spec(
-            spec, path_values=path_values, query=query or None, json_body=body or None
+            spec, path_values=path_values, query=query or None, json_body=body or None,
+            creds_override=creds_override,
         )
         if not resp.get("ok"):
             return resp  # propagate error envelope
