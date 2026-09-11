@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -44,3 +45,34 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         f"(missing: {(per_service | approved_combined) - got}, "
         f"extra: {got - (per_service | approved_combined)})"
     )
+
+
+def test_rate_status_shows_safe_wait_time_without_queue_identity():
+    class Controller:
+        backend = "redis"
+
+    class Client:
+        rate_controller = Controller()
+
+        async def rate_limit_status(self):
+            return {
+                "ok": True,
+                "backend": "redis",
+                "configured_global_rps": 50.0,
+                "active_queues": [{
+                    "queue": "catalog_group",
+                    "queue_id": "opaque-hash",
+                    "wait_seconds": 58.2,
+                }],
+            }
+
+    result = json.loads(asyncio.run(combined._rate_status_tool(Client())()))
+    assert result == {
+        "ok": True,
+        "backend": "redis",
+        "shared": True,
+        "reachable": True,
+        "configured_global_rps": 50.0,
+        "active_queues": [{"queue": "catalog_group", "wait_seconds": 58.2}],
+        "error": None,
+    }

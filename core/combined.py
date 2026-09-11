@@ -1,7 +1,6 @@
 """Combined MCP server: Wildberries + Ozon + Ozon-Perf + public card monitor."""
 from __future__ import annotations
 
-import asyncio
 import importlib
 import json
 from datetime import date
@@ -10,8 +9,6 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .card_monitor import register_tools as register_card_monitor_tools
-from .rate_limit import RateLimitUnavailable, verify_shared_redis
-
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
 
 
@@ -21,24 +18,36 @@ def _j(obj: Any) -> str:
 
 def _rate_status_tool(client: Any):
     async def status() -> str:
-        backend = client.rate_controller.backend
-        reachable = True
-        error = None
-        if backend == "redis":
-            try:
-                await asyncio.to_thread(verify_shared_redis)
-            except RateLimitUnavailable as exc:
-                reachable = False
-                error = str(exc)
+        """Expose queue health and wait time, never credentials or queue keys."""
+        state = await client.rate_limit_status()
+        backend = state.get("backend", client.rate_controller.backend)
+        if not state.get("ok"):
+            return json.dumps({
+                "ok": False,
+                "backend": backend,
+                "shared": backend == "redis",
+                "reachable": False,
+                "active_queues": [],
+                "error": state.get("message", "Rate-limit status is unavailable."),
+            }, ensure_ascii=False)
+
+        # ``snapshot`` already maps opaque Redis names to queue categories. Keep
+        # only the category and remaining time: even a shortened key hash is not
+        # useful to an operator and should not escape the service.
+        queues = [{
+            "queue": item.get("queue", "other"),
+            "wait_seconds": item.get("wait_seconds", 0.0),
+        } for item in state.get("active_queues", [])]
         return json.dumps({
-            "ok": reachable,
+            "ok": True,
             "backend": backend,
             "shared": backend == "redis",
-            "reachable": reachable,
-            "error": error,
+            "reachable": True,
+            "configured_global_rps": state.get("configured_global_rps"),
+            "active_queues": queues,
+            "error": None,
         }, ensure_ascii=False)
     return status
-
 
 def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
     """Register high-signal read-only finance tools on the combined server."""
