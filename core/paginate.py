@@ -97,10 +97,14 @@ async def fetch_all(
             body.setdefault("page_size", limit)
             body["page"] = pages + 1
 
-        resp = await client.call_spec(
-            spec, path_values=path_values, query=query or None, json_body=body or None,
-            creds_override=creds_override,
-        )
+        call_kwargs = {
+            "path_values": path_values,
+            "query": query or None,
+            "json_body": body or None,
+        }
+        if creds_override is not None:
+            call_kwargs["creds_override"] = creds_override
+        resp = await client.call_spec(spec, **call_kwargs)
         if not resp.get("ok"):
             return resp  # propagate error envelope
 
