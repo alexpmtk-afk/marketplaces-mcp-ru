@@ -31,7 +31,8 @@ def test_named_resolution_does_not_read_or_change_active_cabinet():
         name = "ozon"
         fields = ["client_id", "api_key"]
         env_map = {}
-        store = store
+
+    Config.store = store
 
     class Client:
         config = Config()
@@ -50,7 +51,8 @@ def test_named_resolution_rejects_unknown_cabinet_before_provider_call():
         name = "ozon"
         fields = ["client_id", "api_key"]
         env_map = {}
-        store = store
+
+    Config.store = store
 
     class Client:
         config = Config()
