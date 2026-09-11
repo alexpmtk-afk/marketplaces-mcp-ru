@@ -223,9 +223,11 @@ async def sync_wb_orders_history(
         request_from = coverage.watermark_last_change_date
         target_from = coverage.target_from or coverage.covered_from
     else:
-        # Bootstrap completed calendar days, not "today". This makes the
-        # requested and advertised coverage both exactly N completed days.
-        bootstrap_start = verified_to - timedelta(days=bootstrap_days - 1)
+        # Provider retention is a rolling N-day window, not N guaranteed whole
+        # calendar days. Start at today-(N-1) so every advertised historical day
+        # is fully inside the retention window; the partial boundary day is not
+        # claimed as complete coverage.
+        bootstrap_start = today - timedelta(days=bootstrap_days - 1)
         request_from = bootstrap_start.isoformat() + "T00:00:00"
         target_from = bootstrap_start.isoformat()
 
