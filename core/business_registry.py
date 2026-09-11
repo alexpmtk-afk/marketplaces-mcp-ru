@@ -20,20 +20,26 @@ class BusinessCabinet:
 
 
 _CABINETS = (
-    BusinessCabinet("wb", "wb_dmitrieva", "ИП Дмитриева", ("DTE",)),
-    BusinessCabinet("ozon", "ozon_dmitrieva", "ИП Дмитриева", ("DTE",)),
-    BusinessCabinet("wb", "wb_novokshenov", "ИП Новокшенов"),
-    BusinessCabinet("ozon", "ozon_novokshenov", "ИП Новокшенов"),
-    BusinessCabinet("wb", "wb_laser_master", "ООО «Лазер - Мастер»"),
-    BusinessCabinet("ozon", "ozon_laser_master", "ООО «Лазер - Мастер»"),
+    BusinessCabinet("wb", "wb_dmitrieva", "ИП Дмитриева", ("DTE", "Дмитриева", "ИП Дмитриева")),
+    BusinessCabinet("ozon", "ozon_dmitrieva", "ИП Дмитриева", ("DTE", "Дмитриева", "ИП Дмитриева")),
+    BusinessCabinet("wb", "wb_novokshenov", "ИП Новокшенов", ("Новокшенов", "ИП Новокшенов")),
+    BusinessCabinet("ozon", "ozon_novokshenov", "ИП Новокшенов", ("Новокшенов", "ИП Новокшенов")),
+    BusinessCabinet(
+        "wb", "wb_laser_master", "ООО «Лазер - Мастер»",
+        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер", "ООО «Лазер - Мастер»"),
+    ),
+    BusinessCabinet(
+        "ozon", "ozon_laser_master", "ООО «Лазер - Мастер»",
+        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер", "ООО «Лазер - Мастер»"),
+    ),
 )
 
 
 def resolve_business_cabinet(service: str, seller: str) -> BusinessCabinet | None:
-    """Resolve a canonical cabinet or a declared business alias.
+    """Resolve a canonical cabinet, business name or a declared human alias.
 
-    Resolution is case-insensitive for human aliases.  It never fabricates
-    credentials and it does not alter the active cabinet selection.
+    Resolution is case-insensitive. It never fabricates credentials and it does
+    not alter the shared active cabinet selection.
     """
     needle = seller.strip().casefold()
     if not needle:
@@ -41,8 +47,10 @@ def resolve_business_cabinet(service: str, seller: str) -> BusinessCabinet | Non
     for entry in _CABINETS:
         if entry.service != service:
             continue
-        if needle == entry.cabinet.casefold() or any(
-            needle == alias.casefold() for alias in entry.aliases
+        if (
+            needle == entry.cabinet.casefold()
+            or needle == entry.business_entity.casefold()
+            or any(needle == alias.casefold() for alias in entry.aliases)
         ):
             return entry
     return None
