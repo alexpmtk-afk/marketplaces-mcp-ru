@@ -1,7 +1,7 @@
 """Selective historical storage for canonical Wildberries ORDERS.
 
 The store deliberately archives only the approved Statistics Orders semantics.
-It is not a generic marketplace warehouse.  Rows are keyed by cabinet + srid;
+It is not a generic marketplace warehouse. Rows are keyed by cabinet + srid;
 newer ``lastChangeDate`` versions replace older state so cancellations remain
 consistent with the canonical live metric.
 """
@@ -223,7 +223,9 @@ async def sync_wb_orders_history(
         request_from = coverage.watermark_last_change_date
         target_from = coverage.target_from or coverage.covered_from
     else:
-        bootstrap_start = today - timedelta(days=bootstrap_days - 1)
+        # Bootstrap completed calendar days, not "today". This makes the
+        # requested and advertised coverage both exactly N completed days.
+        bootstrap_start = verified_to - timedelta(days=bootstrap_days - 1)
         request_from = bootstrap_start.isoformat() + "T00:00:00"
         target_from = bootstrap_start.isoformat()
 
@@ -245,8 +247,9 @@ async def sync_wb_orders_history(
     if not response.get("ok"):
         return response
 
+    raw_rows = response.get("data")
     try:
-        normalized = normalize_wb_order_rows(response.get("data"))
+        normalized = normalize_wb_order_rows(raw_rows)
     except ValueError as exc:
         return make_error(
             "provider_data_conflict",
@@ -254,6 +257,8 @@ async def sync_wb_orders_history(
             operation_id="wb_orders_history_sync",
             retryable=False,
         )
+    assert isinstance(raw_rows, list)  # validated by normalize_wb_order_rows
+    raw_row_count = len(raw_rows)
 
     changed = store.upsert_rows(cabinet, normalized)
     watermark = coverage.watermark_last_change_date
@@ -261,7 +266,10 @@ async def sync_wb_orders_history(
         watermark = max(str(row["lastChangeDate"]) for row in normalized)
     now = datetime.now(timezone.utc).isoformat()
 
-    if len(normalized) >= WB_STATS_MAX_ROWS:
+    # The provider ceiling applies to the raw response page. Deduplication by
+    # srid can reduce the row count, so checking len(normalized) could falsely
+    # mark an 80k page complete and lose its required continuation.
+    if raw_row_count >= WB_STATS_MAX_ROWS:
         store.save_coverage(OrderHistoryCoverage(
             cabinet=cabinet,
             target_from=target_from,
@@ -279,6 +287,8 @@ async def sync_wb_orders_history(
             retry_after_seconds=60,
             details={
                 "cabinet": cabinet,
+                "rows_received": raw_row_count,
+                "rows_normalized": len(normalized),
                 "rows_stored": changed,
                 "resume_last_change_date": watermark,
                 "complete": False,
@@ -304,7 +314,8 @@ async def sync_wb_orders_history(
         "cabinet": cabinet,
         "source": "wb_stats_orders",
         "storage": store.storage_scope,
-        "rows_received": len(normalized),
+        "rows_received": raw_row_count,
+        "rows_normalized": len(normalized),
         "rows_changed": changed,
         "stored_rows": store.count(cabinet),
         "covered_from": completed.covered_from,
