@@ -15,9 +15,10 @@ def _tool_names(mcp) -> set[str]:
     return {t.name for t in asyncio.run(mcp.list_tools())}
 
 
-def test_combined_contains_exact_services_plus_approved_combined_tools():
+def test_combined_contains_exact_services_plus_approved_combined_tools(monkeypatch):
     import importlib
 
+    monkeypatch.delenv("MARKETPLACE_MCP_YDB_ENDPOINT", raising=False)
     per_service: set[str] = set()
     for mod_name in combined.SERVICE_MODULES:
         mod = importlib.import_module(mod_name)
@@ -34,6 +35,9 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "ozon_get_accrual_types",
         "ozon_get_accruals_by_day",
         "ozon_get_realization",
+        "marketplace_business_query",
+        "wb_orders_history_sync",
+        "wb_orders_history_status",
         "card_monitor_status",
         "card_monitor_get_latest",
         "card_monitor_get_history",
