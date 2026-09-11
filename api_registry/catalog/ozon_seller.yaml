@@ -362,6 +362,8 @@ endpoints:
   path: /v1/analytics/data
   scope: seller
   safety: read
+  rate_limit: 1 req/min
+  quota_proven: true
   summary: Custom report by dimensions+metrics (revenue, ordered_units, conversions).
   params:
     body: '{date_from, date_to, dimension:[], metrics:[], limit<=1000, offset}'
@@ -394,6 +396,7 @@ endpoints:
   scope: seller
   safety: read
   rate_limit: 1 req/min
+  quota_proven: true
   summary: Turnover rate + days-of-stock (idc) per SKU. Hard-limited 1 req/min.
   params:
     body: '{sku:[], limit, offset}'
