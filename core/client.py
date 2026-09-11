@@ -125,14 +125,42 @@ def _parse_retry_after(value: Optional[str]) -> Optional[float]:
     return max(0.0, dt.timestamp() - time.time())
 
 
-def _marketplace_retry_delay(resp: httpx.Response, attempt: int) -> float:
-    """Read standard and WB-specific cooldown headers, then fall back safely."""
+def _provider_retry_after(resp: httpx.Response) -> Optional[float]:
+    """Return an explicit provider cooldown, if one was supplied."""
     candidates = [
         _parse_retry_after(resp.headers.get("Retry-After")),
         _parse_retry_after(resp.headers.get("X-Ratelimit-Retry")),
     ]
     valid = [value for value in candidates if value is not None]
-    return max(valid) if valid else BACKOFF_BASE * (2**attempt)
+    return max(valid) if valid else None
+
+
+def _marketplace_retry_delay(resp: httpx.Response, attempt: int) -> float:
+    """Read standard and WB-specific cooldown headers, then fall back safely."""
+    return _provider_retry_after(resp) or BACKOFF_BASE * (2**attempt)
+
+
+def _known_quota_cooldown(rules: list) -> float:
+    """Use a proven endpoint interval when a provider omits Retry-After.
+
+    A short generic backoff is safe for an unknown transport quota, but it is
+    too short for a documented slow endpoint such as Ozon analytics (1/min).
+    The global transport rule is deliberately excluded: a 429 for one endpoint
+    must not freeze unrelated operations.
+    """
+    return max(
+        (float(rule.interval_seconds) for rule in rules
+         if not str(rule.key).endswith(":global")),
+        default=0.0,
+    )
+
+
+def _cooldown_delay(resp: httpx.Response, attempt: int, rules: list) -> float:
+    """Prefer an explicit provider delay; otherwise respect known endpoint pace."""
+    explicit = _provider_retry_after(resp)
+    if explicit is not None:
+        return explicit
+    return max(BACKOFF_BASE * (2**attempt), _known_quota_cooldown(rules))
 
 
 # Refresh a cached bearer this many seconds BEFORE it actually expires, so an
@@ -443,7 +471,7 @@ class MarketplaceClient:
                 self._invalidate_token(creds or {})
 
             if resp.status_code == 429 and retry_on_429:
-                delay = min(_marketplace_retry_delay(resp, attempt), 3600.0)
+                delay = min(_cooldown_delay(resp, attempt, rules), 3600.0)
                 try:
                     await self.rate_controller.defer(rules, delay)
                 except RateLimitUnavailable as exc:

@@ -341,3 +341,21 @@ def test_busy_oauth_token_slot_returns_retry_after_without_http(monkeypatch):
     assert r["operation_id"] == "oauth_token"
     assert r["retry_after_seconds"] == pytest.approx(4.5)
     assert hits["n"] == 0
+
+def test_429_without_header_uses_proven_endpoint_interval(monkeypatch):
+    def handler(request):
+        return httpx.Response(429, json={"error": "slow down"})
+
+    _route(monkeypatch, handler)
+    monkeypatch.setenv("OZON_CLIENT_ID", "100")
+    monkeypatch.setenv("OZON_API_KEY", "secret")
+    limiter = _ImmediateRateController()
+    client = MarketplaceClient(_static_config(), rate_controller=limiter)
+    result = asyncio.run(client.request(
+        "POST", "api-seller.ozon.ru", "/v1/analytics/data",
+        rate_limit="1 req/min", rate_scope="seller",
+    ))
+
+    assert result["ok"] is False
+    assert result["retry_after_seconds"] == pytest.approx(60.0)
+    assert limiter.defer_calls == [pytest.approx(60.0)]
