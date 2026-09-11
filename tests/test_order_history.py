@@ -101,7 +101,7 @@ def test_memory_store_newer_cancellation_replaces_old_state():
     assert totals["cancelled_orders_excluded"] == 1
 
 
-def test_initial_sync_bootstraps_verified_coverage_and_watermark():
+def test_initial_sync_bootstraps_exact_completed_day_coverage_and_watermark():
     store = MemoryOrderHistoryStore()
     day = date.today() - timedelta(days=3)
     wb = _wb([{"ok": True, "data": [
@@ -117,11 +117,11 @@ def test_initial_sync_bootstraps_verified_coverage_and_watermark():
     assert result["stored_rows"] == 2
     coverage = store.coverage("wb_dmitrieva")
     assert coverage.status == "complete"
-    assert coverage.covered_from == (date.today() - timedelta(days=29)).isoformat()
+    assert coverage.covered_from == (date.today() - timedelta(days=30)).isoformat()
     assert coverage.covered_to == (date.today() - timedelta(days=1)).isoformat()
     assert coverage.watermark_last_change_date.endswith("13:00:00")
     assert wb.client.calls[0][1]["flag"] == 0
-    assert wb.client.calls[0][1]["dateFrom"].endswith("T00:00:00")
+    assert wb.client.calls[0][1]["dateFrom"] == coverage.covered_from + "T00:00:00"
 
 
 def test_incremental_sync_continues_from_stored_watermark():
@@ -143,13 +143,13 @@ def test_incremental_sync_continues_from_stored_watermark():
     assert rows[0]["isCancel"] is True
 
 
-def test_page_ceiling_persists_rows_but_does_not_claim_complete(monkeypatch):
+def test_page_ceiling_uses_raw_count_before_srid_dedupe(monkeypatch):
     monkeypatch.setattr(history, "WB_STATS_MAX_ROWS", 2)
     store = MemoryOrderHistoryStore()
     day = date.today() - timedelta(days=2)
     wb = _wb([{"ok": True, "data": [
-        _row("a", day, last_change=day.isoformat() + "T12:00:00"),
-        _row("b", day, last_change=day.isoformat() + "T13:00:00"),
+        _row("a", day, last_change=day.isoformat() + "T12:00:00", cancelled=False),
+        _row("a", day, last_change=day.isoformat() + "T13:00:00", cancelled=True),
     ]}])
 
     result = asyncio.run(sync_wb_orders_history(wb, store, seller="wb_dmitrieva"))
@@ -157,7 +157,9 @@ def test_page_ceiling_persists_rows_but_does_not_claim_complete(monkeypatch):
     assert result["ok"] is False
     assert result["error_type"] == "execution_pending"
     assert result["details"]["complete"] is False
-    assert store.count("wb_dmitrieva") == 2
+    assert result["details"]["rows_received"] == 2
+    assert result["details"]["rows_normalized"] == 1
+    assert store.count("wb_dmitrieva") == 1
     coverage = store.coverage("wb_dmitrieva")
     assert coverage.status == "syncing"
     assert coverage.covered_from is None
