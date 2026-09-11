@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import date, timedelta
 from types import SimpleNamespace
 
+import core.business_router as router
 from core.business_router import execute_business_query
 from core.registry import EndpointSpec
 
@@ -17,26 +19,25 @@ class _Store:
 class _Catalog:
     def __init__(self):
         self.spec = EndpointSpec(
-            operation_id="wb_analytics_funnel",
-            method="POST",
-            host="seller-analytics-api.wildberries.ru",
-            path="/api/analytics/v3/sales-funnel/products",
-            section="analytics",
-            scope="analytics",
+            operation_id="wb_stats_orders",
+            method="GET",
+            host="statistics-api.wildberries.ru",
+            path="/api/v1/supplier/orders",
+            section="statistics",
+            scope="statistics",
             safety="read",
-            pagination="offset",
-            rate_limit="3 req/min",
+            pagination="lastchangedate",
+            rate_limit="1 req/min",
             quota_proven=True,
-            items_path="data.products",
         )
 
     def get(self, operation_id):
-        return self.spec if operation_id == "wb_analytics_funnel" else None
+        return self.spec if operation_id == "wb_stats_orders" else None
 
 
 class _Client:
-    def __init__(self, pages):
-        self.pages = list(pages)
+    def __init__(self, responses):
+        self.responses = list(responses)
         self.calls = []
         self.config = SimpleNamespace(
             name="wb",
@@ -45,103 +46,71 @@ class _Client:
             store=_Store(),
         )
 
-    async def call_spec(self, spec, *, json_body=None, creds_override=None, **kwargs):
-        self.calls.append((spec.operation_id, dict(json_body or {}), dict(creds_override or {})))
-        return self.pages.pop(0)
+    async def call_spec(self, spec, *, query=None, creds_override=None, **kwargs):
+        self.calls.append((spec.operation_id, dict(query or {}), dict(creds_override or {}), kwargs))
+        return self.responses.pop(0)
 
 
-def _wb(pages):
+def _wb(responses, one_day_result=None):
     async def one_day(*args, **kwargs):
-        raise AssertionError("one-day path was not expected")
+        if one_day_result is None:
+            raise AssertionError("one-day path was not expected")
+        return json.dumps(one_day_result)
 
     return SimpleNamespace(
-        client=_Client(pages),
+        client=_Client(responses),
         catalog=_Catalog(),
         wb_get_orders_summary=one_day,
     )
 
 
-def _product(order_count=10, order_sum=1000, cancel_count=2, cancel_sum=200):
+def _row(day, *, price=100, cancelled=False, last_change=None):
     return {
-        "product": {"nmId": 123},
-        "statistic": {
-            "selected": {
-                "orderCount": order_count,
-                "orderSum": order_sum,
-                "cancelCount": cancel_count,
-                "cancelSum": cancel_sum,
-            }
-        },
+        "date": day.isoformat() + "T12:00:00",
+        "lastChangeDate": (last_change or day).isoformat() + "T13:00:00",
+        "isCancel": cancelled,
+        "finishedPrice": price,
     }
 
 
-def _ok(products):
-    return {"ok": True, "data": {"data": {"products": products}}}
-
-
-def test_multi_day_orders_choose_one_large_provider_period_and_aggregate():
-    wb = _wb([_ok([_product()])])
+def test_multi_day_orders_use_one_canonical_statistics_range_and_aggregate():
     end = date.today() - timedelta(days=1)
-    start = end - timedelta(days=179)
+    start = end - timedelta(days=6)
+    rows = [
+        _row(start, price=100),
+        _row(start + timedelta(days=1), price=200, cancelled=True),
+        _row(end, price=150),
+        _row(start - timedelta(days=1), price=999),
+        _row(end + timedelta(days=1), price=999),
+    ]
+    wb = _wb([{"ok": True, "data": rows}])
 
     result = asyncio.run(execute_business_query(
-        {"wb": wb},
-        marketplace="wb",
-        metric="ORDERS",
-        seller="wb_dmitrieva",
-        date_from=start.isoformat(),
-        date_to=end.isoformat(),
-    ))
-
-    assert result["ok"] is True
-    assert result["route"] == "provider_aggregate"
-    assert result["source"] == "wb_analytics_funnel"
-    assert result["complete"] is True
-    assert result["orders_count"] == 8
-    assert result["orders_amount"] == 800.0
-    assert result["gross_orders_count"] == 10
-    assert result["cancelled_orders_count"] == 2
-    assert len(wb.client.calls) == 1
-    _, body, creds = wb.client.calls[0]
-    assert body["selectedPeriod"] == {"start": start.isoformat(), "end": end.isoformat()}
-    assert body["limit"] == 1000
-    assert body["offset"] == 0
-    assert creds == {"token": "fake-token"}
-
-
-def test_orders_pagination_is_server_side_and_totals_cover_all_pages():
-    first = [_product(order_count=1, order_sum=10, cancel_count=0, cancel_sum=0) for _ in range(1000)]
-    second = [_product(order_count=2, order_sum=20, cancel_count=1, cancel_sum=5)]
-    wb = _wb([_ok(first), _ok(second)])
-    end = date.today() - timedelta(days=1)
-    start = end - timedelta(days=30)
-
-    result = asyncio.run(execute_business_query(
-        {"wb": wb}, marketplace="wildberries", metric="orders",
+        {"wb": wb}, marketplace="wb", metric="ORDERS",
         seller="Дмитриева", date_from=start.isoformat(), date_to=end.isoformat(),
     ))
 
     assert result["ok"] is True
-    assert result["pages_fetched"] == 2
-    assert result["products_fetched"] == 1001
-    assert result["orders_count"] == 1001
-    assert result["orders_amount"] == 10015.0
-    assert [call[1]["offset"] for call in wb.client.calls] == [0, 1000]
+    assert result["route"] == "operational_range"
+    assert result["source"] == "wb_stats_orders"
+    assert result["source_validation"] == "approved"
+    assert result["complete"] is True
+    assert result["orders_count"] == 2
+    assert result["orders_amount"] == 250.0
+    assert result["cancelled_orders_excluded"] == 1
+    assert result["provider_rows_in_period"] == 3
+    assert len(wb.client.calls) == 1
+    operation, query, creds, kwargs = wb.client.calls[0]
+    assert operation == "wb_stats_orders"
+    assert query == {"dateFrom": start.isoformat() + "T00:00:00", "flag": 0}
+    assert creds == {"token": "fake-token"}
+    assert kwargs["retry_on_429"] is False
 
 
-def test_partial_large_query_is_never_presented_as_complete():
-    first = [_product(order_count=1, order_sum=10, cancel_count=0, cancel_sum=0) for _ in range(1000)]
-    rate_limited = {
-        "ok": False,
-        "error": "rate_limit",
-        "error_type": "rate_limit",
-        "message": "busy",
-        "retryable": True,
-        "retry_after_seconds": 999,
-    }
-    wb = _wb([_ok(first), rate_limited])
+def test_orders_over_operational_history_fail_closed_without_substitution():
+    wb = _wb([])
     end = date.today() - timedelta(days=1)
-    start = end - timedelta(days=30)
+    start = end - timedelta(days=100)
 
     result = asyncio.run(execute_business_query(
         {"wb": wb}, marketplace="wb", metric="ORDERS",
@@ -149,19 +118,60 @@ def test_partial_large_query_is_never_presented_as_complete():
     ))
 
     assert result["ok"] is False
-    assert result["complete"] is False
-    assert result["partial_result_discarded"] is True
-    assert result["partial_products_fetched"] == 1000
+    assert result["error_type"] == "source_not_suitable"
+    assert result["details"]["canonical_source"] == "wb_stats_orders"
+    assert result["details"]["rejected_substitute"] == "wb_analytics_funnel"
+    assert "parity mismatch" in result["details"]["rejected_reason"]
+    assert wb.client.calls == []
 
 
-def test_orders_older_than_provider_history_fail_closed_without_api_call():
-    wb = _wb([])
-    end = date.today() - timedelta(days=366)
-    start = end - timedelta(days=10)
+def test_provider_page_ceiling_never_returns_partial_total(monkeypatch):
+    monkeypatch.setattr(router, "WB_STATS_MAX_ROWS", 2)
+    end = date.today() - timedelta(days=1)
+    start = end - timedelta(days=2)
+    wb = _wb([{"ok": True, "data": [_row(start), _row(end)]}])
 
     result = asyncio.run(execute_business_query(
         {"wb": wb}, marketplace="wb", metric="ORDERS",
         seller="wb_dmitrieva", date_from=start.isoformat(), date_to=end.isoformat(),
+    ))
+
+    assert result["ok"] is False
+    assert result["error_type"] == "execution_pending"
+    assert result["details"]["complete"] is False
+    assert result["details"]["rows_received"] == 2
+
+
+def test_one_day_orders_keep_existing_exact_day_path():
+    day = date.today() - timedelta(days=1)
+    wb = _wb([], one_day_result={
+        "ok": True,
+        "orders_count": 4,
+        "orders_amount": 1234.0,
+        "source": "wb_stats_orders",
+    })
+
+    result = asyncio.run(execute_business_query(
+        {"wb": wb}, marketplace="wildberries", metric="orders",
+        seller="wb_dmitrieva", date_from=day.isoformat(), date_to=day.isoformat(),
+    ))
+
+    assert result["ok"] is True
+    assert result["route"] == "operational_exact_day"
+    assert result["source_validation"] == "approved"
+    assert result["complete"] is True
+    assert wb.client.calls == []
+
+
+def test_product_filtered_orders_fail_closed_until_contract_is_approved():
+    end = date.today() - timedelta(days=1)
+    start = end - timedelta(days=6)
+    wb = _wb([])
+
+    result = asyncio.run(execute_business_query(
+        {"wb": wb}, marketplace="wb", metric="ORDERS",
+        seller="wb_dmitrieva", date_from=start.isoformat(), date_to=end.isoformat(),
+        nm_ids=[123],
     ))
 
     assert result["ok"] is False
