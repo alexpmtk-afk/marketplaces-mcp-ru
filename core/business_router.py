@@ -1,14 +1,12 @@
 """Server-side business query routing for marketplace analytics.
 
-The public tool accepts business intent (metric/period/cabinet), not provider
-endpoint names. Source selection therefore lives on the MCP server and is
+Clients provide business intent, not provider endpoint names. Source selection,
+period suitability and aggregation therefore live on the MCP server and are
 shared by every connected ChatGPT/Codex client.
 """
 from __future__ import annotations
 
-import asyncio
 import json
-import time
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
@@ -16,11 +14,11 @@ from typing import Any, Optional
 from .business_registry import resolve_business_cabinet
 from .errors import make_error
 
-WB_FUNNEL_MAX_DAYS = 365
-WB_FUNNEL_PAGE_SIZE = 1000
-WB_FUNNEL_MAX_PAGES_SYNC = 3
-WB_FUNNEL_WAIT_BUDGET_SECONDS = 45.0
+# WB Statistics Orders is the approved canonical source for ORDERS. The
+# Business Metrics Contract currently treats its practical history as ~90 days.
+# Do not silently substitute Sales Funnel or Finance beyond this window.
 WB_OPERATIONAL_RETENTION_DAYS = 90
+WB_STATS_MAX_ROWS = 80_000
 
 
 def _j(obj: Any) -> str:
@@ -36,12 +34,14 @@ def _parse_day(value: str, field: str) -> date:
 
 def _num(value: Any) -> Decimal:
     try:
-        return Decimal(str(value or 0))
+        return Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError) as exc:
         raise ValueError(f"provider returned a non-numeric amount: {value!r}") from exc
 
 
-def _resolve_named_creds(service_module: Any, seller: str) -> tuple[Optional[dict[str, str]], str, Optional[dict]]:
+def _resolve_named_creds(
+    service_module: Any, seller: str,
+) -> tuple[Optional[dict[str, str]], str, Optional[dict]]:
     service = service_module.client.config.name
     business = resolve_business_cabinet(service, seller)
     credential_name = business.cabinet if business else seller.strip()
@@ -75,109 +75,122 @@ def _resolve_named_creds(service_module: Any, seller: str) -> tuple[Optional[dic
     return creds, resolved, None
 
 
-def _funnel_items(response: dict) -> list[dict]:
-    data = response.get("data")
-    if not isinstance(data, dict):
-        raise ValueError("WB Sales Funnel response is not an object")
-    body = data.get("data", data)
-    if not isinstance(body, dict):
-        raise ValueError("WB Sales Funnel response data is not an object")
-    products = body.get("products")
-    if products is None:
-        return []
-    if not isinstance(products, list):
-        raise ValueError("WB Sales Funnel data.products is not an array")
-    return [row for row in products if isinstance(row, dict)]
+def _aggregate_statistics_orders(
+    rows: object, *, start: date, end: date, seller: str,
+) -> dict:
+    if not isinstance(rows, list):
+        return make_error(
+            "provider_data_conflict",
+            "WB Statistics Orders response is not an array.",
+            operation_id="wb_stats_orders",
+            retryable=False,
+        )
 
+    # WB documents a maximum response size for this Statistics feed. If the
+    # ceiling is reached, a continuation request by lastChangeDate is required.
+    # That endpoint is only 1 req/min, so a synchronous MCP call must not pretend
+    # the first 80k rows are complete.
+    if len(rows) >= WB_STATS_MAX_ROWS:
+        last_change = None
+        last = rows[-1] if rows else None
+        if isinstance(last, dict):
+            last_change = last.get("lastChangeDate")
+        return make_error(
+            "execution_pending",
+            "WB Statistics Orders reached the provider page ceiling. A continuation by lastChangeDate is required; no partial aggregate is returned as final.",
+            operation_id="wb_stats_orders",
+            retryable=True,
+            details={
+                "rows_received": len(rows),
+                "resume_last_change_date": last_change,
+                "complete": False,
+            },
+        )
 
-def _aggregate_funnel_orders(products: list[dict]) -> dict:
-    gross_count = 0
-    cancelled_count = 0
-    gross_amount = Decimal("0")
-    cancelled_amount = Decimal("0")
+    count = 0
+    cancelled = 0
+    amount = Decimal("0")
     malformed = 0
-
-    for row in products:
-        selected = ((row.get("statistic") or {}).get("selected") or {})
-        if not isinstance(selected, dict):
+    matched_rows = 0
+    for row in rows:
+        if not isinstance(row, dict):
             malformed += 1
             continue
         try:
-            gross_count += int(selected.get("orderCount") or 0)
-            cancelled_count += int(selected.get("cancelCount") or 0)
-            gross_amount += _num(selected.get("orderSum"))
-            cancelled_amount += _num(selected.get("cancelSum"))
-        except (TypeError, ValueError):
+            row_day = _parse_day(str(row.get("date", "")), "WB order date")
+        except ValueError:
             malformed += 1
+            continue
+        if row_day < start or row_day > end:
+            continue
+        matched_rows += 1
+        if bool(row.get("isCancel", False)):
+            cancelled += 1
+            continue
+        try:
+            amount += _num(row.get("finishedPrice"))
+        except ValueError:
+            return make_error(
+                "provider_data_conflict",
+                "WB Statistics Orders row has no valid finishedPrice.",
+                operation_id="wb_stats_orders",
+                retryable=False,
+            )
+        count += 1
 
     return {
-        "orders_count": gross_count - cancelled_count,
-        "orders_amount": float(gross_amount - cancelled_amount),
-        "gross_orders_count": gross_count,
-        "gross_orders_amount": float(gross_amount),
-        "cancelled_orders_count": cancelled_count,
-        "cancelled_orders_amount": float(cancelled_amount),
+        "ok": True,
+        "metric": "ORDERS",
+        "marketplace": "WB",
+        "seller": seller,
+        "date_from": start.isoformat(),
+        "date_to": end.isoformat(),
+        "orders_count": count,
+        "orders_amount": float(amount),
         "currency": "RUB",
-        "malformed_products_skipped": malformed,
+        "cancelled_orders_excluded": cancelled,
+        "provider_rows_received": len(rows),
+        "provider_rows_in_period": matched_rows,
+        "malformed_rows_skipped": malformed,
+        "route": "operational_range",
+        "source": "wb_stats_orders",
+        "source_operation": "wb_stats_orders",
+        "complete": True,
+        "semantic_rule": "count rows where isCancel=false; sum finishedPrice",
+        "source_validation": "approved",
+        "quality": (
+            "Canonical WB Statistics Orders semantics from the Business Metrics Contract. "
+            "Rows outside the requested calendar period are filtered server-side."
+        ),
     }
 
 
-async def _call_with_short_wait(
-    client: Any,
-    spec: Any,
-    *,
-    body: dict[str, Any],
-    creds: dict[str, str],
-    deadline: float,
-) -> dict:
-    """Absorb only short, proven pacing inside a composite business query."""
-    while True:
-        result = await client.call_spec(spec, json_body=body, creds_override=creds)
-        if result.get("ok"):
-            return result
-        if result.get("error_type") != "rate_limit":
-            return result
-        retry_after = float(
-            result.get("retry_after_seconds", result.get("retry_after_sec", 0)) or 0
-        )
-        remaining = deadline - time.monotonic()
-        if retry_after <= 0 or retry_after > 21.0 or retry_after + 0.1 > remaining:
-            return result
-        await asyncio.sleep(retry_after + 0.05)
-
-
-async def _wb_orders_large_period(
+async def _wb_orders_operational_range(
     wb: Any,
     *,
     seller: str,
     start: date,
     end: date,
-    nm_ids: Optional[list[int]],
 ) -> dict:
     today = date.today()
-    period_days = (end - start).days + 1
-    if period_days < 1:
-        return make_error("invalid_params", "date_from must be <= date_to", retryable=False)
-    if period_days > WB_FUNNEL_MAX_DAYS or start < today - timedelta(days=WB_FUNNEL_MAX_DAYS - 1):
-        return make_error(
-            "source_not_suitable",
-            "WB Sales Funnel can supply at most the last 365 days. This period needs another approved historical source.",
-            operation_id="wb_analytics_funnel",
-            retryable=False,
-            details={
-                "requested_days": period_days,
-                "provider_history_days": WB_FUNNEL_MAX_DAYS,
-                "route": "wb_sales_funnel_products",
-            },
-        )
     if end > today:
         return make_error("invalid_params", "date_to cannot be in the future", retryable=False)
-    if nm_ids is not None and len(nm_ids) > 1000:
+
+    oldest_supported = today - timedelta(days=WB_OPERATIONAL_RETENTION_DAYS - 1)
+    if start < oldest_supported:
         return make_error(
-            "invalid_params",
-            "nm_ids may contain at most 1000 WB articles for one Sales Funnel query.",
-            operation_id="wb_analytics_funnel",
+            "source_not_suitable",
+            "Canonical WB Statistics Orders does not provide the requested historical depth. Sales Funnel was live-tested and is not semantically equivalent, so the server refuses to substitute it. An approved historical ORDERS source/store is required.",
+            operation_id="marketplace_business_query",
             retryable=False,
+            details={
+                "requested_date_from": start.isoformat(),
+                "oldest_operational_date": oldest_supported.isoformat(),
+                "canonical_source": "wb_stats_orders",
+                "rejected_substitute": "wb_analytics_funnel",
+                "rejected_reason": "live parity mismatch on all three TEST WB cabinets (2026-09-11)",
+                "requires": "approved historical ORDERS source or selective Historical Store",
+            },
         )
 
     creds, resolved_seller, error = _resolve_named_creds(wb, seller)
@@ -185,93 +198,26 @@ async def _wb_orders_large_period(
         return error
     assert creds is not None
 
-    spec = wb.catalog.get("wb_analytics_funnel")
+    spec = wb.catalog.get("wb_stats_orders")
     if spec is None:
         return make_error(
             "source_not_suitable",
-            "The approved WB Sales Funnel route is absent from the runtime catalog.",
-            operation_id="wb_analytics_funnel",
+            "Canonical WB Statistics Orders route is absent from the runtime catalog.",
+            operation_id="wb_stats_orders",
             retryable=False,
         )
 
-    products: list[dict] = []
-    offset = 0
-    pages = 0
-    deadline = time.monotonic() + WB_FUNNEL_WAIT_BUDGET_SECONDS
-
-    while True:
-        body: dict[str, Any] = {
-            "selectedPeriod": {"start": start.isoformat(), "end": end.isoformat()},
-            "nmIds": list(nm_ids or []),
-            "brandNames": [],
-            "subjectIds": [],
-            "tagIds": [],
-            "skipDeletedNm": False,
-            "limit": WB_FUNNEL_PAGE_SIZE,
-            "offset": offset,
-        }
-        result = await _call_with_short_wait(
-            wb.client, spec, body=body, creds=creds, deadline=deadline
-        )
-        if not result.get("ok"):
-            if products:
-                result = dict(result)
-                result["partial_result_discarded"] = True
-                result["partial_products_fetched"] = len(products)
-                result["resume_offset"] = offset
-                result["complete"] = False
-            return result
-
-        try:
-            page = _funnel_items(result)
-        except ValueError as exc:
-            return make_error(
-                "provider_data_conflict",
-                str(exc),
-                operation_id=spec.operation_id,
-                retryable=False,
-            )
-
-        products.extend(page)
-        pages += 1
-        if len(page) < WB_FUNNEL_PAGE_SIZE:
-            break
-        offset += len(page)
-        if pages >= WB_FUNNEL_MAX_PAGES_SYNC:
-            return make_error(
-                "execution_pending",
-                "The large-period WB query needs more provider pages than can be safely completed inside one synchronous MCP call. No partial total is returned as final. A resumable task executor is required.",
-                operation_id=spec.operation_id,
-                retryable=True,
-                details={
-                    "partial_products_fetched": len(products),
-                    "resume_offset": offset,
-                    "complete": False,
-                },
-            )
-
-    totals = _aggregate_funnel_orders(products)
-    return {
-        "ok": True,
-        "metric": "ORDERS",
-        "marketplace": "WB",
-        "seller": resolved_seller,
-        "date_from": start.isoformat(),
-        "date_to": end.isoformat(),
-        "route": "provider_aggregate",
-        "source": "wb_analytics_funnel",
-        "source_operation": spec.operation_id,
-        "pages_fetched": pages,
-        "products_fetched": len(products),
-        "complete": True,
-        "semantic_rule": "orderCount - cancelCount; orderSum - cancelSum",
-        "source_validation": "candidate_pending_live_parity",
-        "quality": (
-            "WB Sales Funnel is a provider-native aggregate with up to 365 days of history. "
-            "The route is intentionally marked candidate until live parity against the canonical Statistics Orders metric is accepted."
-        ),
-        **totals,
-    }
+    response = await wb.client.call_spec(
+        spec,
+        query={"dateFrom": start.isoformat() + "T00:00:00", "flag": 0},
+        creds_override=creds,
+        retry_on_429=False,
+    )
+    if not response.get("ok"):
+        return response
+    return _aggregate_statistics_orders(
+        response.get("data"), start=start, end=end, seller=resolved_seller,
+    )
 
 
 async def execute_business_query(
@@ -284,7 +230,7 @@ async def execute_business_query(
     date_to: str,
     nm_ids: Optional[list[int]] = None,
 ) -> dict:
-    """Resolve business intent to an approved/candidate provider route."""
+    """Resolve business intent to an approved provider route or fail closed."""
     marketplace_key = marketplace.strip().lower()
     metric_key = metric.strip().upper()
     try:
@@ -298,13 +244,20 @@ async def execute_business_query(
     if marketplace_key not in {"wb", "wildberries"}:
         return make_error(
             "source_not_suitable",
-            "Business Query Router v1 currently enables automatic large-period routing only for Wildberries.",
+            "Business Query Router v1 currently enables automatic business routing only for Wildberries.",
             operation_id="marketplace_business_query",
             retryable=False,
         )
     wb = modules["wb"]
 
     if metric_key in {"ORDERS", "ORDER"}:
+        if nm_ids:
+            return make_error(
+                "source_not_suitable",
+                "Product-filtered canonical ORDERS is not yet approved in Business Query Router v1.",
+                operation_id="marketplace_business_query",
+                retryable=False,
+            )
         if start == end:
             raw = await wb.wb_get_orders_summary(seller, start.isoformat(), end.isoformat())
             try:
@@ -319,9 +272,10 @@ async def execute_business_query(
             if isinstance(result, dict) and result.get("ok"):
                 result["route"] = "operational_exact_day"
                 result["complete"] = True
+                result["source_validation"] = "approved"
             return result
-        return await _wb_orders_large_period(
-            wb, seller=seller, start=start, end=end, nm_ids=nm_ids
+        return await _wb_orders_operational_range(
+            wb, seller=seller, start=start, end=end,
         )
 
     if metric_key in {"SALES", "SALE"}:
@@ -341,7 +295,7 @@ async def execute_business_query(
             )
         return make_error(
             "source_not_suitable",
-            "SALES aggregation is not yet enabled in Business Query Router v1. Use the existing approved operational SALES path until the Semantic Layer implementation is merged.",
+            "SALES aggregation is not yet enabled in Business Query Router v1. Use the existing approved operational SALES path until it is wired into this server-native entry point.",
             operation_id="marketplace_business_query",
             retryable=False,
         )
@@ -373,11 +327,11 @@ def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None
         date_to: str,
         nm_ids: Optional[list[int]] = None,
     ) -> str:
-        """Primary entry point for business metrics and large periods.
+        """Primary entry point for business metrics and period-aware routing.
 
-        Clients provide business intent only. The MCP server chooses the provider
-        source, period strategy, pagination and aggregation. Do not choose a raw
-        WB/Ozon endpoint in the chat when this business route supports the metric.
+        Clients provide business intent only. The MCP server chooses the approved
+        source, checks historical suitability and performs aggregation. It never
+        silently replaces one business metric with a merely similar provider metric.
         """
         return _j(await execute_business_query(
             modules,
