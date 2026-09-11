@@ -39,6 +39,33 @@ def has_proven_quota(spec: Any) -> bool:
         str(getattr(spec, "rate_limit", ""))
     ) is not None
 
+
+def resolve_named_cabinet(client: MarketplaceClient, cabinet: str) -> tuple[Optional[dict[str, str]], Optional[dict]]:
+    """Resolve an explicitly named cabinet without touching shared active state.
+
+    An empty name deliberately preserves legacy single-cabinet behaviour.  Callers
+    serving a named shop should pass the cabinet name, so a concurrent
+    `*_use_cabinet` call cannot change the credentials for their request.
+    """
+    if not cabinet.strip():
+        return None, None
+    config = client.config
+    creds, resolved = config.store.resolve_named(
+        config.name, config.fields, config.env_map, cabinet
+    )
+    missing = [field for field in config.fields if not creds.get(field)]
+    if not resolved or missing:
+        return None, {
+            "ok": False,
+            "error": "cabinet_not_configured",
+            "code": "CABINET_NOT_CONFIGURED",
+            "cabinet": cabinet,
+            "missing_fields": missing,
+            "retryable": False,
+            "message": "The requested cabinet is absent or its credentials are incomplete; no provider request was sent.",
+        }
+    return creds, None
+
 def register_generic_tools(
     mcp: FastMCP,
     *,
@@ -209,6 +236,7 @@ def register_generic_tools(
         body: Optional[dict] = None,
         confirm_write: bool = False,
         i_understand_this_modifies_data: bool = False,
+        cabinet: str = "",
     ) -> str:
         """Execute one catalog endpoint by operation_id.
 
@@ -241,8 +269,12 @@ def register_generic_tools(
             return _j(gate)
         if not has_proven_quota(spec):
             return _j(quota_error(spec.operation_id, spec.path))
+        creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
+        if cabinet_error:
+            return _j(cabinet_error)
         resp = await client.call_spec(
-            spec, path_values=path_values, query=query, json_body=body
+            spec, path_values=path_values, query=query, json_body=body,
+            creds_override=creds_override,
         )
         return _j(resp)
 
@@ -290,6 +322,7 @@ def register_generic_tools(
         items_path: Optional[str] = None,
         limit: int = 1000,
         max_items: int = 10000,
+        cabinet: str = "",
     ) -> str:
         """Auto-paginate a read endpoint and return every row in one response.
 
@@ -315,9 +348,13 @@ def register_generic_tools(
                                   f"{operation_id} is a {spec.method} write."})
         if not has_proven_quota(spec):
             return _j(quota_error(spec.operation_id, spec.path))
+        creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
+        if cabinet_error:
+            return _j(cabinet_error)
         resp = await _fetch_all(
             client, spec, base_query=query, base_body=body, path_values=path_values,
             items_path=items_path, limit=limit, max_items=max_items,
+            creds_override=creds_override,
         )
         return _j(resp)
 
