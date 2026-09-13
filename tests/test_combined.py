@@ -36,6 +36,8 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "ozon_get_accruals_by_day",
         "ozon_get_realization",
         "marketplace_business_query",
+        "wb_orders_history_sync",
+        "wb_orders_history_status",
         "card_monitor_status",
         "card_monitor_get_latest",
         "card_monitor_get_history",
