@@ -7,9 +7,12 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - The machine-readable source of truth is `core/system_map.py` (`SYSTEM_MAP`, `SYSTEM_INSTRUCTIONS`).
 - Human mirror: `ARCHITECTURE.md`.
 - Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
-- Primary shared archive/storage is **Yandex Object Storage** in a private dedicated bucket.
-- Archive runtime auth uses the Serverless Container service account and temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
-- Google Drive may only be an optional export/mirror; never make it a required runtime dependency or source of truth.
+- Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the report registry are the source of truth.
+- Google Drive OAuth refresh credentials live in Yandex Lockbox; runtime access tokens exist only in memory.
+- **Yandex Object Storage** remains required for durable archive queue/job state, per-report staging, and a secondary byte-for-byte backup of canonical Drive files.
+- Yandex Object Storage runtime auth uses the Serverless Container service account and a temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
+- Canonical archive writes must succeed on Google Drive first; do not silently fall back to Yandex as the source of truth.
+- Existing canonical files left in Yandex by the prior architecture may be migrated to Drive on read without re-downloading marketplace data.
 - Chat-local memory/files are never authoritative shared state.
 - Do not introduce a new cloud provider, primary storage path, or parallel architecture without an explicit architecture change.
 - Any architecture change must update `core/system_map.py`, `ARCHITECTURE.md`, guardrail tests, and pass CI/security/deployment acceptance in the same change.
