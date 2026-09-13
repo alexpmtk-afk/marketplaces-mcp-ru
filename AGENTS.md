@@ -7,7 +7,8 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - The machine-readable source of truth is `core/system_map.py` (`SYSTEM_MAP`, `SYSTEM_INSTRUCTIONS`).
 - Human mirror: `ARCHITECTURE.md`.
 - Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
-- Primary shared archive/storage must live in Yandex Cloud.
+- Primary shared archive/storage is **Yandex Object Storage** in a private dedicated bucket.
+- Archive runtime auth uses the Serverless Container service account and temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
 - Google Drive may only be an optional export/mirror; never make it a required runtime dependency or source of truth.
 - Chat-local memory/files are never authoritative shared state.
 - Do not introduce a new cloud provider, primary storage path, or parallel architecture without an explicit architecture change.
