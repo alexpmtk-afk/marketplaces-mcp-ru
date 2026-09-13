@@ -8,7 +8,10 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from .business_registry import resolve_business_cabinet
 from .card_monitor import register_tools as register_card_monitor_tools
+from .tools import resolve_named_cabinet
+
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
 
 
@@ -49,35 +52,111 @@ def _rate_status_tool(client: Any):
         }, ensure_ascii=False)
     return status
 
+
+def _resolve_wb_finance_creds(wb: Any, seller: str) -> tuple[dict[str, str] | None, dict | None]:
+    """Resolve a WB business alias/canonical seller to one explicit cabinet."""
+    business_cabinet = resolve_business_cabinet("wb", seller)
+    credential_name = business_cabinet.cabinet if business_cabinet else seller
+    creds, error = resolve_named_cabinet(wb.client, credential_name)
+    if error and business_cabinet:
+        error = {
+            **error,
+            "seller": seller,
+            "business_entity": business_cabinet.business_entity,
+            "cabinet": business_cabinet.cabinet,
+        }
+    return creds, error
+
+
 def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
     """Register high-signal read-only finance tools on the combined server."""
     wb = modules["wb"]
     ozon = modules["ozon"]
 
     @combined.tool(
-        name="wb_get_realization_report",
-        annotations={"title": "WB realization report", "readOnlyHint": True,
+        name="wb_list_realization_reports",
+        annotations={"title": "WB realization reports list", "readOnlyHint": True,
                      "openWorldHint": True},
     )
-    async def wb_get_realization_report(
+    async def wb_list_realization_reports(
+        seller: str,
         date_from: str,
         date_to: str,
-        limit: int = 100000,
-        rrdid: int = 0,
+        period: str = "weekly",
+        limit: int = 1000,
+        offset: int = 0,
     ) -> str:
-        """Get WB realization report rows for an inclusive date range."""
+        """List current WB realization reports for one explicitly named cabinet.
+
+        Use this first for archive discovery. ``period`` is ``weekly`` or ``daily``.
+        The returned rows include ``reportId``; use that ID with
+        ``wb_get_realization_report_by_id``. The current WB method requires a
+        Personal or Service token with the Finance category.
+        """
         start = date.fromisoformat(date_from[:10])
         end = date.fromisoformat(date_to[:10])
         if start > end:
             raise ValueError("date_from must be <= date_to")
-        limit = max(1, min(100000, int(limit)))
-        spec = wb.catalog.get("wb_report_realization")
+        period = str(period).strip().lower()
+        if period not in {"weekly", "daily"}:
+            raise ValueError("period must be 'weekly' or 'daily'")
+        limit = max(1, min(1000, int(limit)))
+        offset = max(0, int(offset))
+        creds, error = _resolve_wb_finance_creds(wb, seller)
+        if error:
+            return _j(error)
+        spec = wb.catalog.get("wb_finance_sales_reports_list")
         if spec is None:
-            raise RuntimeError("wb_report_realization contract is missing")
-        return _j(await wb.client.call_spec(spec, query={
-            "dateFrom": start.isoformat(), "dateTo": end.isoformat(),
-            "limit": limit, "rrdid": int(rrdid),
-        }))
+            raise RuntimeError("wb_finance_sales_reports_list contract is missing")
+        return _j(await wb.client.call_spec(
+            spec,
+            json_body={
+                "dateFrom": start.isoformat(),
+                "dateTo": end.isoformat(),
+                "period": period,
+                "limit": limit,
+                "offset": offset,
+            },
+            creds_override=creds,
+        ))
+
+    @combined.tool(
+        name="wb_get_realization_report_by_id",
+        annotations={"title": "WB realization report details by ID", "readOnlyHint": True,
+                     "openWorldHint": True},
+    )
+    async def wb_get_realization_report_by_id(
+        seller: str,
+        report_id: int,
+        limit: int = 100000,
+        rrd_id: int = 0,
+    ) -> str:
+        """Get one page of full WB realization-report details by ``reportId``.
+
+        ``fields`` is deliberately omitted so WB returns every available column.
+        Start with ``rrd_id=0``. If rows are returned, the archive worker should
+        continue from the last row's ``rrdId`` until WB returns HTTP 204. The
+        provider limit is one request per minute per seller account; this tool
+        therefore remains fail-fast when the shared limiter says the next slot is
+        not yet available instead of sleeping inside an interactive MCP call.
+        """
+        report_id = int(report_id)
+        if report_id <= 0:
+            raise ValueError("report_id must be a positive integer")
+        limit = max(1, min(100000, int(limit)))
+        rrd_id = max(0, int(rrd_id))
+        creds, error = _resolve_wb_finance_creds(wb, seller)
+        if error:
+            return _j(error)
+        spec = wb.catalog.get("wb_finance_sales_reports_detailed_by_id")
+        if spec is None:
+            raise RuntimeError("wb_finance_sales_reports_detailed_by_id contract is missing")
+        return _j(await wb.client.call_spec(
+            spec,
+            path_values={"reportId": report_id},
+            json_body={"limit": limit, "rrdId": rrd_id},
+            creds_override=creds,
+        ))
 
     @combined.tool(
         name="ozon_get_accrual_types",

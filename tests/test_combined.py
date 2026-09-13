@@ -30,7 +30,8 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "wb_rate_limit_status",
         "ozon_rate_limit_status",
         "ozon_perf_rate_limit_status",
-        "wb_get_realization_report",
+        "wb_list_realization_reports",
+        "wb_get_realization_report_by_id",
         "ozon_get_accrual_types",
         "ozon_get_accruals_by_day",
         "ozon_get_realization",
@@ -45,6 +46,40 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         f"(missing: {(per_service | approved_combined) - got}, "
         f"extra: {got - (per_service | approved_combined)})"
     )
+    assert "wb_get_realization_report" not in got
+
+
+def test_wb_finance_business_name_resolves_to_explicit_canonical_cabinet():
+    class Store:
+        def __init__(self):
+            self.requested = None
+
+        def resolve_named(self, service, fields, env_map, name):
+            self.requested = (service, name)
+            return {"token": "test-token"}, name
+
+    store = Store()
+
+    class Config:
+        fields = ["token"]
+        env_map = {"token": "WB_API_TOKEN"}
+        name = "wb"
+
+        def __init__(self):
+            self.store = store
+
+    class Client:
+        def __init__(self):
+            self.config = Config()
+
+    class WB:
+        def __init__(self):
+            self.client = Client()
+
+    creds, error = combined._resolve_wb_finance_creds(WB(), "ИП Новокшенов")
+    assert error is None
+    assert creds == {"token": "test-token"}
+    assert store.requested == ("wb", "wb_novokshenov")
 
 
 def test_rate_status_shows_safe_wait_time_without_queue_identity():
