@@ -10,6 +10,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from .archive_queue import WBFinanceArchiveJobQueue
 from .archive_yandex import YandexObjectStorageArchiveStore
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
@@ -111,7 +112,7 @@ def register_archive_tools(
     @mcp.tool(
         name="marketplace_archive_update",
         annotations={
-            "title": "Update central marketplace database archive",
+            "title": "Queue central marketplace database archive update",
             "readOnlyHint": False,
             "openWorldHint": True,
         },
@@ -121,45 +122,58 @@ def register_archive_tools(
         seller: str = "all",
         max_reports_per_cabinet: int = 4,
     ) -> str:
-        """Update the central WB annual CSV database in Yandex Object Storage.
+        """Queue a durable WB archive job instead of holding one long MCP call.
 
-        IMPORTANT ROUTING: use this tool whenever the user says things like
-        ``обнови данные по базе данных``, ``обнови базу маркетплейсов``,
-        ``обнови архив WB`` or asks to synchronize the historical database.
-
-        Default behaviour updates ALL three Wildberries cabinets and ONLY the
-        canonical weekly ``reportType=1`` (Основной) dataset. It discovers all
-        weekly report fragments for the selected year, skips report IDs already
-        marked COMPLETE, downloads each missing fragment with rrdId pagination,
-        and idempotently rebuilds one annual CSV per cabinet. Month-boundary
-        fragments remain separate report IDs inside the annual file but map to
-        one Monday-Sunday logical week in the registry.
-
-        If the response has ``continue_required=true`` the client/agent SHOULD
-        call this same tool again automatically with the same arguments until
-        ``complete=true``. This bounded continuation prevents long historical
-        backfills from exceeding one serverless request timeout.
+        The job state is persisted server-side. A worker step performs at most
+        one WB API request through the shared token/cabinet rate limiter. If the
+        quota is busy, the job is rescheduled and the MCP call returns quickly.
+        ``max_reports_per_cabinet`` is retained only for client compatibility.
         """
+        del max_reports_per_cabinet
         if store is None:
             return _not_configured()
-        if seller.strip().lower() == "all":
-            cabinets = ARCHIVE_CABINETS
-        else:
-            normalized = seller.strip()
-            if normalized not in ARCHIVE_CABINETS:
-                from .business_registry import resolve_business_cabinet
+        queue = WBFinanceArchiveJobQueue(wb, store)
+        sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+        jobs = [await queue.enqueue(year=int(year), seller=item) for item in sellers]
+        return _j({
+            "ok": True,
+            "marketplace": "wb",
+            "dataset": "wb_weekly_finance_main",
+            "year": int(year),
+            "queued": True,
+            "jobs": jobs,
+            "instruction": "Process queued jobs with marketplace_archive_worker_step; no long quota wait occurs inside MCP.",
+        })
 
-                entry = resolve_business_cabinet("wb", normalized)
-                if entry is None:
-                    raise ValueError(f"Unknown WB seller/cabinet: {seller}")
-                normalized = entry.cabinet
-            cabinets = (normalized,)
-        manager = WBFinanceArchiveManager(wb, store)
-        return _j(await manager.update(
-            year=int(year),
-            cabinets=cabinets,
-            max_reports_per_cabinet=max_reports_per_cabinet,
-        ))
+    @mcp.tool(
+        name="marketplace_archive_worker_step",
+        annotations={
+            "title": "Process one durable archive queue step",
+            "readOnlyHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def marketplace_archive_worker_step(job_id: str = "") -> str:
+        """Run at most one real marketplace API request for one queued job."""
+        if store is None:
+            return _not_configured()
+        queue = WBFinanceArchiveJobQueue(wb, store)
+        return _j(await queue.worker_step(job_id))
+
+    @mcp.tool(
+        name="marketplace_archive_job_status",
+        annotations={
+            "title": "Durable archive job status",
+            "readOnlyHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def marketplace_archive_job_status(job_id: str) -> str:
+        """Show persisted progress for an archive queue job."""
+        if store is None:
+            return _not_configured()
+        queue = WBFinanceArchiveJobQueue(wb, store)
+        return _j(await queue.status(job_id))
 
     @mcp.tool(
         name="marketplace_archive_status",
