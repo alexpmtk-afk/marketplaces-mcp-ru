@@ -23,6 +23,9 @@ ERROR_TYPES = (
     "network",         # connection failure
     "safety_gate",     # blocked locally before the call left the machine
     "seller_known_but_not_configured",  # business cabinet exists but has no credentials
+    "source_not_suitable",       # known metric, but no approved source for this request
+    "execution_pending",         # resumable/multi-step work cannot finish synchronously
+    "provider_data_conflict",    # provider response contradicts the proven contract
     "unknown",
 )
 
