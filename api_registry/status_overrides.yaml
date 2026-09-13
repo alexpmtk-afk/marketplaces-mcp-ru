@@ -1,4 +1,4 @@
-verified_at: '2026-09-01'
+verified_at: '2026-09-13'
 entries:
   - marketplace: wildberries
     method: GET
@@ -14,6 +14,28 @@ entries:
       - https://dev.wildberries.ru/news/302
       - https://dev.wildberries.ru/release-notes
     note: Old statistics stock endpoint was explicitly replaced by the analytics warehouses stock report.
+
+  - marketplace: wildberries
+    method: GET
+    path: /api/v5/supplier/reportDetailByPeriod
+    status: SHUTDOWN
+    shutdown_date: '2026-07-15'
+    replacement:
+      - method: POST
+        path: /api/finance/v1/sales-reports/detailed
+        token_scope: finance
+      - method: POST
+        path: /api/finance/v1/sales-reports/list
+        token_scope: finance
+        token_types: [personal, service]
+      - method: POST
+        path: /api/finance/v1/sales-reports/detailed/{reportId}
+        token_scope: finance
+        token_types: [personal, service]
+    evidence:
+      - https://dev.wildberries.ru/release-notes?id=354
+      - https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting
+    note: WB announced the new Finance API on 2026-04-15 and disabled the Statistics realization endpoint on 2026-07-15.
 
   - marketplace: ozon
     method: POST
