@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-13.v2`
+**Version:** `2026-09-13.v3`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -12,21 +12,30 @@ This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool
 Supporting services:
 - Secrets: Yandex Lockbox.
 - Shared limiter/locks: Yandex Managed Redis/Valkey.
-- Primary shared archive/storage: **Yandex Object Storage**.
-- Archive authentication: temporary IAM token obtained by the Serverless Container from its own runtime service-account metadata. No static archive key is required.
+- Canonical marketplace archive: **Google Drive** folder `MCP архив базы данных`.
+- Durable queue/job state and staging: **Yandex Object Storage**.
+- Secondary byte-for-byte backup of canonical archive files: Yandex Object Storage.
+- Google Drive authentication: long-lived OAuth refresh credential in Yandex Lockbox; access tokens exist only in runtime memory.
+- Yandex Object Storage authentication: temporary IAM token obtained by the Serverless Container from its runtime service-account metadata; no static archive key is required.
 
 ## Hard boundaries
 
-- Google Cloud is not part of the runtime architecture.
-- Google Drive may only be an optional export/mirror; it must never be a required runtime dependency or source of truth.
+- Google Cloud is not part of the runtime architecture; only the Google Drive API is used as the canonical archive storage surface.
+- Google Drive annual CSV files and the report registry are the archive source of truth.
+- Yandex Object Storage must not replace Drive as canonical data; it is used for durable queue/staging and backup.
 - Local files or chat memory are never authoritative shared state.
 - No new cloud provider or primary storage path may be introduced without an explicit architecture change.
 
 ## Archive rules
 
 - Archive state is server-owned and shared by every client.
-- Annual CSV files and the archive registry live in one private dedicated Yandex Object Storage bucket.
+- Annual CSV files and the archive registry live canonically on Google Drive under `MCP архив базы данных`.
+- Each canonical write is committed to Google Drive first and then copied byte-for-byte to Yandex Object Storage as a backup.
+- Existing canonical files left in Yandex by the previous architecture are migrated to Google Drive on first read when Drive does not yet contain that file. Provider data is not re-downloaded for this migration.
+- Queue state and temporary per-report staging remain in Yandex Object Storage so in-flight jobs survive deployments and client disconnects.
 - Update is idempotent and registry-driven; already-complete provider reports are not downloaded again.
+- WB finance rows are deduplicated by `(reportId, rrdId)` before the annual CSV is written.
+- Registry rows are deduplicated by `(cabinet, dataset, report_id)`.
 - Partitioning: one logical annual dataset per marketplace / cabinet / dataset / year.
 - Annual file pattern: `<cabinet>__<dataset>__<year>.csv`.
 - WB weekly finance MAIN uses only `reportType=1` (`Основной`).
@@ -36,10 +45,10 @@ Supporting services:
 
 ## Routing rules
 
-- “Обнови данные по базе данных” and equivalent intents must use the server archive update workflow for all configured cabinets by default.
-- Historical questions use the shared archive when coverage exists.
+- “Обнови данные по базе данных” and equivalent intents use the server archive update workflow for all configured cabinets by default.
+- Historical questions read the canonical Google Drive archive when coverage exists.
 - Current/uncovered periods use provider APIs or an explicit backfill/gap workflow.
-- All computers/chats must see the same remote state; no client may invent its own storage or architecture path.
+- All computers/chats see the same remote state; no client may invent its own storage or architecture path.
 
 ## Change control
 
