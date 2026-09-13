@@ -8,8 +8,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from .archive_hybrid import build_hybrid_archive_store_from_env
 from .archive_tools import register_archive_tools
-from .archive_yandex import build_yandex_archive_store_from_env
 from .business_registry import resolve_business_cabinet
 from .business_router import register_business_query_tool
 from .card_monitor import register_tools as register_card_monitor_tools
@@ -229,7 +229,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
         )(_rate_status_tool(mod.client))
 
     order_history_store = build_order_history_store_from_env()
-    archive_store = build_yandex_archive_store_from_env()
+    archive_store = build_hybrid_archive_store_from_env()
     modules["_order_history_store"] = order_history_store
     modules["_archive_store"] = archive_store
 
