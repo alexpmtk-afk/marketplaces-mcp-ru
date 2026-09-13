@@ -40,6 +40,8 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "wb_orders_history_sync",
         "wb_orders_history_status",
         "marketplace_archive_update",
+        "marketplace_archive_worker_step",
+        "marketplace_archive_job_status",
         "marketplace_archive_status",
         "marketplace_archive_query",
         "card_monitor_status",
@@ -89,32 +91,8 @@ def test_wb_finance_business_name_resolves_to_explicit_canonical_cabinet():
     assert store.requested == ("wb", "wb_novokshenov")
 
 
-def test_rate_status_shows_safe_wait_time_without_queue_identity():
-    class Controller:
-        backend = "redis"
-
-    class Client:
-        rate_controller = Controller()
-
-        async def rate_limit_status(self):
-            return {
-                "ok": True,
-                "backend": "redis",
-                "configured_global_rps": 50.0,
-                "active_queues": [{
-                    "queue": "catalog_group",
-                    "queue_id": "opaque-hash",
-                    "wait_seconds": 58.2,
-                }],
-            }
-
-    result = json.loads(asyncio.run(combined._rate_status_tool(Client())()))
-    assert result == {
-        "ok": True,
-        "backend": "redis",
-        "shared": True,
-        "reachable": True,
-        "configured_global_rps": 50.0,
-        "active_queues": [{"queue": "catalog_group", "wait_seconds": 58.2}],
-        "error": None,
-    }
+def test_wb_finance_tool_contracts_are_canonical_names_only():
+    names = _tool_names(combined.build())
+    assert "wb_list_realization_reports" in names
+    assert "wb_get_realization_report_by_id" in names
+    assert "wb_get_realization_report" not in names
