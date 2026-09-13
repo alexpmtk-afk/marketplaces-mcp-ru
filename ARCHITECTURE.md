@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-13.v1`
+**Version:** `2026-09-13.v2`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -12,7 +12,8 @@ This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool
 Supporting services:
 - Secrets: Yandex Lockbox.
 - Shared limiter/locks: Yandex Managed Redis/Valkey.
-- Primary shared archive/storage: Yandex Cloud.
+- Primary shared archive/storage: **Yandex Object Storage**.
+- Archive authentication: temporary IAM token obtained by the Serverless Container from its own runtime service-account metadata. No static archive key is required.
 
 ## Hard boundaries
 
@@ -24,8 +25,10 @@ Supporting services:
 ## Archive rules
 
 - Archive state is server-owned and shared by every client.
+- Annual CSV files and the archive registry live in one private dedicated Yandex Object Storage bucket.
 - Update is idempotent and registry-driven; already-complete provider reports are not downloaded again.
 - Partitioning: one logical annual dataset per marketplace / cabinet / dataset / year.
+- Annual file pattern: `<cabinet>__<dataset>__<year>.csv`.
 - WB weekly finance MAIN uses only `reportType=1` (`Основной`).
 - A logical WB week is Monday-Sunday.
 - If WB splits one logical week across month/year boundaries, all physical `reportId` fragments belong to that same logical week.
