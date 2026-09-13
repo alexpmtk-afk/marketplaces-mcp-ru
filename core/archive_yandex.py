@@ -81,12 +81,11 @@ class YandexObjectStorageArchiveStore:
     def _clean_prefix(value: str) -> str:
         return "/".join(part for part in str(value).strip("/").split("/") if part)
 
-    def _join_key(self, *parts: str) -> str:
+    @classmethod
+    def _join_key(cls, *parts: str) -> str:
         values: list[str] = []
-        if self.root_prefix:
-            values.append(self.root_prefix)
         for raw in parts:
-            clean = self._clean_prefix(raw)
+            clean = cls._clean_prefix(raw)
             if clean:
                 values.append(clean)
         return "/".join(values)
@@ -152,7 +151,7 @@ class YandexObjectStorageArchiveStore:
 
     async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
         """Return an object-key prefix; Object Storage needs no physical folders."""
-        return self._join_key(*(str(part) for part in parts))
+        return self._join_key(self.root_prefix, *(str(part) for part in parts))
 
     async def find_child(
         self, parent_id: str, name: str, *, mime_type: str | None = None
