@@ -11,7 +11,9 @@ from mcp.server.fastmcp import FastMCP
 from .business_registry import resolve_business_cabinet
 from .business_router import register_business_query_tool
 from .card_monitor import register_tools as register_card_monitor_tools
+from .order_history_tools import register_order_history_tools
 from .tools import resolve_named_cabinet
+from .ydb_order_history import build_order_history_store_from_env
 
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
 
@@ -205,7 +207,7 @@ def _register_finance_tools(combined: FastMCP, modules: dict[str, Any]) -> None:
 
 
 def build(**fastmcp_kwargs: Any) -> FastMCP:
-    """Return one FastMCP carrying seller API and public-card monitor tools."""
+    """Return one FastMCP carrying seller APIs and server-native business routing."""
     combined = FastMCP("marketplaces-mcp-ru", **fastmcp_kwargs)
     modules: dict[str, Any] = {}
     for mod_name in SERVICE_MODULES:
@@ -221,8 +223,13 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
                 "openWorldHint": False,
             },
         )(_rate_status_tool(mod.client))
+
+    order_history_store = build_order_history_store_from_env()
+    modules["_order_history_store"] = order_history_store
+
     _register_finance_tools(combined, modules)
     register_business_query_tool(combined, modules)
+    register_order_history_tools(combined, modules, order_history_store)
     register_card_monitor_tools(combined)
     return combined
 
