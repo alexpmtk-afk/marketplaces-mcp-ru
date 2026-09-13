@@ -10,7 +10,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from .archive_drive import GoogleDriveArchiveStore
+from .archive_yandex import YandexObjectStorageArchiveStore
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
 _BLOCKED_SQL = re.compile(
@@ -29,15 +29,18 @@ def _not_configured() -> str:
         "ok": False,
         "error": "archive_storage_not_configured",
         "message": (
-            "Central Google Drive archive storage is not configured on the remote MCP. "
-            "The server requires MARKETPLACE_MCP_GOOGLE_DRIVE_OAUTH_JSON in Lockbox "
-            "and MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID in the runtime environment."
+            "Central Yandex Object Storage archive is not configured on the remote MCP. "
+            "The server requires MARKETPLACE_MCP_ARCHIVE_BUCKET."
         ),
         "retryable": False,
     })
 
 
-async def _query_year(store: GoogleDriveArchiveStore, year: int, sql: str) -> dict[str, Any]:
+async def _query_year(
+    store: YandexObjectStorageArchiveStore,
+    year: int,
+    sql: str,
+) -> dict[str, Any]:
     statement = str(sql).strip()
     if statement.endswith(";"):
         statement = statement[:-1].strip()
@@ -101,7 +104,7 @@ async def _query_year(store: GoogleDriveArchiveStore, year: int, sql: str) -> di
 def register_archive_tools(
     mcp: FastMCP,
     modules: dict[str, Any],
-    store: GoogleDriveArchiveStore | None,
+    store: YandexObjectStorageArchiveStore | None,
 ) -> None:
     wb = modules["wb"]
 
@@ -118,7 +121,7 @@ def register_archive_tools(
         seller: str = "all",
         max_reports_per_cabinet: int = 4,
     ) -> str:
-        """Update the central WB annual CSV database on Google Drive.
+        """Update the central WB annual CSV database in Yandex Object Storage.
 
         IMPORTANT ROUTING: use this tool whenever the user says things like
         ``обнови данные по базе данных``, ``обнови базу маркетплейсов``,
@@ -182,7 +185,7 @@ def register_archive_tools(
         },
     )
     async def marketplace_archive_query(year: int, sql: str) -> str:
-        """Run a safe read-only SQL query over annual WB CSV files on Google Drive.
+        """Run a safe read-only SQL query over annual WB CSV files in Yandex.
 
         The server exposes views named ``wb_dmitrieva``, ``wb_novokshenov``,
         ``wb_laser_master`` and union view ``wb_all``. Use this for historical
