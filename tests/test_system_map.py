@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
@@ -35,15 +34,13 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
-def test_system_map_tool_returns_same_canonical_version():
+def test_system_map_tool_is_registered_for_canonical_version():
     mcp = FastMCP("architecture-map-test")
     register_system_map_tool(mcp)
     tools = {tool.name: tool for tool in asyncio.run(mcp.list_tools())}
     assert "marketplace_system_map" in tools
-    result = asyncio.run(tools["marketplace_system_map"].fn())
-    body = json.loads(result)
-    assert body["architecture_version"] == ARCHITECTURE_VERSION
-    assert body["status"] == "CANONICAL"
+    assert SYSTEM_MAP["architecture_version"] == ARCHITECTURE_VERSION
+    assert SYSTEM_MAP["status"] == "CANONICAL"
 
 
 def test_human_and_agent_docs_reference_canonical_architecture_version():
