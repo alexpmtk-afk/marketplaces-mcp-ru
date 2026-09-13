@@ -30,10 +30,12 @@ _CABINETS = (
 
 
 def resolve_business_cabinet(service: str, seller: str) -> BusinessCabinet | None:
-    """Resolve a canonical cabinet or a declared business alias.
+    """Resolve a canonical cabinet, business name, or declared alias.
 
-    Resolution is case-insensitive for human aliases.  It never fabricates
-    credentials and it does not alter the active cabinet selection.
+    Resolution is case-insensitive. It never fabricates credentials and it does
+    not alter the active cabinet selection. Matching the human business name is
+    intentional: user-facing tools may receive ``ИП Новокшенов`` while the
+    credential store is keyed by ``wb_novokshenov``/``ozon_novokshenov``.
     """
     needle = seller.strip().casefold()
     if not needle:
@@ -41,8 +43,7 @@ def resolve_business_cabinet(service: str, seller: str) -> BusinessCabinet | Non
     for entry in _CABINETS:
         if entry.service != service:
             continue
-        if needle == entry.cabinet.casefold() or any(
-            needle == alias.casefold() for alias in entry.aliases
-        ):
+        candidates = (entry.cabinet, entry.business_entity, *entry.aliases)
+        if any(needle == candidate.casefold() for candidate in candidates):
             return entry
     return None
