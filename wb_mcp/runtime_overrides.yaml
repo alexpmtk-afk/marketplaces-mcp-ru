@@ -2,6 +2,7 @@
 # inventory is refreshed. Keep this file intentionally small and evidence-based.
 remove:
   - wb_stats_stocks
+  - wb_report_realization
 
 endpoints:
   - operation_id: wb_analytics_stocks_wb_warehouses
@@ -25,3 +26,89 @@ endpoints:
       - наличие
       - история остатков
     items_path: data.items
+
+  - operation_id: wb_finance_sales_reports_list
+    section: finance
+    method: POST
+    host: finance-api.wildberries.ru
+    path: /api/finance/v1/sales-reports/list
+    scope: finance
+    safety: read
+    pagination: offset
+    rate_limit: 1 req/min
+    quota_proven: true
+    summary: List realization sales reports. Available since 2025-01-01; Personal or Service Finance token required.
+    params:
+      body: '{dateFrom, dateTo, period=weekly|daily, limit<=1000, offset}'
+      token_types: [personal, service]
+    doc: https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting#tag/financialReports/operation/postV1SalesReportsList
+    keywords:
+      - реализация
+      - финансовые отчёты
+      - еженедельный отчёт
+      - weekly report
+      - список отчётов
+
+  - operation_id: wb_finance_sales_reports_detailed_by_id
+    section: finance
+    method: POST
+    host: finance-api.wildberries.ru
+    path: /api/finance/v1/sales-reports/detailed/{reportId}
+    scope: finance
+    safety: read
+    pagination: rrdid
+    rate_limit: 1 req/min
+    quota_proven: true
+    summary: Realization report details by reportId. Available since 2025-01-01; Personal or Service Finance token required.
+    params:
+      path: '{reportId: int64}'
+      body: '{limit<=100000, rrdId=0, fields[] optional; omit fields to return all fields}'
+      token_types: [personal, service]
+    doc: https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting#tag/financialReports/operation/postV1SalesReportsDetailedReportId
+    keywords:
+      - реализация
+      - детализация
+      - финансовый отчёт
+      - reportId
+      - rrdId
+
+  - operation_id: wb_finance_sales_reports_detailed_period
+    section: finance
+    method: POST
+    host: finance-api.wildberries.ru
+    path: /api/finance/v1/sales-reports/detailed
+    scope: finance
+    safety: read
+    pagination: rrdid
+    rate_limit: 1 req/min
+    quota_proven: false
+    summary: Realization report details for a period. Current replacement for retired /api/v5/supplier/reportDetailByPeriod; quota depends on WB token type.
+    params:
+      body: '{dateFrom, dateTo, period=weekly|daily, limit<=100000, rrdId=0, fields[] optional}'
+      quota_note: 'Personal, Service and Base-with-secret: 1/min; Base: 2 requests/24h with 12h interval.'
+    doc: https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting#tag/financialReports/operation/postV1SalesReportsDetailed
+    keywords:
+      - реализация
+      - детализация
+      - финансовый отчёт
+      - период
+      - rrdId
+
+  - operation_id: wb_finance_balance
+    section: finance
+    method: GET
+    host: finance-api.wildberries.ru
+    path: /api/v1/account/balance
+    scope: finance
+    safety: read
+    pagination: none
+    rate_limit: 1 req/min
+    quota_proven: false
+    summary: Seller balance from the current Finance API host; quota depends on WB token type.
+    params:
+      quota_note: 'Personal, Service and Base-with-secret: 1/min; Base: 1 request/24h.'
+    doc: https://dev.wildberries.ru/docs/openapi/financial-reports-and-accounting#tag/balance/operation/getV1AccountBalance
+    keywords:
+      - баланс
+      - деньги
+      - финансы

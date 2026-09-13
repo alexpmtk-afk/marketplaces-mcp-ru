@@ -5,12 +5,13 @@ machine-friendly ones so an agent can ask for "all" rows without hand-rolling
 loops. Anything exotic can still be paged manually via the generic executor.
 
 Supported styles (EndpointSpec.pagination):
-- offset          : limit/offset (in body for POST, query for GET); stop on short page
+- offset          : limit/offset (in body for POST, query for GET); stop on empty page
 - last_id         : Ozon — body filter, response result.last_id
 - last_id_no_limit: Ozon finance by-day — last_id cursor without a limit field
 - cursor          : Ozon v4/v5 — top-level "cursor" token + "total"
 - page            : body page/page_size, response result.page_count
 - lastchangedate  : WB statistics — query dateFrom = last row's lastChangeDate
+- rrdid           : WB finance reports — request rrdId/rrdid = last row's rrdId
 - none            : single request
 
 Item paths vary per endpoint (result.items, items, result.rows,
@@ -76,7 +77,7 @@ async def fetch_all(
     pages = 0
     query = dict(base_query or {})
     body = dict(base_body or {})
-    seen_cursor: Optional[str] = None
+    seen_cursor: Any = None
 
     while True:
         # paging params go in the query for GET, the body for POST
@@ -96,6 +97,17 @@ async def fetch_all(
         elif style == "page":
             body.setdefault("page_size", limit)
             body["page"] = pages + 1
+        elif style == "rrdid":
+            # Legacy WB Statistics used lowercase `rrdid` in the query string;
+            # the current Finance API uses camelCase `rrdId` in a POST body.
+            # Supporting both keeps the walker generic while runtime routing can
+            # remove the retired endpoint itself.
+            field = "rrdid" if is_get else "rrdId"
+            loc.setdefault("limit", limit)
+            if seen_cursor is None:
+                loc.setdefault(field, 0)
+            else:
+                loc[field] = seen_cursor
 
         call_kwargs = {
             "path_values": path_values,
@@ -156,6 +168,16 @@ async def fetch_all(
                 return _result(items, pages, truncated=False)
             seen_cursor = lcd
             query["dateFrom"] = lcd
+        elif style == "rrdid":
+            last = page_items[-1]
+            rrd_id = None
+            if isinstance(last, dict):
+                rrd_id = last.get("rrdId")
+                if rrd_id is None:
+                    rrd_id = last.get("rrdid")
+            if rrd_id is None or rrd_id == seen_cursor:
+                return _result(items, pages, truncated=False)
+            seen_cursor = rrd_id
         else:  # none / unsupported -> single page
             return _result(items, pages, truncated=False)
 

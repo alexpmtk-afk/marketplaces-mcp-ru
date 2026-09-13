@@ -18,6 +18,27 @@ workflows:
       - Hammering the endpoint — 1 req/min limit, expect slow walks.
       - Confusing order date with change date (the flag parameter controls it).
 
+  - name: weekly_finance_archive
+    category: finance
+    when_to_use: Find the newest completed weekly realization report and archive its full row-level details.
+    steps:
+      - operation_id: wb_finance_sales_reports_list
+        why: Request period=weekly, sort/select the newest returned report by report period/create date, and keep its reportId.
+      - operation_id: wb_finance_sales_reports_detailed_by_id
+        why: Download the selected report by reportId with limit<=100000 and rrdId continuation; omit fields to preserve every WB column.
+    interpret: >
+      Both methods use finance-api.wildberries.ru and require a Personal or
+      Service token with the Finance category. Start details with rrdId=0 and
+      continue from the rrdId of the last returned row until WB returns 204.
+      The endpoint limit is one request per minute per seller account, so an
+      archive worker should persist the cursor and resume instead of creating a
+      hidden interactive wait. Data by report ID is available from 2025-01-01.
+    common_mistakes:
+      - Calling retired GET /api/v5/supplier/reportDetailByPeriod; WB disabled it on 2026-07-15.
+      - Sending a Base token to list/by-ID methods; WB documents only Personal and Service tokens for them.
+      - Passing fields when the archive goal is lossless; omit fields to receive all columns.
+      - Assuming one page is complete without following rrdId until the terminal 204 response.
+
   - name: stock_health
     category: warehouse
     when_to_use: Check current stock and warehouse remains to avoid stockouts.
