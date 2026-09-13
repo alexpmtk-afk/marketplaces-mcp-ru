@@ -15,5 +15,13 @@ def test_dte_resolves_to_dmitrieva_ozon():
     assert entry.cabinet == "ozon_dmitrieva"
 
 
+def test_business_entity_name_resolves_to_service_specific_cabinet():
+    wb = resolve_business_cabinet("wb", "ИП Новокшенов")
+    ozon = resolve_business_cabinet("ozon", "ип новокшенов")
+
+    assert wb is not None and wb.cabinet == "wb_novokshenov"
+    assert ozon is not None and ozon.cabinet == "ozon_novokshenov"
+
+
 def test_unknown_business_seller_is_not_resolved():
     assert resolve_business_cabinet("wb", "unknown seller") is None
