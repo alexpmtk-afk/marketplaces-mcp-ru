@@ -11,7 +11,6 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .archive_queue import WBFinanceArchiveJobQueue
-from .archive_yandex import YandexObjectStorageArchiveStore
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
 _BLOCKED_SQL = re.compile(
@@ -30,15 +29,16 @@ def _not_configured() -> str:
         "ok": False,
         "error": "archive_storage_not_configured",
         "message": (
-            "Central Yandex Object Storage archive is not configured on the remote MCP. "
-            "The server requires MARKETPLACE_MCP_ARCHIVE_BUCKET."
+            "Central archive requires canonical Google Drive storage plus Yandex Object Storage "
+            "for durable queue/staging. Check MARKETPLACE_MCP_GOOGLE_DRIVE_OAUTH_JSON, "
+            "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID and MARKETPLACE_MCP_ARCHIVE_BUCKET."
         ),
         "retryable": False,
     })
 
 
 async def _query_year(
-    store: YandexObjectStorageArchiveStore,
+    store: Any,
     year: int,
     sql: str,
 ) -> dict[str, Any]:
@@ -105,7 +105,7 @@ async def _query_year(
 def register_archive_tools(
     mcp: FastMCP,
     modules: dict[str, Any],
-    store: YandexObjectStorageArchiveStore | None,
+    store: Any | None,
 ) -> None:
     wb = modules["wb"]
 
@@ -124,9 +124,9 @@ def register_archive_tools(
     ) -> str:
         """Queue a durable WB archive job instead of holding one long MCP call.
 
-        The job state is persisted server-side. A worker step performs at most
-        one WB API request through the shared token/cabinet rate limiter. If the
-        quota is busy, the job is rescheduled and the MCP call returns quickly.
+        Job state/staging is durable in Yandex Object Storage. Final annual CSV
+        files and the report registry are canonical on Google Drive. A worker
+        step performs at most one WB API request; quota waits are rescheduled.
         ``max_reports_per_cabinet`` is retained only for client compatibility.
         """
         del max_reports_per_cabinet
@@ -184,7 +184,7 @@ def register_archive_tools(
         },
     )
     async def marketplace_archive_status(year: int = date.today().year) -> str:
-        """Show central WB archive coverage and annual-file state for a year."""
+        """Show central WB archive coverage and canonical annual-file state."""
         if store is None:
             return _not_configured()
         manager = WBFinanceArchiveManager(wb, store)
@@ -199,13 +199,13 @@ def register_archive_tools(
         },
     )
     async def marketplace_archive_query(year: int, sql: str) -> str:
-        """Run a safe read-only SQL query over annual WB CSV files in Yandex.
+        """Run safe read-only SQL over canonical annual WB CSV files on Drive.
 
         The server exposes views named ``wb_dmitrieva``, ``wb_novokshenov``,
         ``wb_laser_master`` and union view ``wb_all``. Use this for historical
-        questions that should be answered from the archive instead of repeatedly
-        calling WB APIs. Only SELECT/WITH is accepted and external file readers
-        or mutating SQL are blocked. At most 1000 result rows are returned.
+        questions covered by the archive rather than repeatedly calling WB APIs.
+        Only SELECT/WITH is accepted; mutating/external-reader SQL is blocked.
+        At most 1000 result rows are returned.
         """
         if store is None:
             return _not_configured()
