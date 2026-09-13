@@ -30,6 +30,7 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "wb_rate_limit_status",
         "ozon_rate_limit_status",
         "ozon_perf_rate_limit_status",
+        "marketplace_system_map",
         "wb_list_realization_reports",
         "wb_get_realization_report_by_id",
         "ozon_get_accrual_types",
