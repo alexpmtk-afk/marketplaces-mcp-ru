@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Iterable
 
-from .archive_drive import GoogleDriveArchiveStore
+from .archive_yandex import YandexObjectStorageArchiveStore
 from .business_registry import resolve_business_cabinet
 from .rate_limit import redis_connection_kwargs, redis_url_from_env
 from .tools import resolve_named_cabinet
@@ -44,7 +44,7 @@ REGISTRY_FIELDS = (
     "create_date",
     "year",
     "annual_file",
-    "drive_file_id",
+    "storage_object_key",
     "rows",
     "bytes",
     "sha256",
@@ -117,7 +117,10 @@ def encode_csv(fieldnames: Iterable[str], rows: Iterable[dict[str, Any]]) -> byt
     return ("\ufeff" + output.getvalue()).encode("utf-8")
 
 
-def merge_annual_csv(existing: bytes | None, new_rows: list[dict[str, Any]]) -> tuple[bytes, dict[str, Any]]:
+def merge_annual_csv(
+    existing: bytes | None,
+    new_rows: list[dict[str, Any]],
+) -> tuple[bytes, dict[str, Any]]:
     """Merge provider rows into one deterministic annual CSV without duplicates."""
     old_fields, old_rows = parse_csv_bytes(existing or b"")
     fieldnames = list(old_fields)
@@ -130,7 +133,11 @@ def merge_annual_csv(existing: bytes | None, new_rows: list[dict[str, Any]]) -> 
     if not fieldnames and new_rows:
         fieldnames = list(new_rows[0].keys())
     if not fieldnames:
-        return existing or b"", {"added_rows": 0, "total_rows": len(old_rows), "columns": 0}
+        return existing or b"", {
+            "added_rows": 0,
+            "total_rows": len(old_rows),
+            "columns": 0,
+        }
 
     by_key: dict[tuple[str, str], dict[str, Any]] = {}
     anonymous: list[dict[str, Any]] = []
@@ -146,7 +153,7 @@ def merge_annual_csv(existing: bytes | None, new_rows: list[dict[str, Any]]) -> 
                 by_key[key] = row
             return not existed
         marker = json.dumps(
-            {k: _stringify(row.get(k)) for k in fieldnames},
+            {key: _stringify(row.get(key)) for key in fieldnames},
             ensure_ascii=False,
             sort_keys=True,
         )
@@ -269,7 +276,11 @@ class ArchiveLock:
     return 0
     """
 
-    def __init__(self, key: str = "marketplace-archive:v1:wb-finance", ttl_seconds: int = 900) -> None:
+    def __init__(
+        self,
+        key: str = "marketplace-archive:v1:wb-finance",
+        ttl_seconds: int = 900,
+    ) -> None:
         self.key = key
         self.ttl_seconds = max(60, int(ttl_seconds))
         self.token = secrets.token_hex(16)
@@ -302,18 +313,28 @@ class ArchiveLock:
 
 
 class WBFinanceArchiveManager:
-    def __init__(self, wb_module: Any, store: GoogleDriveArchiveStore) -> None:
+    def __init__(self, wb_module: Any, store: YandexObjectStorageArchiveStore) -> None:
         self.wb = wb_module
         self.store = store
 
     @staticmethod
     def _retry_after(data: dict[str, Any]) -> float:
         try:
-            return float(data.get("retry_after_seconds", 0) or data.get("retry_after_sec", 0) or 0)
+            return float(
+                data.get("retry_after_seconds", 0)
+                or data.get("retry_after_sec", 0)
+                or 0
+            )
         except (TypeError, ValueError):
             return 0.0
 
-    async def _call_wait(self, spec: Any, *, creds: dict[str, str], **kwargs: Any) -> dict[str, Any]:
+    async def _call_wait(
+        self,
+        spec: Any,
+        *,
+        creds: dict[str, str],
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         while True:
             data = await self.wb.client.call_spec(spec, creds_override=creds, **kwargs)
             retry_after = self._retry_after(data)
@@ -435,7 +456,7 @@ class WBFinanceArchiveManager:
             result["cabinets"][cabinet] = {
                 "complete_report_ids": len(complete_ids),
                 "annual_file": annual_name,
-                "drive_file_id": annual_file.id if annual_file else None,
+                "storage_object_key": annual_file.id if annual_file else None,
                 "bytes": annual_file.size if annual_file else 0,
             }
         return result
@@ -463,10 +484,15 @@ class WBFinanceArchiveManager:
             async def update_one(cabinet: str) -> dict[str, Any]:
                 fragments = await self._list_main_fragments(cabinet, year)
                 complete = registry_complete_ids(registry_data, cabinet)
-                pending = [fragment for fragment in fragments if fragment.report_id not in complete]
+                pending = [
+                    fragment for fragment in fragments if fragment.report_id not in complete
+                ]
                 todo = pending[:max_reports_per_cabinet]
                 annual_folder, annual_name = await self._annual_location(cabinet, year)
-                annual_file, annual_data = await self.store.download_named(annual_folder, annual_name)
+                annual_file, annual_data = await self.store.download_named(
+                    annual_folder,
+                    annual_name,
+                )
                 new_rows: list[dict[str, Any]] = []
                 fragment_rows: dict[int, int] = {}
                 for fragment in todo:
@@ -476,7 +502,10 @@ class WBFinanceArchiveManager:
                 if todo:
                     merged, stats = merge_annual_csv(annual_data, new_rows)
                     annual_file = await self.store.upload_bytes(
-                        annual_folder, annual_name, merged, mime_type="text/csv"
+                        annual_folder,
+                        annual_name,
+                        merged,
+                        mime_type="text/csv",
                     )
                     annual_data = merged
                     for fragment in todo:
@@ -494,7 +523,7 @@ class WBFinanceArchiveManager:
                                 "create_date": fragment.create_date,
                                 "year": year,
                                 "annual_file": annual_name,
-                                "drive_file_id": annual_file.id,
+                                "storage_object_key": annual_file.id,
                                 "rows": fragment_rows.get(fragment.report_id, 0),
                                 "bytes": len(merged),
                                 "sha256": hashlib.sha256(merged).hexdigest(),
@@ -518,17 +547,24 @@ class WBFinanceArchiveManager:
                     "discovered_main_reports": len(fragments),
                     "previously_complete": len(complete),
                     "downloaded_report_ids": [fragment.report_id for fragment in todo],
-                    "remaining_report_ids": [fragment.report_id for fragment in pending[len(todo):]],
+                    "remaining_report_ids": [
+                        fragment.report_id for fragment in pending[len(todo):]
+                    ],
                     "annual_file": annual_name,
-                    "drive_file_id": annual_file.id if annual_file else None,
+                    "storage_object_key": annual_file.id if annual_file else None,
                     **stats,
                 }
 
-            cabinet_results = await asyncio.gather(*(update_one(cabinet) for cabinet in selected))
+            cabinet_results = await asyncio.gather(
+                *(update_one(cabinet) for cabinet in selected)
+            )
             if records:
                 registry_payload = merge_registry(registry_data, records)
                 await self.store.upload_bytes(
-                    registry_folder, registry_name, registry_payload, mime_type="text/csv"
+                    registry_folder,
+                    registry_name,
+                    registry_payload,
+                    mime_type="text/csv",
                 )
             more_pending = any(item["remaining_report_ids"] for item in cabinet_results)
             return {
