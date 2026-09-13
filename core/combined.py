@@ -9,6 +9,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .business_registry import resolve_business_cabinet
+from .business_router import register_business_query_tool
 from .card_monitor import register_tools as register_card_monitor_tools
 from .tools import resolve_named_cabinet
 
@@ -34,9 +35,6 @@ def _rate_status_tool(client: Any):
                 "error": state.get("message", "Rate-limit status is unavailable."),
             }, ensure_ascii=False)
 
-        # ``snapshot`` already maps opaque Redis names to queue categories. Keep
-        # only the category and remaining time: even a shortened key hash is not
-        # useful to an operator and should not escape the service.
         queues = [{
             "queue": item.get("queue", "other"),
             "wait_seconds": item.get("wait_seconds", 0.0),
@@ -224,6 +222,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
             },
         )(_rate_status_tool(mod.client))
     _register_finance_tools(combined, modules)
+    register_business_query_tool(combined, modules)
     register_card_monitor_tools(combined)
     return combined
 

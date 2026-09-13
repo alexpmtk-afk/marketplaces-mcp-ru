@@ -20,12 +20,18 @@ class BusinessCabinet:
 
 
 _CABINETS = (
-    BusinessCabinet("wb", "wb_dmitrieva", "ИП Дмитриева", ("DTE",)),
-    BusinessCabinet("ozon", "ozon_dmitrieva", "ИП Дмитриева", ("DTE",)),
-    BusinessCabinet("wb", "wb_novokshenov", "ИП Новокшенов"),
-    BusinessCabinet("ozon", "ozon_novokshenov", "ИП Новокшенов"),
-    BusinessCabinet("wb", "wb_laser_master", "ООО «Лазер - Мастер»"),
-    BusinessCabinet("ozon", "ozon_laser_master", "ООО «Лазер - Мастер»"),
+    BusinessCabinet("wb", "wb_dmitrieva", "ИП Дмитриева", ("DTE", "Дмитриева")),
+    BusinessCabinet("ozon", "ozon_dmitrieva", "ИП Дмитриева", ("DTE", "Дмитриева")),
+    BusinessCabinet("wb", "wb_novokshenov", "ИП Новокшенов", ("Новокшенов",)),
+    BusinessCabinet("ozon", "ozon_novokshenov", "ИП Новокшенов", ("Новокшенов",)),
+    BusinessCabinet(
+        "wb", "wb_laser_master", "ООО «Лазер - Мастер»",
+        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер"),
+    ),
+    BusinessCabinet(
+        "ozon", "ozon_laser_master", "ООО «Лазер - Мастер»",
+        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер"),
+    ),
 )
 
 

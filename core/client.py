@@ -35,6 +35,7 @@ from .rate_limit import (
     key_prefix,
 )
 from .registry import EndpointSpec
+from .wb_token_rate_policy import effective_wb_rate_limit
 
 DEFAULT_TIMEOUT = 30.0
 MAX_RETRIES = 4
@@ -391,13 +392,20 @@ class MarketplaceClient:
             cabinet_key = self._quota_key(self.config, creds or {})
         except ValueError as exc:
             return make_error("rate_limit", str(exc), operation_id=operation_id, retryable=False)
+        effective_rate_limit = rate_limit
+        if self.config.name == "wb":
+            effective_rate_limit = effective_wb_rate_limit(
+                operation_id,
+                rate_limit,
+                str((creds or {}).get("token", "")),
+            )
         rules = build_rules(
             service=self.config.name,
             cabinet_key=cabinet_key,
             host=host,
             operation_id=operation_id,
             scope=rate_scope,
-            catalog_rate_limit=rate_limit,
+            catalog_rate_limit=effective_rate_limit,
         )
         headers = {
             "User-Agent": self.config.user_agent,
@@ -476,8 +484,7 @@ class MarketplaceClient:
                     await self.rate_controller.defer(rules, delay)
                 except RateLimitUnavailable as exc:
                     return make_error(
-                        "rate_limit",
-                        f"Marketplace returned 429 and the shared cooldown could "
+                        "rate_limit", f"Marketplace returned 429 and the shared cooldown could "
                         f"not be stored: {exc}",
                         code=429, operation_id=operation_id, endpoint=path,
                         retryable=True, retry_after_seconds=delay,
