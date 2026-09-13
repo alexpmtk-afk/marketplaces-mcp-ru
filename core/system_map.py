@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-13.v1"
+ARCHITECTURE_VERSION = "2026-09-13.v2"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -20,7 +20,9 @@ SYSTEM_MAP: dict[str, Any] = {
         "marketplace_sources": ["Wildberries official API", "Ozon official API"],
     },
     "storage_policy": {
-        "primary_runtime_storage": "Yandex Cloud",
+        "primary_runtime_storage": "Yandex Object Storage",
+        "archive_auth": "Serverless Container runtime service-account IAM token from metadata; no static archive key",
+        "archive_layout": "private dedicated bucket; server-owned annual CSV files plus registry",
         "google_drive": "optional export/mirror only; never a required runtime dependency or source of truth",
         "google_cloud": "not part of the runtime architecture",
         "client_local_files": "never authoritative for shared server state",
@@ -31,6 +33,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "idempotent": True,
         "registry_required": True,
         "annual_partitioning": "one logical annual dataset per marketplace/cabinet/dataset/year",
+        "annual_csv_pattern": "<cabinet>__<dataset>__<year>.csv",
         "wb_weekly_finance_main": {
             "period": "weekly",
             "report_type": 1,
@@ -62,7 +65,8 @@ SYSTEM_MAP: dict[str, Any] = {
 SYSTEM_INSTRUCTIONS = f"""CANONICAL MARKETPLACES MCP ARCHITECTURE — {ARCHITECTURE_VERSION}
 Treat marketplace_system_map as the source of truth for this MCP.
 Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
-Primary shared archive/storage must live in Yandex Cloud. Google Drive may only be an optional export/mirror and must never become a required runtime dependency or source of truth.
+Primary shared archive storage is Yandex Object Storage, accessed by the Serverless Container runtime service account with a temporary IAM token. Do not introduce a static archive key unless the canonical architecture is explicitly changed.
+Google Drive may only be an optional export/mirror and must never become a required runtime dependency or source of truth.
 For database/archive tasks, use server-owned shared state, registry/idempotent update logic, and official WB/Ozon APIs. Do not invent chat-local storage, a new cloud provider, or a new architecture path.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """

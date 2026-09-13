@@ -55,13 +55,16 @@ def test_registry_tracks_complete_report_ids_per_cabinet():
         "create_date": "2026-09-07",
         "year": 2026,
         "annual_file": "x.csv",
-        "drive_file_id": "drive-1",
+        "storage_object_key": "archive/x.csv",
         "rows": 5,
         "bytes": 10,
         "sha256": "abc",
         "status": "COMPLETE",
         "ingested_at_utc": "2026-09-13T00:00:00+00:00",
     }])
+    fields, _ = archive.parse_csv_bytes(payload)
+    assert "storage_object_key" in fields
+    assert "drive_file_id" not in fields
     assert archive.registry_complete_ids(payload, "wb_novokshenov") == {123}
     assert archive.registry_complete_ids(payload, "wb_dmitrieva") == set()
 
@@ -74,9 +77,9 @@ class DummyLock:
         return None
 
 
-class FakeDriveFile:
-    def __init__(self, file_id, name, size):
-        self.id = file_id
+class FakeArchiveObject:
+    def __init__(self, object_key, name, size):
+        self.id = object_key
         self.name = name
         self.size = size
 
@@ -92,20 +95,20 @@ class FakeStore:
         value = self.files.get((parent, name))
         if value is None:
             return None
-        return FakeDriveFile("id:" + parent + "/" + name, name, len(value))
+        return FakeArchiveObject(parent + "/" + name, name, len(value))
 
     async def download_named(self, parent, name):
         value = self.files.get((parent, name))
         if value is None:
             return None, None
-        return FakeDriveFile("id:" + parent + "/" + name, name, len(value)), value
+        return FakeArchiveObject(parent + "/" + name, name, len(value)), value
 
     async def upload_bytes(self, parent, name, data, **kwargs):
         self.files[(parent, name)] = data
-        return FakeDriveFile("id:" + parent + "/" + name, name, len(data))
+        return FakeArchiveObject(parent + "/" + name, name, len(data))
 
     async def status(self):
-        return {"configured": True, "reachable": True}
+        return {"configured": True, "reachable": True, "backend": "fake"}
 
 
 class FakeManager(archive.WBFinanceArchiveManager):
@@ -134,6 +137,7 @@ def test_update_builds_one_annual_file_and_second_run_is_noop(monkeypatch):
     assert manager.downloads == [101, 102]
     assert first["cabinets"][0]["total_rows"] == 2
     assert first["cabinets"][0]["downloaded_report_ids"] == [101, 102]
+    assert first["cabinets"][0]["storage_object_key"].endswith("wb_novokshenov__weekly_main__2026.csv")
 
     second = asyncio.run(manager.update(year=2026, cabinets=("wb_novokshenov",), max_reports_per_cabinet=10))
     assert second["complete"] is True
