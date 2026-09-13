@@ -30,7 +30,8 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "wb_rate_limit_status",
         "ozon_rate_limit_status",
         "ozon_perf_rate_limit_status",
-        "wb_get_realization_report",
+        "wb_list_realization_reports",
+        "wb_get_realization_report_by_id",
         "ozon_get_accrual_types",
         "ozon_get_accruals_by_day",
         "ozon_get_realization",
@@ -45,6 +46,7 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         f"(missing: {(per_service | approved_combined) - got}, "
         f"extra: {got - (per_service | approved_combined)})"
     )
+    assert "wb_get_realization_report" not in got
 
 
 def test_rate_status_shows_safe_wait_time_without_queue_identity():
