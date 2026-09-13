@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 from pathlib import Path
 
 import yaml
@@ -98,7 +99,7 @@ class _FakeClient:
         self.calls: list[dict] = []
 
     async def call_spec(self, spec, **kwargs):
-        self.calls.append(kwargs)
+        self.calls.append(copy.deepcopy(kwargs))
         if len(self.calls) == 1:
             return {
                 "ok": True,
