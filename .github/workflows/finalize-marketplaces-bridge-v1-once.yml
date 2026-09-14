@@ -6,6 +6,7 @@ on:
       - bridge-v1-final
     paths:
       - scripts/finalize_marketplaces_bridge_v1.py
+      - scripts/fix_marketplaces_v1_tests.py
       - .github/workflows/finalize-marketplaces-bridge-v1-once.yml
 
 permissions:
@@ -22,7 +23,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Apply deterministic canonical v1 patch
-        run: python scripts/finalize_marketplaces_bridge_v1.py
+        run: |
+          python scripts/finalize_marketplaces_bridge_v1.py
+          python scripts/fix_marketplaces_v1_tests.py
       - name: Remove active legacy/v3 source and tests
         shell: bash
         run: |
@@ -44,6 +47,7 @@ jobs:
           ! grep -q '_LEGACY_MODE' core/archive_google.py
           ! grep -q 'MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL' core/archive_google.py
           ! grep -q 'MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL' .env.example
+          ! grep -q 'NOT_IMPLEMENTED' tests/test_archive_google_bridge_v1.py
           test -f tests/test_archive_google_bridge_v1_stable.py
           test ! -f tests/test_archive_google_bridge_v1_alpha2.py
           test ! -f docs/apps_script/marketplaces_drive_bridge_v3.gs
