@@ -150,7 +150,7 @@ def test_documented_404_expires_session(monkeypatch):
 
 
 @pytest.mark.parametrize("status", [400, 401, 410])
-def test_undocumented_non_rate_limit_4xx_fail_closed(monkeypatch, status):
+def test_non_rate_limit_4xx_restarts_resumable_session(monkeypatch, status):
     uploader = GoogleDriveResumableUploader(session_broker=FakeBroker(), chunk_size=CHUNK_GRANULARITY)
 
     async def fake_request(method, url, **kwargs):
@@ -158,15 +158,15 @@ def test_undocumented_non_rate_limit_4xx_fail_closed(monkeypatch, status):
         return _response(status)
 
     monkeypatch.setattr(uploader, "_request", fake_request)
-    with pytest.raises(ResumableUploadError) as exc:
-        asyncio.run(uploader.query_status(
-            "https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
-            10 * CHUNK_GRANULARITY,
-        ))
-    assert exc.value.retryable is False
+    progress = asyncio.run(uploader.query_status(
+        "https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
+        10 * CHUNK_GRANULARITY,
+    ))
+    assert progress.state == "expired"
+    assert progress.offset == 0
 
 
-def test_plain_permission_403_fails_closed(monkeypatch):
+def test_plain_permission_403_restarts_resumable_session(monkeypatch):
     uploader = GoogleDriveResumableUploader(session_broker=FakeBroker(), chunk_size=CHUNK_GRANULARITY)
 
     async def fake_request(method, url, **kwargs):
@@ -174,12 +174,12 @@ def test_plain_permission_403_fails_closed(monkeypatch):
         return _response(403, json_body={"error": {"errors": [{"reason": "forbidden"}]}})
 
     monkeypatch.setattr(uploader, "_request", fake_request)
-    with pytest.raises(ResumableUploadError) as exc:
-        asyncio.run(uploader.query_status(
-            "https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
-            10 * CHUNK_GRANULARITY,
-        ))
-    assert exc.value.retryable is False
+    progress = asyncio.run(uploader.query_status(
+        "https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
+        10 * CHUNK_GRANULARITY,
+    ))
+    assert progress.state == "expired"
+    assert progress.offset == 0
 
 
 def test_rate_limit_403_is_retryable(monkeypatch):
