@@ -1,0 +1,212 @@
+version: 2026-09-14.v1
+policy:
+  fail_closed: true
+  executable_binding_status: APPROVED
+  recognized_does_not_mean_executable: true
+metrics:
+  ORDERS_UNITS:
+    marketplace: wb
+    business_metric: ORDERS
+    measure: UNITS
+    status: APPROVED
+    source_id: wb_stats_orders
+    event_date_field: date
+    timezone: Europe/Moscow
+    formula: COUNT(rows WHERE date in requested period AND isCancel=false)
+    dedup_key: [srid]
+    quality: preliminary_operational
+  ORDERS_AMOUNT_RUB:
+    marketplace: wb
+    business_metric: ORDERS
+    measure: AMOUNT_RUB
+    status: APPROVED
+    source_id: wb_stats_orders
+    event_date_field: date
+    timezone: Europe/Moscow
+    formula: SUM(finishedPrice WHERE date in requested period AND isCancel=false)
+    dedup_key: [srid]
+    quality: preliminary_operational
+  SALES_NET_UNITS:
+    marketplace: wb
+    business_metric: SALES
+    measure: UNITS
+    status: APPROVED
+    source_id: wb_stats_sales
+    event_date_field: date
+    timezone: Europe/Moscow
+    formula: COUNT(saleID startswith 'S') - COUNT(saleID startswith 'R')
+    dedup_key: [saleID]
+    quality: preliminary_operational
+  SALES_NET_AMOUNT_RUB:
+    marketplace: wb
+    business_metric: SALES
+    measure: AMOUNT_RUB
+    status: APPROVED
+    source_id: wb_stats_sales
+    event_date_field: date
+    timezone: Europe/Moscow
+    formula: SUM(finishedPrice for sale and return events; provider return rows are negative)
+    dedup_key: [saleID]
+    quality: preliminary_operational
+sources:
+  wb_stats_orders:
+    kind: live_api
+    marketplace: wb
+    operation_id: wb_stats_orders
+    status: APPROVED
+    data_class: operational_orders
+    retention_days: 90
+  wb_stats_sales:
+    kind: live_api
+    marketplace: wb
+    operation_id: wb_stats_sales
+    status: APPROVED
+    data_class: operational_sales
+    retention_days: 90
+  wb_weekly_finance_main:
+    kind: archive_dataset
+    marketplace: wb
+    dataset_id: wb_weekly_finance_main
+    status: REGISTERED_NOT_METRIC_BOUND
+    data_class: finance_report
+datasets:
+  wb_weekly_finance_main:
+    marketplace: wb
+    status: REGISTERED
+    report_type: 1
+    canonical_storage: google_drive
+    delimiter: ';'
+    file_pattern: '{cabinet}__weekly_main__{year}.csv'
+    schema_status: OBSERVED_2026_09_14
+    field_count: 92
+    fields:
+      - reportId
+      - dateFrom
+      - dateTo
+      - createDate
+      - currency
+      - reportType
+      - rrdId
+      - giId
+      - dlvPrc
+      - fixTariffDateFrom
+      - fixTariffDateTo
+      - subjectName
+      - nmId
+      - brandName
+      - vendorCode
+      - title
+      - techSize
+      - sku
+      - docTypeName
+      - quantity
+      - retailPrice
+      - retailAmount
+      - salePercent
+      - commissionPercent
+      - officeName
+      - sellerOperName
+      - orderDt
+      - saleDt
+      - rrDate
+      - shkId
+      - retailPriceWithDisc
+      - deliveryAmount
+      - returnAmount
+      - deliveryService
+      - giBoxTypeName
+      - productDiscountForReport
+      - sellerPromo
+      - spp
+      - kvwBase
+      - kvw
+      - supRatingUp
+      - isKgvpV2
+      - ppvzSalesCommission
+      - forPay
+      - ppvzReward
+      - acquiringFee
+      - acquiringPercent
+      - paymentProcessing
+      - acquiringBank
+      - vw
+      - vwNds
+      - ppvzOfficeName
+      - ppvzOfficeId
+      - ppvzSupplierName
+      - ppvzSupplierInn
+      - declarationNumber
+      - stickerId
+      - country
+      - srvDbs
+      - penalty
+      - additionalPayment
+      - rebillLogisticCost
+      - paidStorage
+      - deduction
+      - paidAcceptance
+      - orderId
+      - isB2b
+      - trbxId
+      - installmentCofinancingAmount
+      - wibesDiscountPercent
+      - cashbackAmount
+      - cashbackDiscount
+      - cashbackCommissionChange
+      - paymentSchedule
+      - deliveryMethod
+      - sellerPromoId
+      - sellerPromoDiscount
+      - loyaltyId
+      - loyaltyDiscount
+      - uuidPromocode
+      - salePricePromocodeDiscountPrc
+      - articleSubstitution
+      - salePriceAffiliatedDiscountPrc
+      - salePriceWholesaleDiscountPrc
+      - b2bCustomerTin
+      - paidWithSocialCertificate
+      - warehouseLogisticsCoeff
+      - orderUid
+      - srid
+      - rebillLogisticOrg
+      - bonusTypeName
+      - kiz
+    row_dedup_key: [reportId, rrdId]
+    registry_dedup_key: [cabinet, dataset, report_id]
+    coverage:
+      registry_file: reports_registry.csv
+      complete_status: COMPLETE
+      period_fields: [date_from, date_to]
+      logical_period_fields: [logical_week_from, logical_week_to]
+      archive_route_requirement: FULL_COVERAGE
+    business_semantics:
+      status: UNPROVEN
+      event_date_field: null
+      sign_rule: null
+      metric_formula: null
+bindings:
+  wb_weekly_finance_main__ORDERS_UNITS:
+    metric_id: ORDERS_UNITS
+    source_id: wb_weekly_finance_main
+    status: DRAFT
+    execution_allowed: false
+    reason: metric_mapping_unproven
+  wb_weekly_finance_main__ORDERS_AMOUNT_RUB:
+    metric_id: ORDERS_AMOUNT_RUB
+    source_id: wb_weekly_finance_main
+    status: DRAFT
+    execution_allowed: false
+    reason: metric_mapping_unproven
+  wb_weekly_finance_main__SALES_NET_UNITS:
+    metric_id: SALES_NET_UNITS
+    source_id: wb_weekly_finance_main
+    status: DRAFT
+    execution_allowed: false
+    reason: metric_mapping_unproven
+  wb_weekly_finance_main__SALES_NET_AMOUNT_RUB:
+    metric_id: SALES_NET_AMOUNT_RUB
+    source_id: wb_weekly_finance_main
+    status: DRAFT
+    execution_allowed: false
+    reason: metric_mapping_unproven
