@@ -1,0 +1,161 @@
+version: 2026-09-14.v1
+policy:
+  fail_closed_on_unknown: true
+  prefer_exact_field_reference: true
+  current_state_must_not_be_inferred_from_weekly_archive: true
+routes:
+  - id: ozon_any
+    priority: 2000
+    target_type: not_covered
+    target_id: ozon_data
+    match_any: [ozon, озон]
+
+  - id: current_stock
+    priority: 1950
+    target_type: not_covered
+    target_id: current_stock
+    match_any: [остатки сейчас, текущие остатки, остаток сейчас, сколько осталось, остатки на сегодня]
+
+  - id: current_fulfillment_configuration
+    priority: 1950
+    target_type: not_covered
+    target_id: current_fulfillment_configuration
+    match_any: [какая схема сейчас, схема отгрузки сейчас, текущая схема отгрузки, настроена схема, текущая схема поставки]
+
+  - id: advertising_performance
+    priority: 1900
+    target_type: not_covered
+    target_id: advertising_performance
+    match_any: [реклама, рекламная кампания, показы, клики, рекламные расходы, рекламный расход, дрр]
+
+  - id: detailed_storage_calculation
+    priority: 1850
+    target_type: not_covered
+    target_id: detailed_storage_calculation
+    match_any: [как рассчитано хранение, расчет хранения по дням, расчёт хранения по дням, почему начислили хранение, детализация хранения]
+
+  - id: detailed_acceptance_operations
+    priority: 1850
+    target_type: not_covered
+    target_id: detailed_acceptance_operations
+    match_any: [как рассчитана приемка, как рассчитана приёмка, детализация приемки, детализация приёмки, почему начислили приемку, почему начислили приёмку]
+
+  - id: current_state_generic
+    priority: 1800
+    target_type: inline_not_covered
+    reason: Еженедельный архив отражает исторические операции и не подтверждает текущее состояние на данный момент.
+    match_any: [сейчас, на данный момент, сегодня, текущий, текущая, текущие, текущего]
+
+  - id: report_period_and_identity
+    priority: 1600
+    target_type: capability
+    target_id: report_period_and_identity
+    match_any: [еженедельный отчет, еженедельный отчёт, отчет реализации, отчёт реализации, номер отчета, номер отчёта, период отчета, период отчёта, валюта отчета, валюта отчёта]
+
+  - id: order_context_attribute
+    priority: 1550
+    target_type: capability
+    target_id: order_context_attribute
+    match_any: [дата заказа, время заказа, номер заказа, uid заказа, orderdt, orderuid, orderid, srid]
+
+  - id: all_orders_placed
+    priority: 1500
+    target_type: not_covered
+    target_id: all_orders_placed
+    match_any: [сколько заказов, сумма заказов, все заказы, оформленные заказы, количество заказов, заказы за]
+
+  - id: observed_fulfillment_method
+    priority: 1450
+    target_type: capability
+    target_id: observed_fulfillment_method
+    match_any: [схема отгрузки, модель отгрузки, схема поставки, deliverymethod, fbs, fbw, fbo, со склада продавца, со склада wildberries, со склада вайлдберриз]
+
+  - id: warehouse_tariff_context
+    priority: 1425
+    target_type: capability
+    target_id: warehouse_tariff_context
+    match_any: [коэффициент логистики, коэффициент склада, тариф склада, тариф логистики, warehouselogisticscoeff, dlvprc]
+
+  - id: logistics
+    priority: 1400
+    target_type: capability
+    target_id: logistics
+    match_any: [логистика, обратная логистика, возвратная логистика, стоимость доставки, доставка покупателю, доставка к клиенту, ребилл логистики]
+
+  - id: penalties
+    priority: 1380
+    target_type: capability
+    target_id: penalties
+    match_any: [штраф, штрафы, сумма штрафов, причина штрафа, за что штраф]
+
+  - id: storage_charge
+    priority: 1360
+    target_type: capability
+    target_id: storage_charge
+    match_any: [платное хранение, списали за хранение, начислили за хранение, сумма хранения, стоимость хранения]
+
+  - id: acceptance_charge
+    priority: 1340
+    target_type: capability
+    target_id: acceptance_charge
+    match_any: [платная приемка, платная приёмка, списали за приемку, списали за приёмку, сумма приемки, сумма приёмки]
+
+  - id: deductions_and_adjustments
+    priority: 1320
+    target_type: capability
+    target_id: deductions_and_adjustments
+    match_any: [удержание, удержания, доплата, доплаты, корректировка, корректировки, дополнительная выплата]
+
+  - id: commission_and_wb_reward
+    priority: 1300
+    target_type: capability
+    target_id: commission_and_wb_reward
+    match_any: [комиссия wildberries, комиссия вайлдберриз, комиссия wb, процент комиссии, вознаграждение wildberries, вознаграждение вайлдберриз, квв]
+
+  - id: acquiring_and_payment_processing
+    priority: 1280
+    target_type: capability
+    target_id: acquiring_and_payment_processing
+    match_any: [эквайринг, комиссия эквайринга, обработка платежа, платежный процессинг, платёжный процессинг, acquiring]
+
+  - id: pickup_point_context
+    priority: 1260
+    target_type: capability
+    target_id: pickup_point_context
+    match_any: [пвз, пункт выдачи, офис пвз, вознаграждение пвз]
+
+  - id: promotions_loyalty_cashback
+    priority: 1240
+    target_type: capability
+    target_id: promotions_loyalty_cashback
+    match_any: [промокод, скидка продавца, скидка wb, скидка wildberries, лояльность, кешбэк, кэшбэк, cashback, spp, акция продавца]
+
+  - id: b2b
+    priority: 1220
+    target_type: capability
+    target_id: b2b
+    match_any: [b2b, продажа юрлицу, покупатель юрлицо, инн покупателя, оптовая скидка]
+
+  - id: traceability_and_marking
+    priority: 1200
+    target_type: capability
+    target_id: traceability_and_marking
+    match_any: [киз, маркировка, код маркировки, декларация, номер декларации, штрихкод единицы, stickerid, shkid]
+
+  - id: geography
+    priority: 1180
+    target_type: capability
+    target_id: geography
+    match_any: [география, регион операции, страна операции, страна продажи, где покупатель, регион покупателя]
+
+  - id: product_identity
+    priority: 1160
+    target_type: capability
+    target_id: product_identity
+    match_any: [артикул wb, артикул wildberries, артикул вайлдберриз, артикул продавца, nm id, nmid, vendorcode, бренд, название товара, размер товара, баркод товара, sku]
+
+  - id: sale_and_return_operations
+    priority: 1100
+    target_type: capability
+    target_id: sale_and_return_operations
+    match_any: [продажа, продажи, выкуп, выкупы, возврат, возвраты, реализация, сумма продаж, количество продаж]
