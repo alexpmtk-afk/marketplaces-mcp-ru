@@ -18,8 +18,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def test_contract_exposes_required_layers_and_status():
     data = advertising_data_map()
-    assert data["version"] == DATA_CONTRACT_VERSION == "wb_ads_data_v1.0"
-    assert data["status"] == ARCHIVE_STATUS == "contract_ready_ingestion_pending"
+    assert data["version"] == DATA_CONTRACT_VERSION == "wb_ads_data_v1.1"
+    assert data["status"] == ARCHIVE_STATUS == "archive_primitives_in_progress"
     assert data["layers"] == [
         "provider_source",
         "normalization",
@@ -31,12 +31,25 @@ def test_contract_exposes_required_layers_and_status():
     ]
 
 
+def test_campaign_discovery_is_separate_from_fullstats_population():
+    roster = DATASETS["ads_campaign_roster_snapshots"]
+    assert roster["provider_path"] == "/adv/v1/promotion/count"
+    assert roster["archive"] is True
+    assert roster["fullstats_eligible_statuses"] == [7, 9, 11]
+    assert "/adv/v1/promotion/count" in ROUTING_RULES["campaign_discovery"]
+    assert "7,9,11" in ROUTING_RULES["fullstats_population"]
+
+
 def test_historical_contract_preserves_provider_limits():
     campaign = DATASETS["ads_campaign_daily"]
     assert campaign["provider_path"] == "/adv/v3/fullstats"
     assert campaign["max_days_per_request"] == 31
     assert campaign["max_campaign_ids_per_request"] == 50
     assert campaign["archive"] is True
+    assert any(
+        "not relabeled as ad placement" in limitation
+        for limitation in DATASETS["ads_product_daily"]["limitations"]
+    )
 
     expenses = DATASETS["ads_expenses"]
     payments = DATASETS["ads_payments"]
@@ -68,6 +81,7 @@ def test_profitability_and_spend_boundaries_are_explicit():
 def test_required_provider_operations_cover_archive_v1_sources():
     ops = required_provider_operations(archive_only=True)
     assert {
+        "wb_get_adv_promotion_count",
         "wb_get_adv_fullstats",
         "wb_post_adv_normquery_stats_v1",
         "wb_get_adv_upd",
@@ -79,6 +93,7 @@ def test_required_provider_operations_cover_archive_v1_sources():
 def test_runtime_catalog_contains_read_only_advertising_sources():
     catalog = Catalog.from_yaml(ROOT / "wb_mcp" / "endpoints.yaml")
     expected = {
+        "wb_get_adv_promotion_count": "/adv/v1/promotion/count",
         "wb_get_api_advert_adverts": "/api/advert/v2/adverts",
         "wb_get_adv_fullstats": "/adv/v3/fullstats",
         "wb_post_adv_normquery_stats_v1": "/adv/v1/normquery/stats",
