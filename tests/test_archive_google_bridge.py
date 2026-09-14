@@ -4,8 +4,10 @@ import asyncio
 import base64
 import hashlib
 
+import httpx
 import pytest
 
+import core.archive_google as archive_google
 from core.archive_google import (
     ArchiveStorageError,
     ArchiveStorageNotConfigured,
@@ -112,3 +114,83 @@ def test_status_fails_closed_on_wrong_drive_root():
     store._post = fake_post  # type: ignore[method-assign]
     with pytest.raises(ArchiveStorageError, match="root mismatch"):
         asyncio.run(store.status())
+
+
+def test_post_retries_transient_google_redirect_404_from_original_exec_url(monkeypatch):
+    store = _store()
+    calls: list[str] = []
+    responses = [
+        httpx.Response(
+            404,
+            request=httpx.Request(
+                "POST", "https://script.googleusercontent.com/macros/echo?user_content_key=expired"
+            ),
+            text="Not Found",
+        ),
+        httpx.Response(
+            200,
+            request=httpx.Request("POST", store.bridge_url),
+            json={
+                "ok": True,
+                "version": 2,
+                "root_id": "root-id",
+                "root_name": "MCP архив базы данных",
+            },
+        ),
+    ]
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            del exc_type, exc, tb
+
+        async def post(self, url, **kwargs):
+            del kwargs
+            calls.append(str(url))
+            return responses.pop(0)
+
+    async def no_sleep(delay):
+        del delay
+
+    monkeypatch.setattr(archive_google.httpx, "AsyncClient", FakeClient)
+    monkeypatch.setattr(archive_google.asyncio, "sleep", no_sleep)
+
+    result = asyncio.run(store.status())
+    assert result["reachable"] is True
+    assert calls == [store.bridge_url, store.bridge_url]
+
+
+def test_post_does_not_retry_non_transient_http_error(monkeypatch):
+    store = _store()
+    calls = 0
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            del exc_type, exc, tb
+
+        async def post(self, url, **kwargs):
+            nonlocal calls
+            del kwargs
+            calls += 1
+            return httpx.Response(
+                401,
+                request=httpx.Request("POST", str(url)),
+                text="Unauthorized",
+            )
+
+    monkeypatch.setattr(archive_google.httpx, "AsyncClient", FakeClient)
+
+    with pytest.raises(ArchiveStorageError, match="HTTP 401"):
+        asyncio.run(store.status())
+    assert calls == 1
