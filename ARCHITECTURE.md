@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v4`
+**Version:** `2026-09-14.v5`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -44,6 +44,29 @@ Supporting services:
 - If WB splits one logical week across month/year boundaries, all physical `reportId` fragments belong to that same logical week.
 - `reportType=2` (`По выкупам`) is a separate dataset and must never be mixed into MAIN.
 
+## Semantic Core
+
+The Semantic Core is a server-side knowledge and routing layer that sits before business query execution.
+
+Current components:
+- `core/semantic_registry.yaml` — semantic passport of the currently available archive dataset and all 92 physical fields of the WB weekly realization detail;
+- `core/semantic_intents.yaml` — deterministic mapping of common business wording to registered capabilities or to a required external source;
+- `core/semantic_resolver.py` — fail-closed resolver producing one of: `AVAILABLE`, `AVAILABLE_WITH_LIMITATION`, `REQUIRES_OTHER_SOURCE`, `AMBIGUOUS`, `UNKNOWN`.
+
+Current database truth:
+- `wb_weekly_finance_main` is the only business report treated as present in the canonical archive;
+- other WB/Ozon reports are reference-only until they are actually archived and registered as available.
+
+Guardrails:
+- exact physical field questions may resolve directly to that field's registered semantics;
+- complete marketplace orders must never be reconstructed from `orderDt`/`orderUid` in weekly finance;
+- `deliveryMethod` and warehouse/tariff fields describe historical reported operations and must not be presented as current seller/product configuration;
+- explicit current-state questions do not fall back to historical weekly finance;
+- unknown or ambiguous requests fail closed;
+- semantic resolution does not itself execute archive SQL; a later query plan must still verify `FULL_COVERAGE` before archive execution.
+
+The resolver is **not yet wired into `marketplace_business_query` runtime execution**. That integration is a separate controlled step.
+
 ## Google Drive bridge contract
 
 The Yandex-hosted MCP talks to one deployed Apps Script web app. Runtime configuration is:
@@ -56,8 +79,9 @@ The bridge supports only narrow archive operations: health/status, named-file st
 ## Routing rules
 
 - “Обнови данные по базе данных” and equivalent intents use the server archive update workflow for all configured cabinets by default.
-- Historical questions read the canonical Google Drive archive when coverage exists.
-- Current/uncovered periods use provider APIs or an explicit backfill/gap workflow.
+- Business questions are semantically resolved before archive fields or another source are selected.
+- Historical questions read the canonical Google Drive archive when the semantic capability is registered and coverage exists.
+- Current/uncovered periods use provider APIs or an explicit gap/backfill workflow.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
 
 ## Change control
