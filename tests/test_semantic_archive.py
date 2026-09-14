@@ -44,6 +44,11 @@ class FakeStore:
                 "rebillLogisticCost",
                 "deduction",
                 "additionalPayment",
+                "vw",
+                "vwNds",
+                "acquiringFee",
+                "paymentProcessing",
+                "acquiringBank",
                 "nmId",
             ],
             annual_rows,
@@ -194,6 +199,11 @@ def _annual_rows():
             "sellerOperName": "Продажа",
             "paidStorage": "0",
             "paidAcceptance": "0",
+            "vw": "100.00",
+            "vwNds": "20.00",
+            "acquiringFee": "10.00",
+            "paymentProcessing": "Компенсация платёжных услуг",
+            "acquiringBank": "Вайлдберриз Банк",
             "nmId": "111",
         },
         {
@@ -211,6 +221,11 @@ def _annual_rows():
             "sellerOperName": "Возврат",
             "paidStorage": "0",
             "paidAcceptance": "0",
+            "vw": "30.00",
+            "vwNds": "6.00",
+            "acquiringFee": "3.00",
+            "paymentProcessing": "Компенсация платёжных услуг",
+            "acquiringBank": "Вайлдберриз Банк",
             "nmId": "111",
         },
         {
@@ -333,7 +348,7 @@ def _annual_rows():
     ]
 
 
-def test_execution_registry_approves_six_safe_capabilities():
+def test_execution_registry_approves_eight_safe_capabilities():
     execution = load_semantic_execution()
     assert set(execution["executors"]) == {
         "penalties",
@@ -342,6 +357,8 @@ def test_execution_registry_approves_six_safe_capabilities():
         "sale_and_return_operations",
         "logistics",
         "deductions_and_adjustments",
+        "commission_and_wb_reward",
+        "acquiring_and_payment_processing",
     }
     assert execution["policy"]["require_full_coverage"] is True
     assert execution["policy"]["cross_currency_sum_forbidden"] is True
@@ -514,6 +531,109 @@ def test_deductions_never_net_with_wb_reward_adjustments():
     assert "seller payout" not in result["provenance"]["semantics"].lower()
 
 
+def test_wb_reward_uses_reported_money_fields_not_percentages():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какая сумма комиссии WB за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+            nm_ids=[111],
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "commission_and_wb_reward"
+    assert result["provenance"]["sum_rule"] == "sale_minus_return_by_doc_type_for_registered_components"
+    assert result["calculation"]["components_by_currency"] == [
+        {
+            "currency": "RUB",
+            "sale_wb_reward_without_vat": 100.0,
+            "return_wb_reward_without_vat": 30.0,
+            "net_wb_reward_without_vat": 70.0,
+            "sale_wb_reward_vat": 20.0,
+            "return_wb_reward_vat": 6.0,
+            "net_wb_reward_vat": 14.0,
+            "sale_wb_reward_including_vat": 120.0,
+            "return_wb_reward_including_vat": 36.0,
+            "net_wb_reward_including_vat": 84.0,
+            "sale_rows": 1,
+            "return_rows": 1,
+        }
+    ]
+    assert "commissionPercent" not in result["provenance"]["component_fields"].values()
+    assert "kvw" not in result["provenance"]["component_fields"].values()
+
+
+def test_weekly_acquiring_is_explicitly_preliminary_and_split_by_payment_context():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Сколько было эквайринга за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+            nm_ids=[111],
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "acquiring_and_payment_processing"
+    assert result["provenance"]["data_class"] == "PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING"
+    assert result["calculation"]["components_by_currency"] == [
+        {
+            "currency": "RUB",
+            "sale_weekly_payment_processing_fee": 10.0,
+            "return_weekly_payment_processing_fee": 3.0,
+            "net_weekly_payment_processing_fee": 7.0,
+            "sale_rows": 1,
+            "return_rows": 1,
+        }
+    ]
+    assert result["calculation"]["breakdown"] == [
+        {
+            "currency": "RUB",
+            "paymentProcessing": "Компенсация платёжных услуг",
+            "acquiringBank": "Вайлдберриз Банк",
+            "sale_weekly_payment_processing_fee": 10.0,
+            "return_weekly_payment_processing_fee": 3.0,
+            "net_weekly_payment_processing_fee": 7.0,
+            "sale_rows": 1,
+            "return_rows": 1,
+        }
+    ]
+
+
+def test_rate_and_final_acquiring_questions_fail_closed_instead_of_using_money_executor():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    rate = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какой процент комиссии WB был за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+        )
+    )
+    assert rate["ok"] is False
+    assert rate["error"] == "semantic_source_not_executable"
+    assert rate["resolution"]["route_id"] == "commission_rate_not_money"
+
+    final_acquiring = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какие окончательные издержки на приём платежей за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+        )
+    )
+    assert final_acquiring["ok"] is False
+    assert final_acquiring["error"] == "semantic_source_not_executable"
+    assert final_acquiring["resolution"]["route_id"] == "final_acquiring_expenses"
+
+
 def test_coverage_gap_prevents_archive_calculation():
     store = FakeStore(_registry_rows(full=False), _annual_rows())
     result = asyncio.run(
@@ -576,3 +696,31 @@ def test_component_sql_keeps_logistics_fields_separate():
     assert '"deliveryAmount"' in sql
     assert '"returnAmount"' in sql
     assert '"rrDate"' in sql
+
+
+def test_reward_and_acquiring_sql_use_only_explicit_money_fields():
+    execution = load_semantic_execution()
+    reward_sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["commission_and_wb_reward"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+    )
+    assert '"vw"' in reward_sql
+    assert '"vwNds"' in reward_sql
+    assert '"commissionPercent"' not in reward_sql
+    assert '"kvw"' not in reward_sql
+    assert '"saleDt"' in reward_sql
+    assert '"docTypeName"' in reward_sql
+
+    acquiring_sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["acquiring_and_payment_processing"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+    )
+    assert '"acquiringFee"' in acquiring_sql
+    assert '"paymentProcessing"' in acquiring_sql
+    assert '"acquiringBank"' in acquiring_sql
+    assert '"saleDt"' in acquiring_sql
+    assert '"docTypeName"' in acquiring_sql
