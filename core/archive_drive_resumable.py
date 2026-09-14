@@ -3,6 +3,9 @@
 The owner-operated Apps Script bridge authenticates only the *session start*.
 Google then returns a resumable session URI. Yandex uploads bounded chunks
 directly to that URI, so no Google OAuth refresh token is stored in Yandex.
+
+The session URI is effectively a bearer credential. Never expose it in logs,
+errors, MCP responses, or user-visible status.
 """
 from __future__ import annotations
 
@@ -19,6 +22,8 @@ from .archive_google import ArchiveStorageNotConfigured
 CHUNK_GRANULARITY = 256 * 1024
 DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024
 _RANGE_RE = re.compile(r"bytes=0-(\d+)$")
+_TRANSIENT_STATUSES = {408, 425, 429, 500, 502, 503, 504}
+_RESTART_SESSION_STATUSES = {400, 401, 403, 404, 410}
 
 
 class ResumableUploadError(RuntimeError):
@@ -106,6 +111,8 @@ class GoogleDriveResumableUploader:
         total_bytes: int,
         mime_type: str = "text/csv",
     ) -> UploadSession:
+        if int(total_bytes) <= 0:
+            raise ResumableUploadError("Refusing to start a resumable session for an empty file")
         result = await self.session_broker.start_resumable_session(
             parent_id=parent_id,
             name=name,
@@ -130,11 +137,11 @@ class GoogleDriveResumableUploader:
             return UploadProgress("complete", int(total_bytes), self._json_dict(response))
         if response.status_code == 308:
             return UploadProgress("incomplete", self._confirmed_offset(response), None)
-        if response.status_code == 404:
+        if response.status_code in _RESTART_SESSION_STATUSES:
             return UploadProgress("expired", 0, None)
         raise ResumableUploadError(
             f"Google Drive resumable status failed with HTTP {response.status_code}",
-            retryable=response.status_code in {408, 425, 429, 500, 502, 503, 504},
+            retryable=response.status_code in _TRANSIENT_STATUSES,
         )
 
     async def upload_chunk(
@@ -147,7 +154,16 @@ class GoogleDriveResumableUploader:
     ) -> UploadProgress:
         if not data:
             raise ResumableUploadError("Refusing to upload an empty resumable chunk")
+        if int(offset) < 0 or int(offset) >= int(total_bytes):
+            raise ResumableUploadError("Invalid resumable chunk offset")
         end = int(offset) + len(data) - 1
+        if end >= int(total_bytes):
+            end = int(total_bytes) - 1
+        if len(data) != end - int(offset) + 1:
+            raise ResumableUploadError("Resumable chunk length exceeds declared file size")
+        is_final = end + 1 == int(total_bytes)
+        if not is_final and len(data) % CHUNK_GRANULARITY:
+            raise ResumableUploadError("Non-final Drive chunk must be a multiple of 256 KiB")
         try:
             response = await self._request(
                 "PUT",
@@ -167,9 +183,9 @@ class GoogleDriveResumableUploader:
             return UploadProgress("complete", int(total_bytes), self._json_dict(response))
         if response.status_code == 308:
             return UploadProgress("incomplete", self._confirmed_offset(response), None)
-        if response.status_code == 404:
+        if response.status_code in _RESTART_SESSION_STATUSES:
             return UploadProgress("expired", 0, None)
-        if response.status_code in {408, 425, 429, 500, 502, 503, 504}:
+        if response.status_code in _TRANSIENT_STATUSES:
             return await self.query_status(session_uri, total_bytes)
         raise ResumableUploadError(
             f"Google Drive resumable chunk failed with HTTP {response.status_code}"
@@ -187,6 +203,7 @@ class GoogleDriveResumableUploader:
             "name": item.name,
             "size": item.size,
             "md5Checksum": item.md5_checksum,
+            "sha256Checksum": item.sha256_checksum,
             "mimeType": item.mime_type,
             "modifiedTime": item.modified_time,
         }
