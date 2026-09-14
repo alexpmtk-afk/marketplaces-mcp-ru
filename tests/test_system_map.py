@@ -66,6 +66,8 @@ def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
         "sale_and_return_operations",
         "logistics",
         "deductions_and_adjustments",
+        "commission_and_wb_reward",
+        "acquiring_and_payment_processing",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
@@ -89,6 +91,19 @@ def test_logistics_and_deductions_keep_components_separate():
     assert "never silently netted" in rules
     assert "logistics" in semantic["runtime_integration"]
     assert "deductions/adjustments" in semantic["runtime_integration"]
+
+
+def test_wb_reward_and_acquiring_boundaries_are_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "vw and vwNds" in rules
+    assert "commissionPercent/kvw/kvwBase" in rules
+    assert "acquiringFee" in rules
+    assert "preliminary" in rules.lower()
+    assert "final monthly" in rules.lower()
+    assert "monetary WB reward" in semantic["runtime_integration"]
+    assert "preliminary weekly acquiring" in semantic["runtime_integration"]
+    assert "Commission-rate questions" in semantic["runtime_integration"]
 
 
 def test_order_source_guardrail_is_canonical():
@@ -123,6 +138,12 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "rebillLogisticCost" in SYSTEM_INSTRUCTIONS
     assert "deduction" in SYSTEM_INSTRUCTIONS
     assert "additionalPayment" in SYSTEM_INSTRUCTIONS
+    assert "vw" in SYSTEM_INSTRUCTIONS
+    assert "vwNds" in SYSTEM_INSTRUCTIONS
+    assert "commissionPercent" in SYSTEM_INSTRUCTIONS
+    assert "acquiringFee" in SYSTEM_INSTRUCTIONS
+    assert "PRELIMINARY" in SYSTEM_INSTRUCTIONS
+    assert "final monthly" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -154,6 +175,9 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "rebillLogisticCost" in architecture
     assert "deduction" in architecture
     assert "additionalPayment" in architecture
+    assert "commission_and_wb_reward" in architecture
+    assert "acquiring_and_payment_processing" in architecture
+    assert "PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING" in architecture
     assert "PRELIMINARY_NOT_ALL_ORDERS" in architecture
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
