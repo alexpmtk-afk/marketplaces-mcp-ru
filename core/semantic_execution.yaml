@@ -1,4 +1,4 @@
-version: 2026-09-14.v5
+version: 2026-09-14.v6
 policy:
   fail_closed: true
   require_full_coverage: true
@@ -128,3 +128,14 @@ executors:
     product_filter_field: nmId
     data_class: HISTORICAL_OBSERVED_FULFILLMENT
     semantics: Return the distinct non-empty deliveryMethod values actually observed in weekly-report rows during the fully covered period, with warehouse context, observation count and first/last reported dates. This is historical evidence only and must never be presented as the seller's or product's current fulfillment configuration.
+  warehouse_tariff_context:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    mode: distinct_observations
+    primary_dimension: dlvPrc
+    context_dimensions: [officeName, fixTariffDateFrom, fixTariffDateTo, warehouseLogisticsCoeff]
+    product_filter_field: nmId
+    data_class: HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT
+    semantics: Return distinct non-empty fixed warehouse coefficient values recorded in dlvPrc for historical weekly-report rows, together with warehouse context, fixation-period dates and the separately reported warehouseLogisticsCoeff value. These are historical coefficients attached to reported operations. They must never be presented as current live warehouse tariffs or used to infer the current tariff after the fixation period.
