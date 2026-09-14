@@ -11,6 +11,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .archive_queue import WBFinanceArchiveJobQueue
+from .archive_resumable_worker import WBFinanceResumableWorker
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
 _BLOCKED_SQL = re.compile(
@@ -30,7 +31,8 @@ def _not_configured() -> str:
         "error": "archive_storage_not_configured",
         "message": (
             "Central archive requires canonical Google Drive storage through the Apps Script bridge "
-            "plus Yandex Object Storage for durable queue/staging. Check "
+            "plus Yandex Object Storage for durable queue/staging. Large annual CSV writes additionally "
+            "use direct Google Drive resumable upload with OAuth stored in Yandex Lockbox. Check "
             "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
             "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET, "
             "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID and MARKETPLACE_MCP_ARCHIVE_BUCKET."
@@ -156,11 +158,18 @@ def register_archive_tools(
         },
     )
     async def marketplace_archive_worker_step(job_id: str = "") -> str:
-        """Run at most one real marketplace API request for one queued job."""
+        """Run one bounded durable archive step.
+
+        Provider download stages perform at most one WB API request. Large
+        annual-file writes use one Google Drive resumable-upload chunk per step,
+        so an interrupted client connection does not require resending the full
+        annual CSV.
+        """
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
-        return _j(await queue.worker_step(job_id))
+        worker = WBFinanceResumableWorker(queue, store)
+        return _j(await worker.worker_step(job_id))
 
     @mcp.tool(
         name="marketplace_archive_job_status",

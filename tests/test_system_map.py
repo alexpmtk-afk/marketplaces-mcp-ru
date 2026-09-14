@@ -24,6 +24,8 @@ def test_canonical_map_fixes_storage_boundaries():
     assert storage["google_drive_root"] == "MCP архив базы данных"
     assert "Apps Script" in storage["google_drive_auth"]
     assert "Yandex Lockbox" in storage["google_drive_auth"]
+    assert "Google Drive API" in storage["google_drive_large_upload"]
+    assert "resumable" in storage["google_drive_large_upload"]
     assert "job state" in storage["yandex_object_storage"]
     assert "backup" in storage["yandex_object_storage"]
     assert "not part of the runtime architecture" in storage["google_cloud"]
@@ -32,6 +34,16 @@ def test_canonical_map_fixes_storage_boundaries():
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["report_type"] == 1
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
+
+
+def test_large_annual_files_use_resumable_drive_api_not_apps_script():
+    policy = SYSTEM_MAP["archive_policy"]["large_file_upload"]
+    assert policy["transport"] == "Google Drive API resumable upload"
+    assert policy["apps_script_large_upload"] == "forbidden"
+    assert "one bounded chunk" in policy["worker_model"]
+    assert "confirmed byte offset" in policy["resume_state"]
+    assert "256 KiB" in policy["chunk_rule"]
+    assert "COMMIT" in policy["commit_rule"]
 
 
 def test_wb_advertising_m0_is_read_only_and_separate_from_profit():
@@ -145,10 +157,12 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
     assert "Google Drive" in SYSTEM_INSTRUCTIONS
     assert "Apps Script" in SYSTEM_INSTRUCTIONS
+    assert "resumable upload" in SYSTEM_INSTRUCTIONS
+    assert "OAuth refresh-token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in SYSTEM_INSTRUCTIONS
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
-    assert "Google Cloud is not part" in SYSTEM_INSTRUCTIONS
+    assert "Google Cloud is not a runtime provider" in SYSTEM_INSTRUCTIONS
     assert "WB Advertising M0" in SYSTEM_INSTRUCTIONS
     assert "wb_ads" in SYSTEM_INSTRUCTIONS
     assert "actual business profit" in SYSTEM_INSTRUCTIONS
@@ -194,6 +208,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "core/system_map.py" in architecture
     assert "Canonical marketplace archive: **Google Drive**" in architecture
     assert "Google Apps Script" in architecture
+    assert "resumable" in architecture.lower()
+    assert "Google Drive API" in architecture
     assert "Yandex Object Storage" in architecture
     assert "WB Advertising M0" in architecture
     assert "wb_ads" in architecture
@@ -217,4 +233,5 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
     assert "Google Apps Script" in agents
+    assert "resumable" in agents.lower()
     assert "Yandex Object Storage" in agents
