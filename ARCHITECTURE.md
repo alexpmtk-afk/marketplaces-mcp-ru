@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v9`
+**Version:** `2026-09-14.v10`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -46,15 +46,15 @@ Supporting services:
 
 ## Semantic Core
 
-The Semantic Core is now partially connected to the runtime business-query entry point.
+The Semantic Core is partially connected to the runtime business-query entry point.
 
 Current components:
 - `core/semantic_registry.yaml` — semantic passport of the currently available archive dataset and all 92 physical fields of the WB weekly realization detail;
 - `core/semantic_intents.yaml` — deterministic mapping of common business wording to registered capabilities or to a required external source;
 - `core/semantic_resolver.py` — fail-closed resolver producing one of: `AVAILABLE`, `AVAILABLE_WITH_LIMITATION`, `REQUIRES_OTHER_SOURCE`, `AMBIGUOUS`, `UNKNOWN`;
-- `core/semantic_execution.yaml` — explicit allow-list of business capabilities that are approved for archive calculation;
+- `core/semantic_execution.yaml` — explicit allow-list of business capabilities approved for archive calculation;
 - `core/semantic_archive.py` — coverage evaluator, safe SQL planner and archive executor for approved calculations;
-- `marketplace_business_query` — runtime entry point that now accepts the user's original question and routes approved semantic capabilities.
+- `marketplace_business_query` — runtime entry point that accepts the user's original question and routes approved semantic capabilities.
 
 Current database truth:
 - `wb_weekly_finance_main` is the only business report treated as present in the canonical archive;
@@ -64,9 +64,15 @@ Current approved archive calculations:
 - `penalties` — sum `penalty` exactly as reported, grouped by report currency and reason;
 - `storage_charge` — sum `paidStorage` exactly as reported by report currency;
 - `acceptance_charge` — sum `paidAcceptance` exactly as reported by report currency;
-- `sale_and_return_operations` — by `saleDt`, split rows by `docTypeName`: `Продажа` and `Возврат`; calculate sale amount/units, return amount/units and net result as `Продажа - Возврат` using `retailAmount` and `quantity`.
+- `sale_and_return_operations` — by `saleDt`, split rows by `docTypeName`: `Продажа` and `Возврат`; calculate sale amount/units, return amount/units and net result as `Продажа - Возврат` using `retailAmount` and `quantity`;
+- `logistics` — use `rrDate` and keep `deliveryService` and `rebillLogisticCost` as separate monetary components; `deliveryAmount` and `returnAmount` are reported only as logistics counts; breakdown is preserved by `sellerOperName` and `bonusTypeName`;
+- `deductions_and_adjustments` — use `rrDate` and keep `deduction` and `additionalPayment` separate. `additionalPayment` is treated only as the report field for WB-remuneration adjustment; it is not relabeled as a seller payout and is not netted against deductions.
 
 The sales/returns formula follows the official Wildberries weekly-realization rule: the weekly `Продажа` amount is the detailed report's realized-goods amount for document type `Продажа` minus the same amount for document type `Возврат`. The canonical archive also confirms that return `retailAmount` values are stored as positive values, so the server performs the subtraction explicitly rather than inferring a sign.
+
+For logistics, canonical archive inspection confirms `deliveryService` is populated on rows such as `Логистика`, `Доставка` and `Коррекция логистики`, while `rebillLogisticCost` is populated separately on reimbursement-of-transport/warehouse-cost rows. These fields are therefore not silently merged. Negative logistics corrections are preserved exactly as reported.
+
+For deductions, canonical archive inspection confirms `deduction` is populated on `Удержание` rows and can include reasons such as WB Promotion services in `bonusTypeName`. `additionalPayment` remains a separate WB-remuneration-adjustment field. No cross-component net amount is invented.
 
 Every approved calculation is subject to these gates:
 1. the original question must resolve to the registered capability;
@@ -75,7 +81,8 @@ Every approved calculation is subject to these gates:
 4. the referenced canonical annual file must exist on Google Drive;
 5. only registered fields and a generated read-only query plan may be used;
 6. different currencies are never combined into one amount;
-7. formulas that require operation-type subtraction must encode that subtraction explicitly rather than infer it from the sign of a monetary field.
+7. formulas that require operation-type subtraction must encode that subtraction explicitly rather than infer it from the sign of a monetary field;
+8. distinct financial components are never silently netted unless a separate approved formula explicitly defines that netting.
 
 ### Natural-question routing
 
@@ -85,6 +92,7 @@ Rules:
 - the original question outranks a conflicting legacy metric hint;
 - if the question maps to one of the approved archive calculations, the request goes through the coverage-gated archive executor;
 - sales/returns questions use `saleDt` and explicit `docTypeName` buckets, not `orderDt` and not free-form operation-name guessing;
+- logistics and deductions return registered components separately rather than inventing a combined total;
 - if the question is understood but its calculation contract is not approved, execution stops rather than guessing;
 - if the required source is not in the current database, the server returns that source requirement instead of substituting a similar field/report;
 - ambiguous or unknown questions fail closed.
