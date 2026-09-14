@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v12"
+ARCHITECTURE_VERSION = "2026-09-14.v13"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -112,6 +112,7 @@ SYSTEM_MAP: dict[str, Any] = {
             "commission_and_wb_reward",
             "acquiring_and_payment_processing",
             "observed_fulfillment_method",
+            "warehouse_tariff_context",
         ],
         "execution_gate": "FULL_COVERAGE from COMPLETE reports_registry.csv fragments plus canonical annual file presence",
         "money_policy": "sum values exactly as reported except formulas that explicitly define subtraction by operation type; never combine different currencies and never silently net unrelated financial components",
@@ -126,7 +127,8 @@ SYSTEM_MAP: dict[str, Any] = {
             "only registered capabilities may select archive fields",
             "questions about complete marketplace orders must not be answered from orderDt/orderUid in weekly finance",
             "WB Statistics Orders is operational/preliminary and may omit some orders; it is not complete marketplace-order truth",
-            "historical fulfillment uses non-empty deliveryMethod observations with officeName context and rrDate bounds; it never confirms current fulfillment configuration",
+            "historical fulfillment may use deliveryMethod but must not be presented as current configuration",
+            "historical warehouse tariff context may use dlvPrc, fixTariffDateFrom, fixTariffDateTo and warehouseLogisticsCoeff only as values observed in reported operations; it must never be presented as the current live warehouse tariff",
             "explicit current-state questions must not fall back to historical weekly archive",
             "unknown or ambiguous questions fail closed",
             "only explicitly approved semantic_execution executors may reach archive SQL",
@@ -144,9 +146,9 @@ SYSTEM_MAP: dict[str, Any] = {
         ],
         "runtime_integration": (
             "marketplace_business_query accepts the original question; approved penalties/storage/acceptance, "
-            "sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring and "
-            "historical fulfillment observations route to the coverage-gated archive executor. Commission-rate questions, "
-            "final acquiring-expense questions and current-fulfillment questions fail closed instead of being substituted. "
+            "sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, "
+            "historical fulfillment observations and historical warehouse tariff context route to the coverage-gated archive executor. "
+            "Commission-rate questions, final acquiring-expense questions and current tariff/configuration questions fail closed instead of being substituted. "
             "Legacy metric routing remains for compatibility."
         ),
     },
@@ -156,6 +158,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
+        "current_tariffs": "do not use weekly-report historical coefficients as current WB tariff truth; current tariff questions require a suitable live source",
         "advertising_live_vs_archive": "campaign state/current control is live; closed advertising analytics becomes archive-first only after the ad dataset binding and coverage are implemented and proven",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
         "business_semantics": "the original question outranks a conflicting legacy metric hint",
@@ -184,12 +187,13 @@ Google Drive access is provided by the owner's Google Apps Script web-app bridge
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.
 Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Different currencies are never combined into one total, and distinct report components are not silently netted together.
-marketplace_business_query routes approved natural questions for penalties, storage charges, paid acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring and historical fulfillment observations into the gated archive executor.
+marketplace_business_query routes approved natural questions for penalties, storage charges, paid acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context into the gated archive executor.
 Sales/returns use saleDt and explicit docTypeName buckets, with Продажа minus Возврат for both retailAmount and quantity.
 Logistics keeps deliveryService and rebillLogisticCost separate; deliveryAmount and returnAmount are logistics counts only. Deductions keep deduction and additionalPayment separate; additionalPayment is a WB-remuneration adjustment, not an assumed seller payout.
 Monetary WB reward uses vw and vwNds only. Percentage fields such as commissionPercent, kvw and kvwBase are not converted into money; questions about commission rates fail closed until a dedicated rate executor is approved.
 Weekly acquiring uses acquiringFee and explicit Продажа/Возврат buckets and may show paymentProcessing/acquiringBank. It is PRELIMINARY weekly payment-acceptance withholding, not the final monthly expense. Requests for final acquiring/payment-acceptance expenses must not fall back to weekly acquiringFee.
-Historical fulfillment questions may use deliveryMethod and officeName observations within a fully covered rrDate period. These answers describe what was observed in archived operations only; they never establish the product's or seller's current fulfillment configuration. Current-fulfillment questions must fail closed or use a separately approved current source.
+Historical fulfillment may use deliveryMethod/officeName. Historical warehouse tariff context may use dlvPrc, fixTariffDateFrom, fixTariffDateTo and warehouseLogisticsCoeff. Neither historical capability proves the current seller/product configuration or the current live tariff.
+Current tariff/warehouse coefficient questions must use an explicitly suitable live WB tariff source or fail closed; never infer current tariff truth from weekly-report history.
 WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
 WB Advertising M0 is Wildberries-only and read-only: use dedicated server-side wb_ads Promotion credentials; current campaign state is live from WB Promotion API; M0 advertising-attribution metrics must never be presented as actual business profit.
 The advertising Drive folder scaffold is not proof that Advertising Archive V1 ingestion or historical coverage exists. Do not route historical ad analytics to the archive until dataset bindings, registry coverage and validation are implemented and accepted.
