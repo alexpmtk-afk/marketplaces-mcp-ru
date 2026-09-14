@@ -28,6 +28,25 @@ endpoints:
       - история остатков
     items_path: data.items
 
+  - operation_id: wb_get_adv_promotion_count
+    section: promotion
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v1/promotion/count
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Discover all WB Promotion campaign IDs grouped by provider type/status with last change time.
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - список всех кампаний
+      - discovery
+      - статус кампании
+      - история кампаний
+
   - operation_id: wb_get_api_advert_adverts
     section: promotion
     method: GET
