@@ -48,10 +48,20 @@ def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
         "penalties",
         "storage_charge",
         "acceptance_charge",
+        "sale_and_return_operations",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
     assert "accepts the original question" in semantic["runtime_integration"]
+
+
+def test_sales_and_returns_formula_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "saleDt" in rules
+    assert "docTypeName" in rules
+    assert "Продажа minus Возврат" in rules
+    assert "sales/returns" in semantic["runtime_integration"]
 
 
 def test_order_source_guardrail_is_canonical():
@@ -77,6 +87,8 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "FULL_COVERAGE" in SYSTEM_INSTRUCTIONS
     assert "original wording" in SYSTEM_INSTRUCTIONS
     assert "operational/preliminary" in SYSTEM_INSTRUCTIONS
+    assert "saleDt" in SYSTEM_INSTRUCTIONS
+    assert "Продажа minus Возврат" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -101,6 +113,7 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "core/semantic_execution.yaml" in architecture
     assert "core/semantic_archive.py" in architecture
     assert "original natural-language question" in architecture
+    assert "sale_and_return_operations" in architecture
     assert "PRELIMINARY_NOT_ALL_ORDERS" in architecture
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
