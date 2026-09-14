@@ -38,6 +38,12 @@ class FakeStore:
                 "sellerOperName",
                 "paidStorage",
                 "paidAcceptance",
+                "deliveryAmount",
+                "returnAmount",
+                "deliveryService",
+                "rebillLogisticCost",
+                "deduction",
+                "additionalPayment",
                 "nmId",
             ],
             annual_rows,
@@ -224,16 +230,118 @@ def _annual_rows():
             "paidAcceptance": "0",
             "nmId": "111",
         },
+        {
+            "reportId": 101,
+            "rrdId": 8,
+            "reportType": 1,
+            "rrDate": "2026-08-06",
+            "saleDt": "2026-08-06T09:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
+            "bonusTypeName": "К клиенту при продаже",
+            "sellerOperName": "Логистика",
+            "deliveryAmount": "1",
+            "returnAmount": "0",
+            "deliveryService": "50.00",
+            "rebillLogisticCost": "0",
+            "deduction": "0",
+            "additionalPayment": "0",
+            "nmId": "111",
+        },
+        {
+            "reportId": 101,
+            "rrdId": 9,
+            "reportType": 1,
+            "rrDate": "2026-08-07",
+            "saleDt": "2026-08-07T09:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
+            "bonusTypeName": "Корректировка",
+            "sellerOperName": "Коррекция логистики",
+            "deliveryAmount": "0",
+            "returnAmount": "1",
+            "deliveryService": "-10.00",
+            "rebillLogisticCost": "0",
+            "deduction": "0",
+            "additionalPayment": "0",
+            "nmId": "111",
+        },
+        {
+            "reportId": 102,
+            "rrdId": 10,
+            "reportType": 1,
+            "rrDate": "2026-08-11",
+            "saleDt": "2026-08-11T00:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "2",
+            "retailAmount": "0",
+            "bonusTypeName": "",
+            "sellerOperName": "Возмещение издержек по перевозке/по складским операциям с товаром",
+            "deliveryAmount": "0",
+            "returnAmount": "0",
+            "deliveryService": "0",
+            "rebillLogisticCost": "7.00",
+            "deduction": "0",
+            "additionalPayment": "0",
+            "nmId": "0",
+        },
+        {
+            "reportId": 102,
+            "rrdId": 11,
+            "reportType": 1,
+            "rrDate": "2026-08-11",
+            "saleDt": "2026-08-11T10:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
+            "bonusTypeName": "Оказание услуг «WB Продвижение»",
+            "sellerOperName": "Удержание",
+            "deliveryAmount": "0",
+            "returnAmount": "0",
+            "deliveryService": "0",
+            "rebillLogisticCost": "0",
+            "deduction": "25.00",
+            "additionalPayment": "0",
+            "nmId": "0",
+        },
+        {
+            "reportId": 102,
+            "rrdId": 12,
+            "reportType": 1,
+            "rrDate": "2026-08-12",
+            "saleDt": "2026-08-12T10:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
+            "bonusTypeName": "Корректировка вознаграждения",
+            "sellerOperName": "Корректировка",
+            "deliveryAmount": "0",
+            "returnAmount": "0",
+            "deliveryService": "0",
+            "rebillLogisticCost": "0",
+            "deduction": "0",
+            "additionalPayment": "5.00",
+            "nmId": "0",
+        },
     ]
 
 
-def test_execution_registry_approves_four_safe_capabilities():
+def test_execution_registry_approves_six_safe_capabilities():
     execution = load_semantic_execution()
     assert set(execution["executors"]) == {
         "penalties",
         "storage_charge",
         "acceptance_charge",
         "sale_and_return_operations",
+        "logistics",
+        "deductions_and_adjustments",
     }
     assert execution["policy"]["require_full_coverage"] is True
     assert execution["policy"]["cross_currency_sum_forbidden"] is True
@@ -350,6 +458,62 @@ def test_sales_and_returns_use_explicit_doc_type_subtraction():
     ]
 
 
+def test_logistics_keeps_delivery_rebill_and_counts_separate():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Сколько стоила логистика за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "logistics"
+    assert result["provenance"]["sum_rule"] == "separate_components_as_reported_no_cross_component_netting"
+    assert result["calculation"]["cross_component_total"] is None
+    assert result["calculation"]["components_by_currency"] == [
+        {
+            "currency": "RUB",
+            "delivery_service_amount": 40.0,
+            "rebilled_transport_warehouse_cost": 7.0,
+            "delivery_count": 1.0,
+            "return_logistics_count": 1.0,
+            "operation_rows": 3,
+        }
+    ]
+    operations = {row["operation"] for row in result["calculation"]["breakdown"]}
+    assert "Логистика" in operations
+    assert "Коррекция логистики" in operations
+    assert "Возмещение издержек по перевозке/по складским операциям с товаром" in operations
+
+
+def test_deductions_never_net_with_wb_reward_adjustments():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какие удержания были за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "deductions_and_adjustments"
+    assert result["calculation"]["cross_component_total"] is None
+    assert result["calculation"]["components_by_currency"] == [
+        {
+            "currency": "RUB",
+            "deduction_amount": 25.0,
+            "wb_reward_adjustment_amount": 5.0,
+            "operation_rows": 2,
+        }
+    ]
+    assert "seller payout" not in result["provenance"]["semantics"].lower()
+
+
 def test_coverage_gap_prevents_archive_calculation():
     store = FakeStore(_registry_rows(full=False), _annual_rows())
     result = asyncio.run(
@@ -397,3 +561,18 @@ def test_sales_sql_uses_sale_date_and_explicit_operation_buckets():
     assert '"quantity"' in sql
     assert "'Продажа'" in sql
     assert "'Возврат'" in sql
+
+
+def test_component_sql_keeps_logistics_fields_separate():
+    execution = load_semantic_execution()
+    sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["logistics"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+    )
+    assert 'SUM(COALESCE(TRY_CAST(NULLIF(TRIM("deliveryService")' in sql
+    assert 'SUM(COALESCE(TRY_CAST(NULLIF(TRIM("rebillLogisticCost")' in sql
+    assert '"deliveryAmount"' in sql
+    assert '"returnAmount"' in sql
+    assert '"rrDate"' in sql
