@@ -10,15 +10,20 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the report registry are the source of truth.
 - Google Drive access uses the owner's deployed **Google Apps Script** web-app bridge as the Google authorization/control plane:
   - small archive operations, reads, metadata/status and folder resolution go through the bridge;
-  - large annual CSV writes use the official **Google Drive API resumable upload** path, but Apps Script creates the resumable session using the owner's effective-user OAuth context.
+  - large annual CSV writes use the official **Google Drive API resumable upload** path, but Apps Script creates the resumable session using the owner's effective-user OAuth context;
+  - Apps Script performs the final verified staging-to-canonical promotion after exact Drive size/SHA256 verification and Yandex backup.
 - The Apps Script shared secret lives in Yandex Lockbox. **Do not introduce a Google OAuth refresh token into Yandex for this archive path.** The Google access token stays inside Apps Script; only the opaque resumable session URI is returned to the worker.
-- Large annual CSV file bytes must **not** be sent through Apps Script as one base64 JSON POST. Apps Script brokers only the session start; Yandex uploads bounded chunks directly to the returned Drive session URI.
+- Large annual CSV file bytes must **not** be sent through Apps Script as one base64 JSON POST. Apps Script is control plane only; Yandex uploads bounded chunks directly to the returned Drive session URI.
+- **Never upload resumable large-file chunks directly into the existing canonical annual file.** Upload to a non-canonical staging filename first. The old canonical file must remain untouched until the staged file passes exact Drive size/SHA256 verification and the Yandex byte-for-byte backup is written.
+- The strict large-file order is: immutable Yandex candidate -> non-canonical Drive resumable staging -> server-confirmed offset/resume -> exact Drive size/SHA256 verification -> Yandex byte-for-byte backup -> Apps Script verified promotion to canonical + trash explicit previous canonical -> COMMIT registry/job progress.
 - A resumable session URI is a bearer-like capability: persist it only in durable job state, never print it or return it to users.
+- Treat the Drive `Range` response as authoritative for resumed offsets; never assume all bytes sent were persisted.
+- Non-final chunks must be multiples of 256 KiB. Expired/unusable sessions restart from the immutable candidate. Transient failures use bounded exponential backoff with jitter.
+- Promotion must be retry-safe. If a crash occurs after the staged file was renamed but before durable state was saved, verify the canonical file by explicit ID/size/SHA256 and continue without re-downloading provider data or repeating PREPARE.
 - The Apps Script bridge and the resumable uploader are transport/authentication surfaces only; neither is a parallel source of truth.
 - **Yandex Object Storage** remains required for durable archive queue/job state, per-report staging, immutable annual candidates, resumable-upload state, and a secondary byte-for-byte backup of canonical Drive files.
 - Yandex Object Storage runtime auth uses the Serverless Container service account and a temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
-- Canonical large-file commit order is strict: PREPARE immutable candidate in Yandex -> Apps Script brokered Drive resumable session -> direct bounded chunk upload -> verify Drive result -> Yandex byte-for-byte backup -> COMMIT registry/job progress.
-- Never recreate an in-flight job or redo PREPARE merely because an upload connection failed; continue from durable state and the confirmed Drive offset.
+- Never recreate an in-flight job or redo PREPARE merely because an upload connection failed; continue from durable state and the confirmed Drive offset or restart only the resumable session from the immutable candidate.
 - Canonical archive writes must succeed on Google Drive first; do not silently fall back to Yandex as the source of truth.
 - Existing canonical files left in Yandex by the prior architecture may be migrated to Drive on read without re-downloading marketplace data.
 - Chat-local memory/files are never authoritative shared state.
