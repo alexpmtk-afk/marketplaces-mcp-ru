@@ -51,6 +51,10 @@ class FakeStore:
                 "acquiringBank",
                 "deliveryMethod",
                 "officeName",
+                "dlvPrc",
+                "fixTariffDateFrom",
+                "fixTariffDateTo",
+                "warehouseLogisticsCoeff",
                 "nmId",
             ],
             annual_rows,
@@ -208,6 +212,10 @@ def _annual_rows():
             "acquiringBank": "Вайлдберриз Банк",
             "deliveryMethod": "FBS, (МГТ)",
             "officeName": "Воронеж МП МП",
+            "dlvPrc": "1.25",
+            "fixTariffDateFrom": "2026-07-01",
+            "fixTariffDateTo": "2026-09-28",
+            "warehouseLogisticsCoeff": "1.15",
             "nmId": "111",
         },
         {
@@ -232,6 +240,10 @@ def _annual_rows():
             "acquiringBank": "Вайлдберриз Банк",
             "deliveryMethod": "FBS, (МГТ)",
             "officeName": "Воронеж МП МП",
+            "dlvPrc": "1.25",
+            "fixTariffDateFrom": "2026-07-01",
+            "fixTariffDateTo": "2026-09-28",
+            "warehouseLogisticsCoeff": "1.15",
             "nmId": "111",
         },
         {
@@ -251,6 +263,10 @@ def _annual_rows():
             "paidAcceptance": "0",
             "deliveryMethod": "FBW, (МГТ, коробка)",
             "officeName": "Электросталь",
+            "dlvPrc": "1.10",
+            "fixTariffDateFrom": "2026-07-15",
+            "fixTariffDateTo": "2026-09-12",
+            "warehouseLogisticsCoeff": "1.05",
             "nmId": "111",
         },
         {
@@ -356,7 +372,7 @@ def _annual_rows():
     ]
 
 
-def test_execution_registry_approves_nine_safe_capabilities():
+def test_execution_registry_approves_ten_safe_capabilities():
     execution = load_semantic_execution()
     assert set(execution["executors"]) == {
         "penalties",
@@ -368,6 +384,7 @@ def test_execution_registry_approves_nine_safe_capabilities():
         "commission_and_wb_reward",
         "acquiring_and_payment_processing",
         "observed_fulfillment_method",
+        "warehouse_tariff_context",
     }
     assert execution["policy"]["require_full_coverage"] is True
     assert execution["policy"]["cross_currency_sum_forbidden"] is True
@@ -672,6 +689,67 @@ def test_current_fulfillment_never_falls_back_to_historical_observations():
     assert result["resolution"]["concept_id"] == "current_fulfillment_configuration"
 
 
+def test_historical_tariff_context_returns_applied_coefficients_only():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какой коэффициент склада применялся к товару за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+            nm_ids=[111],
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "warehouse_tariff_context"
+    assert result["semantic_status"] == "AVAILABLE_WITH_LIMITATION"
+    assert result["provenance"]["data_class"] == "HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT"
+    assert result["provenance"]["current_state_inference_forbidden"] is True
+    assert result["calculation"]["historical_only"] is True
+    assert result["calculation"]["current_configuration_confirmed"] is False
+    assert result["calculation"]["distinct_values"] == ["1.10", "1.25"]
+    assert result["calculation"]["observations"] == [
+        {
+            "value": "1.25",
+            "officeName": "Воронеж МП МП",
+            "fixTariffDateFrom": "2026-07-01",
+            "fixTariffDateTo": "2026-09-28",
+            "warehouseLogisticsCoeff": "1.15",
+            "observation_rows": 2,
+            "first_observed_date": "2026-08-07",
+            "last_observed_date": "2026-08-08",
+        },
+        {
+            "value": "1.10",
+            "officeName": "Электросталь",
+            "fixTariffDateFrom": "2026-07-15",
+            "fixTariffDateTo": "2026-09-12",
+            "warehouseLogisticsCoeff": "1.05",
+            "observation_rows": 1,
+            "first_observed_date": "2026-08-08",
+            "last_observed_date": "2026-08-08",
+        },
+    ]
+
+
+def test_current_tariff_never_falls_back_to_historical_coefficients():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какой актуальный коэффициент склада у товара?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+            nm_ids=[111],
+        )
+    )
+    assert result["ok"] is False
+    assert result["error"] == "semantic_source_not_executable"
+    assert result["resolution"]["route_id"] == "current_warehouse_tariff"
+
+
 def test_rate_and_final_acquiring_questions_fail_closed_instead_of_using_money_executor():
     store = FakeStore(_registry_rows(full=True), _annual_rows())
     rate = asyncio.run(
@@ -808,5 +886,26 @@ def test_fulfillment_sql_is_observation_only_and_uses_historical_date_axis():
     assert '"nmId"' in sql
     assert "COUNT(*) AS observation_rows" in sql
     assert "MIN(" in sql and "MAX(" in sql
+    assert '"currency"' not in sql
+    assert '"retailAmount"' not in sql
+
+
+def test_tariff_context_sql_is_observation_only_and_never_reads_money_fields():
+    execution = load_semantic_execution()
+    sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["warehouse_tariff_context"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+        nm_ids=[111],
+    )
+    assert '"dlvPrc"' in sql
+    assert '"fixTariffDateFrom"' in sql
+    assert '"fixTariffDateTo"' in sql
+    assert '"warehouseLogisticsCoeff"' in sql
+    assert '"officeName"' in sql
+    assert '"rrDate"' in sql
+    assert '"nmId"' in sql
+    assert "COUNT(*) AS observation_rows" in sql
     assert '"currency"' not in sql
     assert '"retailAmount"' not in sql
