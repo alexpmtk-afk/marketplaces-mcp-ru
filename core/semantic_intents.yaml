@@ -1,4 +1,4 @@
-version: 2026-09-14.v4
+version: 2026-09-14.v5
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -106,11 +106,23 @@ routes:
     target_id: deductions_and_adjustments
     match_any: [удержание, удержания, удержали, доплата, доплаты, корректировка, корректировки, дополнительная выплата]
 
+  - id: commission_rate_not_money
+    priority: 1315
+    target_type: inline_not_covered
+    reason: Процент комиссии/кВВ присутствует в исторических строках отчёта, но это не денежная сумма комиссии. Отдельный исполнитель ставок ещё не утверждён; нельзя подменять процент денежным расчётом vw/vwNds.
+    match_any: [процент комиссии, ставка комиссии, размер комиссии в процентах, квв, kvw, kvwbase, commissionpercent]
+
   - id: commission_and_wb_reward
     priority: 1300
     target_type: capability
     target_id: commission_and_wb_reward
-    match_any: [комиссия wildberries, комиссия вайлдберриз, комиссия wb, процент комиссии, вознаграждение wildberries, вознаграждение вайлдберриз, квв]
+    match_any: [комиссия wildberries, комиссия вайлдберриз, комиссия wb, сумма комиссии, сколько комиссии, вознаграждение wildberries, вознаграждение вайлдберриз, сумма вознаграждения]
+
+  - id: final_acquiring_expenses
+    priority: 1290
+    target_type: inline_not_covered
+    reason: Окончательные издержки на приём платежей подтверждаются отдельным месячным Отчётом об издержках на приём платежей. Его данных сейчас нет в канонической базе; еженедельный acquiringFee нельзя выдавать за окончательную сумму.
+    match_any: [окончательный эквайринг, финальный эквайринг, фактические издержки на прием платежей, фактические издержки на приём платежей, окончательные издержки на прием платежей, окончательные издержки на приём платежей, отчет об издержках на прием платежей, отчёт об издержках на приём платежей]
 
   - id: acquiring_and_payment_processing
     priority: 1280
