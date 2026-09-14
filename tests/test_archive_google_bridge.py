@@ -98,6 +98,73 @@ def test_download_named_decodes_bridge_payload():
     assert data == b"archive"
 
 
+def test_promote_verified_file_sends_exact_integrity_contract():
+    store = _store()
+    captured = {}
+    sha = hashlib.sha256(b"archive").hexdigest()
+
+    async def fake_post(action, **payload):
+        captured["action"] = action
+        captured.update(payload)
+        return {
+            "ok": True,
+            "previous_file_trashed": True,
+            "file": {
+                "id": "staged-id",
+                "name": "annual.csv",
+                "mimeType": "text/csv",
+                "size": "7",
+                "sha256Checksum": sha,
+            },
+        }
+
+    store._post = fake_post  # type: ignore[method-assign]
+    item = asyncio.run(store.promote_verified_file(
+        parent_id="База данных/WB/test/2026/finance/weekly/main",
+        file_id="staged-id",
+        canonical_name="annual.csv",
+        expected_bytes=7,
+        expected_sha256=sha,
+        previous_file_id="old-id",
+    ))
+
+    assert item.id == "staged-id"
+    assert item.sha256_checksum == sha
+    assert captured["action"] == "promote_verified"
+    assert captured["expected_bytes"] == 7
+    assert captured["expected_sha256"] == sha
+    assert captured["previous_file_id"] == "old-id"
+
+
+def test_promote_verified_file_fails_closed_on_wrong_checksum_response():
+    store = _store()
+    sha = hashlib.sha256(b"archive").hexdigest()
+
+    async def fake_post(action, **payload):
+        del action, payload
+        return {
+            "ok": True,
+            "file": {
+                "id": "staged-id",
+                "name": "annual.csv",
+                "mimeType": "text/csv",
+                "size": "7",
+                "sha256Checksum": "0" * 64,
+            },
+        }
+
+    store._post = fake_post  # type: ignore[method-assign]
+    with pytest.raises(ArchiveStorageError, match="size/SHA256"):
+        asyncio.run(store.promote_verified_file(
+            parent_id="База данных/WB/test",
+            file_id="staged-id",
+            canonical_name="annual.csv",
+            expected_bytes=7,
+            expected_sha256=sha,
+            previous_file_id="old-id",
+        ))
+
+
 def test_status_fails_closed_on_wrong_drive_root():
     store = _store()
 
