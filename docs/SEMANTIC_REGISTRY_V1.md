@@ -1,4 +1,4 @@
-# Semantic Registry — WB Weekly Report Semantics (v4)
+# Semantic Registry — WB Weekly Report Semantics (v5)
 
 This is the machine-readable knowledge, intent-routing and gated archive-calculation layer for the data that actually exists in the canonical archive today.
 
@@ -45,13 +45,16 @@ Resolution itself does not automatically authorize SQL. It identifies the allowe
 4. the referenced canonical annual CSV exists;
 5. the query is generated from registered fields, not free-form LLM SQL.
 
-Current approved calculations are deliberately narrow:
+Current approved calculations:
 
 - `penalties` → sum `penalty` exactly as reported, with breakdown by report currency and reason from `bonusTypeName` / `sellerOperName`;
 - `storage_charge` → sum `paidStorage` exactly as reported by report currency;
-- `acceptance_charge` → sum `paidAcceptance` exactly as reported by report currency.
+- `acceptance_charge` → sum `paidAcceptance` exactly as reported by report currency;
+- `sale_and_return_operations` → use `saleDt`, split by `docTypeName`, report sales and returns separately and calculate net as `Продажа - Возврат` for both `retailAmount` and `quantity`;
+- `logistics` → use `rrDate`, keep `deliveryService` and `rebillLogisticCost` as separate monetary components, keep `deliveryAmount` and `returnAmount` as logistics counts, and preserve breakdown by operation/reason;
+- `deductions_and_adjustments` → use `rrDate`, keep `deduction` and `additionalPayment` separate. `additionalPayment` is the report field for WB-remuneration adjustment and is not renamed to seller payout or netted against `deduction`.
 
-Provider signs are preserved. Different currencies are never added into one cross-currency total. All other recognized capabilities, including sales and commissions, remain non-executable until their formulas are separately approved.
+Different currencies are never added into one cross-currency total. Distinct financial components are also never silently netted into one amount. Provider signs are preserved except where a separately approved formula explicitly defines operation-type subtraction, as with sales minus returns.
 
 ## Resolution order
 
@@ -73,8 +76,10 @@ Examples:
 - “Сколько списали за хранение?” → approved archive calculation using `paidStorage` with `FULL_COVERAGE`.
 - “Как рассчитано хранение по дням?” → `REQUIRES_OTHER_SOURCE`; the dedicated paid-storage report is required and is currently absent.
 - “Сколько списали за приёмку?” → approved archive calculation using `paidAcceptance` with `FULL_COVERAGE`.
+- “Сколько было продаж?” → approved archive calculation: sale and return buckets are computed separately and the net result is explicit `Продажа - Возврат`.
+- “Сколько стоила логистика?” → approved archive calculation, but `deliveryService` and `rebillLogisticCost` are returned separately rather than merged into one guessed total.
+- “Какие были удержания?” → approved archive calculation using `deduction`; `additionalPayment` is shown separately as a WB-remuneration adjustment field.
 - “Какая комиссия WB сейчас?” → `REQUIRES_OTHER_SOURCE`; a current rate must not be inferred from a historical finance row.
-- “Сколько было продаж?” → recognized semantically, but archive execution remains blocked until a separate sales formula is approved.
 - Any Ozon question → `REQUIRES_OTHER_SOURCE` while no Ozon report dataset exists in the canonical archive.
 
 ## Core guardrails
@@ -83,15 +88,17 @@ Examples:
 - `deliveryMethod`, `officeName`, tariff coefficients and similar fields describe historical reported operations; they do not prove current configuration.
 - Service rows must not be mixed with product sale/return rows without an explicit approved formula.
 - A numeric field is not automatically summable for every business question.
+- `deliveryService` and `rebillLogisticCost` are separate logistics components and are not automatically netted or merged.
+- `deduction` and `additionalPayment` are separate financial components; `additionalPayment` must not be relabeled as a seller payout without explicit evidence.
 - Reference-only sources cannot be selected for archive execution.
 - Explicit current-state questions cannot silently use historical archive values.
 - Unknown or ambiguous questions must not trigger free-form archive SQL.
 - Archive execution requires `FULL_COVERAGE` in `reports_registry.csv` and canonical annual-file presence.
-- Money is summed exactly as reported; signs are not rewritten and currencies are not mixed.
+- Currencies are not mixed.
 
 ## Runtime status
 
-The gated archive executor exists and is covered by tests, but it is **not yet wired into `marketplace_business_query`**. The current change establishes the safe execution layer first; runtime integration remains a separate controlled step.
+The gated archive executor is wired into `marketplace_business_query` for the explicitly approved capabilities above. The user's original natural-language question is preserved and takes precedence over a conflicting legacy `metric` hint. Unsupported, ambiguous, uncovered or current-state requests fail closed or return the required source rather than falling back to a guessed field or source.
 
 ## Evidence
 
@@ -101,5 +108,6 @@ Primary semantic references:
 - Wildberries Seller Help: “Еженедельные отчёты реализации”.
 - Wildberries API documentation: financial reports / detailed realization report.
 - Canonical archive header observed on 2026-09-14: 92 columns in `wb_weekly_finance_main`.
+- Canonical archive row inspection confirms separate `deliveryService`, `rebillLogisticCost`, `deduction` and `additionalPayment` columns and operation-level values.
 
 Where Wildberries changes field semantics in future API/report versions, the registry, intent routing and execution allow-list must be versioned and reviewed before those changes become executable.
