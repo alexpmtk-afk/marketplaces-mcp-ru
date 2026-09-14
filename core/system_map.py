@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v15"
+ARCHITECTURE_VERSION = "2026-09-14.v16"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -25,26 +25,28 @@ SYSTEM_MAP: dict[str, Any] = {
         "google_drive_root": "MCP архив базы данных",
         "google_drive_auth": (
             "owner-operated Google Apps Script bridge authenticates Drive control-plane operations, including "
-            "resumable-session creation; no Google OAuth refresh token is stored in Yandex"
+            "resumable-session creation and verified staged-file promotion; no Google OAuth refresh token is stored in Yandex"
         ),
         "google_drive_bridge": (
             "Apps Script executes as the Drive owner and exposes narrow archive read/write/status operations "
-            "under the fixed archive root; for large files it brokers only the resumable session start, "
-            "not the file bytes"
+            "under the fixed archive root; for large files it brokers resumable session start, checksum metadata, "
+            "and final verified promotion, never the large file bytes"
         ),
         "google_drive_large_upload": (
             "Apps Script starts the official Google Drive API resumable session using its effective-user OAuth token; "
-            "Yandex then uploads bounded chunks directly to the returned Drive session URI and persists the "
-            "confirmed byte offset durably"
+            "Yandex uploads bounded chunks to a non-canonical staging file, persists the server-confirmed byte offset, "
+            "verifies exact Drive size/SHA256, writes the Yandex backup, then Apps Script promotes the verified staged file "
+            "to the canonical filename and trashes the previous canonical file"
         ),
         "google_drive_resumable_auth": (
             "no server-side Google refresh token is used; the resumable session URI is a bearer-like capability "
             "kept only in durable Yandex job state and never printed to logs or user responses"
         ),
-        "yandex_object_storage": "durable archive job state, staging, upload resume state, and byte-for-byte backup of canonical files",
+        "yandex_object_storage": "durable archive job state, staging, immutable annual candidate, upload resume state, and byte-for-byte backup of canonical files",
         "archive_write_order": (
-            "prepare immutable candidate in Yandex Object Storage; verify resumable Google Drive canonical write; "
-            "write byte-for-byte Yandex backup; only then COMMIT the report registry/job progress"
+            "prepare immutable candidate in Yandex Object Storage; upload to non-canonical Drive staging through a resumable session; "
+            "verify staged Drive size/SHA256; write byte-for-byte Yandex backup; promote the verified staged Drive file to canonical "
+            "and trash the previous canonical; only then COMMIT the report registry/job progress"
         ),
         "read_through_migration": "if a canonical file is absent on Drive but exists in Yandex Object Storage, copy it to Drive before use",
         "google_cloud": (
@@ -70,18 +72,23 @@ SYSTEM_MAP: dict[str, Any] = {
         "annual_csv_pattern": "<cabinet>__<dataset>__<year>.csv",
         "large_file_upload": {
             "transport": "Google Drive API resumable upload",
-            "apps_script_large_upload": "file-byte transport forbidden; Apps Script may broker resumable session start only",
+            "apps_script_large_upload": "file-byte transport forbidden; Apps Script may broker resumable session start, metadata verification, and final staged-file promotion only",
             "session_broker": "Google Apps Script effective-user OAuth; no Google refresh token is stored in Yandex",
-            "worker_model": "MCP/queue persists work; each worker step starts a session or uploads at most one bounded chunk",
+            "worker_model": "MCP/queue persists work; each worker step starts a session, queries server state, or uploads at most one bounded chunk",
             "resume_state": [
                 "resumable session URI",
                 "candidate identity",
                 "candidate bytes/SHA256",
                 "confirmed byte offset",
-                "target Drive file id/name",
+                "staging Drive file id/name",
+                "previous canonical Drive file id",
+                "retry count",
             ],
-            "chunk_rule": "non-final chunks are multiples of 256 KiB; v1 default is 4 MiB",
-            "commit_rule": "registry/progress COMMIT occurs only after canonical Drive verification and Yandex backup",
+            "chunk_rule": "non-final chunks are multiples of 256 KiB; default is 4 MiB; Drive Range is authoritative for the next offset",
+            "retry_rule": "expired/nonrecoverable resumable sessions restart from the immutable candidate; transient failures use bounded exponential backoff with jitter",
+            "integrity_rule": "Drive staged file must match expected byte count and Drive sha256Checksum before canonical promotion",
+            "canonical_safety_rule": "large-file chunk upload must never write directly into the existing canonical file; canonical remains untouched until staging verification and Yandex backup succeed",
+            "commit_rule": "registry/progress COMMIT occurs only after staged Drive SHA256 verification, Yandex backup, and verified promotion to canonical",
         },
         "wb_weekly_finance_main": {
             "period": "weekly",
@@ -226,11 +233,13 @@ SYSTEM_INSTRUCTIONS = f"""CANONICAL MARKETPLACES MCP ARCHITECTURE — {ARCHITECT
 Treat marketplace_system_map as the source of truth for this MCP.
 Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
 Canonical marketplace archive data is stored on Google Drive under the server-owned archive root: annual CSV files and the report registry are the source of truth.
-Yandex Object Storage is required for durable queue/job state, staging, resumable-upload state, and a secondary byte-for-byte backup of canonical archive files.
+Yandex Object Storage is required for durable queue/job state, staging, immutable annual candidates, resumable-upload state, and a secondary byte-for-byte backup of canonical archive files.
 The owner's Google Apps Script web-app bridge authenticates Google Drive control-plane operations; its shared secret remains in Yandex Lockbox.
-Large annual CSV file bytes must NOT be transported through Apps Script/base64. Apps Script uses its effective-user OAuth token only to create an official Google Drive resumable session, then Yandex uploads bounded chunks directly to that session URI.
+Large annual CSV file bytes must NOT be transported through Apps Script/base64. Apps Script uses its effective-user OAuth token to create an official Google Drive resumable session for a non-canonical staging file, then Yandex uploads bounded chunks directly to that session URI.
 No Google OAuth refresh token is stored in Yandex for the archive upload path. Resumable session URIs are bearer-like capabilities and must never be logged or returned to users.
-A large-file worker must persist confirmed byte offsets, resume after interruption, verify the canonical Drive result, write the Yandex backup, and only then COMMIT registry/job progress.
+The existing canonical large file must remain untouched while chunks are uploaded. The worker must persist the Drive-confirmed offset, resume or restart from the immutable candidate after interruption, verify exact staged-file size and Drive SHA256, write the Yandex byte-for-byte backup, then use Apps Script to promote the verified staged file to the canonical name and trash the previous canonical file.
+Transient upload failures must use bounded exponential backoff with jitter. Non-final chunks must be multiples of 256 KiB and the Drive Range response is authoritative for the next byte offset.
+Only after staged Drive verification, Yandex backup, and verified canonical promotion may the worker COMMIT registry/job progress.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.
 Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Different currencies are never combined into one total, and distinct report components are not silently netted together.

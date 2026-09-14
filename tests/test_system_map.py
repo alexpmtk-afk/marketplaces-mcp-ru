@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
+    assert ARCHITECTURE_VERSION == "2026-09-14.v16"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     assert SYSTEM_MAP["runtime"]["cloud"] == "Yandex Cloud only"
     storage = SYSTEM_MAP["storage_policy"]
@@ -27,8 +28,15 @@ def test_canonical_map_fixes_storage_boundaries():
     assert "Google Drive API" in storage["google_drive_large_upload"]
     assert "resumable" in storage["google_drive_large_upload"]
     assert "effective-user OAuth" in storage["google_drive_large_upload"]
+    assert "non-canonical staging" in storage["google_drive_large_upload"]
+    assert "SHA256" in storage["google_drive_large_upload"]
+    assert "promotes" in storage["google_drive_large_upload"]
     assert "job state" in storage["yandex_object_storage"]
+    assert "immutable annual candidate" in storage["yandex_object_storage"]
     assert "backup" in storage["yandex_object_storage"]
+    assert "non-canonical Drive staging" in storage["archive_write_order"]
+    assert "promote" in storage["archive_write_order"]
+    assert "COMMIT" in storage["archive_write_order"]
     assert "not part of the runtime architecture" in storage["google_cloud"]
     assert "no separate Google Cloud runtime" in storage["google_cloud"]
     assert SYSTEM_MAP["archive_policy"]["canonical_source_of_truth"] == "Google Drive annual CSV plus reports registry"
@@ -37,16 +45,26 @@ def test_canonical_map_fixes_storage_boundaries():
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
 
 
-def test_large_annual_files_use_resumable_drive_api_not_apps_script_bytes():
+def test_large_annual_files_use_staged_resumable_drive_api_not_canonical_overwrite():
     policy = SYSTEM_MAP["archive_policy"]["large_file_upload"]
     assert policy["transport"] == "Google Drive API resumable upload"
     assert "file-byte transport forbidden" in policy["apps_script_large_upload"]
-    assert "session start only" in policy["apps_script_large_upload"]
+    assert "staged-file promotion" in policy["apps_script_large_upload"]
     assert "Apps Script" in policy["session_broker"]
     assert "no Google refresh token" in policy["session_broker"]
     assert "one bounded chunk" in policy["worker_model"]
     assert "confirmed byte offset" in policy["resume_state"]
+    assert "staging Drive file id/name" in policy["resume_state"]
+    assert "previous canonical Drive file id" in policy["resume_state"]
+    assert "retry count" in policy["resume_state"]
     assert "256 KiB" in policy["chunk_rule"]
+    assert "Range is authoritative" in policy["chunk_rule"]
+    assert "exponential backoff" in policy["retry_rule"]
+    assert "sha256Checksum" in policy["integrity_rule"]
+    assert "never write directly" in policy["canonical_safety_rule"]
+    assert "canonical remains untouched" in policy["canonical_safety_rule"]
+    assert "Yandex backup" in policy["commit_rule"]
+    assert "promotion to canonical" in policy["commit_rule"]
     assert "COMMIT" in policy["commit_rule"]
 
 
@@ -164,6 +182,13 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "resumable session" in SYSTEM_INSTRUCTIONS
     assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "effective-user OAuth token" in SYSTEM_INSTRUCTIONS
+    assert "non-canonical staging file" in SYSTEM_INSTRUCTIONS
+    assert "canonical large file must remain untouched" in SYSTEM_INSTRUCTIONS
+    assert "Drive SHA256" in SYSTEM_INSTRUCTIONS
+    assert "promote" in SYSTEM_INSTRUCTIONS
+    assert "exponential backoff" in SYSTEM_INSTRUCTIONS
+    assert "256 KiB" in SYSTEM_INSTRUCTIONS
+    assert "Drive Range" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in SYSTEM_INSTRUCTIONS
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
@@ -215,6 +240,10 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Google Apps Script" in architecture
     assert "resumable" in architecture.lower()
     assert "Google Drive API" in architecture
+    assert "non-canonical staging filename" in architecture
+    assert "sha256Checksum" in architecture
+    assert "promote_verified" in architecture
+    assert "old canonical file remains untouched" in architecture
     assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in architecture
     assert "WB Advertising M0" in architecture
@@ -241,4 +270,6 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Google Apps Script" in agents
     assert "resumable" in agents.lower()
     assert "refresh token" in agents
+    assert "non-canonical staging filename" in agents
+    assert "exact Drive size/SHA256" in agents
     assert "Yandex Object Storage" in agents

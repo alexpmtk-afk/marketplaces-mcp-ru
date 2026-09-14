@@ -23,6 +23,10 @@ class ArchiveStorageNotConfigured(RuntimeError):
 class ArchiveStorageError(RuntimeError):
     """The Google Apps Script Drive bridge rejected or failed an operation."""
 
+    def __init__(self, message: str, *, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.retryable = bool(retryable)
+
 
 @dataclass(frozen=True)
 class DriveFile:
@@ -96,6 +100,9 @@ class GoogleDriveArchiveStore:
         last_response: httpx.Response | None = None
         for attempt in range(1, self._MAX_ATTEMPTS + 1):
             try:
+                # Apps Script /exec legitimately redirects to googleusercontent,
+                # so this control-plane client must follow redirects. Large file
+                # bytes never pass through this client.
                 async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                     resp = await client.post(self.bridge_url, json=body, headers={"Accept": "application/json"})
                 last_response = resp
@@ -104,25 +111,43 @@ class GoogleDriveArchiveStore:
                 if attempt < self._MAX_ATTEMPTS:
                     await asyncio.sleep(0.75 * attempt)
                     continue
-                raise ArchiveStorageError(f"Apps Script Drive bridge request failed after {attempt} attempts: {exc}") from exc
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge request failed after {attempt} attempts: {type(exc).__name__}",
+                    retryable=True,
+                ) from exc
             if resp.is_success:
                 break
-            if resp.status_code in self._RETRYABLE_HTTP_STATUSES and attempt < self._MAX_ATTEMPTS:
+            retryable = resp.status_code in self._RETRYABLE_HTTP_STATUSES
+            if retryable and attempt < self._MAX_ATTEMPTS:
                 await asyncio.sleep(0.75 * attempt)
                 continue
-            raise ArchiveStorageError(f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}")
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}",
+                retryable=retryable,
+            )
         else:
             if last_error is not None:
-                raise ArchiveStorageError(f"Apps Script Drive bridge request failed: {last_error}") from last_error
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge request failed: {type(last_error).__name__}",
+                    retryable=True,
+                ) from last_error
             if last_response is not None:
-                raise ArchiveStorageError(f"Apps Script Drive bridge HTTP {last_response.status_code}: {last_response.text[:500]}")
-            raise ArchiveStorageError("Apps Script Drive bridge request failed")
+                status = last_response.status_code
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge HTTP {status}: {last_response.text[:500]}",
+                    retryable=status in self._RETRYABLE_HTTP_STATUSES,
+                )
+            raise ArchiveStorageError("Apps Script Drive bridge request failed", retryable=True)
         try:
             data = resp.json()
         except ValueError as exc:
             raise ArchiveStorageError("Apps Script Drive bridge returned a non-JSON response; check web-app access settings") from exc
         if not isinstance(data, dict) or data.get("ok") is not True:
-            raise ArchiveStorageError(f"Apps Script Drive bridge rejected {action}: {str(data)[:500]}")
+            retryable = bool(data.get("retryable")) if isinstance(data, dict) else False
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge rejected {action}: {str(data)[:500]}",
+                retryable=retryable,
+            )
         return data
 
     async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
@@ -156,6 +181,40 @@ class GoogleDriveArchiveStore:
         data = await self._post("trash_by_id", file_id=str(file_id))
         if data.get("trashed") is not True:
             raise ArchiveStorageError("Apps Script Drive bridge failed to trash diagnostic file")
+
+    async def promote_verified_file(
+        self,
+        *,
+        parent_id: str,
+        file_id: str,
+        staging_name: str,
+        canonical_name: str,
+        expected_bytes: int,
+        expected_sha256: str,
+        previous_file_id: str | None = None,
+    ) -> DriveFile:
+        data = await self._post(
+            "promote_verified",
+            path=self._path((parent_id,)),
+            file_id=str(file_id),
+            staging_filename=str(staging_name),
+            canonical_filename=str(canonical_name),
+            expected_bytes=int(expected_bytes),
+            expected_sha256=str(expected_sha256).lower(),
+            previous_file_id=str(previous_file_id or ""),
+        )
+        item = self._to_file(dict(data.get("file") or {}))
+        if not item.id:
+            raise ArchiveStorageError("Apps Script Drive bridge promotion returned no file id")
+        if item.id != str(file_id):
+            raise ArchiveStorageError("Apps Script Drive bridge promoted an unexpected file id")
+        if item.name != str(canonical_name):
+            raise ArchiveStorageError("Apps Script Drive bridge promotion returned the wrong canonical name")
+        if item.size != int(expected_bytes) or item.sha256_checksum != str(expected_sha256).lower():
+            raise ArchiveStorageError("Apps Script Drive bridge promotion failed final size/SHA256 verification")
+        if previous_file_id and str(previous_file_id) != str(file_id) and data.get("previous_file_trashed") is not True:
+            raise ArchiveStorageError("Apps Script Drive bridge did not confirm previous canonical cleanup", retryable=True)
+        return item
 
     async def start_resumable_session(self, *, parent_id: str, name: str, total_bytes: int, mime_type: str = "text/csv") -> dict[str, Any]:
         data = await self._post("resumable_start", path=self._path((parent_id,)), filename=str(name), mime_type=str(mime_type), total_bytes=int(total_bytes))

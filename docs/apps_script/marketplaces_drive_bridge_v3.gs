@@ -1,17 +1,29 @@
 /**
- * Marketplaces MCP -> Google Drive bridge v3.
+ * Marketplaces MCP -> Google Drive bridge v3 (hardened).
  *
- * v3 keeps the existing small-file bridge and adds control-plane actions:
- * - resumable_start: Apps Script authenticates the initial Drive resumable request;
- * - metadata_by_id: returns Drive metadata/checksums without reading file bytes;
- * - trash_by_id: authenticated cleanup for verified diagnostic copies.
+ * Small files keep the existing bridge path. Large files use the bridge only
+ * as a control plane:
+ * - resumable_start: authenticate the initial Drive resumable request;
+ * - metadata_by_id: obtain Drive size/checksums without moving file bytes;
+ * - promote_verified: promote an exact SHA256-verified staging file;
+ * - trash_by_id: cleanup diagnostic copies only.
  *
- * Large file bytes never pass through Apps Script.
+ * Security boundary: every ID-based operation is restricted to the fixed
+ * archive root. Large file bytes never pass through Apps Script. The resumable
+ * session URI is a bearer capability and must never be logged.
  */
 const ARCHIVE_ROOT_ID='1UVKUcFfDhCDk6nMHX1mWg9cRL05DT-OJ';
 const ARCHIVE_ROOT_NAME='MCP архив базы данных';
 const SECRET_PROPERTY='MCP_DRIVE_BRIDGE_SECRET';
 const BRIDGE_VERSION=3;
+const BRIDGE_CAPABILITIES={
+  resumable_start:true,
+  sha256_metadata:true,
+  staged_promotion:true,
+  diagnostic_cleanup:true,
+  archive_root_id_guard:true,
+  drive_api_preflight:true
+};
 
 function setupBridge(){
   const props=PropertiesService.getScriptProperties();
@@ -22,15 +34,31 @@ function setupBridge(){
   }
   const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
   if(root.getName()!==ARCHIVE_ROOT_NAME) throw new Error('wrong_root');
+
+  // Fail during setup, not during a production upload, if the script cannot
+  // call Drive REST with its current Cloud project/scopes.
+  const apiRoot=driveApiMetadata_(ARCHIVE_ROOT_ID);
+  if(String(apiRoot.id||'')!==ARCHIVE_ROOT_ID) throw new Error('drive_api_preflight_failed');
   console.log('ROOT_OK='+root.getName());
+  console.log('DRIVE_API_OK='+apiRoot.id);
   return 'READY';
 }
 
 function doGet(){
   try{
     const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
-    return json_({ok:true,service:'marketplaces-mcp-drive-bridge',version:BRIDGE_VERSION,root_id:root.getId(),root_name:root.getName()});
-  }catch(err){return json_({ok:false,error:String(err&&err.message||err)});}
+    return json_({
+      ok:true,
+      service:'marketplaces-mcp-drive-bridge',
+      version:BRIDGE_VERSION,
+      root_id:root.getId(),
+      root_name:root.getName(),
+      capabilities:BRIDGE_CAPABILITIES
+    });
+  }catch(err){
+    const message=String(err&&err.message||err);
+    return json_({ok:false,error:message,retryable:isRetryableError_(message)});
+  }
 }
 
 function doPost(e){
@@ -43,7 +71,13 @@ function doPost(e){
 
     if(action==='health'){
       const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
-      return json_({ok:true,version:BRIDGE_VERSION,root_id:root.getId(),root_name:root.getName()});
+      return json_({
+        ok:true,
+        version:BRIDGE_VERSION,
+        root_id:root.getId(),
+        root_name:root.getName(),
+        capabilities:BRIDGE_CAPABILITIES
+      });
     }
     if(action==='stat'){
       const file=findFile_(String(body.path||''),String(body.filename||''));
@@ -55,20 +89,27 @@ function doPost(e){
       return json_({ok:true,found:true,file:metadata_(file),content_base64:Utilities.base64Encode(file.getBlob().getBytes())});
     }
     if(action==='read_by_id'){
-      const file=DriveApp.getFileById(String(body.file_id||'').trim());
+      const file=assertFileInsideArchive_(String(body.file_id||'').trim());
       return json_({ok:true,found:true,file:metadata_(file),content_base64:Utilities.base64Encode(file.getBlob().getBytes())});
     }
     if(action==='metadata_by_id'){
       const fileId=String(body.file_id||'').trim();
       if(!fileId) return json_({ok:false,error:'missing_file_id'});
+      assertFileInsideArchive_(fileId);
       return json_({ok:true,found:true,file:driveApiMetadata_(fileId)});
     }
     if(action==='trash_by_id'){
       const fileId=String(body.file_id||'').trim();
       if(!fileId) return json_({ok:false,error:'missing_file_id'});
-      const file=DriveApp.getFileById(fileId);
+      const file=assertFileInsideArchive_(fileId);
+      if(!/^\..+\.diagnostic-report-\d+\.csv$/.test(file.getName())){
+        return json_({ok:false,error:'trash_only_allowed_for_diagnostic_copy'});
+      }
       file.setTrashed(true);
       return json_({ok:true,file_id:fileId,trashed:true});
+    }
+    if(action==='promote_verified'){
+      return json_(promoteVerified_(body));
     }
     if(action==='resumable_start'){
       const filename=validateFilename_(String(body.filename||''));
@@ -95,14 +136,69 @@ function doPost(e){
       return json_({ok:true,file:metadata_(file),sha256:sha,path:normalizePath_(path)});
     }
     return json_({ok:false,error:'unknown_action'});
-  }catch(err){return json_({ok:false,error:String(err&&err.message||err)});}
-  finally{lock.releaseLock();}
+  }catch(err){
+    const message=String(err&&err.message||err);
+    return json_({ok:false,error:message,retryable:isRetryableError_(message)});
+  }finally{lock.releaseLock();}
+}
+
+function promoteVerified_(body){
+  const path=String(body.path||'');
+  const fileId=String(body.file_id||'').trim();
+  const previousId=String(body.previous_file_id||'').trim();
+  const stagingName=validateFilename_(String(body.staging_filename||''));
+  const canonicalName=validateFilename_(String(body.canonical_filename||''));
+  const expectedBytes=Number(body.expected_bytes||0);
+  const expectedSha=String(body.expected_sha256||'').trim().toLowerCase();
+  if(!fileId) throw new Error('missing_file_id');
+  if(!Number.isFinite(expectedBytes)||expectedBytes<=0) throw new Error('invalid_expected_bytes');
+  if(!/^[0-9a-f]{64}$/.test(expectedSha)) throw new Error('invalid_expected_sha256');
+  const folder=resolveFolder_(path,false);
+  if(!folder) throw new Error('target_folder_missing');
+
+  assertFileInsideArchive_(fileId);
+  const before=driveApiMetadata_(fileId);
+  if(before.trashed) throw new Error('candidate_trashed');
+  if(Number(before.size||0)!==expectedBytes) throw new Error('candidate_size_mismatch');
+  if(String(before.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('candidate_sha256_mismatch');
+  if(!Array.isArray(before.parents)||before.parents.indexOf(folder.getId())<0) throw new Error('candidate_wrong_parent');
+  const beforeName=String(before.name||'');
+  if(beforeName!==stagingName&&beforeName!==canonicalName) throw new Error('candidate_wrong_name');
+
+  let previous=null;
+  if(previousId&&previousId!==fileId){
+    assertFileInsideArchive_(previousId);
+    previous=driveApiMetadata_(previousId);
+    if(!previous.trashed){
+      if(!Array.isArray(previous.parents)||previous.parents.indexOf(folder.getId())<0) throw new Error('previous_wrong_parent');
+      if(String(previous.name||'')!==canonicalName) throw new Error('previous_wrong_name');
+    }
+  }
+
+  // Promote the verified candidate first. If the response is lost after the
+  // rename, an exact-ID retry is safe and will finish previous-file cleanup.
+  const candidate=DriveApp.getFileById(fileId);
+  if(candidate.getName()!==canonicalName) candidate.setName(canonicalName);
+
+  try{
+    if(previousId&&previousId!==fileId&&previous&&!previous.trashed){
+      DriveApp.getFileById(previousId).setTrashed(true);
+    }
+    const after=driveApiMetadata_(fileId);
+    if(after.trashed) throw new Error('promoted_file_trashed');
+    if(String(after.name||'')!==canonicalName) throw new Error('promoted_name_mismatch');
+    if(Number(after.size||0)!==expectedBytes) throw new Error('promoted_size_mismatch');
+    if(String(after.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('promoted_sha256_mismatch');
+    return {ok:true,file:after,previous_file_trashed:!!(previousId&&previousId!==fileId)};
+  }catch(err){
+    return {ok:false,error:'promotion_post_rename_retry',retryable:true};
+  }
 }
 
 function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes){
   const token=ScriptApp.getOAuthToken();
   const fileId=existingFile?existingFile.getId():'';
-  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime';
+  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime,parents,trashed';
   const base='https://www.googleapis.com/upload/drive/v3/files';
   const url=fileId
     ? base+'/'+encodeURIComponent(fileId)+'?uploadType=resumable&supportsAllDrives=true&fields='+encodeURIComponent(fields)
@@ -133,16 +229,49 @@ function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes
 }
 
 function driveApiMetadata_(fileId){
-  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime';
+  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime,parents,trashed';
   const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?supportsAllDrives=true&fields='+encodeURIComponent(fields);
   const response=UrlFetchApp.fetch(url,{
     method:'get',
     headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken(),Accept:'application/json'},
-    muteHttpExceptions:true
+    muteHttpExceptions:true,
+    followRedirects:false
   });
   const code=response.getResponseCode();
   if(code<200||code>=300) throw new Error('drive_metadata_http_'+code);
   return JSON.parse(response.getContentText()||'{}');
+}
+
+function assertFileInsideArchive_(fileId){
+  if(!fileId) throw new Error('missing_file_id');
+  const file=DriveApp.getFileById(fileId);
+  const parents=file.getParents();
+  let inside=false;
+  while(parents.hasNext()){
+    if(folderInsideArchive_(parents.next())){inside=true;break;}
+  }
+  if(!inside) throw new Error('file_outside_archive_root');
+  return file;
+}
+
+function folderInsideArchive_(folder){
+  let current=folder;
+  for(let depth=0;depth<32;depth++){
+    if(current.getId()===ARCHIVE_ROOT_ID) return true;
+    const parents=current.getParents();
+    if(!parents.hasNext()) return false;
+    current=parents.next();
+    if(parents.hasNext()) throw new Error('folder_has_multiple_parents');
+  }
+  throw new Error('archive_parent_depth_exceeded');
+}
+
+function isRetryableError_(message){
+  const m=String(message||'');
+  if(/drive_(resumable_start|metadata)_http_(408|425|429|500|502|503|504)/.test(m)) return true;
+  if(/promotion_post_rename_retry/.test(m)) return true;
+  if(/Service invoked too many times|Server error occurred|Service unavailable/i.test(m)) return true;
+  return false;
 }
 
 function normalizePath_(path){
