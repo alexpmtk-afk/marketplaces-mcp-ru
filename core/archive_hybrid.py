@@ -5,8 +5,8 @@ Yandex Object Storage remains the durable home for queue/job state and staging,
 and also receives a byte-for-byte backup of canonical files.
 
 When a canonical file is missing on Drive but still exists in Object Storage,
-the first read migrates it to Drive before returning it. This lets an in-flight
-backfill survive the storage-policy change without re-downloading provider data.
+the first content read migrates it to Drive before returning it. Metadata-only
+probes never copy a potentially large backup file as a side effect.
 """
 from __future__ import annotations
 
@@ -104,20 +104,19 @@ class HybridArchiveStore:
         *,
         mime_type: str | None = None,
     ):
+        """Return metadata without triggering read-through migration.
+
+        For canonical hybrid paths Google Drive is the source of truth, so a
+        metadata probe reports only what is physically present on Drive. Actual
+        content reads still use ``download_named`` and retain read-through
+        recovery from the Yandex backup.
+        """
         mode, drive_parent, yandex_parent = self._decode_parent(parent_id)
         if mode == "yandex":
             assert yandex_parent is not None
             return await self.yandex.find_child(yandex_parent, name, mime_type=mime_type)
         assert drive_parent is not None and yandex_parent is not None
-        drive_item = await self.drive.find_child(drive_parent, name, mime_type=mime_type)
-        if drive_item is not None:
-            return drive_item
-        return await self._migrate_if_needed(
-            drive_parent,
-            yandex_parent,
-            name,
-            mime_type=mime_type or "text/csv",
-        )
+        return await self.drive.find_child(drive_parent, name, mime_type=mime_type)
 
     async def download_bytes(self, file_id: str) -> bytes:
         # Canonical callers should normally use download_named. This helper keeps
