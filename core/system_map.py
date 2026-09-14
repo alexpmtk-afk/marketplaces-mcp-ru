@@ -6,12 +6,12 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v4"
+ARCHITECTURE_VERSION = "2026-09-14.v5"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
     "status": "CANONICAL",
-    "scope": "Marketplaces MCP runtime and marketplace archive",
+    "scope": "Marketplaces MCP runtime, marketplace archive, and semantic routing layer",
     "runtime": {
         "cloud": "Yandex Cloud only",
         "entry": "ChatGPT/Codex -> marketplaces-yandex -> Yandex API Gateway -> Yandex Serverless Container",
@@ -50,16 +50,43 @@ SYSTEM_MAP: dict[str, Any] = {
             "registry_deduplication": "(cabinet, dataset, report_id)",
         },
     },
+    "semantic_core": {
+        "status": "KNOWLEDGE_AND_RESOLVER_PRESENT_NOT_RUNTIME_ROUTED",
+        "registry": "core/semantic_registry.yaml",
+        "intent_catalog": "core/semantic_intents.yaml",
+        "resolver": "core/semantic_resolver.py",
+        "current_archive_dataset": "wb_weekly_finance_main",
+        "current_archive_schema": "92 physical columns, each with reviewed semantic meaning/safe uses/limitations",
+        "resolution_outcomes": [
+            "AVAILABLE",
+            "AVAILABLE_WITH_LIMITATION",
+            "REQUIRES_OTHER_SOURCE",
+            "AMBIGUOUS",
+            "UNKNOWN",
+        ],
+        "rules": [
+            "exact physical field references resolve to field semantics first",
+            "only registered capabilities may select archive fields",
+            "questions about complete marketplace orders must not be answered from orderDt/orderUid in weekly finance",
+            "historical fulfillment may use deliveryMethod but must not be presented as current configuration",
+            "explicit current-state questions must not fall back to historical weekly archive",
+            "unknown or ambiguous questions fail closed",
+            "semantic resolution does not execute archive SQL; execution requires a later query plan and FULL_COVERAGE check",
+        ],
+        "runtime_integration": "not yet wired into marketplace_business_query",
+    },
     "routing_policy": {
         "update_database": "route to the server archive update workflow; compare canonical registry and fetch only missing provider reports",
         "historical_queries": "read canonical Google Drive archive for covered periods before repeatedly querying provider APIs",
         "current_or_uncovered": "use provider APIs or explicit gap/backfill workflow",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
+        "business_semantics": "resolve the question through the Semantic Core before selecting archive fields or another source",
     },
     "change_control": {
         "new_cloud_provider": "FORBIDDEN without explicit architecture change",
         "new_primary_storage": "FORBIDDEN without explicit architecture change",
         "bypass_registry_or_idempotency": "FORBIDDEN",
+        "bypass_semantic_guardrails": "FORBIDDEN",
         "architecture_change_requires": [
             "update SYSTEM_MAP and server instructions",
             "update architecture documentation",
@@ -76,6 +103,8 @@ Canonical marketplace archive data is stored on Google Drive under the server-ow
 Yandex Object Storage is required for durable queue/job state, staging, and a secondary byte-for-byte backup of canonical archive files.
 Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
+Business questions must pass through the server Semantic Core before archive fields are selected. Unknown, ambiguous, current-state, or unsupported questions must fail closed instead of being guessed from similar historical columns.
+The Semantic Core resolver is present as a knowledge/planning layer but is not yet wired into marketplace_business_query execution; semantic resolution alone must not execute archive SQL.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """
 
