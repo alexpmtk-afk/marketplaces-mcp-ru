@@ -6,12 +6,12 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v8"
+ARCHITECTURE_VERSION = "2026-09-14.v9"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
     "status": "CANONICAL",
-    "scope": "Marketplaces MCP runtime, marketplace archive, and semantic routing layer",
+    "scope": "Marketplaces MCP runtime, marketplace archive, advertising, and semantic routing layer",
     "runtime": {
         "cloud": "Yandex Cloud only",
         "entry": "ChatGPT/Codex -> marketplaces-yandex -> Yandex API Gateway -> Yandex Serverless Container",
@@ -49,6 +49,41 @@ SYSTEM_MAP: dict[str, Any] = {
             "row_deduplication": "(reportId, rrdId)",
             "registry_deduplication": "(cabinet, dataset, report_id)",
         },
+    },
+    "advertising_policy": {
+        "current_scope": "Wildberries only; Ozon advertising is explicitly out of scope for this phase",
+        "phase": "WB Advertising M0 read-only",
+        "credential_service": "wb_ads",
+        "credentials": "Promotion-scoped WB credentials are server-side only and must be injected from Yandex Lockbox; never stored on Drive/GitHub",
+        "live_state_source": "Wildberries Promotion API",
+        "active_campaign_status": 9,
+        "m0_tools": [
+            "wb_ads_list_active_campaigns",
+            "wb_ads_get_campaign_stats",
+            "wb_ads_audit_active",
+        ],
+        "m0_default_audit_period": "last 7 full Europe/Moscow calendar days ending yesterday",
+        "m0_batch_limit": "at most 50 campaign IDs in one /adv/v3/fullstats request; fail closed instead of returning a partial audit",
+        "metric_class": "advertising_attribution_operational",
+        "profitability_boundary": "advertising attribution metrics are not actual business profit; real profitability requires approved joins to sales/buyouts, returns, finance and unit economics",
+        "archive_domain": "База данных/WB/<cabinet>/<year>/advertising",
+        "archive_status": "Drive folder scaffold exists; ingestion/coverage/registry integration is not yet implemented or accepted",
+        "planned_datasets": [
+            "ads_campaign_daily",
+            "ads_product_daily",
+            "ads_search_cluster_daily",
+            "ads_campaign_snapshots",
+            "ads_expenses",
+            "ads_payments",
+            "ads_bid_history",
+            "ads_product_membership_history",
+            "ads_placement_history",
+            "ads_minus_phrase_history",
+            "ads_mcp_actions",
+        ],
+        "historical_routing": "when Advertising Archive V1 is implemented and coverage is proven, closed historical periods must be archive-first; current state/control stays live",
+        "write_control_status": "not accepted in M0; dedicated start/pause/stop/bid/budget/product/cluster control tools require a later safety-reviewed phase",
+        "safety_override": "provider GET endpoints that mutate campaign state (start/pause/stop/delete) are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb",
     },
     "semantic_core": {
         "status": "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED",
@@ -108,6 +143,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
+        "advertising_live_vs_archive": "campaign state/current control is live; closed advertising analytics becomes archive-first only after the ad dataset binding and coverage are implemented and proven",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
         "business_semantics": "the original question outranks a conflicting legacy metric hint",
     },
@@ -137,6 +173,9 @@ For business questions, preserve the user's original wording and pass it through
 Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Different currencies are never combined into one total.
 marketplace_business_query now routes natural questions for penalties, storage charges, paid acceptance, and sales/returns into the gated archive executor. Sales/returns use saleDt and explicit docTypeName buckets, with Продажа minus Возврат for both retailAmount and quantity.
 WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
+WB Advertising M0 is Wildberries-only and read-only: use dedicated server-side wb_ads Promotion credentials; current campaign state is live from WB Promotion API; M0 advertising-attribution metrics must never be presented as actual business profit.
+The advertising Drive folder scaffold is not proof that Advertising Archive V1 ingestion or historical coverage exists. Do not route historical ad analytics to the archive until dataset bindings, registry coverage and validation are implemented and accepted.
+Provider GET endpoints that change advertising state are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb.
 Unknown, ambiguous, current-state, unsupported or uncovered questions must fail closed or identify the required source instead of being guessed from similar fields.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """
