@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v7`
+**Version:** `2026-09-14.v8`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -63,7 +63,10 @@ Current database truth:
 Current approved archive calculations:
 - `penalties` — sum `penalty` exactly as reported, grouped by report currency and reason;
 - `storage_charge` — sum `paidStorage` exactly as reported by report currency;
-- `acceptance_charge` — sum `paidAcceptance` exactly as reported by report currency.
+- `acceptance_charge` — sum `paidAcceptance` exactly as reported by report currency;
+- `sale_and_return_operations` — by `saleDt`, split rows by `docTypeName`: `Продажа` and `Возврат`; calculate sale amount/units, return amount/units and net result as `Продажа - Возврат` using `retailAmount` and `quantity`.
+
+The sales/returns formula follows the official Wildberries weekly-realization rule: the weekly `Продажа` amount is the detailed report's realized-goods amount for document type `Продажа` minus the same amount for document type `Возврат`. The archive also confirms that return `retailAmount` values are stored as positive values, so the server performs the subtraction explicitly rather than inferring a sign.
 
 Every approved calculation is subject to these gates:
 1. the original question must resolve to the registered capability;
@@ -71,7 +74,8 @@ Every approved calculation is subject to these gates:
 3. `reports_registry.csv` must prove `FULL_COVERAGE` for the entire requested period using `COMPLETE` fragments;
 4. the referenced canonical annual file must exist on Google Drive;
 5. only registered fields and a generated read-only query plan may be used;
-6. values keep the provider sign; different currencies are never combined into one amount.
+6. different currencies are never combined into one amount;
+7. formulas that require operation-type subtraction must encode that subtraction explicitly rather than infer it from the sign of a monetary field.
 
 ### Natural-question routing
 
@@ -79,7 +83,8 @@ Every approved calculation is subject to these gates:
 
 Rules:
 - the original question outranks a conflicting legacy metric hint;
-- if the question maps to one of the three approved archive calculations, the request goes through the coverage-gated archive executor;
+- if the question maps to one of the approved archive calculations, the request goes through the coverage-gated archive executor;
+- sales/returns questions use `saleDt` and explicit `docTypeName` buckets, not `orderDt` and not free-form operation-name guessing;
 - if the question is understood but its calculation contract is not approved, execution stops rather than guessing;
 - if the required source is not in the current database, the server returns that source requirement instead of substituting a similar field/report;
 - ambiguous or unknown questions fail closed.
