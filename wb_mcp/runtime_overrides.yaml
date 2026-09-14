@@ -3,6 +3,7 @@
 remove:
   - wb_stats_stocks
   - wb_report_realization
+  - wb_adv_fullstats
 
 endpoints:
   - operation_id: wb_analytics_stocks_wb_warehouses
@@ -26,6 +27,111 @@ endpoints:
       - наличие
       - история остатков
     items_path: data.items
+
+  - operation_id: wb_get_api_advert_adverts
+    section: promotion
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /api/advert/v2/adverts
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Current WB Promotion campaigns filtered by ids, statuses and payment model.
+    params:
+      query: 'ids CSV <=50; statuses CSV (-1,4,7,8,9,11); payment_type=cpm|cpc'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - кампании
+      - активные кампании
+      - продвижение
+    items_path: adverts
+
+  - operation_id: wb_get_adv_fullstats
+    section: promotion
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v3/fullstats
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 3 req/min
+    quota_proven: true
+    summary: Current WB Promotion statistics for up to 50 campaigns and at most 31 calendar days.
+    params:
+      query: 'ids CSV <=50, beginDate YYYY-MM-DD, endDate YYYY-MM-DD; campaigns statuses 7,9,11'
+      quota_note: 'Personal/Service/Base-with-secret: 3/min; Base token may be slower.'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - статистика рекламы
+      - fullstats
+      - показы
+      - клики
+      - заказы
+      - расход
+
+  - operation_id: wb_get_adv_start
+    section: promotion-control
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v0/start
+    scope: promotion
+    safety: write
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Start a WB Promotion campaign. Mutates campaign state despite HTTP GET.
+    params:
+      query: 'id campaign ID'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+
+  - operation_id: wb_get_adv_pause
+    section: promotion-control
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v0/pause
+    scope: promotion
+    safety: write
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Pause an active WB Promotion campaign. Mutates campaign state despite HTTP GET.
+    params:
+      query: 'id campaign ID'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+
+  - operation_id: wb_get_adv_stop
+    section: promotion-control
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v0/stop
+    scope: promotion
+    safety: write
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Stop/complete a WB Promotion campaign. Mutates campaign state despite HTTP GET.
+    params:
+      query: 'id campaign ID'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+
+  - operation_id: wb_get_adv_delete
+    section: promotion-control
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v0/delete
+    scope: promotion
+    safety: destructive
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Delete a WB Promotion campaign. Destructive despite HTTP GET.
+    params:
+      query: 'id campaign ID'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
 
   - operation_id: wb_finance_sales_reports_list
     section: finance
