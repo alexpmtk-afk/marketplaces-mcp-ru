@@ -13,6 +13,8 @@ from mcp.server.fastmcp import FastMCP
 from .archive_queue import WBFinanceArchiveJobQueue
 from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
 from .archive_resumable_worker import WBFinanceResumableWorker
+from .wb_advertising_archive import ARCHIVE_CABINETS as ADS_ARCHIVE_CABINETS
+from .wb_advertising_archive_queue import WBAdvertisingArchiveJobQueue
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
 _BLOCKED_SQL = re.compile(
@@ -197,3 +199,52 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         if store is None:
             return _not_configured()
         return _j(await _query_year(store, int(year), sql))
+
+    @mcp.tool(
+        name="marketplace_advertising_archive_update",
+        annotations={"title": "Queue WB advertising archive ingestion", "readOnlyHint": False, "openWorldHint": True},
+    )
+    async def marketplace_advertising_archive_update(
+        year: int = date.today().year,
+        seller: str = "all",
+    ) -> str:
+        """Queue durable WB advertising-history ingestion for one or all cabinets."""
+        if store is None:
+            return _not_configured()
+        queue = WBAdvertisingArchiveJobQueue(wb, store)
+        sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+        jobs = [await queue.enqueue(year=int(year), seller=item) for item in sellers]
+        return _j({
+            "ok": True,
+            "marketplace": "wb",
+            "dataset_family": "advertising",
+            "year": int(year),
+            "queued": True,
+            "jobs": jobs,
+            "instruction": (
+                "Process queued jobs with marketplace_advertising_archive_worker_step. "
+                "Ingestion stops safely at READY_TO_COMMIT until verified Drive commit is available."
+            ),
+        })
+
+    @mcp.tool(
+        name="marketplace_advertising_archive_worker_step",
+        annotations={"title": "Process one WB advertising archive ingestion step", "readOnlyHint": False, "openWorldHint": True},
+    )
+    async def marketplace_advertising_archive_worker_step(job_id: str = "") -> str:
+        """Run one bounded advertising ingestion step; at most one WB request is sent."""
+        if store is None:
+            return _not_configured()
+        queue = WBAdvertisingArchiveJobQueue(wb, store)
+        return _j(await queue.worker_step(job_id))
+
+    @mcp.tool(
+        name="marketplace_advertising_archive_job_status",
+        annotations={"title": "WB advertising archive ingestion status", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_advertising_archive_job_status(job_id: str) -> str:
+        """Show durable progress for one WB advertising archive job."""
+        if store is None:
+            return _not_configured()
+        queue = WBAdvertisingArchiveJobQueue(wb, store)
+        return _j(await queue.status(job_id))
