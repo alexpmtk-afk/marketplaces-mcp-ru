@@ -81,4 +81,4 @@ executors:
       deduction_amount: deduction
       wb_reward_adjustment_amount: additionalPayment
     product_filter_field: nmId
-    semantics: Keep deduction and additionalPayment separate. deduction is summed as the report's deduction field; additionalPayment is the WB-remuneration adjustment field and must not be relabeled as seller payout or netted against deductions without a separately approved rule.
+    semantics: Keep deduction and additionalPayment separate. deduction is summed as the report's deduction field; additionalPayment is the WB-remuneration adjustment field and must not be interpreted as a payment to the seller or netted against deductions without a separately approved rule.
