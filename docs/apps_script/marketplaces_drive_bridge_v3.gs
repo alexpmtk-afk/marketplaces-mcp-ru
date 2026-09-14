@@ -1,12 +1,16 @@
 /**
- * Marketplaces MCP -> Google Drive bridge v3.
+ * Marketplaces MCP -> Google Drive bridge v3 (hardened).
  *
- * v3 keeps the existing small-file bridge and adds control-plane actions:
- * - resumable_start: Apps Script authenticates the initial Drive resumable request;
- * - metadata_by_id: returns Drive metadata/checksums without reading file bytes;
- * - trash_by_id: authenticated cleanup for verified diagnostic copies.
+ * Small files keep the existing bridge path. Large files use the bridge only
+ * as a control plane:
+ * - resumable_start: authenticate the initial Drive resumable request;
+ * - metadata_by_id: obtain Drive size/checksums without moving file bytes;
+ * - promote_verified: after exact size/SHA256 verification, rename the staged
+ *   upload to the canonical filename and only then trash the previous canonical;
+ * - trash_by_id: cleanup verified diagnostic copies.
  *
- * Large file bytes never pass through Apps Script.
+ * Large file bytes never pass through Apps Script. The resumable session URI is
+ * a bearer credential and must never be logged.
  */
 const ARCHIVE_ROOT_ID='1UVKUcFfDhCDk6nMHX1mWg9cRL05DT-OJ';
 const ARCHIVE_ROOT_NAME='MCP архив базы данных';
@@ -70,6 +74,9 @@ function doPost(e){
       file.setTrashed(true);
       return json_({ok:true,file_id:fileId,trashed:true});
     }
+    if(action==='promote_verified'){
+      return json_(promoteVerified_(body));
+    }
     if(action==='resumable_start'){
       const filename=validateFilename_(String(body.filename||''));
       const path=String(body.path||'');
@@ -99,10 +106,50 @@ function doPost(e){
   finally{lock.releaseLock();}
 }
 
+function promoteVerified_(body){
+  const path=String(body.path||'');
+  const fileId=String(body.file_id||'').trim();
+  const previousId=String(body.previous_file_id||'').trim();
+  const canonicalName=validateFilename_(String(body.canonical_filename||''));
+  const expectedBytes=Number(body.expected_bytes||0);
+  const expectedSha=String(body.expected_sha256||'').trim().toLowerCase();
+  if(!fileId) throw new Error('missing_file_id');
+  if(!Number.isFinite(expectedBytes)||expectedBytes<=0) throw new Error('invalid_expected_bytes');
+  if(!/^[0-9a-f]{64}$/.test(expectedSha)) throw new Error('invalid_expected_sha256');
+  const folder=resolveFolder_(path,false);
+  if(!folder) throw new Error('target_folder_missing');
+
+  const before=driveApiMetadata_(fileId);
+  if(before.trashed) throw new Error('candidate_trashed');
+  if(Number(before.size||0)!==expectedBytes) throw new Error('candidate_size_mismatch');
+  if(String(before.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('candidate_sha256_mismatch');
+  if(!Array.isArray(before.parents)||before.parents.indexOf(folder.getId())<0) throw new Error('candidate_wrong_parent');
+
+  // Promote the already verified staged file first. If execution stops after
+  // this line, a retry with the same explicit file IDs safely completes cleanup.
+  const candidate=DriveApp.getFileById(fileId);
+  if(candidate.getName()!==canonicalName) candidate.setName(canonicalName);
+
+  if(previousId&&previousId!==fileId){
+    const previous=driveApiMetadata_(previousId);
+    if(!previous.trashed){
+      if(!Array.isArray(previous.parents)||previous.parents.indexOf(folder.getId())<0) throw new Error('previous_wrong_parent');
+      DriveApp.getFileById(previousId).setTrashed(true);
+    }
+  }
+
+  const after=driveApiMetadata_(fileId);
+  if(after.trashed) throw new Error('promoted_file_trashed');
+  if(String(after.name||'')!==canonicalName) throw new Error('promoted_name_mismatch');
+  if(Number(after.size||0)!==expectedBytes) throw new Error('promoted_size_mismatch');
+  if(String(after.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('promoted_sha256_mismatch');
+  return {ok:true,file:after,previous_file_trashed:!!(previousId&&previousId!==fileId)};
+}
+
 function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes){
   const token=ScriptApp.getOAuthToken();
   const fileId=existingFile?existingFile.getId():'';
-  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime';
+  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime,parents,trashed';
   const base='https://www.googleapis.com/upload/drive/v3/files';
   const url=fileId
     ? base+'/'+encodeURIComponent(fileId)+'?uploadType=resumable&supportsAllDrives=true&fields='+encodeURIComponent(fields)
@@ -133,7 +180,7 @@ function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes
 }
 
 function driveApiMetadata_(fileId){
-  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime';
+  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime,parents,trashed';
   const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?supportsAllDrives=true&fields='+encodeURIComponent(fields);
   const response=UrlFetchApp.fetch(url,{
     method:'get',
