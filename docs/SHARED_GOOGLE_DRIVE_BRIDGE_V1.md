@@ -1,6 +1,6 @@
 # Marketplaces MCP → Shared Google Drive Bridge v1
 
-Status: integration guide. Client target: `protocol_version=1`, candidate `bridge_release=1.0.0-alpha.2`. Production cutover is forbidden until the dedicated Marketplaces deployment passes the common acceptance matrix.
+Status: FINAL CLIENT CONTRACT. Target: `protocol_version=1`, `bridge_release=1.0.0`. The client implementation is complete. Production activation remains fail-closed until the dedicated Marketplaces deployment passes live acceptance.
 
 Source of truth for the shared bridge implementation:
 `alexpmtk-afk/mcp-yandex-cloud-infra/shared/google-drive-bridge/`
@@ -59,7 +59,7 @@ Do not move into the shared bridge:
 - Apps Script is control plane only; large bytes travel Yandex → Google directly.
 - Canonical files remain untouched until staging size/SHA256 verification succeeds and the project backup/commit policy is satisfied.
 
-## Large reads — alpha.2
+## Large reads — v1.0.0
 
 Canonical annual CSV reads that exceed the bounded Apps Script small-read limit use:
 
@@ -122,4 +122,4 @@ Production switching is allowed only after PASS for:
 11. cross-project concurrent IO with reciprocal root isolation;
 12. retry after ambiguous/lost response without duplicate canonical state.
 
-Client-code READY is not production PASS. Production PASS requires a separate Marketplaces Apps Script deployment, dedicated secret/Lockbox binding and real live acceptance against a large file.
+Client code is complete. Production PASS requires only runtime activation evidence: the separate Marketplaces Apps Script deployment, project-isolated `gdrive_bridge_v1_secret`, and live acceptance against real small/large files. No protocol or client function remains unfinished.
