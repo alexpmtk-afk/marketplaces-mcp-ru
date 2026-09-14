@@ -33,7 +33,7 @@ SYSTEM_MAP: dict[str, Any] = {
             "not the file bytes"
         ),
         "google_drive_large_upload": (
-            "Apps Script starts the official Google Drive resumable session using its effective-user OAuth token; "
+            "Apps Script starts the official Google Drive API resumable session using its effective-user OAuth token; "
             "Yandex then uploads bounded chunks directly to the returned Drive session URI and persists the "
             "confirmed byte offset durably"
         ),
