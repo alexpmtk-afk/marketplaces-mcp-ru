@@ -73,6 +73,129 @@ endpoints:
       - заказы
       - расход
 
+  - operation_id: wb_post_adv_normquery_stats_v1
+    section: promotion
+    method: POST
+    host: advert-api.wildberries.ru
+    path: /adv/v1/normquery/stats
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 10 req/min
+    quota_proven: true
+    summary: Daily WB Promotion search-cluster statistics for CPM and CPC campaigns.
+    params:
+      body: '{from YYYY-MM-DD, to YYYY-MM-DD, items:[{advertId,nmId}]<=100}'
+      quality_note: 'For CPC campaigns WB does not provide views, ctr or cpm; preserve them as unavailable/null, never synthetic zero.'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - поисковые кластеры
+      - поисковые запросы
+      - статистика по дням
+      - позиция
+      - spend
+    items_path: items
+
+  - operation_id: wb_get_adv_upd
+    section: promotion-finance
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v1/upd
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 1 req/sec
+    quota_proven: true
+    summary: Actual WB Promotion campaign cost history for a period of at most 31 days.
+    params:
+      query: 'from YYYY-MM-DD, to YYYY-MM-DD; 1..31 days'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - расходы
+      - затраты
+      - история расходов
+      - сверка spend
+
+  - operation_id: wb_get_adv_payments
+    section: promotion-finance
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v1/payments
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 1 req/sec
+    quota_proven: true
+    summary: WB Promotion account top-up history for a period of at most 31 days.
+    params:
+      query: 'from YYYY-MM-DD, to YYYY-MM-DD; 1..31 days'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - пополнения
+      - платежи
+      - история пополнений
+
+  - operation_id: wb_get_adv_balance
+    section: promotion-finance
+    method: GET
+    host: advert-api.wildberries.ru
+    path: /adv/v1/balance
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 1 req/sec
+    quota_proven: true
+    summary: Current WB Promotion account balance, netting, bonus and cashback state.
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - баланс рекламы
+      - бонусы
+      - cashback
+
+  - operation_id: wb_post_adv_normquery_get_bids
+    section: promotion-config
+    method: POST
+    host: advert-api.wildberries.ru
+    path: /adv/v0/normquery/get-bids
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Current WB Promotion search-cluster bids by campaign and product.
+    params:
+      body: 'provider-defined campaign/product items; current state only'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - ставки
+      - поисковые кластеры
+      - текущие ставки
+
+  - operation_id: wb_post_adv_normquery_get_minus
+    section: promotion-config
+    method: POST
+    host: advert-api.wildberries.ru
+    path: /adv/v0/normquery/get-minus
+    scope: promotion
+    safety: read
+    pagination: none
+    rate_limit: 5 req/sec
+    quota_proven: true
+    summary: Current WB Promotion minus phrases by campaign and product.
+    params:
+      body: '{items:[{advert_id,nm_id}]<=100}'
+    doc: https://dev.wildberries.ru/docs/openapi/promotion
+    keywords:
+      - реклама
+      - минус-фразы
+      - исключения
+      - поисковые кластеры
+
   - operation_id: wb_get_adv_start
     section: promotion-control
     method: GET
