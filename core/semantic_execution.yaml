@@ -1,4 +1,4 @@
-version: 2026-09-14.v1
+version: 2026-09-14.v2
 policy:
   fail_closed: true
   require_full_coverage: true
@@ -37,3 +37,17 @@ executors:
     mode: sum_by_currency
     product_filter_field: nmId
     semantics: Sum paidAcceptance exactly as reported for the covered calculation period. Detailed acceptance operations are not available here.
+  sale_and_return_operations:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: saleDt
+    amount_field: retailAmount
+    unit_field: quantity
+    currency_field: currency
+    operation_field: docTypeName
+    sale_value: Продажа
+    return_value: Возврат
+    mode: sale_return_summary
+    product_filter_field: nmId
+    semantics: For the covered saleDt period, calculate sales and returns separately by docTypeName. Net sales amount is retailAmount for Продажа minus retailAmount for Возврат; net units are quantity for Продажа minus quantity for Возврат. Never infer the sign from retailAmount and never combine currencies.
