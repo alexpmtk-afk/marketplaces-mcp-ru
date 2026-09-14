@@ -5,7 +5,7 @@ import hashlib
 from dataclasses import dataclass
 
 import core.wb_advertising_archive_queue as queue_module
-from core.archive_coverage import parse_coverage_registry
+from core.archive_coverage import parse_registry
 from core.wb_advertising_archive import encode_csv, parse_csv
 from core.wb_advertising_archive_worker import (
     WBAdvertisingArchiveWorker,
@@ -178,19 +178,18 @@ def test_coverage_is_written_only_after_canonical_phase_and_is_idempotent():
     assert first["action"] == "advertising_coverage_committed"
     registry_parent = asyncio.run(store.ensure_folder_path(["app", "registry"]))
     _, raw1 = asyncio.run(store.download_named(registry_parent, "dataset_coverage_registry.csv"))
-    records1 = parse_coverage_registry(raw1)
+    records1 = parse_registry(raw1)
     assert len(records1) == 1
     assert records1[0]["status"] == "COMPLETE"
     assert records1[0]["dataset"] == "ads_campaign_daily"
 
-    # Re-run the same coverage record from a replayed state: deterministic key prevents duplicates.
     replay = _state(status="COMMITTING")
     replay_commit = dict(commit)
     replay["commit"] = replay_commit
     queue.state = replay
     asyncio.run(worker._coverage_dataset(replay, replay_commit, "ads_campaign_daily"))
     _, raw2 = asyncio.run(store.download_named(registry_parent, "dataset_coverage_registry.csv"))
-    assert len(parse_coverage_registry(raw2)) == 1
+    assert len(parse_registry(raw2)) == 1
 
 
 def test_worker_marks_job_complete_only_after_all_dataset_commits():
