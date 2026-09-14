@@ -50,6 +50,7 @@ class UploadSession:
     uri: str
     file_id: str | None
     offset: int = 0
+    staging_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -201,7 +202,13 @@ class GoogleDriveResumableUploader:
         )
         uri = self._validate_session_uri(str(result.get("session_uri") or ""))
         file_id = str(result.get("file_id") or "").strip() or None
-        return UploadSession(uri=uri, file_id=file_id, offset=0)
+        staging_name = str(result.get("staging_filename") or "").strip() or None
+        return UploadSession(
+            uri=uri,
+            file_id=file_id,
+            offset=0,
+            staging_name=staging_name,
+        )
 
     async def query_status(self, session_uri: str, total_bytes: int) -> UploadProgress:
         response = await self._request(
