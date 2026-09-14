@@ -148,6 +148,23 @@ class WBFinanceResumableWorker:
         session_uri = str(upload.get("session_uri") or "")
 
         try:
+            # Once promotion has been attempted, recover only by explicit IDs.
+            # This avoids ambiguous name lookups during the tiny interval where
+            # both old and new files may carry the canonical name.
+            staged_checkpoint_id = str(upload.get("staged_file_id") or "")
+            if upload.get("promotion_attempted") and staged_checkpoint_id:
+                return await self._finish_staged_upload(
+                    state=state,
+                    finalize=finalize,
+                    file_meta={"id": staged_checkpoint_id},
+                    candidate_id=candidate_obj.id,
+                    annual_parts=annual_parts,
+                    annual_name=annual_name,
+                    staging_name=staging_name,
+                    expected_bytes=expected_bytes,
+                    expected_sha=expected_sha,
+                )
+
             if session_uri:
                 probe = await self.uploader.query_status(session_uri, expected_bytes)
                 if probe.state == "complete":
@@ -378,9 +395,8 @@ class WBFinanceResumableWorker:
             }
         except (ResumableUploadError, ArchiveStorageError) as exc:
             retryable = bool(getattr(exc, "retryable", False))
-            promotion_attempted = bool(
-                (finalize.get("resumable_upload") or {}).get("promotion_attempted")
-            )
+            current_upload = dict(finalize.get("resumable_upload") or upload)
+            promotion_attempted = bool(current_upload.get("promotion_attempted"))
             if not retryable:
                 state["status"] = "FAILED"
                 state["last_error"] = str(exc)[:1000]
@@ -396,9 +412,9 @@ class WBFinanceResumableWorker:
                     "candidate_preserved": True,
                     "canonical_state": "recheck_required" if promotion_attempted else "untouched",
                 }
-            retry_count = int(upload.get("retry_count", 0) or 0) + 1
-            upload["retry_count"] = retry_count
-            finalize["resumable_upload"] = upload
+            retry_count = int(current_upload.get("retry_count", 0) or 0) + 1
+            current_upload["retry_count"] = retry_count
+            finalize["resumable_upload"] = current_upload
             backoff = self._retry_delay(job_id, retry_count)
             retry_after = int(math.ceil(float(getattr(exc, "retry_after_seconds", 0.0) or 0.0)))
             delay = max(backoff, retry_after)
@@ -433,7 +449,7 @@ class WBFinanceResumableWorker:
     ) -> dict[str, Any]:
         job_id = str(state["job_id"])
         upload = dict(finalize.get("resumable_upload") or {})
-        file_id = str(file_meta.get("id") or upload.get("target_file_id") or "")
+        file_id = str(file_meta.get("id") or upload.get("target_file_id") or upload.get("staged_file_id") or "")
         drive_parent = await self.store.drive.ensure_folder_path(annual_parts)
         if not file_id:
             found = await self.uploader.find_named_file(drive_parent, staging_name)
@@ -445,7 +461,8 @@ class WBFinanceResumableWorker:
         if not self._metadata_matches(meta, expected_bytes, expected_sha):
             raise RuntimeError("Drive staged upload failed exact size/SHA256 verification")
 
-        # The canonical Drive file is still untouched at this point.
+        # The canonical Drive file is still untouched at this point unless this
+        # is an exact-ID retry after an uncertain promotion response.
         await self._verify_candidate_and_backup(
             candidate_id=candidate_id,
             annual_parts=annual_parts,
@@ -470,6 +487,7 @@ class WBFinanceResumableWorker:
         promoted = await self.store.drive.promote_verified_file(
             parent_id=drive_parent,
             file_id=file_id,
+            staging_name=staging_name,
             canonical_name=annual_name,
             expected_bytes=expected_bytes,
             expected_sha256=expected_sha,
