@@ -8,7 +8,8 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Human mirror: `ARCHITECTURE.md`.
 - Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
 - Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the report registry are the source of truth.
-- Google Drive OAuth refresh credentials live in Yandex Lockbox; runtime access tokens exist only in memory.
+- Google Drive access uses the owner's deployed Google Apps Script web-app bridge. Its shared bridge secret lives in Yandex Lockbox; the MCP must not depend on a Google Cloud OAuth refresh token.
+- The Apps Script bridge is only the transport/authentication surface into the fixed archive root; it must not become a parallel source of truth.
 - **Yandex Object Storage** remains required for durable archive queue/job state, per-report staging, and a secondary byte-for-byte backup of canonical Drive files.
 - Yandex Object Storage runtime auth uses the Serverless Container service account and a temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
 - Canonical archive writes must succeed on Google Drive first; do not silently fall back to Yandex as the source of truth.
