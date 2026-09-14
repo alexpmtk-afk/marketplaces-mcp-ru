@@ -18,6 +18,7 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Do not introduce a new cloud provider, primary storage path, or parallel architecture without an explicit architecture change.
 - Any architecture change must update `core/system_map.py`, `ARCHITECTURE.md`, guardrail tests, and pass CI/security/deployment acceptance in the same change.
 - If implementation and canonical architecture conflict, fail closed and surface the conflict instead of silently changing architecture.
+- Semantic Core historical fulfillment (`deliveryMethod` / `officeName`) and historical warehouse tariff context (`dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `warehouseLogisticsCoeff`) are archive observations only. Never promote them to current configuration or live tariff truth; current-state questions require a suitable live source or must fail closed.
 
 ## Before every commit / push
 - `pre-commit run --all-files` (or at minimum the two local hooks below).
