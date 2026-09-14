@@ -1,4 +1,4 @@
-version: 2026-09-14.v3
+version: 2026-09-14.v4
 policy:
   fail_closed: true
   require_full_coverage: true
@@ -82,3 +82,38 @@ executors:
       wb_reward_adjustment_amount: additionalPayment
     product_filter_field: nmId
     semantics: Keep deduction and additionalPayment separate. deduction is summed as the report's deduction field; additionalPayment is the WB-remuneration adjustment field and must not be interpreted as a payment to the seller or netted against deductions without a separately approved rule.
+  commission_and_wb_reward:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: saleDt
+    amount_field: vw
+    currency_field: currency
+    operation_field: docTypeName
+    sale_value: Продажа
+    return_value: Возврат
+    mode: sale_return_component_summary
+    components:
+      wb_reward_without_vat: vw
+      wb_reward_vat: vwNds
+    combined_components:
+      wb_reward_including_vat: [wb_reward_without_vat, wb_reward_vat]
+    product_filter_field: nmId
+    semantics: Calculate the money actually reported as Wildberries reward from vw and vwNds only. Keep Продажа and Возврат buckets explicit and report the net as Продажа minus Возврат. Do not derive monetary commission from commissionPercent/kvw/kvwBase and do not add acquiringFee, ppvzReward or ppvzSalesCommission to this total.
+  acquiring_and_payment_processing:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: saleDt
+    amount_field: acquiringFee
+    currency_field: currency
+    operation_field: docTypeName
+    sale_value: Продажа
+    return_value: Возврат
+    mode: sale_return_component_summary
+    components:
+      weekly_payment_processing_fee: acquiringFee
+    breakdown_fields: [paymentProcessing, acquiringBank]
+    product_filter_field: nmId
+    data_class: PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING
+    semantics: acquiringFee in the weekly realization detail is the weekly payment-acceptance/acquiring amount reflected in that report. Keep Продажа and Возврат explicit and report net as Продажа minus Возврат. This is not the final monthly payment-acceptance expense under the separate acquiring-expense report/offer reconciliation.
