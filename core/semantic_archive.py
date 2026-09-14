@@ -264,7 +264,7 @@ def validate_semantic_execution(
                     f"semantic executor {capability_id} has invalid primary dimension {primary_dimension!r}"
                 )
             primary_meta = field_catalog.get(primary_dimension) or {}
-            if primary_meta.get("role") not in {"dimension", "identifier", "flag"}:
+            if primary_meta.get("role") not in {"dimension", "identifier", "flag", "measure"}:
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} primary dimension has unsafe role"
                 )
@@ -278,7 +278,7 @@ def validate_semantic_execution(
                 )
             for field in context_dimensions:
                 meta = field_catalog.get(field) or {}
-                if meta.get("role") not in {"dimension", "identifier", "flag"}:
+                if meta.get("role") not in {"dimension", "identifier", "flag", "measure", "date"}:
                     raise SemanticArchiveExecutionError(
                         f"semantic executor {capability_id} context dimension {field!r} has unsafe role"
                     )
