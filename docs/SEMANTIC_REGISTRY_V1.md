@@ -1,4 +1,4 @@
-# Semantic Registry — WB Weekly Report Semantics (v5)
+# Semantic Registry — WB Weekly Report Semantics (v6)
 
 This is the machine-readable knowledge, intent-routing and gated archive-calculation layer for the data that actually exists in the canonical archive today.
 
@@ -52,16 +52,40 @@ Current approved calculations:
 - `acceptance_charge` → sum `paidAcceptance` exactly as reported by report currency;
 - `sale_and_return_operations` → use `saleDt`, split by `docTypeName`, report sales and returns separately and calculate net as `Продажа - Возврат` for both `retailAmount` and `quantity`;
 - `logistics` → use `rrDate`, keep `deliveryService` and `rebillLogisticCost` as separate monetary components, keep `deliveryAmount` and `returnAmount` as logistics counts, and preserve breakdown by operation/reason;
-- `deductions_and_adjustments` → use `rrDate`, keep `deduction` and `additionalPayment` separate. `additionalPayment` is the report field for WB-remuneration adjustment and is not renamed to seller payout or netted against `deduction`.
+- `deductions_and_adjustments` → use `rrDate`, keep `deduction` and `additionalPayment` separate. `additionalPayment` is the report field for WB-remuneration adjustment and is not renamed to seller payout or netted against `deduction`;
+- `commission_and_wb_reward` → use `saleDt`, explicit `Продажа`/`Возврат` buckets and only the monetary report fields `vw` and `vwNds`. The report may expose rate/intermediate fields such as `commissionPercent`, `kvw`, `kvwBase` and `ppvzSalesCommission`, but the money executor does not convert or add them;
+- `acquiring_and_payment_processing` → use `saleDt`, explicit `Продажа`/`Возврат` buckets and `acquiringFee`; optional breakdown is by `paymentProcessing` and `acquiringBank`. The returned data class is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`, not final monthly acquiring expense.
 
 Different currencies are never added into one cross-currency total. Distinct financial components are also never silently netted into one amount. Provider signs are preserved except where a separately approved formula explicitly defines operation-type subtraction, as with sales minus returns.
+
+### Commission / WB reward boundary
+
+The phrase “комиссия WB” can mean either a money amount or a rate. The resolver treats these meanings separately:
+
+- monetary reward/commission questions may execute from `vw` and `vwNds`;
+- `vw` is treated as the reported WB reward without VAT and `vwNds` as VAT on that reward;
+- sale and return buckets remain explicit, and the net amount is `Продажа - Возврат`;
+- `commissionPercent`, `kvw` and `kvwBase` are rates/context, not money; a question asking for a percentage/rate does not use the monetary executor;
+- acquiring, PVZ service amounts and intermediate commission fields are not silently added to WB reward.
+
+### Acquiring / payment-acceptance boundary
+
+The weekly report exposes `acquiringFee`, but this is not automatically the final actual payment-acceptance expense. The current WB contract distinguishes preliminary weekly withholding/advancing from the final monthly expense reconciliation.
+
+Therefore:
+
+- a normal weekly/historical acquiring question may execute from `acquiringFee` with the data class `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`;
+- `Продажа` and `Возврат` are calculated separately and the net is explicit sale minus return;
+- `paymentProcessing` and `acquiringBank` are available as breakdown dimensions;
+- a question explicitly asking for final/actual acquiring or the `Отчёт об издержках на приём платежей` does **not** use weekly `acquiringFee`;
+- that final monthly report is not currently in the canonical database, so the request fails closed instead of being approximated.
 
 ## Resolution order
 
 1. If the user explicitly names a physical column, return that column's registered semantics first.
 2. Otherwise match the question to a deterministic semantic route.
 3. If the route maps to a weekly-report capability, return only the fields registered for that capability and its guardrail.
-4. If the route requires a report/source absent from the database, return `REQUIRES_OTHER_SOURCE`.
+4. If the route requires a report/source absent from the database, return `REQUIRES_OTHER_SOURCE` or an explicit fail-closed source boundary.
 5. Explicit current-state questions do not fall back to historical weekly-report fields.
 6. Unknown/ambiguous questions fail closed.
 7. Archive calculation is allowed only for a capability in `semantic_execution.yaml` and only after `FULL_COVERAGE` is proven.
@@ -79,7 +103,11 @@ Examples:
 - “Сколько было продаж?” → approved archive calculation: sale and return buckets are computed separately and the net result is explicit `Продажа - Возврат`.
 - “Сколько стоила логистика?” → approved archive calculation, but `deliveryService` and `rebillLogisticCost` are returned separately rather than merged into one guessed total.
 - “Какие были удержания?” → approved archive calculation using `deduction`; `additionalPayment` is shown separately as a WB-remuneration adjustment field.
-- “Какая комиссия WB сейчас?” → `REQUIRES_OTHER_SOURCE`; a current rate must not be inferred from a historical finance row.
+- “Какая сумма комиссии WB за период?” → approved monetary reward calculation from `vw` and `vwNds`, with explicit sale/return buckets.
+- “Какой процент комиссии WB был?” → fail closed for the monetary executor; rate fields are not money and require their own approved rate analysis.
+- “Сколько было эквайринга за неделю?” → approved `acquiringFee` calculation marked `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`.
+- “Какие окончательные издержки на приём платежей?” → do not use weekly `acquiringFee`; the separate final monthly report is required and is absent from the canonical archive.
+- “Какая комиссия WB сейчас?” → current-state request does not infer a live rate from historical finance rows.
 - Any Ozon question → `REQUIRES_OTHER_SOURCE` while no Ozon report dataset exists in the canonical archive.
 
 ## Core guardrails
@@ -90,6 +118,8 @@ Examples:
 - A numeric field is not automatically summable for every business question.
 - `deliveryService` and `rebillLogisticCost` are separate logistics components and are not automatically netted or merged.
 - `deduction` and `additionalPayment` are separate financial components; `additionalPayment` must not be relabeled as a seller payout without explicit evidence.
+- Monetary WB reward uses `vw` / `vwNds`; percentage fields are not silently converted to money.
+- Weekly `acquiringFee` is not silently upgraded to final monthly payment-acceptance expense.
 - Reference-only sources cannot be selected for archive execution.
 - Explicit current-state questions cannot silently use historical archive values.
 - Unknown or ambiguous questions must not trigger free-form archive SQL.
@@ -106,8 +136,9 @@ Primary semantic references:
 
 - Wildberries Seller Help: “Детализация еженедельного отчёта реализации”.
 - Wildberries Seller Help: “Еженедельные отчёты реализации”.
+- Wildberries current offer / payment-acceptance terms: preliminary weekly withholding versus final monthly `Отчёт об издержках на приём платежей`.
 - Wildberries API documentation: financial reports / detailed realization report.
 - Canonical archive header observed on 2026-09-14: 92 columns in `wb_weekly_finance_main`.
-- Canonical archive row inspection confirms separate `deliveryService`, `rebillLogisticCost`, `deduction` and `additionalPayment` columns and operation-level values.
+- Canonical archive row inspection confirms separate `deliveryService`, `rebillLogisticCost`, `deduction`, `additionalPayment`, `vw`, `vwNds`, `acquiringFee`, `paymentProcessing` and `acquiringBank` fields and operation-level values.
 
 Where Wildberries changes field semantics in future API/report versions, the registry, intent routing and execution allow-list must be versioned and reviewed before those changes become executable.
