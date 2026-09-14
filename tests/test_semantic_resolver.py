@@ -70,6 +70,28 @@ def test_explicit_current_state_never_falls_back_to_historical_archive():
     assert result["next_action"] == "DO_NOT_QUERY_WEEKLY_ARCHIVE"
 
 
+def test_monetary_wb_reward_and_commission_rate_are_different_intents():
+    money = resolve_semantic_question("Какая сумма комиссии WB за август?")
+    assert money["status"] == "AVAILABLE"
+    assert money["capability_id"] == "commission_and_wb_reward"
+
+    rate = resolve_semantic_question("Какой процент комиссии WB был за август?")
+    assert rate["status"] == "REQUIRES_OTHER_SOURCE"
+    assert rate["route_id"] == "commission_rate_not_money"
+    assert rate["next_action"] == "DO_NOT_QUERY_WEEKLY_ARCHIVE"
+
+
+def test_weekly_acquiring_and_final_payment_expenses_are_different_intents():
+    weekly = resolve_semantic_question("Сколько было эквайринга за август?")
+    assert weekly["status"] == "AVAILABLE"
+    assert weekly["capability_id"] == "acquiring_and_payment_processing"
+
+    final = resolve_semantic_question("Какие окончательные издержки на приём платежей за август?")
+    assert final["status"] == "REQUIRES_OTHER_SOURCE"
+    assert final["route_id"] == "final_acquiring_expenses"
+    assert final["next_action"] == "DO_NOT_QUERY_WEEKLY_ARCHIVE"
+
+
 def test_sales_genitive_form_resolves_to_sale_operations():
     result = resolve_semantic_question("Сколько было продаж за этот период?")
     assert result["status"] == "AVAILABLE"
@@ -86,4 +108,4 @@ def test_unknown_question_fails_closed():
 def test_intent_catalog_validates_against_registry():
     intents = load_semantic_intents()
     assert intents["policy"]["fail_closed_on_unknown"] is True
-    assert len(intents["routes"]) >= 20
+    assert len(intents["routes"]) >= 22
