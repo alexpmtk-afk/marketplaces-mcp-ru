@@ -11,6 +11,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .archive_queue import WBFinanceArchiveJobQueue
+from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
 from .archive_resumable_worker import WBFinanceResumableWorker
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
@@ -31,8 +32,8 @@ def _not_configured() -> str:
         "error": "archive_storage_not_configured",
         "message": (
             "Central archive requires canonical Google Drive storage through the Apps Script bridge "
-            "plus Yandex Object Storage for durable queue/staging. Large annual CSV writes additionally "
-            "use direct Google Drive resumable upload with OAuth stored in Yandex Lockbox. Check "
+            "plus Yandex Object Storage for durable queue/staging. Large annual CSV writes use "
+            "Google Drive resumable sessions brokered by Apps Script. Check "
             "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
             "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET, "
             "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID and MARKETPLACE_MCP_ARCHIVE_BUCKET."
@@ -41,11 +42,7 @@ def _not_configured() -> str:
     })
 
 
-async def _query_year(
-    store: Any,
-    year: int,
-    sql: str,
-) -> dict[str, Any]:
+async def _query_year(store: Any, year: int, sql: str) -> dict[str, Any]:
     statement = str(sql).strip()
     if statement.endswith(";"):
         statement = statement[:-1].strip()
@@ -106,33 +103,19 @@ async def _query_year(
             conn.close()
 
 
-def register_archive_tools(
-    mcp: FastMCP,
-    modules: dict[str, Any],
-    store: Any | None,
-) -> None:
+def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | None) -> None:
     wb = modules["wb"]
 
     @mcp.tool(
         name="marketplace_archive_update",
-        annotations={
-            "title": "Queue central marketplace database archive update",
-            "readOnlyHint": False,
-            "openWorldHint": True,
-        },
+        annotations={"title": "Queue central marketplace database archive update", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_archive_update(
         year: int = date.today().year,
         seller: str = "all",
         max_reports_per_cabinet: int = 4,
     ) -> str:
-        """Queue a durable WB archive job instead of holding one long MCP call.
-
-        Job state/staging is durable in Yandex Object Storage. Final annual CSV
-        files and the report registry are canonical on Google Drive. A worker
-        step performs at most one WB API request; quota waits are rescheduled.
-        ``max_reports_per_cabinet`` is retained only for client compatibility.
-        """
+        """Queue a durable WB archive job instead of holding one long MCP call."""
         del max_reports_per_cabinet
         if store is None:
             return _not_configured()
@@ -151,20 +134,10 @@ def register_archive_tools(
 
     @mcp.tool(
         name="marketplace_archive_worker_step",
-        annotations={
-            "title": "Process one durable archive queue step",
-            "readOnlyHint": False,
-            "openWorldHint": True,
-        },
+        annotations={"title": "Process one durable archive queue step", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_archive_worker_step(job_id: str = "") -> str:
-        """Run one bounded durable archive step.
-
-        Provider download stages perform at most one WB API request. Large
-        annual-file writes use one Google Drive resumable-upload chunk per step,
-        so an interrupted client connection does not require resending the full
-        annual CSV.
-        """
+        """Run one bounded durable archive step."""
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
@@ -172,12 +145,30 @@ def register_archive_tools(
         return _j(await worker.worker_step(job_id))
 
     @mcp.tool(
-        name="marketplace_archive_job_status",
+        name="marketplace_archive_resumable_diagnostic_step",
         annotations={
-            "title": "Durable archive job status",
-            "readOnlyHint": True,
-            "openWorldHint": False,
+            "title": "Verify existing archive candidate through temporary Drive resumable copy",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "openWorldHint": True,
         },
+    )
+    async def marketplace_archive_resumable_diagnostic_step(job_id: str) -> str:
+        """Upload only a temporary copy of an existing PREPARE candidate.
+
+        This diagnostic never advances completed_count, never calls WB, never
+        repeats PREPARE, and never overwrites the canonical annual filename.
+        After exact Drive size/SHA256 verification the temporary copy is trashed.
+        """
+        if store is None:
+            return _not_configured()
+        queue = WBFinanceArchiveJobQueue(wb, store)
+        diagnostic = WBFinanceResumableDiagnostic(queue, store)
+        return _j(await diagnostic.step(job_id))
+
+    @mcp.tool(
+        name="marketplace_archive_job_status",
+        annotations={"title": "Durable archive job status", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_archive_job_status(job_id: str) -> str:
         """Show persisted progress for an archive queue job."""
@@ -188,11 +179,7 @@ def register_archive_tools(
 
     @mcp.tool(
         name="marketplace_archive_status",
-        annotations={
-            "title": "Marketplace archive status",
-            "readOnlyHint": True,
-            "openWorldHint": False,
-        },
+        annotations={"title": "Marketplace archive status", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_archive_status(year: int = date.today().year) -> str:
         """Show central WB archive coverage and canonical annual-file state."""
@@ -203,21 +190,10 @@ def register_archive_tools(
 
     @mcp.tool(
         name="marketplace_archive_query",
-        annotations={
-            "title": "Query WB annual archive",
-            "readOnlyHint": True,
-            "openWorldHint": False,
-        },
+        annotations={"title": "Query WB annual archive", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_archive_query(year: int, sql: str) -> str:
-        """Run safe read-only SQL over canonical annual WB CSV files on Drive.
-
-        The server exposes views named ``wb_dmitrieva``, ``wb_novokshenov``,
-        ``wb_laser_master`` and union view ``wb_all``. Use this for historical
-        questions covered by the archive rather than repeatedly calling WB APIs.
-        Only SELECT/WITH is accepted; mutating/external-reader SQL is blocked.
-        At most 1000 result rows are returned.
-        """
+        """Run safe read-only SQL over canonical annual WB CSV files on Drive."""
         if store is None:
             return _not_configured()
         return _j(await _query_year(store, int(year), sql))
