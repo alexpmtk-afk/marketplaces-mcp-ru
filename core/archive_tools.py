@@ -15,6 +15,7 @@ from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
 from .archive_resumable_worker import WBFinanceResumableWorker
 from .wb_advertising_archive import ARCHIVE_CABINETS as ADS_ARCHIVE_CABINETS
 from .wb_advertising_archive_queue import WBAdvertisingArchiveJobQueue
+from .wb_advertising_archive_worker import WBAdvertisingArchiveWorker
 from .wb_finance_archive import ARCHIVE_CABINETS, WBFinanceArchiveManager
 
 _BLOCKED_SQL = re.compile(
@@ -117,7 +118,6 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         seller: str = "all",
         max_reports_per_cabinet: int = 4,
     ) -> str:
-        """Queue a durable WB archive job instead of holding one long MCP call."""
         del max_reports_per_cabinet
         if store is None:
             return _not_configured()
@@ -139,7 +139,6 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         annotations={"title": "Process one durable archive queue step", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_archive_worker_step(job_id: str = "") -> str:
-        """Run one bounded durable archive step."""
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
@@ -156,12 +155,6 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         },
     )
     async def marketplace_archive_resumable_diagnostic_step(job_id: str) -> str:
-        """Upload only a temporary copy of an existing PREPARE candidate.
-
-        This diagnostic never advances completed_count, never calls WB, never
-        repeats PREPARE, and never overwrites the canonical annual filename.
-        After exact Drive size/SHA256 verification the temporary copy is trashed.
-        """
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
@@ -173,7 +166,6 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         annotations={"title": "Durable archive job status", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_archive_job_status(job_id: str) -> str:
-        """Show persisted progress for an archive queue job."""
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
@@ -184,7 +176,6 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         annotations={"title": "Marketplace archive status", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_archive_status(year: int = date.today().year) -> str:
-        """Show central WB archive coverage and canonical annual-file state."""
         if store is None:
             return _not_configured()
         manager = WBFinanceArchiveManager(wb, store)
@@ -195,20 +186,19 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         annotations={"title": "Query WB annual archive", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_archive_query(year: int, sql: str) -> str:
-        """Run safe read-only SQL over canonical annual WB CSV files on Drive."""
         if store is None:
             return _not_configured()
         return _j(await _query_year(store, int(year), sql))
 
     @mcp.tool(
         name="marketplace_advertising_archive_update",
-        annotations={"title": "Queue WB advertising archive ingestion", "readOnlyHint": False, "openWorldHint": True},
+        annotations={"title": "Queue WB advertising archive update", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_advertising_archive_update(
         year: int = date.today().year,
         seller: str = "all",
     ) -> str:
-        """Queue durable WB advertising-history ingestion for one or all cabinets."""
+        """Queue durable WB advertising-history collection and verified archive commit."""
         if store is None:
             return _not_configured()
         queue = WBAdvertisingArchiveJobQueue(wb, store)
@@ -223,27 +213,27 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             "jobs": jobs,
             "instruction": (
                 "Process queued jobs with marketplace_advertising_archive_worker_step. "
-                "Ingestion stops safely at READY_TO_COMMIT until verified Drive commit is available."
+                "The same worker performs provider ingestion, verified Drive publication and coverage commit."
             ),
         })
 
     @mcp.tool(
         name="marketplace_advertising_archive_worker_step",
-        annotations={"title": "Process one WB advertising archive ingestion step", "readOnlyHint": False, "openWorldHint": True},
+        annotations={"title": "Process one WB advertising archive step", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_advertising_archive_worker_step(job_id: str = "") -> str:
-        """Run one bounded advertising ingestion step; at most one WB request is sent."""
+        """Run one bounded end-to-end advertising archive step."""
         if store is None:
             return _not_configured()
         queue = WBAdvertisingArchiveJobQueue(wb, store)
-        return _j(await queue.worker_step(job_id))
+        worker = WBAdvertisingArchiveWorker(queue, store)
+        return _j(await worker.worker_step(job_id))
 
     @mcp.tool(
         name="marketplace_advertising_archive_job_status",
-        annotations={"title": "WB advertising archive ingestion status", "readOnlyHint": True, "openWorldHint": False},
+        annotations={"title": "WB advertising archive status", "readOnlyHint": True, "openWorldHint": False},
     )
     async def marketplace_advertising_archive_job_status(job_id: str) -> str:
-        """Show durable progress for one WB advertising archive job."""
         if store is None:
             return _not_configured()
         queue = WBAdvertisingArchiveJobQueue(wb, store)
