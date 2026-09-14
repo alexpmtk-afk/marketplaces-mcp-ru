@@ -34,14 +34,21 @@ def test_canonical_map_fixes_storage_boundaries():
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
 
 
-def test_semantic_core_is_registered_but_not_runtime_wired():
+def test_semantic_core_has_gated_executor_but_is_not_runtime_wired():
     semantic = SYSTEM_MAP["semantic_core"]
-    assert semantic["status"] == "KNOWLEDGE_AND_RESOLVER_PRESENT_NOT_RUNTIME_ROUTED"
+    assert semantic["status"] == "KNOWLEDGE_RESOLVER_AND_GATED_ARCHIVE_EXECUTOR_PRESENT_NOT_RUNTIME_ROUTED"
     assert semantic["registry"] == "core/semantic_registry.yaml"
     assert semantic["intent_catalog"] == "core/semantic_intents.yaml"
     assert semantic["resolver"] == "core/semantic_resolver.py"
+    assert semantic["execution_registry"] == "core/semantic_execution.yaml"
+    assert semantic["archive_executor"] == "core/semantic_archive.py"
     assert semantic["current_archive_dataset"] == "wb_weekly_finance_main"
-    assert "REQUIRES_OTHER_SOURCE" in semantic["resolution_outcomes"]
+    assert set(semantic["approved_archive_executors"]) == {
+        "penalties",
+        "storage_charge",
+        "acceptance_charge",
+    }
+    assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert "not yet wired" in semantic["runtime_integration"]
 
 
@@ -55,6 +62,7 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "source of truth" in SYSTEM_INSTRUCTIONS
     assert "Google Cloud is not part" in SYSTEM_INSTRUCTIONS
     assert "Semantic Core" in SYSTEM_INSTRUCTIONS
+    assert "FULL_COVERAGE" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -76,6 +84,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Google Apps Script" in architecture
     assert "Yandex Object Storage" in architecture
     assert "core/semantic_resolver.py" in architecture
+    assert "core/semantic_execution.yaml" in architecture
+    assert "core/semantic_archive.py" in architecture
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
     assert "Google Apps Script" in agents

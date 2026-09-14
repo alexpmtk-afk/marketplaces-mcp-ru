@@ -1,6 +1,6 @@
-# Semantic Registry — WB Weekly Report Semantics (v3)
+# Semantic Registry — WB Weekly Report Semantics (v4)
 
-This is the machine-readable knowledge and intent-routing layer for the data that actually exists in the canonical archive today.
+This is the machine-readable knowledge, intent-routing and gated archive-calculation layer for the data that actually exists in the canonical archive today.
 
 ## Current database truth
 
@@ -33,7 +33,25 @@ The physical 92-column schema and the semantic catalog must match exactly.
 - `AMBIGUOUS` — several incompatible semantic routes match;
 - `UNKNOWN` — no confirmed semantic route exists.
 
-Resolution itself does not execute SQL. It identifies the allowed capability/fields or refuses the archive route. A later query planner must still verify period coverage before execution.
+Resolution itself does not automatically authorize SQL. It identifies the allowed capability/fields or refuses the archive route.
+
+## Coverage-gated archive execution
+
+`core/semantic_execution.yaml` is a separate execution allow-list. `core/semantic_archive.py` may reach the canonical archive only when all gates pass:
+
+1. the question resolves to a weekly-report capability;
+2. that capability is explicitly approved in `semantic_execution.yaml`;
+3. `reports_registry.csv` proves `FULL_COVERAGE` for the entire requested period using `COMPLETE` fragments;
+4. the referenced canonical annual CSV exists;
+5. the query is generated from registered fields, not free-form LLM SQL.
+
+Current approved calculations are deliberately narrow:
+
+- `penalties` → sum `penalty` exactly as reported, with breakdown by report currency and reason from `bonusTypeName` / `sellerOperName`;
+- `storage_charge` → sum `paidStorage` exactly as reported by report currency;
+- `acceptance_charge` → sum `paidAcceptance` exactly as reported by report currency.
+
+Provider signs are preserved. Different currencies are never added into one cross-currency total. All other recognized capabilities, including sales and commissions, remain non-executable until their formulas are separately approved.
 
 ## Resolution order
 
@@ -43,37 +61,37 @@ Resolution itself does not execute SQL. It identifies the allowed capability/fie
 4. If the route requires a report/source absent from the database, return `REQUIRES_OTHER_SOURCE`.
 5. Explicit current-state questions do not fall back to historical weekly-report fields.
 6. Unknown/ambiguous questions fail closed.
-7. Before any future archive execution, require `FULL_COVERAGE` for the requested period.
+7. Archive calculation is allowed only for a capability in `semantic_execution.yaml` and only after `FULL_COVERAGE` is proven.
 
 Examples:
 
-- “По какой схеме отгружался товар?” → `observed_fulfillment_method`, using `deliveryMethod` and related historical fields. This answers what was observed in archived operations, not the seller's current configuration.
+- “По какой схеме отгружался товар?” → `observed_fulfillment_method`, using `deliveryMethod` and related historical fields. This answers what was observed in archived operations, not the seller's current configuration. It is currently knowledge-only, not an approved archive aggregate.
 - “Какая схема отгрузки сейчас?” → `REQUIRES_OTHER_SOURCE`; historical `deliveryMethod` is not used as current truth.
-- “Сколько штрафов и за что?” → `penalties`, using `penalty` plus `bonusTypeName` / `sellerOperName`.
+- “Сколько штрафов и за что?” → approved archive calculation using `penalty` plus `bonusTypeName` / `sellerOperName`, but only with `FULL_COVERAGE`.
 - “Сколько было всех оформленных заказов?” → `REQUIRES_OTHER_SOURCE`; do **not** count `orderDt` or `orderUid` from this financial report. Complete order flow requires the WB Order Feed, which is not currently in the archive.
-- “Какая дата заказа у этой продажи?” → `order_context_attribute`; `orderDt` is valid as an attribute of the reported operation.
-- “Сколько списали за хранение?” → `storage_charge`; `paidStorage` can answer the charge present in the weekly report.
+- “Какая дата заказа у этой продажи?” → `order_context_attribute`; `orderDt` is valid as an attribute of the reported operation, but it is not a complete orders dataset.
+- “Сколько списали за хранение?” → approved archive calculation using `paidStorage` with `FULL_COVERAGE`.
 - “Как рассчитано хранение по дням?” → `REQUIRES_OTHER_SOURCE`; the dedicated paid-storage report is required and is currently absent.
+- “Сколько списали за приёмку?” → approved archive calculation using `paidAcceptance` with `FULL_COVERAGE`.
 - “Какая комиссия WB сейчас?” → `REQUIRES_OTHER_SOURCE`; a current rate must not be inferred from a historical finance row.
-- “Что означает поле deliveryMethod?” → direct field semantics from the 92-column field passport.
+- “Сколько было продаж?” → recognized semantically, but archive execution remains blocked until a separate sales formula is approved.
 - Any Ozon question → `REQUIRES_OTHER_SOURCE` while no Ozon report dataset exists in the canonical archive.
 
 ## Core guardrails
 
 - `orderDt` is an attribute of a reported operation, not a complete orders dataset.
 - `deliveryMethod`, `officeName`, tariff coefficients and similar fields describe historical reported operations; they do not prove current configuration.
-- Service rows (logistics, storage, penalties, deductions, acceptance, etc.) must not be mixed with product sale/return rows without an explicit operation filter.
+- Service rows must not be mixed with product sale/return rows without an explicit approved formula.
 - A numeric field is not automatically summable for every business question.
 - Reference-only sources cannot be selected for archive execution.
 - Explicit current-state questions cannot silently use historical archive values.
 - Unknown or ambiguous questions must not trigger free-form archive SQL.
-- Archive execution requires `FULL_COVERAGE` in `reports_registry.csv`.
+- Archive execution requires `FULL_COVERAGE` in `reports_registry.csv` and canonical annual-file presence.
+- Money is summed exactly as reported; signs are not rewritten and currencies are not mixed.
 
-## Current semantic capabilities from the weekly report
+## Runtime status
 
-The registry explicitly covers report metadata, product identity, sale/return operations, order context, observed fulfillment method, warehouse/tariff context, logistics, penalties, storage charges, paid acceptance, deductions/adjustments, WB commission and reward, acquiring/payment processing, pickup-point context, promotions/loyalty/cashback, B2B attributes, traceability/marking, and geography attached to reported operations.
-
-This still does **not** wire the resolver into `marketplace_business_query`; runtime execution remains unchanged until a later controlled integration step.
+The gated archive executor exists and is covered by tests, but it is **not yet wired into `marketplace_business_query`**. The current change establishes the safe execution layer first; runtime integration remains a separate controlled step.
 
 ## Evidence
 
@@ -84,4 +102,4 @@ Primary semantic references:
 - Wildberries API documentation: financial reports / detailed realization report.
 - Canonical archive header observed on 2026-09-14: 92 columns in `wb_weekly_finance_main`.
 
-Where Wildberries changes field semantics in future API/report versions, the registry and intent routing must be versioned and reviewed before those changes become executable.
+Where Wildberries changes field semantics in future API/report versions, the registry, intent routing and execution allow-list must be versioned and reviewed before those changes become executable.

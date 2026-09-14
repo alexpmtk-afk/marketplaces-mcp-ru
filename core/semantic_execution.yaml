@@ -1,0 +1,39 @@
+version: 2026-09-14.v1
+policy:
+  fail_closed: true
+  require_full_coverage: true
+  sum_as_reported: true
+  cross_currency_sum_forbidden: true
+  current_state_forbidden_from_weekly_archive: true
+executors:
+  penalties:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: penalty
+    currency_field: currency
+    mode: grouped_reason_amount
+    reason_fields: [bonusTypeName, sellerOperName]
+    product_filter_field: nmId
+    semantics: Sum penalty exactly as reported, grouped by report currency and reason. Do not convert sign or currency.
+  storage_charge:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: paidStorage
+    currency_field: currency
+    mode: sum_by_currency
+    product_filter_field: nmId
+    semantics: Sum paidStorage exactly as reported for the covered calculation period. Detailed storage drivers are not available here.
+  acceptance_charge:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: paidAcceptance
+    currency_field: currency
+    mode: sum_by_currency
+    product_filter_field: nmId
+    semantics: Sum paidAcceptance exactly as reported for the covered calculation period. Detailed acceptance operations are not available here.
