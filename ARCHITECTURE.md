@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-13.v3`
+**Version:** `2026-09-14.v4`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -15,13 +15,14 @@ Supporting services:
 - Canonical marketplace archive: **Google Drive** folder `MCP архив базы данных`.
 - Durable queue/job state and staging: **Yandex Object Storage**.
 - Secondary byte-for-byte backup of canonical archive files: Yandex Object Storage.
-- Google Drive authentication: long-lived OAuth refresh credential in Yandex Lockbox; access tokens exist only in runtime memory.
+- Google Drive access: owner-operated **Google Apps Script web-app bridge**. The bridge executes as the Drive owner and is authenticated by a shared secret kept in Yandex Lockbox.
 - Yandex Object Storage authentication: temporary IAM token obtained by the Serverless Container from its runtime service-account metadata; no static archive key is required.
 
 ## Hard boundaries
 
-- Google Cloud is not part of the runtime architecture; only the Google Drive API is used as the canonical archive storage surface.
+- Google Cloud is not part of the runtime architecture. The MCP does not depend on a Google Cloud OAuth refresh token.
 - Google Drive annual CSV files and the report registry are the archive source of truth.
+- The Apps Script bridge is only a transport/authentication surface into the fixed Drive archive root; it is not a second source of truth.
 - Yandex Object Storage must not replace Drive as canonical data; it is used for durable queue/staging and backup.
 - Local files or chat memory are never authoritative shared state.
 - No new cloud provider or primary storage path may be introduced without an explicit architecture change.
@@ -30,7 +31,7 @@ Supporting services:
 
 - Archive state is server-owned and shared by every client.
 - Annual CSV files and the archive registry live canonically on Google Drive under `MCP архив базы данных`.
-- Each canonical write is committed to Google Drive first and then copied byte-for-byte to Yandex Object Storage as a backup.
+- Each canonical write is committed to Google Drive first through the Apps Script bridge and then copied byte-for-byte to Yandex Object Storage as a backup.
 - Existing canonical files left in Yandex by the previous architecture are migrated to Google Drive on first read when Drive does not yet contain that file. Provider data is not re-downloaded for this migration.
 - Queue state and temporary per-report staging remain in Yandex Object Storage so in-flight jobs survive deployments and client disconnects.
 - Update is idempotent and registry-driven; already-complete provider reports are not downloaded again.
@@ -42,6 +43,15 @@ Supporting services:
 - A logical WB week is Monday-Sunday.
 - If WB splits one logical week across month/year boundaries, all physical `reportId` fragments belong to that same logical week.
 - `reportType=2` (`По выкупам`) is a separate dataset and must never be mixed into MAIN.
+
+## Google Drive bridge contract
+
+The Yandex-hosted MCP talks to one deployed Apps Script web app. Runtime configuration is:
+- `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL` — non-secret `/exec` URL of the deployed web app;
+- `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET` — shared secret injected from Yandex Lockbox;
+- `MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID` — expected fixed archive root ID.
+
+The bridge supports only narrow archive operations: health/status, named-file stat/read/write under the fixed archive root, and explicit file reads required by the storage interface. Server acceptance must verify the exact root ID and root name before the archive is considered reachable.
 
 ## Routing rules
 
