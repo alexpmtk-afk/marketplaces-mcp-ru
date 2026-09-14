@@ -1,177 +1,669 @@
-version: 2026-09-14.v1
+version: 2026-09-14.v2
 policy:
   fail_closed: true
-  executable_binding_status: APPROVED
-  recognized_does_not_mean_executable: true
-metrics:
-  ORDERS_UNITS:
-    marketplace: wb
-    business_metric: ORDERS
-    measure: UNITS
-    status: APPROVED
-    source_id: wb_stats_orders
-    event_date_field: date
-    timezone: Europe/Moscow
-    formula: COUNT(rows WHERE date in requested period AND isCancel=false)
-    dedup_key: [srid]
-    quality: preliminary_operational
-  ORDERS_AMOUNT_RUB:
-    marketplace: wb
-    business_metric: ORDERS
-    measure: AMOUNT_RUB
-    status: APPROVED
-    source_id: wb_stats_orders
-    event_date_field: date
-    timezone: Europe/Moscow
-    formula: SUM(finishedPrice WHERE date in requested period AND isCancel=false)
-    dedup_key: [srid]
-    quality: preliminary_operational
-  SALES_NET_UNITS:
-    marketplace: wb
-    business_metric: SALES
-    measure: UNITS
-    status: APPROVED
-    source_id: wb_stats_sales
-    event_date_field: date
-    timezone: Europe/Moscow
-    formula: COUNT(saleID startswith 'S') - COUNT(saleID startswith 'R')
-    dedup_key: [saleID]
-    quality: preliminary_operational
-  SALES_NET_AMOUNT_RUB:
-    marketplace: wb
-    business_metric: SALES
-    measure: AMOUNT_RUB
-    status: APPROVED
-    source_id: wb_stats_sales
-    event_date_field: date
-    timezone: Europe/Moscow
-    formula: SUM(finishedPrice for sale and return events; provider return rows are negative)
-    dedup_key: [saleID]
-    quality: preliminary_operational
+  recognized_does_not_mean_available: true
+  database_presence_required_for_archive_route: true
+  field_semantics_required_for_query: true
+  current_state_must_not_be_inferred_from_historical_rows: true
 sources:
-  wb_stats_orders:
-    kind: live_api
-    marketplace: wb
-    operation_id: wb_stats_orders
-    status: APPROVED
-    data_class: operational_orders
-    retention_days: 90
-  wb_stats_sales:
-    kind: live_api
-    marketplace: wb
-    operation_id: wb_stats_sales
-    status: APPROVED
-    data_class: operational_sales
-    retention_days: 90
   wb_weekly_finance_main:
-    kind: archive_dataset
     marketplace: wb
+    kind: archive_dataset
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    execution_status: SEMANTIC_QUERY_NOT_WIRED_YET
     dataset_id: wb_weekly_finance_main
-    status: REGISTERED_NOT_METRIC_BOUND
-    data_class: finance_report
+    purpose: 'Еженедельная детализация отчёта реализации: продажи, возвраты и все отражённые финансовые/сервисные операции.'
+  wb_order_feed:
+    marketplace: wb
+    kind: reference_report
+    database_presence: NOT_IN_DATABASE
+    execution_status: REFERENCE_ONLY
+    purpose: Полный поток заказов и их статусы; нужен для вопросов о реально оформленных заказах, которые не покрывает финансовый архив.
+  wb_paid_storage_report:
+    marketplace: wb
+    kind: reference_report
+    database_presence: NOT_IN_DATABASE
+    execution_status: REFERENCE_ONLY
+    purpose: Детальный расчёт платного хранения.
+  wb_acceptance_operations_report:
+    marketplace: wb
+    kind: reference_report
+    database_presence: NOT_IN_DATABASE
+    execution_status: REFERENCE_ONLY
+    purpose: Детализация операций и начислений при приёмке.
+  wb_stock_report:
+    marketplace: wb
+    kind: reference_report
+    database_presence: NOT_IN_DATABASE
+    execution_status: REFERENCE_ONLY
+    purpose: Текущие/исторические остатки; финансовый отчёт не является источником текущих остатков.
+  wb_ads_data:
+    marketplace: wb
+    kind: reference_source
+    database_presence: NOT_IN_DATABASE
+    execution_status: REFERENCE_ONLY
+    purpose: Расходы, показы, клики и другие рекламные показатели.
+  ozon_reports:
+    marketplace: ozon
+    kind: reference_source
+    database_presence: NOT_IN_DATABASE
+    execution_status: REFERENCE_ONLY
+    purpose: Отчёты Ozon пока не загружены в каноническую базу; конкретные Ozon-семантики будут регистрироваться отдельно.
 datasets:
   wb_weekly_finance_main:
     marketplace: wb
-    status: REGISTERED
-    report_type: 1
+    report_name_ru: Детализация еженедельного отчёта реализации Wildberries
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
     canonical_storage: google_drive
+    report_type: 1
     delimiter: ';'
     file_pattern: '{cabinet}__weekly_main__{year}.csv'
-    schema_status: OBSERVED_2026_09_14
+    schema_status: OBSERVED_AND_SEMANTICALLY_CATALOGUED_2026_09_14
     field_count: 92
     fields:
-      - reportId
-      - dateFrom
-      - dateTo
-      - createDate
-      - currency
-      - reportType
-      - rrdId
-      - giId
-      - dlvPrc
-      - fixTariffDateFrom
-      - fixTariffDateTo
-      - subjectName
-      - nmId
-      - brandName
-      - vendorCode
-      - title
-      - techSize
-      - sku
-      - docTypeName
-      - quantity
-      - retailPrice
-      - retailAmount
-      - salePercent
-      - commissionPercent
-      - officeName
-      - sellerOperName
-      - orderDt
-      - saleDt
-      - rrDate
-      - shkId
-      - retailPriceWithDisc
-      - deliveryAmount
-      - returnAmount
-      - deliveryService
-      - giBoxTypeName
-      - productDiscountForReport
-      - sellerPromo
-      - spp
-      - kvwBase
-      - kvw
-      - supRatingUp
-      - isKgvpV2
-      - ppvzSalesCommission
-      - forPay
-      - ppvzReward
-      - acquiringFee
-      - acquiringPercent
-      - paymentProcessing
-      - acquiringBank
-      - vw
-      - vwNds
-      - ppvzOfficeName
-      - ppvzOfficeId
-      - ppvzSupplierName
-      - ppvzSupplierInn
-      - declarationNumber
-      - stickerId
-      - country
-      - srvDbs
-      - penalty
-      - additionalPayment
-      - rebillLogisticCost
-      - paidStorage
-      - deduction
-      - paidAcceptance
-      - orderId
-      - isB2b
-      - trbxId
-      - installmentCofinancingAmount
-      - wibesDiscountPercent
-      - cashbackAmount
-      - cashbackDiscount
-      - cashbackCommissionChange
-      - paymentSchedule
-      - deliveryMethod
-      - sellerPromoId
-      - sellerPromoDiscount
-      - loyaltyId
-      - loyaltyDiscount
-      - uuidPromocode
-      - salePricePromocodeDiscountPrc
-      - articleSubstitution
-      - salePriceAffiliatedDiscountPrc
-      - salePriceWholesaleDiscountPrc
-      - b2bCustomerTin
-      - paidWithSocialCertificate
-      - warehouseLogisticsCoeff
-      - orderUid
-      - srid
-      - rebillLogisticOrg
-      - bonusTypeName
-      - kiz
+    - reportId
+    - dateFrom
+    - dateTo
+    - createDate
+    - currency
+    - reportType
+    - rrdId
+    - giId
+    - dlvPrc
+    - fixTariffDateFrom
+    - fixTariffDateTo
+    - subjectName
+    - nmId
+    - brandName
+    - vendorCode
+    - title
+    - techSize
+    - sku
+    - docTypeName
+    - quantity
+    - retailPrice
+    - retailAmount
+    - salePercent
+    - commissionPercent
+    - officeName
+    - sellerOperName
+    - orderDt
+    - saleDt
+    - rrDate
+    - shkId
+    - retailPriceWithDisc
+    - deliveryAmount
+    - returnAmount
+    - deliveryService
+    - giBoxTypeName
+    - productDiscountForReport
+    - sellerPromo
+    - spp
+    - kvwBase
+    - kvw
+    - supRatingUp
+    - isKgvpV2
+    - ppvzSalesCommission
+    - forPay
+    - ppvzReward
+    - acquiringFee
+    - acquiringPercent
+    - paymentProcessing
+    - acquiringBank
+    - vw
+    - vwNds
+    - ppvzOfficeName
+    - ppvzOfficeId
+    - ppvzSupplierName
+    - ppvzSupplierInn
+    - declarationNumber
+    - stickerId
+    - country
+    - srvDbs
+    - penalty
+    - additionalPayment
+    - rebillLogisticCost
+    - paidStorage
+    - deduction
+    - paidAcceptance
+    - orderId
+    - isB2b
+    - trbxId
+    - installmentCofinancingAmount
+    - wibesDiscountPercent
+    - cashbackAmount
+    - cashbackDiscount
+    - cashbackCommissionChange
+    - paymentSchedule
+    - deliveryMethod
+    - sellerPromoId
+    - sellerPromoDiscount
+    - loyaltyId
+    - loyaltyDiscount
+    - uuidPromocode
+    - salePricePromocodeDiscountPrc
+    - articleSubstitution
+    - salePriceAffiliatedDiscountPrc
+    - salePriceWholesaleDiscountPrc
+    - b2bCustomerTin
+    - paidWithSocialCertificate
+    - warehouseLogisticsCoeff
+    - orderUid
+    - srid
+    - rebillLogisticOrg
+    - bonusTypeName
+    - kiz
+    field_catalog:
+      reportId:
+        meaning_ru: Номер отчёта реализации Wildberries.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [идентификация отчёта, дедупликация вместе с rrdId]
+      dateFrom:
+        meaning_ru: Дата начала периода отчёта.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [границы отчёта]
+      dateTo:
+        meaning_ru: Дата окончания периода отчёта.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [границы отчёта]
+      createDate:
+        meaning_ru: Дата создания отчёта.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [контроль версии/появления отчёта]
+      currency:
+        meaning_ru: Валюта расчётов отчёта.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [интерпретация денежных полей]
+      reportType:
+        meaning_ru: Тип финансового отчёта Wildberries.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [разделение типов отчёта]
+        limitations: [Не трактовать как вид конкретной операции строки; для операции использовать sellerOperName/docTypeName.]
+      rrdId:
+        meaning_ru: Уникальный идентификатор строки детализации отчёта.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [дедупликация строки вместе с reportId]
+      giId:
+        meaning_ru: Номер поставки. Характерен для FBW; для других моделей может быть 0.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [поиск поставки, различение контекста FBW]
+        limitations: [Нулевое значение не означает отсутствие продажи.]
+      dlvPrc:
+        meaning_ru: Зафиксированный коэффициент склада/логистики, применённый к расчёту.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ применённого коэффициента]
+        limitations: [Не использовать как текущий тариф склада.]
+      fixTariffDateFrom:
+        meaning_ru: Начало периода действия зафиксированного тарифа/коэффициента.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [анализ применённого тарифа]
+      fixTariffDateTo:
+        meaning_ru: Окончание периода действия зафиксированного тарифа/коэффициента.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [анализ применённого тарифа]
+      subjectName:
+        meaning_ru: Предмет (категория) товара.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [группировка и фильтр по категории]
+      nmId:
+        meaning_ru: Артикул Wildberries (идентификатор карточки товара).
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [поиск/группировка товара]
+      brandName:
+        meaning_ru: Бренд товара.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [фильтр/группировка по бренду]
+      vendorCode:
+        meaning_ru: Артикул продавца.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [поиск/группировка товара по артикулу продавца]
+      title:
+        meaning_ru: Название товара.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [человекочитаемая идентификация товара]
+      techSize:
+        meaning_ru: Размер товара.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [фильтр/группировка по размеру]
+        limitations: [0/пусто может означать отсутствие размерного признака.]
+      sku:
+        meaning_ru: Баркод товара.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [идентификация варианта товара]
+        limitations: [Не считать глобально уникальным идентификатором карточки.]
+      docTypeName:
+        meaning_ru: Тип документа/товарной операции, например «Продажа» или «Возврат».
+        role: operation
+        semantic_status: REVIEWED
+        safe_uses: [разделение продаж и возвратов]
+        limitations: [Для логистики, хранения, удержаний и других услуг поле может быть пустым; использовать sellerOperName.]
+      quantity:
+        meaning_ru: Количество товарных операций в строке детализации.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [количество продаж/возвратов в подходящих строках]
+        limitations: [Не суммировать без фильтра по sellerOperName/docTypeName: у сервисных операций значение может иметь иной смысл или быть 0.]
+      retailPrice:
+        meaning_ru: Розничная цена товара по данным отчёта с учётом скидки продавца.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ цены товара]
+        limitations: [Не считать автоматически фактически полученной продавцом суммой.]
+      retailAmount:
+        meaning_ru: Сумма реализации/возврата по строке отчёта, отражающая расчёт с покупателем.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ суммы продажи/возврата]
+        limitations: [Знак и включение в итог зависят от типа операции; не смешивать с forPay.]
+      salePercent:
+        meaning_ru: Историческое поле скидки продавца; в актуальных отчётах обычно 0.
+        role: legacy
+        semantic_status: REVIEWED
+        safe_uses: [диагностика старых строк]
+        limitations: [Не использовать как актуальную скидку без проверки периода.]
+      commissionPercent:
+        meaning_ru: Процент комиссии/вознаграждения Wildberries, отражённый по строке.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ ставки комиссии]
+        limitations: [Не суммировать как деньги.]
+      officeName:
+        meaning_ru: Склад/офис, связанный с операцией и отгрузкой товара.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [анализ фактического склада по операциям]
+        limitations: [Не использовать как текущий настроенный склад товара.]
+      sellerOperName:
+        meaning_ru: Фактический вид финансовой операции/основание платежа — продажа, возврат, логистика, хранение, штраф и др.
+        role: operation
+        semantic_status: REVIEWED
+        safe_uses: [определение смысла строки, фильтрация финансовых операций]
+      orderDt:
+        meaning_ru: Дата и время оформления заказа, к которому относится строка отчёта.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [атрибут даты заказа для реализованной/отражённой операции]
+        limitations: [НЕ является источником полного потока заказов магазина и не должна использоваться для метрики всех оформленных заказов.]
+      saleDt:
+        meaning_ru: Дата и время продажи/выкупа, возврата/отказа либо соответствующей операции по правилам отчёта.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [датировка продажи/возврата в контексте строки]
+        limitations: [Смысл зависит от sellerOperName/docTypeName.]
+      rrDate:
+        meaning_ru: Расчётная дата строки в отчёте — дата отнесения операции к детализации/расчётному периоду.
+        role: date
+        semantic_status: REVIEWED
+        safe_uses: [отнесение финансовой операции к расчётному периоду]
+        limitations: [Не подменять ею дату заказа или выкупа.]
+      shkId:
+        meaning_ru: Уникальный складской штрихкод/идентификатор единицы при движении товара.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [трассировка единицы/движения товара]
+      retailPriceWithDisc:
+        meaning_ru: Цена товара с учётом скидок, используемая в расчётах отчёта.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [база для отдельных расчётов]
+        limitations: [В актуальных версиях может совпадать с retailPrice; не считать это универсальным правилом для всех периодов.]
+      deliveryAmount:
+        meaning_ru: Количество начисленных доставок по строке логистики.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [подсчёт логистических доставок]
+        limitations: [Использовать только в контексте логистических операций.]
+      returnAmount:
+        meaning_ru: Количество возвратных логистических операций по строке.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [подсчёт возвратной логистики]
+        limitations: [Не равно числу всех товарных возвратов без соответствующей фильтрации.]
+      deliveryService:
+        meaning_ru: Стоимость конкретной логистической услуги/доставки.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [сумма затрат на логистику]
+        limitations: [Фильтровать по логистическим операциям; не трактовать как цену товара.]
+      giBoxTypeName:
+        meaning_ru: Тип поставки/упаковки поставки, например короб, монопаллета или микс в зависимости от данных WB.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [анализ типа поставки/упаковки]
+        limitations: [Не подменяет модель продаж FBW/FBS.]
+      productDiscountForReport:
+        meaning_ru: Историческое поле скидки товара для отчёта; в актуальных данных часто 0.
+        role: legacy
+        semantic_status: REVIEWED
+        safe_uses: [диагностика старых периодов]
+        limitations: [Не использовать как актуальную скидку без проверки.]
+      sellerPromo:
+        meaning_ru: Историческое поле промо/скидки продавца; в актуальных данных часто 0.
+        role: legacy
+        semantic_status: REVIEWED
+        safe_uses: [диагностика старых периодов]
+        limitations: [Для современных собственных промо использовать sellerPromoId/sellerPromoDiscount, если заполнены.]
+      spp:
+        meaning_ru: Скидка покупателю, финансируемая Wildberries, в процентах.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ скидки WB]
+        limitations: [Не суммировать как денежную сумму.]
+      kvwBase:
+        meaning_ru: Базовый коэффициент вознаграждения/комиссии Wildberries без НДС.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ базовой ставки вознаграждения]
+        limitations: [Не суммировать как деньги.]
+      kvw:
+        meaning_ru: Итоговый коэффициент вознаграждения/комиссии Wildberries без НДС после применённых корректировок.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ фактической ставки вознаграждения]
+        limitations: [Не суммировать как деньги.]
+      supRatingUp:
+        meaning_ru: Историческая корректировка комиссии по рейтингу продавца; в актуальных отчётах обычно 0.
+        role: legacy
+        semantic_status: REVIEWED
+        safe_uses: [диагностика старых периодов]
+      isKgvpV2:
+        meaning_ru: Исторический признак корректировки комиссии/промо-механики; в актуальных отчётах обычно 0.
+        role: legacy
+        semantic_status: REVIEWED
+        safe_uses: [диагностика старых периодов]
+      ppvzSalesCommission:
+        meaning_ru: Вознаграждение Wildberries по продаже до отдельных услуг сторонних агентов, без НДС.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ комиссии/вознаграждения WB]
+      forPay:
+        meaning_ru: Сумма к начислению продавцу за конкретную товарную операцию по правилам отчёта.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [расчёт начислений по товарным операциям]
+        limitations: [Не равно итоговой выплате за период — итог дополнительно включает услуги, штрафы, удержания и другие строки.]
+      ppvzReward:
+        meaning_ru: Возмещение/стоимость услуг пункта выдачи, связанная с выдачей/возвратом.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ затрат/возмещений ПВЗ]
+      acquiringFee:
+        meaning_ru: Комиссия за эквайринг/услуги платёжной организации.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [расчёт затрат на платёжную обработку]
+      acquiringPercent:
+        meaning_ru: Процент комиссии за эквайринг/платёжную обработку.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ ставки эквайринга]
+        limitations: [Не суммировать как деньги.]
+      paymentProcessing:
+        meaning_ru: Тип/описание платёжной обработки или перевыставленной комиссии.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [классификация эквайринга/платёжной услуги]
+      acquiringBank:
+        meaning_ru: Банк/платёжная организация, связанная с эквайрингом.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [анализ по банку/платёжной организации]
+      vw:
+        meaning_ru: Вознаграждение Wildberries без НДС.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ суммы вознаграждения WB]
+      vwNds:
+        meaning_ru: НДС на вознаграждение Wildberries.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ НДС на вознаграждение WB]
+      ppvzOfficeName:
+        meaning_ru: Наименование/адрес пункта выдачи, связанного с операцией.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [анализ ПВЗ по отражённым операциям]
+      ppvzOfficeId:
+        meaning_ru: Внутренний идентификатор пункта выдачи Wildberries.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [идентификация ПВЗ]
+      ppvzSupplierName:
+        meaning_ru: Наименование партнёра/владельца ПВЗ в исторической схеме отчёта.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [справочный анализ ПВЗ]
+        limitations: [В актуальных данных поле может не заполняться.]
+      ppvzSupplierInn:
+        meaning_ru: ИНН партнёра/владельца ПВЗ в исторической схеме отчёта.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [справочный анализ ПВЗ]
+        limitations: [В актуальных данных поле может не заполняться.]
+      declarationNumber:
+        meaning_ru: Номер таможенной декларации, если применимо.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [трассировка таможенной декларации]
+        limitations: [Для большинства операций может быть пустым.]
+      stickerId:
+        meaning_ru: Идентификатор стикера заказа/товара, прежде всего для FBS.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [трассировка FBS-отправления]
+      country:
+        meaning_ru: Страна, связанная с продажей/операцией.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [географический анализ операций]
+      srvDbs:
+        meaning_ru: Признак платной доставки по моделям DBS/EDBS.
+        role: flag
+        semantic_status: REVIEWED
+        safe_uses: [выявление оплачиваемой доставки DBS/EDBS]
+        limitations: [Не определяет модель продаж целиком.]
+      penalty:
+        meaning_ru: Сумма штрафа по строке.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [суммирование штрафов, анализ штрафов по товару/периоду]
+        limitations: [Причину штрафа брать из bonusTypeName и/или sellerOperName.]
+      additionalPayment:
+        meaning_ru: Корректировка вознаграждения/дополнительное начисление или удержание по правилам WB.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ корректировок]
+        limitations: [Причину/тип интерпретировать вместе с bonusTypeName/sellerOperName.]
+      rebillLogisticCost:
+        meaning_ru: Перевыставленная/возмещаемая стоимость логистики стороннего перевозчика.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ сторонней логистики]
+      paidStorage:
+        meaning_ru: Начисление за платное хранение.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [общая сумма платного хранения по имеющимся строкам]
+        limitations: [Еженедельный отчёт не даёт полной детализации драйверов хранения; для детального расчёта нужен отдельный отчёт «Платное хранение».]
+      deduction:
+        meaning_ru: Сумма удержания/дополнительного списания.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [суммирование удержаний]
+        limitations: [Причину определять по sellerOperName/bonusTypeName; не считать автоматически комиссией.]
+      paidAcceptance:
+        meaning_ru: Начисление за платную приёмку/обработку.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [общая сумма платной приёмки по имеющимся строкам]
+        limitations: [Детали операций приёмки могут требовать отдельный отчёт «Операции при приёмке».]
+      orderId:
+        meaning_ru: Идентификатор сборочного задания; используется в FBS, для других моделей может быть 0.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [трассировка FBS-сборочного задания]
+        limitations: [Не считать универсальным ID заказа покупателя.]
+      isB2b:
+        meaning_ru: Признак продажи юридическому лицу/ИП.
+        role: flag
+        semantic_status: REVIEWED
+        safe_uses: [фильтр B2B-операций]
+      trbxId:
+        meaning_ru: Идентификатор короба/группы заказов одного покупателя для соответствующих FBS-сценариев.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [анализ группировки FBS-заказов]
+      installmentCofinancingAmount:
+        meaning_ru: Сумма софинансирования продавцом скидки при оплате в рассрочку.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ стоимости рассрочки для продавца]
+      wibesDiscountPercent:
+        meaning_ru: Процент скидки/корректировки комиссии для покупки через Wibes.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ Wibes-скидки]
+        limitations: [Не суммировать как деньги.]
+      cashbackAmount:
+        meaning_ru: Сумма кешбэка, удержанная/возвращённая по операции.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ кешбэка]
+      cashbackDiscount:
+        meaning_ru: Сумма скидки/компенсации, связанной с использованием кешбэка/лояльности.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ скидки по кешбэку]
+      cashbackCommissionChange:
+        meaning_ru: Изменение комиссии, связанное с программой кешбэка продавца.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ влияния кешбэка на комиссию]
+      paymentSchedule:
+        meaning_ru: Параметр/признак графика выплат или финансового сервиса, если применён к строке.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [анализ специальных схем выплат]
+        limitations: [Интерпретировать только при заполненном значении и подтверждённом типе операции.]
+      deliveryMethod:
+        meaning_ru: Фактическая модель/способ продажи и отгрузки, отражённый в строке — например FBS/FBW и габаритный контекст.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [ответ на вопрос по какой схеме фактически прошла отражённая операция, группировка продаж/логистики по модели]
+        limitations: [Это исторически наблюдаемая схема в отчёте, а не гарантия текущей настройки товара/склада.]
+      sellerPromoId:
+        meaning_ru: Идентификатор собственной промоакции продавца.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [связь операции с промо продавца]
+      sellerPromoDiscount:
+        meaning_ru: Дополнительная скидка собственной промоакции продавца, %.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ промо-скидки]
+        limitations: [Не суммировать как деньги.]
+      loyaltyId:
+        meaning_ru: Идентификатор программы лояльности.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [связь операции с программой лояльности]
+      loyaltyDiscount:
+        meaning_ru: Скидка по программе лояльности, %.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ скидки лояльности]
+        limitations: [Не суммировать как деньги.]
+      uuidPromocode:
+        meaning_ru: Идентификатор промокода.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [связь операции с промокодом]
+      salePricePromocodeDiscountPrc:
+        meaning_ru: Процент скидки по промокоду.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ промокодной скидки]
+        limitations: [Не суммировать как деньги.]
+      articleSubstitution:
+        meaning_ru: Идентификатор/артикул подменного товара, если применялся механизм подмены.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [анализ подменного артикула]
+      salePriceAffiliatedDiscountPrc:
+        meaning_ru: Процент скидки, связанной с подменным/аффилированным артикулом.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ соответствующей скидки]
+        limitations: [Не суммировать как деньги.]
+      salePriceWholesaleDiscountPrc:
+        meaning_ru: Процент оптовой/B2B-скидки.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ оптовой скидки]
+        limitations: [Не суммировать как деньги.]
+      b2bCustomerTin:
+        meaning_ru: ИНН B2B-покупателя, если операция B2B и поле заполнено.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [идентификация B2B-покупателя в доступных строках]
+        limitations: [Может быть пустым; не использовать как универсальный идентификатор покупателя.]
+      paidWithSocialCertificate:
+        meaning_ru: Признак оплаты социальным сертификатом.
+        role: flag
+        semantic_status: REVIEWED
+        safe_uses: [фильтр операций с социальным сертификатом]
+      warehouseLogisticsCoeff:
+        meaning_ru: Коэффициент складской логистики, применённый к операции.
+        role: measure
+        semantic_status: REVIEWED
+        safe_uses: [анализ применённого коэффициента логистики]
+        limitations: [Не использовать как текущий тариф склада.]
+      orderUid:
+        meaning_ru: Идентификатор корзины/транзакции заказа, связывающий заказ с детализацией.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [связь с заказом/корзиной, сопоставление с другими WB-отчётами при наличии]
+        limitations: [Не использовать один по себе для подсчёта всех заказов магазина — в финансовом отчёте присутствуют только отражённые в нём операции.]
+      srid:
+        meaning_ru: Уникальный идентификатор заказа/операционной цепочки Wildberries, повторяющийся у связанных строк одной цепочки.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [связывание продажи, логистики и иных операций, дедуп/группировка при доказанном сценарии]
+        limitations: [При возврате/повторной продаже идентификаторы могут меняться; не считать универсальным числом заказов без правил.]
+      rebillLogisticOrg:
+        meaning_ru: Юридическое лицо стороннего перевозчика, по которому перевыставлена логистика.
+        role: dimension
+        semantic_status: REVIEWED
+        safe_uses: [анализ стороннего перевозчика]
+      bonusTypeName:
+        meaning_ru: Пояснение к виду логистики, штрафу, корректировке или другому начислению/удержанию.
+        role: operation
+        semantic_status: REVIEWED
+        safe_uses: [определение причины штрафа/логистики/корректировки, 'маршрут логистики: к клиенту/от клиента/к продавцу']
+        limitations: [Использовать совместно с sellerOperName и денежным полем соответствующей операции.]
+      kiz:
+        meaning_ru: Код обязательной маркировки товара («Честный знак»), если применим.
+        role: identifier
+        semantic_status: REVIEWED
+        safe_uses: [трассировка маркированной единицы]
     row_dedup_key: [reportId, rrdId]
     registry_dedup_key: [cabinet, dataset, report_id]
     coverage:
@@ -180,33 +672,149 @@ datasets:
       period_fields: [date_from, date_to]
       logical_period_fields: [logical_week_from, logical_week_to]
       archive_route_requirement: FULL_COVERAGE
-    business_semantics:
-      status: UNPROVEN
-      event_date_field: null
-      sign_rule: null
-      metric_formula: null
-bindings:
-  wb_weekly_finance_main__ORDERS_UNITS:
-    metric_id: ORDERS_UNITS
+    semantic_scope:
+      row_model: ONE_FINANCIAL_OR_SERVICE_OPERATION_PER_ROW
+      authoritative_for:
+      - operations actually present in the weekly realization archive
+      - historical attributes attached to those operations
+      - financial amounts explicitly stored in report fields
+      not_authoritative_for:
+      - complete marketplace order funnel
+      - current stock state
+      - current product fulfillment configuration
+      - advertising statistics
+capabilities:
+  report_period_and_identity:
     source_id: wb_weekly_finance_main
-    status: DRAFT
-    execution_allowed: false
-    reason: metric_mapping_unproven
-  wb_weekly_finance_main__ORDERS_AMOUNT_RUB:
-    metric_id: ORDERS_AMOUNT_RUB
+    status: AVAILABLE
+    fields: [reportId, dateFrom, dateTo, createDate, currency, reportType, rrdId]
+    scope: report_metadata
+  product_identity:
     source_id: wb_weekly_finance_main
-    status: DRAFT
-    execution_allowed: false
-    reason: metric_mapping_unproven
-  wb_weekly_finance_main__SALES_NET_UNITS:
-    metric_id: SALES_NET_UNITS
+    status: AVAILABLE
+    fields: [subjectName, nmId, brandName, vendorCode, title, techSize, sku]
+    scope: historical_report_rows
+  sale_and_return_operations:
     source_id: wb_weekly_finance_main
-    status: DRAFT
-    execution_allowed: false
-    reason: metric_mapping_unproven
-  wb_weekly_finance_main__SALES_NET_AMOUNT_RUB:
-    metric_id: SALES_NET_AMOUNT_RUB
+    status: AVAILABLE
+    fields: [docTypeName, sellerOperName, saleDt, rrDate, quantity, retailPrice, retailAmount, retailPriceWithDisc, forPay]
+    scope: operations_present_in_weekly_realization
+    guardrail: Filter by operation type before aggregating; do not mix service rows with product sale/return rows.
+  order_context_attribute:
     source_id: wb_weekly_finance_main
-    status: DRAFT
-    execution_allowed: false
-    reason: metric_mapping_unproven
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [orderDt, orderUid, srid, orderId]
+    scope: order_attributes_attached_to_reported_operations
+    guardrail: Can describe/link reported operations to an order context; cannot calculate the full number/value of all orders placed in the marketplace.
+  observed_fulfillment_method:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [deliveryMethod, officeName, giId, giBoxTypeName, orderId, stickerId, trbxId]
+    scope: historical_observed_operations
+    guardrail: Answer what scheme/warehouse was observed in archived operations; never assert current product or seller configuration from historical rows alone.
+  warehouse_tariff_context:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [dlvPrc, fixTariffDateFrom, fixTariffDateTo, warehouseLogisticsCoeff, officeName]
+    scope: coefficients_attached_to_reported_operations
+    guardrail: These are applied historical coefficients, not current live tariffs.
+  logistics:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE
+    fields: [sellerOperName, deliveryAmount, returnAmount, deliveryService, bonusTypeName, rebillLogisticCost, rebillLogisticOrg, srvDbs]
+    scope: weekly_financial_logistics_operations
+  penalties:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE
+    fields: [penalty, bonusTypeName, sellerOperName, rrDate, nmId, vendorCode]
+    scope: penalties_present_in_weekly_report
+    guardrail: Use bonusTypeName/sellerOperName for reason; penalty is the amount.
+  storage_charge:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [paidStorage, sellerOperName, rrDate]
+    scope: weekly_storage_charge_amount
+    guardrail: Can answer the charge amount present in weekly report; detailed storage drivers require wb_paid_storage_report, which is not in database.
+  acceptance_charge:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [paidAcceptance, sellerOperName, rrDate]
+    scope: weekly_paid_acceptance_amount
+    guardrail: Can answer the charge amount present in weekly report; detailed acceptance operations may require wb_acceptance_operations_report.
+  deductions_and_adjustments:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE
+    fields: [deduction, additionalPayment, bonusTypeName, sellerOperName, rrDate]
+    scope: weekly_financial_operations
+  commission_and_wb_reward:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE
+    fields: [commissionPercent, kvwBase, kvw, ppvzSalesCommission, vw, vwNds, forPay]
+    scope: weekly_sale_financial_operations
+  acquiring_and_payment_processing:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE
+    fields: [acquiringFee, acquiringPercent, paymentProcessing, acquiringBank]
+    scope: weekly_payment_processing_operations
+  pickup_point_context:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [ppvzReward, ppvzOfficeName, ppvzOfficeId, ppvzSupplierName, ppvzSupplierInn]
+    scope: pickup_point_context_present_in_rows
+    guardrail: Some legacy partner fields may be blank in modern reports.
+  promotions_loyalty_cashback:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [spp, sellerPromoId, sellerPromoDiscount, loyaltyId, loyaltyDiscount, uuidPromocode, salePricePromocodeDiscountPrc, articleSubstitution, salePriceAffiliatedDiscountPrc, cashbackAmount, cashbackDiscount, cashbackCommissionChange, wibesDiscountPercent, installmentCofinancingAmount]
+    scope: discount_and_loyalty_attributes_present_in_rows
+    guardrail: Legacy fields salePercent/productDiscountForReport/sellerPromo are not treated as current promotion truth.
+  b2b:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [isB2b, b2bCustomerTin, salePriceWholesaleDiscountPrc]
+    scope: b2b_attributes_present_in_rows
+  traceability_and_marking:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [shkId, stickerId, kiz, declarationNumber, orderUid, srid]
+    scope: identifiers_present_in_financial_rows
+  geography:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [country, officeName, ppvzOfficeName]
+    scope: locations_attached_to_reported_operations
+    guardrail: Not a substitute for the dedicated geography-of-orders report.
+not_covered:
+  all_orders_placed:
+    status: REQUIRES_OTHER_SOURCE
+    required_source_id: wb_order_feed
+    reason: orderDt/orderUid in the financial report only exist for operations that reached this report; they do not represent the complete order flow.
+  current_stock:
+    status: REQUIRES_OTHER_SOURCE
+    required_source_id: wb_stock_report
+    reason: Weekly realization is not a stock snapshot.
+  current_fulfillment_configuration:
+    status: REQUIRES_OTHER_SOURCE
+    reason: deliveryMethod shows observed historical operations, not guaranteed current settings.
+  detailed_storage_calculation:
+    status: REQUIRES_OTHER_SOURCE
+    required_source_id: wb_paid_storage_report
+    reason: paidStorage stores the charge but not the complete detailed storage calculation.
+  detailed_acceptance_operations:
+    status: REQUIRES_OTHER_SOURCE
+    required_source_id: wb_acceptance_operations_report
+    reason: paidAcceptance stores the charge; deeper operation details may be in a dedicated report.
+  advertising_performance:
+    status: REQUIRES_OTHER_SOURCE
+    required_source_id: wb_ads_data
+    reason: Weekly realization does not contain campaign impressions/clicks/spend semantics.
+  ozon_data:
+    status: REQUIRES_OTHER_SOURCE
+    required_source_id: ozon_reports
+    reason: No Ozon report dataset is currently present in the canonical archive.
+references:
+  official_wb:
+  - 'Wildberries Seller Help: Детализация еженедельного отчёта реализации'
+  - 'Wildberries Seller Help: Еженедельные отчёты реализации'
+  - 'Wildberries API: Финансовые отчёты и детализация'
+  archive_observation: Canonical wb_weekly_finance_main header observed on 2026-09-14; 92 columns.
