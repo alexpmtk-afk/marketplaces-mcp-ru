@@ -1,29 +1,31 @@
 """Canonical WB Promotion data-layer contract.
 
-This module is deliberately declarative. It defines source-of-truth routing,
-archive grains, provider limits and semantic/quality boundaries before any
-Advertising Archive V1 ingestion worker is allowed to persist data.
-
-The contract is grounded in the current Wildberries Promotion API:
-- current campaign state: GET /api/advert/v2/adverts
-- campaign statistics: GET /adv/v3/fullstats (<=31 days, <=50 campaign IDs)
-- daily search-cluster statistics: POST /adv/v1/normquery/stats
-- actual promotion costs history: GET /adv/v1/upd (<=31 days)
-- account top-ups: GET /adv/v1/payments (<=31 days)
-- current budgets/balance/config/bids/minus phrases: live Promotion API
-
-No entry in this contract means that archive ingestion or coverage is already
-implemented. The contract is the prerequisite for those stages.
+This module defines source-of-truth routing, archive grains, provider limits and
+semantic/quality boundaries before Advertising Archive V1 persists data.
 """
 from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any
 
-DATA_CONTRACT_VERSION = "wb_ads_data_v1.0"
-ARCHIVE_STATUS = "contract_ready_ingestion_pending"
+DATA_CONTRACT_VERSION = "wb_ads_data_v1.1"
+ARCHIVE_STATUS = "archive_primitives_in_progress"
 
 DATASETS: dict[str, dict[str, Any]] = {
+    "ads_campaign_roster_snapshots": {
+        "layer": "discovery_snapshot",
+        "provider_operation": "wb_get_adv_promotion_count",
+        "provider_path": "/adv/v1/promotion/count",
+        "grain": ["observed_at", "campaign_id"],
+        "archive": True,
+        "rate_limit": "5 req/sec per seller account",
+        "meaning": "all seller campaign IDs grouped by provider type/status with last change time",
+        "fullstats_eligible_statuses": [7, 9, 11],
+        "quality_rule": (
+            "campaign discovery and fullstats availability are different contracts; "
+            "fullstats covers only provider-addressable statuses 7,9,11"
+        ),
+    },
     "ads_campaign_daily": {
         "layer": "historical",
         "provider_operation": "wb_get_adv_fullstats",
@@ -60,6 +62,7 @@ DATASETS: dict[str, dict[str, Any]] = {
         "semantic_class": "advertising_attribution_operational",
         "limitations": [
             "same attribution boundary as campaign statistics",
+            "app_type is a provider platform/app dimension and is not relabeled as ad placement",
             "rows from different app_type values must not be silently collapsed before aggregation rules are applied",
         ],
     },
@@ -75,16 +78,14 @@ DATASETS: dict[str, dict[str, Any]] = {
             "views", "clicks", "cart_adds", "orders", "ordered_items",
             "spend", "avg_position", "ctr", "cpc", "cpm",
         ],
-        "nullable_by_payment_model": {
-            "cpc": ["views", "ctr", "cpm"],
-        },
+        "nullable_by_payment_model": {"cpc": ["views", "ctr", "cpm"]},
         "quality_rule": "provider-unavailable CPC fields are NULL/not_available, never synthetic zero",
     },
     "ads_expenses": {
         "layer": "financial_history",
         "provider_operation": "wb_get_adv_upd",
         "provider_path": "/adv/v1/upd",
-        "grain": ["expense_event"],
+        "grain": ["expense_event_fingerprint"],
         "archive": True,
         "max_days_per_request": 31,
         "rate_limit": "1 req/sec per seller account",
@@ -95,7 +96,7 @@ DATASETS: dict[str, dict[str, Any]] = {
         "layer": "financial_history",
         "provider_operation": "wb_get_adv_payments",
         "provider_path": "/adv/v1/payments",
-        "grain": ["payment_event"],
+        "grain": ["payment_id_or_event_fingerprint"],
         "archive": True,
         "max_days_per_request": 31,
         "rate_limit": "1 req/sec per seller account",
@@ -150,6 +151,8 @@ DATASETS: dict[str, dict[str, Any]] = {
 }
 
 ROUTING_RULES = {
+    "campaign_discovery": "use /adv/v1/promotion/count; do not infer the complete campaign roster from active/current filters",
+    "fullstats_population": "only discovered campaigns in provider-addressable statuses 7,9,11 are eligible for /adv/v3/fullstats coverage",
     "current_campaign_state": "live Promotion API only",
     "current_budget_balance_bids_minus_phrases": "live Promotion API only",
     "closed_historical_advertising": "archive-first only after FULL_COVERAGE is proven; otherwise explicit live fallback or coverage gap",
@@ -186,7 +189,6 @@ LAYER_MODEL = [
 
 
 def advertising_data_map() -> dict[str, Any]:
-    """Return a copy of the canonical WB advertising data contract."""
     return {
         "version": DATA_CONTRACT_VERSION,
         "status": ARCHIVE_STATUS,
@@ -198,7 +200,6 @@ def advertising_data_map() -> dict[str, Any]:
 
 
 def required_provider_operations(*, archive_only: bool = False) -> set[str]:
-    """Return provider operation IDs required by the contract."""
     rows = DATASETS.values()
     if archive_only:
         rows = [row for row in rows if row.get("archive") is True]
