@@ -70,6 +70,12 @@ def test_explicit_current_state_never_falls_back_to_historical_archive():
     assert result["next_action"] == "DO_NOT_QUERY_WEEKLY_ARCHIVE"
 
 
+def test_sales_genitive_form_resolves_to_sale_operations():
+    result = resolve_semantic_question("Сколько было продаж за этот период?")
+    assert result["status"] == "AVAILABLE"
+    assert result["capability_id"] == "sale_and_return_operations"
+
+
 def test_unknown_question_fails_closed():
     result = resolve_semantic_question("Какой цвет лучше выбрать для упаковки?")
     assert result["status"] == "UNKNOWN"

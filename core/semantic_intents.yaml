@@ -1,4 +1,4 @@
-version: 2026-09-14.v3
+version: 2026-09-14.v4
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -158,4 +158,4 @@ routes:
     priority: 1100
     target_type: capability
     target_id: sale_and_return_operations
-    match_any: [продажа, продажи, выкуп, выкупы, возврат, возвраты, реализация, сумма продаж, количество продаж]
+    match_any: [продажа, продажи, продаж, выкуп, выкупы, возврат, возвраты, реализация, сумма продаж, количество продаж]
