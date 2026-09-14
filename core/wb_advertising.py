@@ -7,6 +7,7 @@ reviewed and accepted.
 """
 from __future__ import annotations
 
+import base64
 import json
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -17,9 +18,11 @@ from mcp.server.fastmcp import FastMCP
 
 from .business_registry import resolve_business_cabinet
 from .errors import make_error
+from .tools import resolve_named_cabinet
 
 ADS_SERVICE = "wb_ads"
 ADS_TOKEN_ENV = "WB_ADS_API_TOKEN"
+PROMOTION_SCOPE_BIT = 1 << 5
 ACTIVE_STATUS = 9
 MAX_CAMPAIGNS_PER_STATS_CALL = 50
 MAX_STATS_DAYS = 31
@@ -63,45 +66,109 @@ def _ratio(numerator: Decimal | int, denominator: Decimal | int) -> float | None
     return float((num / den).quantize(Decimal("0.0001")))
 
 
-def _resolve_ads_creds(wb: Any, seller: str) -> tuple[dict[str, str] | None, dict[str, Any] | None, dict[str, str]]:
-    """Resolve one named Promotion token without changing global cabinet state."""
+def _token_has_promotion_scope(token: str) -> bool:
+    """Prove WB Promotion category locally from the JWT ``s`` bitmask.
+
+    This is intentionally fail-closed. It is used only when a normal named WB
+    credential is reused as the backing secret for the logical ``wb_ads``
+    service. An explicitly configured ``wb_ads`` credential remains authoritative.
+    """
+    try:
+        parts = str(token or "").split(".")
+        if len(parts) < 2:
+            return False
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(payload.encode("ascii")).decode("utf-8"))
+        scope_mask = int(claims.get("s") or 0)
+        return bool(scope_mask & PROMOTION_SCOPE_BIT)
+    except (ValueError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+
+
+def _resolve_ads_creds(
+    wb: Any,
+    seller: str,
+) -> tuple[dict[str, str] | None, dict[str, Any] | None, dict[str, str]]:
+    """Resolve one named Promotion credential without changing shared state.
+
+    Resolution order:
+    1. Explicit ``wb_ads`` credential for the cabinet.
+    2. The same named ``wb`` cabinet credential, but only when its JWT proves
+       Promotion scope locally. This avoids duplicating an identical secret in
+       Lockbox while keeping ``wb_ads`` as the logical service boundary.
+    """
     business = resolve_business_cabinet("wb", seller)
     cabinet = business.cabinet if business else seller.strip()
     meta = {
         "seller": seller,
         "cabinet": cabinet,
         "business_entity": business.business_entity if business else seller,
+        "credential_service": ADS_SERVICE,
     }
     if not cabinet:
         return None, make_error(
-            "invalid_params", "seller must name a configured WB cabinet.",
-            operation_id="wb_ads_credentials", retryable=False,
+            "invalid_params",
+            "seller must name a configured WB cabinet.",
+            operation_id="wb_ads_credentials",
+            retryable=False,
         ), meta
 
-    creds, resolved = wb.client.config.store.resolve_named(
+    explicit, resolved = wb.client.config.store.resolve_named(
         ADS_SERVICE,
         ["token"],
         {"token": ADS_TOKEN_ENV},
         cabinet,
     )
-    if resolved and creds.get("token"):
-        return {"token": str(creds["token"])}, None, meta
+    if resolved and explicit.get("token"):
+        meta.update({
+            "credential_backing_service": ADS_SERVICE,
+            "credential_binding": "explicit",
+            "promotion_scope_proof": "dedicated_ads_credential",
+        })
+        return {"token": str(explicit["token"])}, None, meta
 
-    return None, {
-        "ok": False,
-        "error": "seller_known_but_ads_not_configured" if business else "ads_cabinet_not_configured",
-        "code": "WB_ADS_CABINET_NOT_CONFIGURED",
-        **meta,
-        "credentials_status": "not_configured",
-        "credential_service": ADS_SERVICE,
-        "required_scope": "promotion",
-        "upstream_request_sent": False,
-        "retryable": False,
-        "message": (
-            "Для этого WB-кабинета не настроен отдельный Promotion credential; "
-            "запрос к Wildberries не отправлялся."
-        ),
-    }, meta
+    wb_creds, wb_error = resolve_named_cabinet(wb.client, cabinet)
+    if wb_error or not wb_creds or not wb_creds.get("token"):
+        return None, {
+            "ok": False,
+            "error": "seller_known_but_ads_not_configured" if business else "ads_cabinet_not_configured",
+            "code": "WB_ADS_CABINET_NOT_CONFIGURED",
+            **meta,
+            "credentials_status": "not_configured",
+            "required_scope": "promotion",
+            "upstream_request_sent": False,
+            "retryable": False,
+            "message": (
+                "Для этого WB-кабинета нет доступного Promotion credential; "
+                "запрос к Wildberries не отправлялся."
+            ),
+        }, meta
+
+    token = str(wb_creds["token"])
+    if not _token_has_promotion_scope(token):
+        return None, {
+            "ok": False,
+            "error": "promotion_scope_unproven",
+            "code": "WB_ADS_PROMOTION_SCOPE_UNPROVEN",
+            **meta,
+            "credentials_status": "scope_unproven",
+            "credential_backing_service": "wb",
+            "credential_binding": "scope_verified_alias",
+            "required_scope": "promotion",
+            "upstream_request_sent": False,
+            "retryable": False,
+            "message": (
+                "WB-токен кабинета найден, но Promotion-доступ локально не подтверждён; "
+                "запрос к Wildberries не отправлялся."
+            ),
+        }, meta
+
+    meta.update({
+        "credential_backing_service": "wb",
+        "credential_binding": "scope_verified_alias",
+        "promotion_scope_proof": "jwt_s_bit_6",
+    })
+    return {"token": token}, None, meta
 
 
 def _campaign_rows(data: Any) -> list[dict[str, Any]]:
@@ -208,6 +275,15 @@ def _validate_period(date_from: str, date_to: str) -> tuple[date, date]:
     return start, end
 
 
+def _credential_provenance(meta: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "credential_service": ADS_SERVICE,
+        "credential_backing_service": meta.get("credential_backing_service"),
+        "credential_binding": meta.get("credential_binding"),
+        "promotion_scope_proof": meta.get("promotion_scope_proof"),
+    }
+
+
 async def _list_active(wb: Any, seller: str, payment_type: str = "") -> dict[str, Any]:
     creds, error, meta = _resolve_ads_creds(wb, seller)
     if error:
@@ -215,16 +291,20 @@ async def _list_active(wb: Any, seller: str, payment_type: str = "") -> dict[str
     spec = wb.catalog.get("wb_get_api_advert_adverts")
     if spec is None:
         return make_error(
-            "contract", "Current WB campaign-list contract is missing.",
-            operation_id="wb_get_api_advert_adverts", retryable=False,
+            "contract",
+            "Current WB campaign-list contract is missing.",
+            operation_id="wb_get_api_advert_adverts",
+            retryable=False,
         )
     query: dict[str, Any] = {"statuses": str(ACTIVE_STATUS)}
     normalized_payment = str(payment_type or "").strip().lower()
     if normalized_payment:
         if normalized_payment not in {"cpm", "cpc"}:
             return make_error(
-                "invalid_params", "payment_type must be 'cpm' or 'cpc'.",
-                operation_id=spec.operation_id, retryable=False,
+                "invalid_params",
+                "payment_type must be 'cpm' or 'cpc'.",
+                operation_id=spec.operation_id,
+                retryable=False,
             )
         query["payment_type"] = normalized_payment
     response = await wb.client.call_spec(spec, query=query, creds_override=creds)
@@ -241,7 +321,7 @@ async def _list_active(wb: Any, seller: str, payment_type: str = "") -> dict[str
         "source": spec.operation_id,
         "provenance": {
             "marketplace": "wb",
-            "credential_service": ADS_SERVICE,
+            **_credential_provenance(meta),
             "operation_id": spec.operation_id,
             "data_class": "live_campaign_state",
         },
@@ -258,12 +338,19 @@ async def _get_stats(
     try:
         start, end = _validate_period(date_from, date_to)
     except ValueError as exc:
-        return make_error("invalid_params", str(exc), operation_id="wb_get_adv_fullstats", retryable=False)
+        return make_error(
+            "invalid_params",
+            str(exc),
+            operation_id="wb_get_adv_fullstats",
+            retryable=False,
+        )
     ids = sorted({int(value) for value in campaign_ids if int(value) > 0})
     if not ids:
         return make_error(
-            "invalid_params", "campaign_ids must contain at least one positive ID.",
-            operation_id="wb_get_adv_fullstats", retryable=False,
+            "invalid_params",
+            "campaign_ids must contain at least one positive ID.",
+            operation_id="wb_get_adv_fullstats",
+            retryable=False,
         )
     if len(ids) > MAX_CAMPAIGNS_PER_STATS_CALL:
         return {
@@ -273,7 +360,10 @@ async def _get_stats(
             "campaign_count": len(ids),
             "max_campaigns": MAX_CAMPAIGNS_PER_STATS_CALL,
             "retryable": False,
-            "message": "M0 refuses partial advertising analytics; split/batch scheduling belongs to the durable archive stage.",
+            "message": (
+                "M0 refuses partial advertising analytics; split/batch scheduling "
+                "belongs to the durable archive stage."
+            ),
         }
     creds, error, meta = _resolve_ads_creds(wb, seller)
     if error:
@@ -281,8 +371,10 @@ async def _get_stats(
     spec = wb.catalog.get("wb_get_adv_fullstats")
     if spec is None:
         return make_error(
-            "contract", "Current WB /adv/v3/fullstats contract is missing.",
-            operation_id="wb_get_adv_fullstats", retryable=False,
+            "contract",
+            "Current WB /adv/v3/fullstats contract is missing.",
+            operation_id="wb_get_adv_fullstats",
+            retryable=False,
         )
     response = await wb.client.call_spec(
         spec,
@@ -313,7 +405,7 @@ async def _get_stats(
         "metric_contract_version": METRIC_CONTRACT_VERSION,
         "provenance": {
             "marketplace": "wb",
-            "credential_service": ADS_SERVICE,
+            **_credential_provenance(meta),
             "operation_id": spec.operation_id,
             "data_class": "advertising_attribution_operational",
             "period_days": (end - start).days + 1,
@@ -372,8 +464,10 @@ def register_wb_advertising_tools(mcp: FastMCP, modules: dict[str, Any]) -> None
         days = int(days)
         if not 1 <= days <= MAX_STATS_DAYS:
             return _j(make_error(
-                "invalid_params", f"days must be in 1..{MAX_STATS_DAYS}.",
-                operation_id="wb_ads_audit_active", retryable=False,
+                "invalid_params",
+                f"days must be in 1..{MAX_STATS_DAYS}.",
+                operation_id="wb_ads_audit_active",
+                retryable=False,
             ))
         active = await _list_active(wb, seller)
         if not active.get("ok"):
@@ -386,7 +480,10 @@ def register_wb_advertising_tools(mcp: FastMCP, modules: dict[str, Any]) -> None
                 "error": "campaign_schema_unproven",
                 "code": "WB_ADS_CAMPAIGN_ID_MISSING",
                 "retryable": False,
-                "message": "At least one active campaign has no recognized campaign ID; audit stopped instead of returning partial results.",
+                "message": (
+                    "At least one active campaign has no recognized campaign ID; "
+                    "audit stopped instead of returning partial results."
+                ),
                 "campaign_count": len(campaigns),
                 "resolved_ids": ids,
             })
@@ -411,7 +508,10 @@ def register_wb_advertising_tools(mcp: FastMCP, modules: dict[str, Any]) -> None
                 "active_campaign_count": len(ids),
                 "max_campaigns": MAX_CAMPAIGNS_PER_STATS_CALL,
                 "retryable": False,
-                "message": "M0 does not return a partial audit; durable rate-aware batching will be added with Advertising Archive V1.",
+                "message": (
+                    "M0 does not return a partial audit; durable rate-aware batching "
+                    "will be added with Advertising Archive V1."
+                ),
             })
 
         msk_today = datetime.now(ZoneInfo("Europe/Moscow")).date()
@@ -437,7 +537,11 @@ def register_wb_advertising_tools(mcp: FastMCP, modules: dict[str, Any]) -> None
             "cabinet": active.get("cabinet"),
             "business_entity": active.get("business_entity"),
             "active_campaign_count": len(ids),
-            "period": {"date_from": start.isoformat(), "date_to": end.isoformat(), "timezone": "Europe/Moscow"},
+            "period": {
+                "date_from": start.isoformat(),
+                "date_to": end.isoformat(),
+                "timezone": "Europe/Moscow",
+            },
             "evaluation_class": "advertising_attribution_operational",
             "business_profitability": "not_evaluated",
             "business_profitability_reason": (
