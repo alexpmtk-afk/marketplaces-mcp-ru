@@ -1,0 +1,205 @@
+"""Canonical WB Promotion data-layer contract.
+
+This module is deliberately declarative. It defines source-of-truth routing,
+archive grains, provider limits and semantic/quality boundaries before any
+Advertising Archive V1 ingestion worker is allowed to persist data.
+
+The contract is grounded in the current Wildberries Promotion API:
+- current campaign state: GET /api/advert/v2/adverts
+- campaign statistics: GET /adv/v3/fullstats (<=31 days, <=50 campaign IDs)
+- daily search-cluster statistics: POST /adv/v1/normquery/stats
+- actual promotion costs history: GET /adv/v1/upd (<=31 days)
+- account top-ups: GET /adv/v1/payments (<=31 days)
+- current budgets/balance/config/bids/minus phrases: live Promotion API
+
+No entry in this contract means that archive ingestion or coverage is already
+implemented. The contract is the prerequisite for those stages.
+"""
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import Any
+
+DATA_CONTRACT_VERSION = "wb_ads_data_v1.0"
+ARCHIVE_STATUS = "contract_ready_ingestion_pending"
+
+DATASETS: dict[str, dict[str, Any]] = {
+    "ads_campaign_daily": {
+        "layer": "historical",
+        "provider_operation": "wb_get_adv_fullstats",
+        "provider_path": "/adv/v3/fullstats",
+        "grain": ["date", "campaign_id"],
+        "archive": True,
+        "max_days_per_request": 31,
+        "max_campaign_ids_per_request": 50,
+        "rate_limit": "3 req/min per seller account",
+        "primary_measures": [
+            "views", "clicks", "cart_adds", "ad_orders", "advertised_items",
+            "canceled", "spend", "attributed_order_amount",
+        ],
+        "derived_measures": [
+            "ctr_pct", "cpc", "click_to_order_cr_pct", "cpo",
+            "drr_order_pct", "roas",
+        ],
+        "semantic_class": "advertising_attribution_operational",
+        "limitations": [
+            "ad_orders are WB advertising-attributed orders, not complete seller orders",
+            "attributed_order_amount is not actual realized seller revenue",
+            "financial spend should be reconciled against ads_expenses before financial conclusions",
+        ],
+    },
+    "ads_product_daily": {
+        "layer": "historical",
+        "provider_operation": "wb_get_adv_fullstats",
+        "provider_path": "/adv/v3/fullstats",
+        "provider_extract": "days[].apps[].nms[]",
+        "grain": ["date", "campaign_id", "app_type", "nm_id"],
+        "archive": True,
+        "max_days_per_request": 31,
+        "max_campaign_ids_per_request": 50,
+        "semantic_class": "advertising_attribution_operational",
+        "limitations": [
+            "same attribution boundary as campaign statistics",
+            "rows from different app_type values must not be silently collapsed before aggregation rules are applied",
+        ],
+    },
+    "ads_search_cluster_daily": {
+        "layer": "historical",
+        "provider_operation": "wb_post_adv_normquery_stats_v1",
+        "provider_path": "/adv/v1/normquery/stats",
+        "grain": ["date", "campaign_id", "nm_id", "norm_query"],
+        "archive": True,
+        "max_items_per_request": 100,
+        "rate_limit": "10 req/min per seller account",
+        "primary_measures": [
+            "views", "clicks", "cart_adds", "orders", "ordered_items",
+            "spend", "avg_position", "ctr", "cpc", "cpm",
+        ],
+        "nullable_by_payment_model": {
+            "cpc": ["views", "ctr", "cpm"],
+        },
+        "quality_rule": "provider-unavailable CPC fields are NULL/not_available, never synthetic zero",
+    },
+    "ads_expenses": {
+        "layer": "financial_history",
+        "provider_operation": "wb_get_adv_upd",
+        "provider_path": "/adv/v1/upd",
+        "grain": ["expense_event"],
+        "archive": True,
+        "max_days_per_request": 31,
+        "rate_limit": "1 req/sec per seller account",
+        "meaning": "provider history of actual Promotion campaign costs",
+        "financial_role": "spend_reconciliation_source",
+    },
+    "ads_payments": {
+        "layer": "financial_history",
+        "provider_operation": "wb_get_adv_payments",
+        "provider_path": "/adv/v1/payments",
+        "grain": ["payment_event"],
+        "archive": True,
+        "max_days_per_request": 31,
+        "rate_limit": "1 req/sec per seller account",
+        "meaning": "Promotion account top-up history",
+        "financial_role": "funding_history_not_performance",
+    },
+    "ads_campaign_snapshots": {
+        "layer": "current_state_snapshot",
+        "provider_operation": "wb_get_api_advert_adverts",
+        "provider_path": "/api/advert/v2/adverts",
+        "grain": ["observed_at", "campaign_id"],
+        "archive": True,
+        "provider_sync": {
+            "database": "about 3 minutes",
+            "campaign_status": "about 1 minute",
+            "bids": "about 30 seconds",
+        },
+        "quality_rule": "snapshot observed_at is mandatory; snapshot is observation, not event-time truth",
+    },
+    "ads_account_balance_current": {
+        "layer": "live_state",
+        "provider_operation": "wb_get_adv_balance",
+        "provider_path": "/adv/v1/balance",
+        "grain": ["cabinet"],
+        "archive": False,
+        "meaning": "current Promotion account balance/net/bonus state",
+    },
+    "ads_campaign_budget_current": {
+        "layer": "live_state",
+        "provider_operation": "wb_adv_budget",
+        "provider_path": "/adv/v1/budget",
+        "grain": ["campaign_id"],
+        "archive": False,
+        "meaning": "current campaign budget",
+    },
+    "ads_search_cluster_bids_current": {
+        "layer": "live_config",
+        "provider_operation": "wb_post_adv_normquery_get_bids",
+        "provider_path": "/adv/v0/normquery/get-bids",
+        "grain": ["campaign_id", "nm_id", "norm_query"],
+        "archive": False,
+        "history_policy": "history exists only from MCP-owned snapshots/audit log; provider endpoint is current state",
+    },
+    "ads_minus_phrases_current": {
+        "layer": "live_config",
+        "provider_operation": "wb_post_adv_normquery_get_minus",
+        "provider_path": "/adv/v0/normquery/get-minus",
+        "grain": ["campaign_id", "nm_id", "norm_query"],
+        "archive": False,
+        "history_policy": "history exists only from MCP-owned snapshots/audit log; provider endpoint is current state",
+    },
+}
+
+ROUTING_RULES = {
+    "current_campaign_state": "live Promotion API only",
+    "current_budget_balance_bids_minus_phrases": "live Promotion API only",
+    "closed_historical_advertising": "archive-first only after FULL_COVERAGE is proven; otherwise explicit live fallback or coverage gap",
+    "advertising_efficiency": "use advertising attribution datasets; label results as provider-attributed",
+    "actual_business_profitability": (
+        "requires joins to actual sales/buyouts, returns, marketplace finance and unit economics; "
+        "advertising attribution alone is insufficient"
+    ),
+    "financial_spend": "reconcile campaign-stat spend with ads_expenses; do not assume identical semantics",
+    "missing_provider_rows": "never silently coerce missing campaign/stat rows to zero",
+}
+
+QUALITY_GATES = {
+    "coverage": "FULL_COVERAGE required before archive-only historical calculations",
+    "provenance": "every answer must retain marketplace, cabinet, dataset/source operation and covered period",
+    "nullability": "provider-unavailable metrics remain NULL/not_available",
+    "currency": "never combine different currencies without explicit conversion contract",
+    "attribution": "AD_ORDERS != REAL_ORDERS and AD_ORDER_AMOUNT != REAL_SALES_AMOUNT",
+    "zero_anomaly": (
+        "zero-rich provider statistics must not be treated as proven business zero when other provider sources conflict; "
+        "surface a quality flag and reconcile where an independent provider source exists"
+    ),
+}
+
+LAYER_MODEL = [
+    "provider_source",
+    "normalization",
+    "archive_and_coverage",
+    "semantic_routing",
+    "business_join",
+    "quality_and_provenance",
+    "action_gate",
+]
+
+
+def advertising_data_map() -> dict[str, Any]:
+    """Return a copy of the canonical WB advertising data contract."""
+    return {
+        "version": DATA_CONTRACT_VERSION,
+        "status": ARCHIVE_STATUS,
+        "layers": list(LAYER_MODEL),
+        "datasets": deepcopy(DATASETS),
+        "routing_rules": dict(ROUTING_RULES),
+        "quality_gates": dict(QUALITY_GATES),
+    }
+
+
+def required_provider_operations(*, archive_only: bool = False) -> set[str]:
+    """Return provider operation IDs required by the contract."""
+    rows = DATASETS.values()
+    if archive_only:
+        rows = [row for row in rows if row.get("archive") is True]
+    return {str(row["provider_operation"]) for row in rows if row.get("provider_operation")}
