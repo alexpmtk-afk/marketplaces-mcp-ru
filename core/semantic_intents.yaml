@@ -1,4 +1,4 @@
-version: 2026-09-14.v5
+version: 2026-09-14.v6
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -21,6 +21,12 @@ routes:
     target_type: not_covered
     target_id: current_fulfillment_configuration
     match_any: [какая схема сейчас, схема отгрузки сейчас, схеме отгрузки сейчас, текущая схема отгрузки, настроена схема, текущая схема поставки]
+
+  - id: current_warehouse_tariff
+    priority: 1945
+    target_type: inline_not_covered
+    reason: Актуальные коэффициенты логистики/хранения и текущие тарифы склада нужно получать из актуального раздела тарифов Wildberries или подтверждённого live-источника. Исторические dlvPrc/warehouseLogisticsCoeff из еженедельного отчёта нельзя выдавать за текущий тариф.
+    match_any: [актуальный коэффициент склада, актуальный коэффициент логистики, актуальный коэффициент хранения, текущий коэффициент склада, текущий коэффициент логистики, текущий коэффициент хранения, тариф склада сейчас, тариф логистики сейчас, тариф хранения сейчас, актуальный тариф склада, актуальный тариф логистики, актуальный тариф хранения]
 
   - id: advertising_performance
     priority: 1900
@@ -74,7 +80,7 @@ routes:
     priority: 1425
     target_type: capability
     target_id: warehouse_tariff_context
-    match_any: [коэффициент логистики, коэффициент склада, тариф склада, тариф логистики, warehouselogisticscoeff, dlvprc]
+    match_any: [коэффициент логистики, коэффициент склада, коэффициент хранения, зафиксированный коэффициент, фиксированный коэффициент склада, тариф склада, тариф логистики, период фиксации тарифа, warehouselogisticscoeff, dlvprc]
 
   - id: logistics
     priority: 1400
