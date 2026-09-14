@@ -143,7 +143,11 @@ class GoogleDriveArchiveStore:
         except ValueError as exc:
             raise ArchiveStorageError("Apps Script Drive bridge returned a non-JSON response; check web-app access settings") from exc
         if not isinstance(data, dict) or data.get("ok") is not True:
-            raise ArchiveStorageError(f"Apps Script Drive bridge rejected {action}: {str(data)[:500]}")
+            retryable = bool(data.get("retryable")) if isinstance(data, dict) else False
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge rejected {action}: {str(data)[:500]}",
+                retryable=retryable,
+            )
         return data
 
     async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
@@ -183,6 +187,7 @@ class GoogleDriveArchiveStore:
         *,
         parent_id: str,
         file_id: str,
+        staging_name: str,
         canonical_name: str,
         expected_bytes: int,
         expected_sha256: str,
@@ -192,6 +197,7 @@ class GoogleDriveArchiveStore:
             "promote_verified",
             path=self._path((parent_id,)),
             file_id=str(file_id),
+            staging_filename=str(staging_name),
             canonical_filename=str(canonical_name),
             expected_bytes=int(expected_bytes),
             expected_sha256=str(expected_sha256).lower(),
@@ -206,6 +212,8 @@ class GoogleDriveArchiveStore:
             raise ArchiveStorageError("Apps Script Drive bridge promotion returned the wrong canonical name")
         if item.size != int(expected_bytes) or item.sha256_checksum != str(expected_sha256).lower():
             raise ArchiveStorageError("Apps Script Drive bridge promotion failed final size/SHA256 verification")
+        if previous_file_id and str(previous_file_id) != str(file_id) and data.get("previous_file_trashed") is not True:
+            raise ArchiveStorageError("Apps Script Drive bridge did not confirm previous canonical cleanup", retryable=True)
         return item
 
     async def start_resumable_session(self, *, parent_id: str, name: str, total_bytes: int, mime_type: str = "text/csv") -> dict[str, Any]:
