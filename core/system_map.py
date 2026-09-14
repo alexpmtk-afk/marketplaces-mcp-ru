@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v7"
+ARCHITECTURE_VERSION = "2026-09-14.v8"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -71,9 +71,10 @@ SYSTEM_MAP: dict[str, Any] = {
             "penalties",
             "storage_charge",
             "acceptance_charge",
+            "sale_and_return_operations",
         ],
         "execution_gate": "FULL_COVERAGE from COMPLETE reports_registry.csv fragments plus canonical annual file presence",
-        "money_policy": "sum values exactly as reported; never combine different currencies into one total",
+        "money_policy": "sum values exactly as reported except formulas that explicitly define subtraction by operation type; never combine different currencies into one total",
         "question_policy": {
             "preferred_input": "the user's original natural-language question",
             "legacy_metric": "retained only for backward compatibility",
@@ -92,12 +93,13 @@ SYSTEM_MAP: dict[str, Any] = {
             "archive execution requires FULL_COVERAGE for the entire requested period before any calculation",
             "registry coverage without the corresponding canonical annual file fails closed",
             "penalty, paidStorage and paidAcceptance sums preserve provider sign and currency",
-            "sales, commissions and other recognized capabilities remain non-executable until separate formulas are approved",
+            "sales and returns use saleDt and explicit docTypeName buckets: Продажа minus Возврат for both retailAmount and quantity",
+            "commissions and other recognized capabilities remain non-executable until separate formulas are approved",
         ],
         "runtime_integration": (
             "marketplace_business_query accepts the original question; approved penalties/storage/acceptance "
-            "route to the coverage-gated archive executor. Other concepts fail closed or identify another "
-            "required source. Legacy metric routing remains for compatibility."
+            "and sales/returns route to the coverage-gated archive executor. Other concepts fail closed or "
+            "identify another required source. Legacy metric routing remains for compatibility."
         ),
     },
     "routing_policy": {
@@ -132,8 +134,8 @@ Yandex Object Storage is required for durable queue/job state, staging, and a se
 Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.
-Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Values are summed exactly as reported and different currencies are never combined into one total.
-marketplace_business_query now routes natural questions for penalties, storage charges and paid acceptance into the gated archive executor. Other recognized capabilities remain blocked until their own execution contracts or suitable sources are approved.
+Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Different currencies are never combined into one total.
+marketplace_business_query now routes natural questions for penalties, storage charges, paid acceptance, and sales/returns into the gated archive executor. Sales/returns use saleDt and explicit docTypeName buckets, with Продажа minus Возврат for both retailAmount and quantity.
 WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
 Unknown, ambiguous, current-state, unsupported or uncovered questions must fail closed or identify the required source instead of being guessed from similar fields.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
