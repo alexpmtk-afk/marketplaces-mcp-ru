@@ -17,6 +17,7 @@ from .archive_drive_resumable import (
     ResumableUploadError,
     build_drive_resumable_uploader_from_bridge,
 )
+from .archive_google import ArchiveStorageError
 from .archive_queue import JOB_FOLDER, WBFinanceArchiveJobQueue
 from .wb_finance_archive import ArchiveLock
 
@@ -164,14 +165,18 @@ class WBFinanceResumableWorker:
                 if probe.state == "expired":
                     previous = upload.get("previous_canonical_file_id")
                     upload = {"previous_canonical_file_id": previous} if previous else {}
+                    finalize["resumable_upload"] = upload
                     session_uri = ""
                 else:
+                    # Drive is authoritative. A lower offset means rewind and
+                    # resend from the server-confirmed position, not failure.
                     upload["offset"] = int(probe.offset)
                     upload["retry_count"] = 0
+                    finalize["resumable_upload"] = upload
 
             if not session_uri:
-                # Crash recovery: if the canonical file already has the exact expected
-                # content, promotion must have succeeded before state persistence.
+                # Recovery A: promotion may have succeeded before durable state
+                # persistence. If canonical is already exact, do not re-upload.
                 canonical = await self.uploader.find_named_file(drive_parent, annual_name)
                 previous_canonical_id = str((canonical or {}).get("id") or "") or None
                 if previous_canonical_id:
@@ -191,6 +196,38 @@ class WBFinanceResumableWorker:
                             expected_bytes=expected_bytes,
                             expected_sha=expected_sha,
                             action="report_annual_already_promoted",
+                        )
+
+                # Recovery B: upload may have completed but its final response or
+                # session URI was lost. Reuse an exact deterministic staging file.
+                staged = await self.uploader.find_named_file(drive_parent, staging_name)
+                staged_id = str((staged or {}).get("id") or "") or None
+                if staged_id:
+                    staged_meta = await self.uploader.file_metadata(staged_id)
+                    if self._metadata_matches(staged_meta, expected_bytes, expected_sha):
+                        upload = {
+                            "offset": expected_bytes,
+                            "target_file_id": staged_id,
+                            "chunk_bytes": self.uploader.chunk_size,
+                            "session_broker": "google_apps_script",
+                            "staging_name": staging_name,
+                            "previous_canonical_file_id": previous_canonical_id,
+                            "retry_count": 0,
+                            "recovered_completed_staging": True,
+                        }
+                        finalize["resumable_upload"] = upload
+                        state["finalize"] = finalize
+                        await self.queue._save(state)
+                        return await self._finish_staged_upload(
+                            state=state,
+                            finalize=finalize,
+                            file_meta={"id": staged_id},
+                            candidate_id=candidate_obj.id,
+                            annual_parts=annual_parts,
+                            annual_name=annual_name,
+                            staging_name=staging_name,
+                            expected_bytes=expected_bytes,
+                            expected_sha=expected_sha,
                         )
 
                 session = await self.uploader.start_session(
@@ -231,10 +268,37 @@ class WBFinanceResumableWorker:
             if offset >= expected_bytes:
                 probe = await self.uploader.query_status(session_uri, expected_bytes)
                 if probe.state != "complete":
-                    raise ResumableUploadError(
-                        "Drive reports an incomplete session after the expected final offset",
-                        retryable=True,
-                    )
+                    if probe.state == "expired":
+                        previous = upload.get("previous_canonical_file_id")
+                        finalize["resumable_upload"] = (
+                            {"previous_canonical_file_id": previous} if previous else {}
+                        )
+                        state["finalize"] = finalize
+                        state["status"] = "QUEUED"
+                        await self.queue._save(state)
+                        await self.queue._schedule(job_id, 0)
+                        return {
+                            "ok": True,
+                            "job_id": job_id,
+                            "status": state["status"],
+                            "action": "drive_resumable_session_restarted",
+                            "report_id": report_id,
+                            "confirmed_bytes": 0,
+                            "annual_bytes": expected_bytes,
+                        }
+                    upload["offset"] = int(probe.offset)
+                    finalize["resumable_upload"] = upload
+                    state["finalize"] = finalize
+                    await self.queue._save(state)
+                    await self.queue._schedule(job_id, 0)
+                    return {
+                        "ok": True,
+                        "job_id": job_id,
+                        "status": state.get("status", "QUEUED"),
+                        "action": "drive_resumable_offset_rewound",
+                        "confirmed_bytes": int(probe.offset),
+                        "annual_bytes": expected_bytes,
+                    }
                 return await self._finish_staged_upload(
                     state=state,
                     finalize=finalize,
@@ -290,7 +354,7 @@ class WBFinanceResumableWorker:
                     expected_sha=expected_sha,
                 )
             confirmed = int(progress.offset)
-            if confirmed < offset or confirmed > expected_bytes:
+            if confirmed < 0 or confirmed > expected_bytes:
                 raise RuntimeError("Drive returned an invalid confirmed upload offset")
             upload["offset"] = confirmed
             upload["retry_count"] = 0
@@ -312,8 +376,12 @@ class WBFinanceResumableWorker:
                 "progress_percent": round(100.0 * confirmed / expected_bytes, 2),
                 "canonical_untouched": True,
             }
-        except ResumableUploadError as exc:
-            if not exc.retryable:
+        except (ResumableUploadError, ArchiveStorageError) as exc:
+            retryable = bool(getattr(exc, "retryable", False))
+            promotion_attempted = bool(
+                (finalize.get("resumable_upload") or {}).get("promotion_attempted")
+            )
+            if not retryable:
                 state["status"] = "FAILED"
                 state["last_error"] = str(exc)[:1000]
                 state["finalize"] = finalize
@@ -326,12 +394,14 @@ class WBFinanceResumableWorker:
                     "action": "drive_resumable_upload_failed",
                     "error": state["last_error"],
                     "candidate_preserved": True,
-                    "canonical_untouched": True,
+                    "canonical_state": "recheck_required" if promotion_attempted else "untouched",
                 }
             retry_count = int(upload.get("retry_count", 0) or 0) + 1
             upload["retry_count"] = retry_count
             finalize["resumable_upload"] = upload
-            delay = self._retry_delay(job_id, retry_count)
+            backoff = self._retry_delay(job_id, retry_count)
+            retry_after = int(math.ceil(float(getattr(exc, "retry_after_seconds", 0.0) or 0.0)))
+            delay = max(backoff, retry_after)
             state["status"] = "WAITING_RETRY"
             state["last_error"] = str(exc)[:1000]
             state["finalize"] = finalize
@@ -345,7 +415,7 @@ class WBFinanceResumableWorker:
                 "retry_after_seconds": delay,
                 "retry_count": retry_count,
                 "report_id": report_id,
-                "canonical_untouched": True,
+                "canonical_state": "recheck_required" if promotion_attempted else "untouched",
             }
 
     async def _finish_staged_upload(
@@ -383,6 +453,18 @@ class WBFinanceResumableWorker:
             expected_bytes=expected_bytes,
             expected_sha=expected_sha,
         )
+
+        # Persist an explicit promotion checkpoint before the side effect. If the
+        # bridge response is lost, the next step can safely re-check/retry using
+        # the same staged and previous-canonical file IDs.
+        upload["staged_file_id"] = file_id
+        upload["promotion_attempted"] = True
+        upload["offset"] = expected_bytes
+        finalize["resumable_upload"] = upload
+        state["finalize"] = finalize
+        state["status"] = "PROMOTION_PENDING"
+        state["last_error"] = None
+        await self.queue._save(state)
 
         previous_id = str(upload.get("previous_canonical_file_id") or "") or None
         promoted = await self.store.drive.promote_verified_file(
