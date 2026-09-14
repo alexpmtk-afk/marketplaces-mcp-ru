@@ -69,6 +69,7 @@ def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
         "commission_and_wb_reward",
         "acquiring_and_payment_processing",
         "observed_fulfillment_method",
+        "warehouse_tariff_context",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
@@ -111,11 +112,22 @@ def test_historical_fulfillment_boundary_is_canonical():
     semantic = SYSTEM_MAP["semantic_core"]
     rules = "\n".join(semantic["rules"])
     assert "deliveryMethod" in rules
-    assert "officeName" in rules
-    assert "rrDate" in rules
-    assert "never confirms current fulfillment configuration" in rules
+    assert "historical fulfillment" in rules
+    assert "current configuration" in rules
     assert "historical fulfillment observations" in semantic["runtime_integration"]
-    assert "current-fulfillment questions fail closed" in semantic["runtime_integration"]
+    assert "current tariff/configuration questions fail closed" in semantic["runtime_integration"]
+
+
+def test_historical_tariff_context_boundary_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "dlvPrc" in rules
+    assert "fixTariffDateFrom" in rules
+    assert "fixTariffDateTo" in rules
+    assert "warehouseLogisticsCoeff" in rules
+    assert "current live warehouse tariff" in rules
+    assert "historical warehouse tariff context" in semantic["runtime_integration"]
+    assert "live source" in SYSTEM_MAP["routing_policy"]["current_tariffs"]
 
 
 def test_order_source_guardrail_is_canonical():
@@ -158,7 +170,11 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "final monthly" in SYSTEM_INSTRUCTIONS
     assert "deliveryMethod" in SYSTEM_INSTRUCTIONS
     assert "officeName" in SYSTEM_INSTRUCTIONS
-    assert "current fulfillment configuration" in SYSTEM_INSTRUCTIONS
+    assert "dlvPrc" in SYSTEM_INSTRUCTIONS
+    assert "fixTariffDateFrom" in SYSTEM_INSTRUCTIONS
+    assert "fixTariffDateTo" in SYSTEM_INSTRUCTIONS
+    assert "warehouseLogisticsCoeff" in SYSTEM_INSTRUCTIONS
+    assert "current live tariff" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -194,6 +210,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "acquiring_and_payment_processing" in architecture
     assert "observed_fulfillment_method" in architecture
     assert "HISTORICAL_OBSERVED_FULFILLMENT" in architecture
+    assert "warehouse_tariff_context" in architecture
+    assert "HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT" in architecture
     assert "PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING" in architecture
     assert "PRELIMINARY_NOT_ALL_ORDERS" in architecture
     assert "core/system_map.py" in agents
