@@ -1,4 +1,4 @@
-version: 2026-09-14.v2
+version: 2026-09-14.v3
 policy:
   fail_closed: true
   require_full_coverage: true
@@ -51,3 +51,34 @@ executors:
     mode: sale_return_summary
     product_filter_field: nmId
     semantics: For the covered saleDt period, calculate sales and returns separately by docTypeName. Net sales amount is retailAmount for Продажа minus retailAmount for Возврат; net units are quantity for Продажа minus quantity for Возврат. Never infer the sign from retailAmount and never combine currencies.
+  logistics:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: deliveryService
+    currency_field: currency
+    mode: component_breakdown
+    reason_fields: [bonusTypeName]
+    components:
+      delivery_service_amount: deliveryService
+      rebilled_transport_warehouse_cost: rebillLogisticCost
+    count_components:
+      delivery_count: deliveryAmount
+      return_logistics_count: returnAmount
+    product_filter_field: nmId
+    semantics: Keep weekly-report logistics components separate. deliveryService is summed as reported and broken down by sellerOperName/bonusTypeName; rebillLogisticCost is a separate reimbursed transport/warehouse-cost component and is never silently merged with deliveryService. deliveryAmount and returnAmount are logistics counts, not sales/return counts.
+  deductions_and_adjustments:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: deduction
+    currency_field: currency
+    mode: component_breakdown
+    reason_fields: [bonusTypeName]
+    components:
+      deduction_amount: deduction
+      wb_reward_adjustment_amount: additionalPayment
+    product_filter_field: nmId
+    semantics: Keep deduction and additionalPayment separate. deduction is summed as the report's deduction field; additionalPayment is the WB-remuneration adjustment field and must not be relabeled as seller payout or netted against deductions without a separately approved rule.
