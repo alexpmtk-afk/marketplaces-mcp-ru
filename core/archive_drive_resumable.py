@@ -1,8 +1,8 @@
 """Google Drive resumable uploader for large canonical archive files.
 
-The owner-operated Apps Script bridge authenticates only the *session start*.
-Google then returns a resumable session URI. Yandex uploads bounded chunks
-directly to that URI, so no Google OAuth refresh token is stored in Yandex.
+Apps Script authenticates only creation of the official Drive resumable session.
+Yandex then uploads bounded chunks directly to that opaque session URI, so no
+Google OAuth refresh token is stored in Yandex.
 
 The session URI is effectively a bearer credential. Never expose it in logs,
 errors, MCP responses, or user-visible status.
@@ -23,6 +23,7 @@ from .archive_google import ArchiveStorageNotConfigured
 
 CHUNK_GRANULARITY = 256 * 1024
 DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024
+MAX_CHUNK_SIZE = 32 * 1024 * 1024
 _RANGE_RE = re.compile(r"bytes=0-(\d+)$")
 _AMBIGUOUS_TRANSIENT_STATUSES = {408, 500, 502, 503, 504}
 _BACKOFF_ONLY_STATUSES = {425, 429}
@@ -72,9 +73,13 @@ class GoogleDriveResumableUploader:
             raise ArchiveStorageNotConfigured("Google Drive resumable session broker is missing")
         self.session_broker = session_broker
         self.chunk_size = int(chunk_size)
-        if self.chunk_size < CHUNK_GRANULARITY or self.chunk_size % CHUNK_GRANULARITY:
+        if (
+            self.chunk_size < CHUNK_GRANULARITY
+            or self.chunk_size > MAX_CHUNK_SIZE
+            or self.chunk_size % CHUNK_GRANULARITY
+        ):
             raise ArchiveStorageNotConfigured(
-                "Google Drive resumable chunk size must be a positive multiple of 256 KiB"
+                "Google Drive resumable chunk size must be 256 KiB aligned and between 256 KiB and 32 MiB"
             )
         self.timeout = float(timeout)
 
@@ -91,6 +96,9 @@ class GoogleDriveResumableUploader:
         if (
             parsed.scheme != "https"
             or parsed.hostname != "www.googleapis.com"
+            or parsed.port not in {None, 443}
+            or parsed.username is not None
+            or parsed.password is not None
             or not parsed.path.startswith("/upload/drive/")
         ):
             raise ResumableUploadError("Invalid Google Drive resumable session URI")
@@ -99,9 +107,8 @@ class GoogleDriveResumableUploader:
     async def _request(self, method: str, session_uri: str, **kwargs: Any) -> httpx.Response:
         url = self._validate_session_uri(session_uri)
         try:
-            # A resumable session URI is a bearer-like capability. Never follow
-            # redirects for direct chunk/status requests: fail closed instead of
-            # forwarding upload bytes or the opaque capability to another host.
+            # The session URI is a bearer-like capability. Never automatically
+            # forward it or upload bytes to a redirect target.
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
                 return await client.request(method, url, **kwargs)
         except httpx.HTTPError as exc:
@@ -113,8 +120,17 @@ class GoogleDriveResumableUploader:
     @staticmethod
     def _confirmed_offset(response: httpx.Response) -> int:
         value = str(response.headers.get("Range") or "").strip()
+        if not value:
+            # Google documents that a 308 without Range means zero bytes have
+            # been durably received.
+            return 0
         match = _RANGE_RE.fullmatch(value)
-        return int(match.group(1)) + 1 if match else 0
+        if not match:
+            raise ResumableUploadError(
+                "Google Drive returned a malformed resumable Range header",
+                retryable=True,
+            )
+        return int(match.group(1)) + 1
 
     @staticmethod
     def _retry_after(response: httpx.Response) -> float:
@@ -157,6 +173,16 @@ class GoogleDriveResumableUploader:
             or cls._is_rate_limit_403(response)
         )
 
+    @classmethod
+    def _session_must_restart(cls, response: httpx.Response) -> bool:
+        # Drive's resumable-upload guide says any non-rate-limit 4xx during a
+        # resumable upload means the session should be restarted. 408/425/429
+        # and 403 rate limits are handled as transient backoff instead.
+        return (
+            400 <= response.status_code < 500
+            and not cls._retryable_response(response)
+        )
+
     async def start_session(
         self,
         *,
@@ -191,9 +217,7 @@ class GoogleDriveResumableUploader:
             return UploadProgress("complete", int(total_bytes), self._json_dict(response))
         if response.status_code == 308:
             return UploadProgress("incomplete", self._confirmed_offset(response), None)
-        # Google Drive explicitly documents 404 as an expired resumable session.
-        # Other 4xx responses fail closed unless they are a recognized rate limit.
-        if response.status_code == 404:
+        if self._session_must_restart(response):
             return UploadProgress("expired", 0, None)
         raise ResumableUploadError(
             f"Google Drive resumable status failed with HTTP {response.status_code}",
@@ -235,17 +259,19 @@ class GoogleDriveResumableUploader:
         except ResumableUploadError as exc:
             if not exc.retryable:
                 raise
+            # The request may have reached Google even when the client saw a
+            # timeout/disconnect. Never blindly resend; ask Drive first.
             return await self.query_status(session_uri, total_bytes)
         if response.status_code in {200, 201}:
             return UploadProgress("complete", int(total_bytes), self._json_dict(response))
         if response.status_code == 308:
             return UploadProgress("incomplete", self._confirmed_offset(response), None)
-        if response.status_code == 404:
-            return UploadProgress("expired", 0, None)
         if response.status_code in _AMBIGUOUS_TRANSIENT_STATUSES:
-            # A failed/timeout-like upload request may still have persisted bytes;
-            # query Drive before deciding what to resend.
+            # 5xx/408 can be ambiguous: bytes may have been committed. Query the
+            # authoritative server offset before any resend.
             return await self.query_status(session_uri, total_bytes)
+        if self._session_must_restart(response):
+            return UploadProgress("expired", 0, None)
         if response.status_code in _BACKOFF_ONLY_STATUSES or self._is_rate_limit_403(response):
             raise ResumableUploadError(
                 f"Google Drive resumable chunk throttled with HTTP {response.status_code}",
