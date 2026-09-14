@@ -5,8 +5,9 @@
  * as a control plane:
  * - resumable_start: authenticate the initial Drive resumable request;
  * - metadata_by_id: obtain Drive size/checksums without moving file bytes;
- * - promote_verified: after exact size/SHA256 verification, rename the staged
- *   upload to the canonical filename and only then trash the previous canonical;
+ * - promote_verified: after exact ID/name/parent/size/SHA256 verification,
+ *   rename the staged upload to the canonical filename and only then trash the
+ *   explicitly identified previous canonical;
  * - trash_by_id: cleanup verified diagnostic copies.
  *
  * Large file bytes never pass through Apps Script. The resumable session URI is
@@ -34,7 +35,10 @@ function doGet(){
   try{
     const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
     return json_({ok:true,service:'marketplaces-mcp-drive-bridge',version:BRIDGE_VERSION,root_id:root.getId(),root_name:root.getName()});
-  }catch(err){return json_({ok:false,error:String(err&&err.message||err)});}
+  }catch(err){
+    const message=String(err&&err.message||err);
+    return json_({ok:false,error:message,retryable:isRetryableError_(message)});
+  }
 }
 
 function doPost(e){
@@ -102,14 +106,17 @@ function doPost(e){
       return json_({ok:true,file:metadata_(file),sha256:sha,path:normalizePath_(path)});
     }
     return json_({ok:false,error:'unknown_action'});
-  }catch(err){return json_({ok:false,error:String(err&&err.message||err)});}
-  finally{lock.releaseLock();}
+  }catch(err){
+    const message=String(err&&err.message||err);
+    return json_({ok:false,error:message,retryable:isRetryableError_(message)});
+  }finally{lock.releaseLock();}
 }
 
 function promoteVerified_(body){
   const path=String(body.path||'');
   const fileId=String(body.file_id||'').trim();
   const previousId=String(body.previous_file_id||'').trim();
+  const stagingName=validateFilename_(String(body.staging_filename||''));
   const canonicalName=validateFilename_(String(body.canonical_filename||''));
   const expectedBytes=Number(body.expected_bytes||0);
   const expectedSha=String(body.expected_sha256||'').trim().toLowerCase();
@@ -124,26 +131,42 @@ function promoteVerified_(body){
   if(Number(before.size||0)!==expectedBytes) throw new Error('candidate_size_mismatch');
   if(String(before.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('candidate_sha256_mismatch');
   if(!Array.isArray(before.parents)||before.parents.indexOf(folder.getId())<0) throw new Error('candidate_wrong_parent');
+  const beforeName=String(before.name||'');
+  if(beforeName!==stagingName&&beforeName!==canonicalName) throw new Error('candidate_wrong_name');
 
-  // Promote the already verified staged file first. If execution stops after
-  // this line, a retry with the same explicit file IDs safely completes cleanup.
-  const candidate=DriveApp.getFileById(fileId);
-  if(candidate.getName()!==canonicalName) candidate.setName(canonicalName);
-
+  // Validate the exact old canonical BEFORE renaming the candidate, so a bad
+  // durable previous-file ID can never cause an unrelated file to be trashed.
+  let previous=null;
   if(previousId&&previousId!==fileId){
-    const previous=driveApiMetadata_(previousId);
+    previous=driveApiMetadata_(previousId);
     if(!previous.trashed){
       if(!Array.isArray(previous.parents)||previous.parents.indexOf(folder.getId())<0) throw new Error('previous_wrong_parent');
-      DriveApp.getFileById(previousId).setTrashed(true);
+      if(String(previous.name||'')!==canonicalName) throw new Error('previous_wrong_name');
     }
   }
 
-  const after=driveApiMetadata_(fileId);
-  if(after.trashed) throw new Error('promoted_file_trashed');
-  if(String(after.name||'')!==canonicalName) throw new Error('promoted_name_mismatch');
-  if(Number(after.size||0)!==expectedBytes) throw new Error('promoted_size_mismatch');
-  if(String(after.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('promoted_sha256_mismatch');
-  return {ok:true,file:after,previous_file_trashed:!!(previousId&&previousId!==fileId)};
+  // Promote the verified staged file first. The script lock serializes all
+  // bridge operations, so MCP readers cannot observe the short duplicate-name
+  // interval between rename and trash. A retry with the same explicit IDs is
+  // idempotent if the response is lost after this point.
+  const candidate=DriveApp.getFileById(fileId);
+  if(candidate.getName()!==canonicalName) candidate.setName(canonicalName);
+
+  try{
+    if(previousId&&previousId!==fileId&&previous&&!previous.trashed){
+      DriveApp.getFileById(previousId).setTrashed(true);
+    }
+    const after=driveApiMetadata_(fileId);
+    if(after.trashed) throw new Error('promoted_file_trashed');
+    if(String(after.name||'')!==canonicalName) throw new Error('promoted_name_mismatch');
+    if(Number(after.size||0)!==expectedBytes) throw new Error('promoted_size_mismatch');
+    if(String(after.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('promoted_sha256_mismatch');
+    return {ok:true,file:after,previous_file_trashed:!!(previousId&&previousId!==fileId)};
+  }catch(err){
+    // The candidate may already have been renamed. Mark the response retryable
+    // so the durable worker re-enters this exact-ID idempotent promotion path.
+    return {ok:false,error:'promotion_post_rename_retry',retryable:true};
+  }
 }
 
 function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes){
@@ -190,6 +213,14 @@ function driveApiMetadata_(fileId){
   const code=response.getResponseCode();
   if(code<200||code>=300) throw new Error('drive_metadata_http_'+code);
   return JSON.parse(response.getContentText()||'{}');
+}
+
+function isRetryableError_(message){
+  const m=String(message||'');
+  if(/drive_(resumable_start|metadata)_http_(408|425|429|500|502|503|504)/.test(m)) return true;
+  if(/promotion_post_rename_retry/.test(m)) return true;
+  if(/Service invoked too many times|Server error occurred|Service unavailable/i.test(m)) return true;
+  return false;
 }
 
 function normalizePath_(path){
