@@ -64,8 +64,39 @@ class FakeYandex:
 
 
 class FakeDrive:
+    def __init__(self):
+        self.starts = []
+        self.file_id = "drive-file-1"
+        self.size = 0
+        self.md5 = ""
+
     async def ensure_folder_path(self, parts):
-        return "drive:" + "/".join(parts)
+        return "/".join(parts)
+
+    async def start_resumable_session(self, **kwargs):
+        self.starts.append(kwargs)
+        return {
+            "session_uri": (
+                "https://www.googleapis.com/upload/drive/v3/files"
+                "?uploadType=resumable&upload_id=test-session"
+            ),
+            "file_id": self.file_id,
+        }
+
+    async def file_metadata(self, file_id):
+        assert file_id == self.file_id
+        return {"id": file_id, "size": str(self.size), "md5Checksum": self.md5}
+
+    async def find_child(self, parent_id, name, **kwargs):
+        del parent_id, name, kwargs
+        return SimpleNamespace(
+            id=self.file_id,
+            name="annual.csv",
+            size=self.size,
+            md5_checksum=self.md5,
+            mime_type="text/csv",
+            modified_time=None,
+        )
 
 
 class FakeStore:
@@ -200,6 +231,7 @@ def test_existing_laser_upload_phase_starts_session_without_provider_or_prepare(
     assert queue.state["finalize"]["phase"] == "UPLOAD_ANNUAL"
     assert queue.state["finalize"]["report_id"] == 743994450
     assert queue.state["finalize"]["resumable_upload"]["offset"] == 0
+    assert queue.state["finalize"]["resumable_upload"]["session_broker"] == "google_apps_script"
 
 
 def test_resumable_worker_uploads_one_chunk_per_step_and_persists_offset(monkeypatch):
@@ -253,29 +285,27 @@ def test_resumable_worker_verifies_final_file_and_advances_only_to_commit(monkey
     assert store.yandex.full_reads == 1
     backup_key = "База данных/WB/wb_laser_master/2026/finance/weekly/main/wb_laser_master__weekly_main__2026.csv"
     assert store.yandex.backups[backup_key] == candidate
-    # COMMIT is deliberately left to the existing queue on the next step.
     assert queue.delegate_calls == []
 
 
-def test_missing_oauth_fails_closed_and_preserves_candidate(monkeypatch):
+def test_default_worker_uses_apps_script_session_broker_without_oauth(monkeypatch):
     monkeypatch.setattr(archive_resumable_worker, "ArchiveLock", DummyLock)
+    monkeypatch.delenv("MARKETPLACE_MCP_GOOGLE_DRIVE_OAUTH_JSON", raising=False)
     candidate = b"laser-candidate"
     state = _state(candidate)
     queue = FakeQueue(state)
     store = FakeStore(candidate)
     worker = archive_resumable_worker.WBFinanceResumableWorker(queue, store, None)
-    worker.uploader = None
 
     result = asyncio.run(worker.worker_step(state["job_id"]))
 
-    assert result["action"] == "drive_resumable_oauth_required"
-    assert result["candidate_preserved"] is True
-    assert queue.state["status"] == "WAITING_CONFIGURATION"
+    assert result["action"] == "drive_resumable_session_started"
+    assert store.drive.starts
     assert queue.state["finalize"]["phase"] == "UPLOAD_ANNUAL"
     assert queue.state["finalize"]["report_id"] == 743994450
+    assert queue.state["finalize"]["resumable_upload"]["session_broker"] == "google_apps_script"
     assert store.yandex.candidate == candidate
     assert queue.delegate_calls == []
-    assert state["job_id"] in queue.unscheduled
 
 
 def test_non_upload_phase_delegates_to_existing_queue(monkeypatch):
@@ -286,7 +316,6 @@ def test_non_upload_phase_delegates_to_existing_queue(monkeypatch):
     state["phase"] = "DOWNLOAD"
     queue = FakeQueue(state)
     worker = archive_resumable_worker.WBFinanceResumableWorker(queue, FakeStore(candidate), None)
-    worker.uploader = None
 
     result = asyncio.run(worker.worker_step(state["job_id"]))
 
