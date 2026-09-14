@@ -61,6 +61,97 @@ def test_wb_advertising_m0_is_read_only_and_separate_from_profit():
     assert "WRITE/DESTRUCTIVE" in policy["safety_override"]
 
 
+def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
+    semantic = SYSTEM_MAP["semantic_core"]
+    assert semantic["status"] == "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED"
+    assert semantic["registry"] == "core/semantic_registry.yaml"
+    assert semantic["intent_catalog"] == "core/semantic_intents.yaml"
+    assert semantic["resolver"] == "core/semantic_resolver.py"
+    assert semantic["execution_registry"] == "core/semantic_execution.yaml"
+    assert semantic["archive_executor"] == "core/semantic_archive.py"
+    assert semantic["runtime_entry"] == "marketplace_business_query"
+    assert semantic["current_archive_dataset"] == "wb_weekly_finance_main"
+    assert set(semantic["approved_archive_executors"]) == {
+        "penalties",
+        "storage_charge",
+        "acceptance_charge",
+        "sale_and_return_operations",
+        "logistics",
+        "deductions_and_adjustments",
+        "commission_and_wb_reward",
+        "acquiring_and_payment_processing",
+        "observed_fulfillment_method",
+        "warehouse_tariff_context",
+    }
+    assert "FULL_COVERAGE" in semantic["execution_gate"]
+    assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
+    assert "accepts the original question" in semantic["runtime_integration"]
+
+
+def test_sales_and_returns_formula_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "saleDt" in rules
+    assert "docTypeName" in rules
+    assert "Продажа minus Возврат" in rules
+    assert "sales/returns" in semantic["runtime_integration"]
+
+
+def test_logistics_and_deductions_keep_components_separate():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "deliveryService and rebillLogisticCost separate" in rules
+    assert "deduction and additionalPayment separate" in rules
+    assert "never silently netted" in rules
+    assert "logistics" in semantic["runtime_integration"]
+    assert "deductions/adjustments" in semantic["runtime_integration"]
+
+
+def test_wb_reward_and_acquiring_boundaries_are_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "vw and vwNds" in rules
+    assert "commissionPercent/kvw/kvwBase" in rules
+    assert "acquiringFee" in rules
+    assert "preliminary" in rules.lower()
+    assert "final monthly" in rules.lower()
+    assert "monetary WB reward" in semantic["runtime_integration"]
+    assert "preliminary weekly acquiring" in semantic["runtime_integration"]
+    assert "Commission-rate questions" in semantic["runtime_integration"]
+
+
+def test_historical_fulfillment_boundary_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "deliveryMethod" in rules
+    assert "historical fulfillment" in rules
+    assert "current configuration" in rules
+    assert "historical fulfillment observations" in semantic["runtime_integration"]
+    assert "current tariff/configuration questions fail closed" in semantic["runtime_integration"]
+
+
+def test_historical_tariff_context_boundary_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "dlvPrc" in rules
+    assert "fixTariffDateFrom" in rules
+    assert "fixTariffDateTo" in rules
+    assert "warehouseLogisticsCoeff" in rules
+    assert "current live warehouse tariff" in rules
+    assert "historical warehouse tariff context" in semantic["runtime_integration"]
+    assert "live source" in SYSTEM_MAP["routing_policy"]["current_tariffs"]
+
+
+def test_order_source_guardrail_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "Statistics Orders" in rules
+    assert "operational/preliminary" in rules
+    assert SYSTEM_MAP["routing_policy"]["complete_orders"].startswith(
+        "do not substitute WB Statistics Orders"
+    )
+
+
 def test_server_instructions_contain_hard_architecture_boundaries():
     assert ARCHITECTURE_VERSION in SYSTEM_INSTRUCTIONS
     assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
@@ -75,6 +166,29 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "WB Advertising M0" in SYSTEM_INSTRUCTIONS
     assert "wb_ads" in SYSTEM_INSTRUCTIONS
     assert "actual business profit" in SYSTEM_INSTRUCTIONS
+    assert "Semantic Core" in SYSTEM_INSTRUCTIONS
+    assert "FULL_COVERAGE" in SYSTEM_INSTRUCTIONS
+    assert "original wording" in SYSTEM_INSTRUCTIONS
+    assert "operational/preliminary" in SYSTEM_INSTRUCTIONS
+    assert "saleDt" in SYSTEM_INSTRUCTIONS
+    assert "Продажа minus Возврат" in SYSTEM_INSTRUCTIONS
+    assert "deliveryService" in SYSTEM_INSTRUCTIONS
+    assert "rebillLogisticCost" in SYSTEM_INSTRUCTIONS
+    assert "deduction" in SYSTEM_INSTRUCTIONS
+    assert "additionalPayment" in SYSTEM_INSTRUCTIONS
+    assert "vw" in SYSTEM_INSTRUCTIONS
+    assert "vwNds" in SYSTEM_INSTRUCTIONS
+    assert "commissionPercent" in SYSTEM_INSTRUCTIONS
+    assert "acquiringFee" in SYSTEM_INSTRUCTIONS
+    assert "PRELIMINARY" in SYSTEM_INSTRUCTIONS
+    assert "final monthly" in SYSTEM_INSTRUCTIONS
+    assert "deliveryMethod" in SYSTEM_INSTRUCTIONS
+    assert "officeName" in SYSTEM_INSTRUCTIONS
+    assert "dlvPrc" in SYSTEM_INSTRUCTIONS
+    assert "fixTariffDateFrom" in SYSTEM_INSTRUCTIONS
+    assert "fixTariffDateTo" in SYSTEM_INSTRUCTIONS
+    assert "warehouseLogisticsCoeff" in SYSTEM_INSTRUCTIONS
+    assert "current live tariff" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -99,6 +213,23 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Yandex Object Storage" in architecture
     assert "WB Advertising M0" in architecture
     assert "wb_ads" in architecture
+    assert "core/semantic_resolver.py" in architecture
+    assert "core/semantic_execution.yaml" in architecture
+    assert "core/semantic_archive.py" in architecture
+    assert "original natural-language question" in architecture
+    assert "sale_and_return_operations" in architecture
+    assert "deliveryService" in architecture
+    assert "rebillLogisticCost" in architecture
+    assert "deduction" in architecture
+    assert "additionalPayment" in architecture
+    assert "commission_and_wb_reward" in architecture
+    assert "acquiring_and_payment_processing" in architecture
+    assert "observed_fulfillment_method" in architecture
+    assert "HISTORICAL_OBSERVED_FULFILLMENT" in architecture
+    assert "warehouse_tariff_context" in architecture
+    assert "HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT" in architecture
+    assert "PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING" in architecture
+    assert "PRELIMINARY_NOT_ALL_ORDERS" in architecture
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
     assert "Google Apps Script" in agents

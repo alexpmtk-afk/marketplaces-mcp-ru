@@ -26,6 +26,13 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Any architecture change must update `core/system_map.py`, `ARCHITECTURE.md`, guardrail tests, and pass CI/security/deployment acceptance in the same change.
 - If implementation and canonical architecture conflict, fail closed and surface the conflict instead of silently changing architecture.
 
+## Semantic Core boundaries
+- The canonical WB weekly realization dataset has 92 physical columns; all 92 must remain semantically catalogued in `core/semantic_registry.yaml`.
+- Weekly realization semantics are complete when every physical field has documented meaning, role, safe uses and explicit limitations where needed. Do not invent a calculation merely because a field exists.
+- Approved formulas remain separate from field semantics in `core/semantic_execution.yaml`.
+- Historical fulfillment (`HISTORICAL_OBSERVED_FULFILLMENT`) and historical warehouse-tariff context (`HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT`) must never be presented as current configuration or current live tariff.
+- `orderDt` / `orderUid` in weekly finance must never be treated as the complete marketplace order flow.
+
 ## Before every commit / push
 - `pre-commit run --all-files` (or at minimum the two local hooks below).
 - `python scripts/security/forbid_sensitive_files.py --all`

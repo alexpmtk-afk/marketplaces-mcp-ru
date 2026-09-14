@@ -1,0 +1,141 @@
+version: 2026-09-14.v6
+policy:
+  fail_closed: true
+  require_full_coverage: true
+  sum_as_reported: true
+  cross_currency_sum_forbidden: true
+  current_state_forbidden_from_weekly_archive: true
+executors:
+  penalties:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: penalty
+    currency_field: currency
+    mode: grouped_reason_amount
+    reason_fields: [bonusTypeName, sellerOperName]
+    product_filter_field: nmId
+    semantics: Sum penalty exactly as reported, grouped by report currency and reason. Do not convert sign or currency.
+  storage_charge:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: paidStorage
+    currency_field: currency
+    mode: sum_by_currency
+    product_filter_field: nmId
+    semantics: Sum paidStorage exactly as reported for the covered calculation period. Detailed storage drivers are not available here.
+  acceptance_charge:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: paidAcceptance
+    currency_field: currency
+    mode: sum_by_currency
+    product_filter_field: nmId
+    semantics: Sum paidAcceptance exactly as reported for the covered calculation period. Detailed acceptance operations are not available here.
+  sale_and_return_operations:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: saleDt
+    amount_field: retailAmount
+    unit_field: quantity
+    currency_field: currency
+    operation_field: docTypeName
+    sale_value: Продажа
+    return_value: Возврат
+    mode: sale_return_summary
+    product_filter_field: nmId
+    semantics: For the covered saleDt period, calculate sales and returns separately by docTypeName. Net sales amount is retailAmount for Продажа minus retailAmount for Возврат; net units are quantity for Продажа minus quantity for Возврат. Never infer the sign from retailAmount and never combine currencies.
+  logistics:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: deliveryService
+    currency_field: currency
+    mode: component_breakdown
+    reason_fields: [bonusTypeName]
+    components:
+      delivery_service_amount: deliveryService
+      rebilled_transport_warehouse_cost: rebillLogisticCost
+    count_components:
+      delivery_count: deliveryAmount
+      return_logistics_count: returnAmount
+    product_filter_field: nmId
+    semantics: Keep weekly-report logistics components separate. deliveryService is summed as reported and broken down by sellerOperName/bonusTypeName; rebillLogisticCost is a separate reimbursed transport/warehouse-cost component and is never silently merged with deliveryService. deliveryAmount and returnAmount are logistics counts, not sales/return counts.
+  deductions_and_adjustments:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: deduction
+    currency_field: currency
+    mode: component_breakdown
+    reason_fields: [bonusTypeName]
+    components:
+      deduction_amount: deduction
+      wb_reward_adjustment_amount: additionalPayment
+    product_filter_field: nmId
+    semantics: Keep deduction and additionalPayment separate. deduction is summed as the report's deduction field; additionalPayment is the WB-remuneration adjustment field and must not be interpreted as a payment to the seller or netted against deductions without a separately approved rule.
+  commission_and_wb_reward:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: saleDt
+    amount_field: vw
+    currency_field: currency
+    operation_field: docTypeName
+    sale_value: Продажа
+    return_value: Возврат
+    mode: sale_return_component_summary
+    components:
+      wb_reward_without_vat: vw
+      wb_reward_vat: vwNds
+    combined_components:
+      wb_reward_including_vat: [wb_reward_without_vat, wb_reward_vat]
+    product_filter_field: nmId
+    semantics: Calculate the money actually reported as Wildberries reward from vw and vwNds only. Keep Продажа and Возврат buckets explicit and report the net as Продажа minus Возврат. Do not derive monetary commission from commissionPercent/kvw/kvwBase and do not add acquiringFee, ppvzReward or ppvzSalesCommission to this total.
+  acquiring_and_payment_processing:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: saleDt
+    amount_field: acquiringFee
+    currency_field: currency
+    operation_field: docTypeName
+    sale_value: Продажа
+    return_value: Возврат
+    mode: sale_return_component_summary
+    components:
+      weekly_payment_processing_fee: acquiringFee
+    breakdown_fields: [paymentProcessing, acquiringBank]
+    product_filter_field: nmId
+    data_class: PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING
+    semantics: acquiringFee in the weekly realization detail is the weekly payment-acceptance/acquiring amount reflected in that report. Keep Продажа and Возврат explicit and report net as Продажа minus Возврат. This is not the final monthly payment-acceptance expense under the separate acquiring-expense report/offer reconciliation.
+  observed_fulfillment_method:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    mode: distinct_observations
+    primary_dimension: deliveryMethod
+    context_dimensions: [officeName]
+    product_filter_field: nmId
+    data_class: HISTORICAL_OBSERVED_FULFILLMENT
+    semantics: Return the distinct non-empty deliveryMethod values actually observed in weekly-report rows during the fully covered period, with warehouse context, observation count and first/last reported dates. This is historical evidence only and must never be presented as the seller's or product's current fulfillment configuration.
+  warehouse_tariff_context:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    mode: distinct_observations
+    primary_dimension: dlvPrc
+    context_dimensions: [officeName, fixTariffDateFrom, fixTariffDateTo, warehouseLogisticsCoeff]
+    product_filter_field: nmId
+    data_class: HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT
+    semantics: Return distinct non-empty fixed warehouse coefficient values recorded in dlvPrc for historical weekly-report rows, together with warehouse context, fixation-period dates and the separately reported warehouseLogisticsCoeff value. These are historical coefficients attached to reported operations. They must never be presented as current live warehouse tariffs or used to infer the current tariff after the fixation period.

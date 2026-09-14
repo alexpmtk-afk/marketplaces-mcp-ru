@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v6`
+**Version:** `2026-09-14.v14`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -90,7 +90,7 @@ Server tools introduced by M0:
 - `wb_ads_get_campaign_stats` — normalized statistics for at most 50 campaign IDs over at most 31 calendar days;
 - `wb_ads_audit_active` — audits every currently active campaign over the last 7 full Europe/Moscow calendar days by default.
 
-Advertising credentials are a separate logical credential service named `wb_ads`. They use the same canonical business cabinet names (`wb_dmitrieva`, `wb_novokshenov`, `wb_laser_master`) but Promotion-scoped secrets are stored only server-side through the deployment-managed secret architecture/Yandex Lockbox. They must not be stored on Google Drive or in GitHub.
+Advertising credentials are a separate logical credential service named `wb_ads`. Promotion-scoped secrets are stored only server-side through Yandex Lockbox and must not be stored on Google Drive or in GitHub.
 
 M0 metrics have data class `advertising_attribution_operational`. They include provider-attributed spend/orders/order amount and calculated CTR, CPC, click-to-order conversion, CPO, order-based DRR and ROAS. These values **must not be presented as actual business profit**. Actual profitability requires separately approved joins to real orders/sales/buyouts, returns, finance and unit economics.
 
@@ -98,23 +98,63 @@ The current WB fullstats contract accepts at most 50 campaign IDs and a 31-day w
 
 ### Advertising archive boundary
 
-The canonical Drive scaffold is:
+The canonical Drive scaffold is `База данных/WB/<cabinet>/<year>/advertising/...`.
 
-`База данных/WB/<cabinet>/<year>/advertising/...`
-
-The intended dataset families are campaign/product/search-cluster daily statistics, campaign snapshots, financial expenses/payments, bid/product/placement/minus-phrase history and MCP action audit records.
-
-**Important:** the Drive folder scaffold is not evidence that Advertising Archive V1 ingestion, coverage or registry integration exists. Until those mechanisms are implemented and accepted, historical advertising analytics continue to use the approved live provider path. Once coverage is proven, closed historical ad periods become archive-first while current state/control remains live.
+The Drive folder scaffold is not evidence that Advertising Archive V1 ingestion, coverage or registry integration exists. Until those mechanisms are implemented and accepted, historical advertising analytics continue to use the approved live provider path. Once coverage is proven, closed historical ad periods become archive-first while current state/control remains live.
 
 ### Advertising safety
 
 WB has campaign-control operations implemented as HTTP GETs. HTTP verb does not determine MCP safety. Start, pause and stop are `WRITE`; delete is `DESTRUCTIVE`. Dedicated write/control business tools are not accepted in M0 and will be added only after a separate safety-reviewed phase.
 
+## Semantic Core
+
+The Semantic Core is partially wired into runtime through `marketplace_business_query` and preserves the original natural-language question as the primary intent signal. Legacy `metric` remains compatibility-only and must not override the user's wording.
+
+Canonical components:
+- `core/semantic_registry.yaml` — full semantic catalog for the physical WB weekly realization archive;
+- `core/semantic_intents.yaml` — deterministic natural-language routing;
+- `core/semantic_resolver.py` — fail-closed resolver;
+- `core/semantic_execution.yaml` — approved executable contracts;
+- `core/semantic_archive.py` — coverage-gated archive execution.
+
+### 92-column weekly-report completion status
+
+The canonical `wb_weekly_finance_main` header has **92 physical columns and all 92 have semantic definitions**. Each field has a documented meaning, role and safe use; the semantic registry fails closed if the physical field set and semantic field catalog diverge. Therefore the original semantic task for the weekly realization report is COMPLETE.
+
+Approved runtime calculations are an additional layer, not a requirement for semantic completeness. Identifiers, flags, historical attributes, percentages and legacy fields must not be turned into totals merely because they exist in the report.
+
+### Approved archive execution
+
+Archive execution requires exact `FULL_COVERAGE` from COMPLETE fragments in `reports_registry.csv` plus presence of the canonical annual file. Current approved archive capabilities are:
+- `penalties`;
+- `storage_charge`;
+- `acceptance_charge`;
+- `sale_and_return_operations`;
+- `logistics`;
+- `deductions_and_adjustments`;
+- `commission_and_wb_reward`;
+- `acquiring_and_payment_processing`;
+- `observed_fulfillment_method`;
+- `warehouse_tariff_context`.
+
+Sales/returns use `saleDt` and explicit `docTypeName` buckets, with Продажа minus Возврат for the approved `retailAmount` / `quantity` calculation. Logistics keeps `deliveryService` and `rebillLogisticCost` separate. Deductions keep `deduction` and `additionalPayment` separate and are never silently netted. Monetary WB reward uses `vw` and `vwNds`; it is not derived from `commissionPercent/kvw/kvwBase`. Weekly `acquiringFee` is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`, not the final monthly acquiring expense.
+
+Historical fulfillment observations use `deliveryMethod`, `officeName` and `rrDate`; their data class is `HISTORICAL_OBSERVED_FULFILLMENT` and they never confirm current fulfillment configuration. Historical warehouse tariff context uses `dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `warehouseLogisticsCoeff` and `officeName`; its data class is `HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT` and it never confirms the current live warehouse tariff.
+
+## Hard source boundaries
+
+The weekly realization archive is not authoritative for the complete marketplace order funnel, current stock, current fulfillment configuration, current live tariffs, detailed storage drivers, detailed acceptance operations, advertising performance, or Ozon data. Those concepts require another approved source and must fail closed instead of being inferred from weekly rows.
+
+WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDERS`) and must not be substituted for the complete order flow.
+
 ## Routing rules
 
 - “Обнови данные по базе данных” and equivalent intents use the server archive update workflow for all configured cabinets by default.
-- Historical questions read the canonical Google Drive archive when coverage exists.
-- Current/uncovered periods use provider APIs or an explicit backfill/gap workflow.
+- Natural business questions preserve the user's original wording and resolve through Semantic Core before source selection.
+- Historical questions read the canonical Google Drive archive only when semantic approval and exact coverage exist.
+- Current/uncovered periods use a suitable provider API or an explicit backfill/gap workflow; no partial archive is silently substituted.
+- Complete-order questions do not substitute WB Statistics Orders for the full marketplace order flow.
+- Current tariff questions do not use historical weekly-report coefficients as live tariff truth.
 - Advertising current campaign state/control is always live from WB Promotion API.
 - Advertising closed-period analytics become archive-first only after Advertising Archive V1 dataset bindings, registry coverage and validation are implemented and accepted.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
@@ -124,7 +164,7 @@ WB has campaign-control operations implemented as HTTP GETs. HTTP verb does not 
 Any architecture change must update all of the following in one change:
 1. `core/system_map.py` — `SYSTEM_MAP` and `SYSTEM_INSTRUCTIONS`;
 2. this document;
-3. `AGENTS.md` when a hard storage/deployment boundary changes;
+3. `AGENTS.md` when a hard storage/deployment/semantic boundary changes;
 4. guardrail tests;
 5. CI/security/deployment acceptance.
 

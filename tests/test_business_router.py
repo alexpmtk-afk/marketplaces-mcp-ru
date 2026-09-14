@@ -74,7 +74,7 @@ def _row(day, *, price=100, cancelled=False, last_change=None):
     }
 
 
-def test_multi_day_orders_use_one_canonical_statistics_range_and_aggregate():
+def test_multi_day_orders_use_one_operational_statistics_range_and_aggregate():
     end = date.today() - timedelta(days=1)
     start = end - timedelta(days=6)
     rows = [
@@ -94,7 +94,8 @@ def test_multi_day_orders_use_one_canonical_statistics_range_and_aggregate():
     assert result["ok"] is True
     assert result["route"] == "operational_range"
     assert result["source"] == "wb_stats_orders"
-    assert result["source_validation"] == "approved"
+    assert result["source_validation"] == "official_operational_preliminary"
+    assert result["business_completeness"] == "PRELIMINARY_NOT_ALL_ORDERS"
     assert result["complete"] is True
     assert result["orders_count"] == 2
     assert result["orders_amount"] == 250.0
@@ -121,6 +122,7 @@ def test_orders_over_operational_history_fail_closed_without_substitution():
     assert result["ok"] is False
     assert result["error_type"] == "source_not_suitable"
     assert result["details"]["canonical_source"] == "wb_stats_orders"
+    assert "operational/preliminary" in result["details"]["source_limitations"]
     assert result["details"]["rejected_substitute"] == "wb_analytics_funnel"
     assert "parity mismatch" in result["details"]["rejected_reason"]
     assert wb.client.calls == []
@@ -143,7 +145,7 @@ def test_provider_page_ceiling_never_returns_partial_total(monkeypatch):
     assert result["details"]["rows_received"] == 2
 
 
-def test_one_day_orders_keep_existing_exact_day_path():
+def test_one_day_orders_keep_existing_exact_day_path_but_mark_preliminary():
     day = date.today() - timedelta(days=1)
     wb = _wb([], one_day_result={
         "ok": True,
@@ -159,7 +161,8 @@ def test_one_day_orders_keep_existing_exact_day_path():
 
     assert result["ok"] is True
     assert result["route"] == "operational_exact_day"
-    assert result["source_validation"] == "approved"
+    assert result["source_validation"] == "official_operational_preliminary"
+    assert result["business_completeness"] == "PRELIMINARY_NOT_ALL_ORDERS"
     assert result["complete"] is True
     assert wb.client.calls == []
 
@@ -193,4 +196,118 @@ def test_long_sales_fail_closed_until_finance_semantics_are_approved():
     assert result["ok"] is False
     assert result["error_type"] == "source_not_suitable"
     assert result["details"]["candidate_source"] == "wb_finance_sales_reports_detailed"
+    assert wb.client.calls == []
+
+
+def test_natural_storage_question_routes_to_gated_semantic_archive(monkeypatch):
+    wb = _wb([])
+    archive_store = object()
+    captured = {}
+
+    async def fake_execute(store, **kwargs):
+        captured["store"] = store
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "capability_id": "storage_charge",
+            "calculation": {"totals_by_currency": [{"currency": "RUB", "amount": 42.0}]},
+        }
+
+    monkeypatch.setattr(router, "execute_semantic_archive_question", fake_execute)
+
+    result = asyncio.run(execute_business_query(
+        {"wb": wb, "_archive_store": archive_store},
+        marketplace="wb",
+        seller="wb_novokshenov",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+        question="Сколько списали за хранение за август?",
+    ))
+
+    assert result["ok"] is True
+    assert result["route"] == "semantic_archive"
+    assert result["capability_id"] == "storage_charge"
+    assert result["semantic_question"] == "Сколько списали за хранение за август?"
+    assert captured["store"] is archive_store
+    assert captured["seller"] == "wb_novokshenov"
+    assert wb.client.calls == []
+
+
+def test_natural_all_orders_question_never_uses_preliminary_statistics_feed():
+    wb = _wb([])
+
+    result = asyncio.run(execute_business_query(
+        {"wb": wb},
+        marketplace="wb",
+        seller="wb_dmitrieva",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+        question="Сколько всего заказов было за август?",
+    ))
+
+    assert result["ok"] is False
+    assert result["error_type"] == "source_not_suitable"
+    resolution = result["details"]["semantic_resolution"]
+    assert resolution["status"] == "REQUIRES_OTHER_SOURCE"
+    assert resolution["concept_id"] == "all_orders_placed"
+    assert resolution["required_source_id"] == "wb_order_feed"
+    assert wb.client.calls == []
+
+
+def test_natural_sales_question_routes_to_approved_semantic_archive(monkeypatch):
+    wb = _wb([])
+    archive_store = object()
+    captured = {}
+
+    async def fake_execute(store, **kwargs):
+        captured["store"] = store
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "capability_id": "sale_and_return_operations",
+            "calculation": {
+                "sales_and_returns_by_currency": [
+                    {"currency": "RUB", "net_sales_amount": 12345.0}
+                ]
+            },
+        }
+
+    monkeypatch.setattr(router, "execute_semantic_archive_question", fake_execute)
+
+    result = asyncio.run(execute_business_query(
+        {"wb": wb, "_archive_store": archive_store},
+        marketplace="wb",
+        seller="wb_novokshenov",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+        question="Какая была сумма продаж за август?",
+    ))
+
+    assert result["ok"] is True
+    assert result["route"] == "semantic_archive"
+    assert result["capability_id"] == "sale_and_return_operations"
+    assert result["semantic_question"] == "Какая была сумма продаж за август?"
+    assert captured["store"] is archive_store
+    assert captured["seller"] == "wb_novokshenov"
+    assert captured["date_from"].isoformat() == "2026-08-01"
+    assert captured["date_to"].isoformat() == "2026-08-31"
+    assert wb.client.calls == []
+
+
+def test_question_takes_precedence_over_conflicting_legacy_metric():
+    wb = _wb([])
+
+    result = asyncio.run(execute_business_query(
+        {"wb": wb},
+        marketplace="wb",
+        seller="wb_dmitrieva",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+        question="Сколько всего заказов было за август?",
+        metric="SALES",
+    ))
+
+    assert result["ok"] is False
+    resolution = result["details"]["semantic_resolution"]
+    assert resolution["concept_id"] == "all_orders_placed"
     assert wb.client.calls == []
