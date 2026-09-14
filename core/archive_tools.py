@@ -29,8 +29,10 @@ def _not_configured() -> str:
         "ok": False,
         "error": "archive_storage_not_configured",
         "message": (
-            "Central archive requires canonical Google Drive storage plus Yandex Object Storage "
-            "for durable queue/staging. Check MARKETPLACE_MCP_GOOGLE_DRIVE_OAUTH_JSON, "
+            "Central archive requires canonical Google Drive storage through the Apps Script bridge "
+            "plus Yandex Object Storage for durable queue/staging. Check "
+            "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
+            "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET, "
             "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID and MARKETPLACE_MCP_ARCHIVE_BUCKET."
         ),
         "retryable": False,
