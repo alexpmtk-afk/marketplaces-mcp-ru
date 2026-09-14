@@ -1,4 +1,4 @@
-version: 2026-09-14.v1
+version: 2026-09-14.v2
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -14,13 +14,13 @@ routes:
     priority: 1950
     target_type: not_covered
     target_id: current_stock
-    match_any: [остатки сейчас, текущие остатки, остаток сейчас, сколько осталось, остатки на сегодня]
+    match_any: [остатки, остаток товара, складской остаток, остатки сейчас, текущие остатки, остаток сейчас, сколько осталось, остатки на сегодня]
 
   - id: current_fulfillment_configuration
     priority: 1950
     target_type: not_covered
     target_id: current_fulfillment_configuration
-    match_any: [какая схема сейчас, схема отгрузки сейчас, текущая схема отгрузки, настроена схема, текущая схема поставки]
+    match_any: [какая схема сейчас, схема отгрузки сейчас, схеме отгрузки сейчас, текущая схема отгрузки, настроена схема, текущая схема поставки]
 
   - id: advertising_performance
     priority: 1900
@@ -62,13 +62,13 @@ routes:
     priority: 1500
     target_type: not_covered
     target_id: all_orders_placed
-    match_any: [сколько заказов, сумма заказов, все заказы, оформленные заказы, количество заказов, заказы за]
+    match_any: [сколько заказов, сумма заказов, все заказы, оформленные заказы, количество заказов, заказы за, заказы, заказов]
 
   - id: observed_fulfillment_method
     priority: 1450
     target_type: capability
     target_id: observed_fulfillment_method
-    match_any: [схема отгрузки, модель отгрузки, схема поставки, deliverymethod, fbs, fbw, fbo, со склада продавца, со склада wildberries, со склада вайлдберриз]
+    match_any: [схема отгрузки, схеме отгрузки, модель отгрузки, схема поставки, схеме поставки, как отгружался, как отгружалась, как отгружалось, как отгружается, deliverymethod, fbs, fbw, fbo, со склада продавца, со склада wildberries, со склада вайлдберриз]
 
   - id: warehouse_tariff_context
     priority: 1425
@@ -104,7 +104,7 @@ routes:
     priority: 1320
     target_type: capability
     target_id: deductions_and_adjustments
-    match_any: [удержание, удержания, доплата, доплаты, корректировка, корректировки, дополнительная выплата]
+    match_any: [удержание, удержания, удержали, доплата, доплаты, корректировка, корректировки, дополнительная выплата]
 
   - id: commission_and_wb_reward
     priority: 1300
