@@ -1,9 +1,10 @@
 /**
  * Marketplaces MCP -> Google Drive bridge v3.
  *
- * v3 keeps the existing small-file bridge and adds two control-plane actions:
+ * v3 keeps the existing small-file bridge and adds control-plane actions:
  * - resumable_start: Apps Script authenticates the initial Drive resumable request;
- * - metadata_by_id: returns Drive metadata/checksum without reading file bytes.
+ * - metadata_by_id: returns Drive metadata/checksums without reading file bytes;
+ * - trash_by_id: authenticated cleanup for verified diagnostic copies.
  *
  * Large file bytes never pass through Apps Script.
  */
@@ -62,6 +63,13 @@ function doPost(e){
       if(!fileId) return json_({ok:false,error:'missing_file_id'});
       return json_({ok:true,found:true,file:driveApiMetadata_(fileId)});
     }
+    if(action==='trash_by_id'){
+      const fileId=String(body.file_id||'').trim();
+      if(!fileId) return json_({ok:false,error:'missing_file_id'});
+      const file=DriveApp.getFileById(fileId);
+      file.setTrashed(true);
+      return json_({ok:true,file_id:fileId,trashed:true});
+    }
     if(action==='resumable_start'){
       const filename=validateFilename_(String(body.filename||''));
       const path=String(body.path||'');
@@ -94,10 +102,11 @@ function doPost(e){
 function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes){
   const token=ScriptApp.getOAuthToken();
   const fileId=existingFile?existingFile.getId():'';
+  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime';
   const base='https://www.googleapis.com/upload/drive/v3/files';
   const url=fileId
-    ? base+'/'+encodeURIComponent(fileId)+'?uploadType=resumable&supportsAllDrives=true&fields=id,name,size,md5Checksum,mimeType,modifiedTime'
-    : base+'?uploadType=resumable&supportsAllDrives=true&fields=id,name,size,md5Checksum,mimeType,modifiedTime';
+    ? base+'/'+encodeURIComponent(fileId)+'?uploadType=resumable&supportsAllDrives=true&fields='+encodeURIComponent(fields)
+    : base+'?uploadType=resumable&supportsAllDrives=true&fields='+encodeURIComponent(fields);
   const metadata=fileId
     ? {name:filename,mimeType:mimeType}
     : {name:filename,mimeType:mimeType,parents:[folder.getId()]};
@@ -124,7 +133,7 @@ function startResumableSession_(folder,existingFile,filename,mimeType,totalBytes
 }
 
 function driveApiMetadata_(fileId){
-  const fields='id,name,size,md5Checksum,mimeType,modifiedTime';
+  const fields='id,name,size,md5Checksum,sha256Checksum,mimeType,modifiedTime';
   const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?supportsAllDrives=true&fields='+encodeURIComponent(fields);
   const response=UrlFetchApp.fetch(url,{
     method:'get',
