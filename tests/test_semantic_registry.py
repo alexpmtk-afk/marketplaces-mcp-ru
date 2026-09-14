@@ -15,12 +15,51 @@ from core.semantic_registry import (
 
 def test_weekly_finance_has_semantics_for_every_physical_field():
     dataset = get_dataset("wb_weekly_finance_main")
+    assert dataset["schema_status"] == "OFFICIAL_HELP_AUDITED_92_FIELDS_2026_09_14"
     assert dataset["field_count"] == 92
     assert len(dataset["fields"]) == 92
     assert len(dataset["field_catalog"]) == 92
     assert set(dataset["fields"]) == set(dataset["field_catalog"])
     assert dataset["row_dedup_key"] == ["reportId", "rrdId"]
     assert dataset["coverage"]["archive_route_requirement"] == "FULL_COVERAGE"
+    assert "agencyVat" not in dataset["fields"]
+    assert "agencyVat" not in dataset["field_catalog"]
+
+
+def test_official_audit_corrects_fixed_coefficient_semantics():
+    field = get_field("wb_weekly_finance_main", "dlvPrc")
+    assert "момент планирования" in field["meaning_ru"]
+    limitations = " ".join(field["limitations"])
+    assert "окончания срока фиксации" in limitations
+    assert "Не считать dlvPrc фактически применённым" in limitations
+
+    capability = get_capability("warehouse_tariff_context")
+    guardrail = capability["guardrail"]
+    assert "fixed when the supply was planned" in guardrail
+    assert "not proof" in guardrail
+    assert "current live tariff" in guardrail
+
+
+def test_official_audit_corrects_legacy_promo_and_payout_service_fields():
+    legacy = get_field("wb_weekly_finance_main", "isKgvpV2")
+    assert legacy["role"] == "legacy"
+    assert "изменения коэффициента" in legacy["meaning_ru"]
+    assert "акции со сниженной комиссией" in legacy["meaning_ru"]
+    assert any("булев" in item.lower() for item in legacy["limitations"])
+
+    payout = get_field("wb_weekly_finance_main", "paymentSchedule")
+    assert payout["role"] == "measure"
+    assert "Вывести сейчас" in payout["meaning_ru"]
+    assert any("график выплат" in item.lower() for item in payout["limitations"])
+
+
+def test_cashback_money_fields_remain_distinct_after_official_audit():
+    cashback = get_field("wb_weekly_finance_main", "cashbackAmount")
+    compensation = get_field("wb_weekly_finance_main", "cashbackDiscount")
+    participation = get_field("wb_weekly_finance_main", "cashbackCommissionChange")
+    assert "начисленные покупателю баллы" in cashback["meaning_ru"]
+    assert "потратил на оплату товара" in compensation["meaning_ru"]
+    assert "Стоимость участия продавца" in participation["meaning_ru"]
 
 
 def test_delivery_method_answers_only_observed_historical_fulfillment():
