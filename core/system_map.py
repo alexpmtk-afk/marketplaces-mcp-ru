@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-13.v3"
+ARCHITECTURE_VERSION = "2026-09-14.v4"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -23,11 +23,12 @@ SYSTEM_MAP: dict[str, Any] = {
         "primary_archive_storage": "Google Drive",
         "canonical_archive_data": "annual marketplace CSV files plus reports registry",
         "google_drive_root": "MCP архив базы данных",
-        "google_drive_auth": "OAuth refresh credential kept in Yandex Lockbox; access token only in runtime memory",
+        "google_drive_auth": "owner-operated Google Apps Script web-app bridge; shared bridge secret kept in Yandex Lockbox",
+        "google_drive_bridge": "Apps Script executes as the Drive owner and exposes only archive read/write/status operations under the fixed archive root",
         "yandex_object_storage": "durable archive job state, staging, and byte-for-byte backup of canonical files",
         "archive_write_order": "Google Drive canonical write first; Yandex backup second",
         "read_through_migration": "if a canonical file is absent on Drive but exists in Yandex Object Storage, copy it to Drive before use",
-        "google_cloud": "not part of the runtime architecture; only Google Drive API is used as archive storage",
+        "google_cloud": "not part of the runtime architecture; no Google Cloud OAuth runtime dependency is required",
         "client_local_files": "never authoritative for shared server state",
     },
     "archive_policy": {
@@ -73,7 +74,7 @@ Treat marketplace_system_map as the source of truth for this MCP.
 Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
 Canonical marketplace archive data is stored on Google Drive under the server-owned archive root: annual CSV files and the report registry are the source of truth.
 Yandex Object Storage is required for durable queue/job state, staging, and a secondary byte-for-byte backup of canonical archive files.
-Google Drive OAuth refresh credentials must remain in Yandex Lockbox; access tokens exist only in runtime memory.
+Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """

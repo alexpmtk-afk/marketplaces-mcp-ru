@@ -1,24 +1,18 @@
-"""Google Drive storage backend for the canonical marketplace archive.
+"""Google Drive archive backend via the owner's Google Apps Script web app.
 
-The remote MCP owns its Google Drive session so archive updates work from any
-ChatGPT/Codex client. OAuth refresh credentials are supplied by Yandex Lockbox;
-access tokens exist only in process memory and are refreshed on demand.
+The remote MCP remains hosted in Yandex Cloud. The Apps Script deployment runs
+as the archive owner and exposes a narrow authenticated bridge into the fixed
+Google Drive archive root. The bridge secret is injected from Yandex Lockbox.
 """
 from __future__ import annotations
 
-import asyncio
-import json
+import base64
+import hashlib
 import os
-import time
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
-
-DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
-DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
-DEFAULT_TOKEN_URI = "https://oauth2.googleapis.com/token"
-FOLDER_MIME = "application/vnd.google-apps.folder"
 
 
 class ArchiveStorageNotConfigured(RuntimeError):
@@ -26,7 +20,7 @@ class ArchiveStorageNotConfigured(RuntimeError):
 
 
 class ArchiveStorageError(RuntimeError):
-    """Google Drive rejected or failed an archive operation."""
+    """The Google Apps Script Drive bridge rejected or failed an operation."""
 
 
 @dataclass(frozen=True)
@@ -40,108 +34,51 @@ class DriveFile:
 
 
 class GoogleDriveArchiveStore:
-    """Minimal async Google Drive client scoped to one archive root folder."""
+    """Async client for the authenticated Apps Script Drive bridge."""
 
     def __init__(
         self,
         *,
-        client_id: str,
-        client_secret: str,
-        refresh_token: str,
+        bridge_url: str,
+        bridge_secret: str,
         root_folder_id: str,
-        token_uri: str = DEFAULT_TOKEN_URI,
-        timeout: float = 90.0,
+        timeout: float = 120.0,
     ) -> None:
-        self.client_id = client_id.strip()
-        self.client_secret = client_secret.strip()
-        self.refresh_token = refresh_token.strip()
+        self.bridge_url = bridge_url.strip()
+        self.bridge_secret = bridge_secret.strip()
         self.root_folder_id = root_folder_id.strip()
-        self.token_uri = token_uri.strip() or DEFAULT_TOKEN_URI
-        self.timeout = timeout
-        self._access_token = ""
-        self._access_token_expires_at = 0.0
-        self._token_lock = asyncio.Lock()
-        if not all((self.client_id, self.client_secret, self.refresh_token, self.root_folder_id)):
-            raise ArchiveStorageNotConfigured("Google Drive OAuth or archive root folder is incomplete")
+        self.timeout = float(timeout)
+        if not all((self.bridge_url, self.bridge_secret, self.root_folder_id)):
+            raise ArchiveStorageNotConfigured(
+                "Google Drive Apps Script bridge URL, secret, or archive root is incomplete"
+            )
+        if not self.bridge_url.startswith("https://script.google.com/macros/s/"):
+            raise ArchiveStorageNotConfigured("Google Drive Apps Script bridge URL is invalid")
 
     @classmethod
     def from_env(cls) -> "GoogleDriveArchiveStore":
-        raw = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_OAUTH_JSON", "").strip()
+        url = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL", "").strip()
+        secret = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET", "").strip()
         root = os.environ.get("MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID", "").strip()
-        if not raw or not root:
+        if not url or not secret or not root:
             raise ArchiveStorageNotConfigured(
-                "Set MARKETPLACE_MCP_GOOGLE_DRIVE_OAUTH_JSON and "
+                "Set MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
+                "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET and "
                 "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID"
             )
-        try:
-            cfg = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ArchiveStorageNotConfigured("Google Drive OAuth JSON is invalid") from exc
-        return cls(
-            client_id=str(cfg.get("client_id", "")),
-            client_secret=str(cfg.get("client_secret", "")),
-            refresh_token=str(cfg.get("refresh_token", "")),
-            token_uri=str(cfg.get("token_uri", DEFAULT_TOKEN_URI)),
-            root_folder_id=root,
-        )
-
-    async def _token(self) -> str:
-        now = time.monotonic()
-        if self._access_token and now < self._access_token_expires_at:
-            return self._access_token
-        async with self._token_lock:
-            now = time.monotonic()
-            if self._access_token and now < self._access_token_expires_at:
-                return self._access_token
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                resp = await client.post(
-                    self.token_uri,
-                    data={
-                        "client_id": self.client_id,
-                        "client_secret": self.client_secret,
-                        "refresh_token": self.refresh_token,
-                        "grant_type": "refresh_token",
-                    },
-                    headers={"Accept": "application/json"},
-                )
-            if not resp.is_success:
-                raise ArchiveStorageError(
-                    f"Google OAuth refresh failed with HTTP {resp.status_code}: {resp.text[:300]}"
-                )
-            body = resp.json()
-            token = str(body.get("access_token", "")).strip()
-            if not token:
-                raise ArchiveStorageError("Google OAuth refresh returned no access_token")
-            try:
-                ttl = max(60.0, float(body.get("expires_in", 3600)))
-            except (TypeError, ValueError):
-                ttl = 3600.0
-            self._access_token = token
-            self._access_token_expires_at = time.monotonic() + max(30.0, ttl - 60.0)
-            return token
-
-    async def _headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {await self._token()}"}
-
-    async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        headers = dict(kwargs.pop("headers", {}))
-        headers.update(await self._headers())
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-            resp = await client.request(method, url, headers=headers, **kwargs)
-        if resp.status_code == 401:
-            self._access_token = ""
-            headers.update(await self._headers())
-            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                resp = await client.request(method, url, headers=headers, **kwargs)
-        if not resp.is_success:
-            raise ArchiveStorageError(
-                f"Google Drive {method} failed with HTTP {resp.status_code}: {resp.text[:500]}"
-            )
-        return resp
+        return cls(bridge_url=url, bridge_secret=secret, root_folder_id=root)
 
     @staticmethod
-    def _q_literal(value: str) -> str:
-        return value.replace("\\", "\\\\").replace("'", "\\'")
+    def _path(parts: list[str] | tuple[str, ...]) -> str:
+        clean: list[str] = []
+        for raw in parts:
+            part = str(raw).strip().strip("/")
+            if not part:
+                continue
+            if part in {".", ".."} or "\\" in part:
+                raise ArchiveStorageError(f"Invalid Drive archive path segment: {part!r}")
+            clean.append(part)
+        return "/".join(clean)
 
     @staticmethod
     def _to_file(item: dict[str, Any]) -> DriveFile:
@@ -152,159 +89,123 @@ class GoogleDriveArchiveStore:
         return DriveFile(
             id=str(item.get("id", "")),
             name=str(item.get("name", "")),
-            mime_type=str(item.get("mimeType", "")),
+            mime_type=str(item.get("mime_type", "")),
             size=size,
-            md5_checksum=item.get("md5Checksum"),
-            modified_time=item.get("modifiedTime"),
+            modified_time=item.get("modified_time"),
         )
+
+    async def _post(self, action: str, **payload: Any) -> dict[str, Any]:
+        body = {"secret": self.bridge_secret, "action": action, **payload}
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                resp = await client.post(
+                    self.bridge_url,
+                    json=body,
+                    headers={"Accept": "application/json"},
+                )
+        except httpx.HTTPError as exc:
+            raise ArchiveStorageError(f"Apps Script Drive bridge request failed: {exc}") from exc
+        if not resp.is_success:
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}"
+            )
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise ArchiveStorageError(
+                "Apps Script Drive bridge returned a non-JSON response; check web-app access settings"
+            ) from exc
+        if not isinstance(data, dict) or data.get("ok") is not True:
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge rejected {action}: {str(data)[:500]}"
+            )
+        return data
+
+    async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
+        # The bridge creates missing folders lazily on write. A relative path is
+        # therefore the stable parent locator used by the hybrid store.
+        return self._path(parts)
 
     async def find_child(
         self, parent_id: str, name: str, *, mime_type: str | None = None
     ) -> DriveFile | None:
-        clauses = [
-            f"'{self._q_literal(parent_id)}' in parents",
-            f"name = '{self._q_literal(name)}'",
-            "trashed = false",
-        ]
-        if mime_type:
-            clauses.append(f"mimeType = '{self._q_literal(mime_type)}'")
-        resp = await self._request(
-            "GET",
-            DRIVE_FILES_URL,
-            params={
-                "q": " and ".join(clauses),
-                "fields": "files(id,name,mimeType,size,md5Checksum,modifiedTime,parents)",
-                "pageSize": 10,
-                "spaces": "drive",
-                "supportsAllDrives": "true",
-                "includeItemsFromAllDrives": "true",
-            },
-        )
-        files = resp.json().get("files") or []
-        if not files:
+        data = await self._post("stat", path=self._path((parent_id,)), filename=str(name))
+        if not data.get("found"):
             return None
-        if len(files) > 1:
-            raise ArchiveStorageError(
-                f"Drive path is ambiguous: {len(files)} children named {name!r} under {parent_id}"
-            )
-        return self._to_file(files[0])
-
-    async def create_folder(self, parent_id: str, name: str) -> DriveFile:
-        resp = await self._request(
-            "POST",
-            DRIVE_FILES_URL,
-            params={"fields": "id,name,mimeType,modifiedTime", "supportsAllDrives": "true"},
-            json={"name": name, "mimeType": FOLDER_MIME, "parents": [parent_id]},
-            headers={"Content-Type": "application/json; charset=UTF-8"},
-        )
-        return self._to_file(resp.json())
-
-    async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
-        parent = self.root_folder_id
-        for raw_part in parts:
-            part = str(raw_part).strip()
-            if not part:
-                continue
-            child = await self.find_child(parent, part, mime_type=FOLDER_MIME)
-            if child is None:
-                child = await self.create_folder(parent, part)
-            parent = child.id
-        return parent
+        item = self._to_file(dict(data.get("file") or {}))
+        if mime_type and item.mime_type and item.mime_type != mime_type:
+            return None
+        return item
 
     async def download_bytes(self, file_id: str) -> bytes:
-        resp = await self._request(
-            "GET",
-            f"{DRIVE_FILES_URL}/{file_id}",
-            params={"alt": "media", "supportsAllDrives": "true"},
-        )
-        return resp.content
+        data = await self._post("read_by_id", file_id=str(file_id))
+        encoded = str(data.get("content_base64", ""))
+        if not encoded:
+            return b""
+        try:
+            return base64.b64decode(encoded, validate=True)
+        except ValueError as exc:
+            raise ArchiveStorageError("Apps Script Drive bridge returned invalid base64") from exc
 
-    async def download_named(self, parent_id: str, name: str) -> tuple[DriveFile | None, bytes | None]:
-        item = await self.find_child(parent_id, name)
-        if item is None:
+    async def download_named(
+        self, parent_id: str, name: str
+    ) -> tuple[DriveFile | None, bytes | None]:
+        data = await self._post("read", path=self._path((parent_id,)), filename=str(name))
+        if not data.get("found"):
             return None, None
-        return item, await self.download_bytes(item.id)
-
-    async def _start_resumable(
-        self,
-        *,
-        file_id: str | None,
-        parent_id: str,
-        name: str,
-        mime_type: str,
-        size: int,
-    ) -> str:
-        if file_id:
-            url = f"{DRIVE_UPLOAD_URL}/{file_id}"
-            method = "PATCH"
-            metadata: dict[str, Any] = {"name": name}
-        else:
-            url = DRIVE_UPLOAD_URL
-            method = "POST"
-            metadata = {"name": name, "mimeType": mime_type, "parents": [parent_id]}
-        resp = await self._request(
-            method,
-            url,
-            params={"uploadType": "resumable", "supportsAllDrives": "true"},
-            json=metadata,
-            headers={
-                "Content-Type": "application/json; charset=UTF-8",
-                "X-Upload-Content-Type": mime_type,
-                "X-Upload-Content-Length": str(size),
-            },
-        )
-        location = resp.headers.get("Location", "")
-        if not location:
-            raise ArchiveStorageError("Google Drive resumable upload did not return a Location")
-        return location
+        item = self._to_file(dict(data.get("file") or {}))
+        encoded = str(data.get("content_base64", ""))
+        try:
+            raw = base64.b64decode(encoded, validate=True) if encoded else b""
+        except ValueError as exc:
+            raise ArchiveStorageError("Apps Script Drive bridge returned invalid base64") from exc
+        if item.size is not None and len(raw) != item.size:
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge size mismatch for {name!r}: {len(raw)} != {item.size}"
+            )
+        return item, raw
 
     async def upload_bytes(
         self, parent_id: str, name: str, data: bytes, *, mime_type: str = "text/csv"
     ) -> DriveFile:
-        existing = await self.find_child(parent_id, name)
-        location = await self._start_resumable(
-            file_id=existing.id if existing else None,
-            parent_id=parent_id,
-            name=name,
+        sha256 = hashlib.sha256(data).hexdigest()
+        result = await self._post(
+            "write",
+            path=self._path((parent_id,)),
+            filename=str(name),
             mime_type=mime_type,
-            size=len(data),
+            content_base64=base64.b64encode(data).decode("ascii"),
+            sha256=sha256,
         )
-        resp = await self._request(
-            "PUT",
-            location,
-            content=data,
-            headers={"Content-Type": mime_type, "Content-Length": str(len(data))},
-        )
-        body = resp.json() if resp.content else {}
-        file_id = str(body.get("id", "")) or (existing.id if existing else "")
-        if file_id:
-            meta = await self._request(
-                "GET",
-                f"{DRIVE_FILES_URL}/{file_id}",
-                params={
-                    "fields": "id,name,mimeType,size,md5Checksum,modifiedTime,parents",
-                    "supportsAllDrives": "true",
-                },
+        returned_sha = str(result.get("sha256", "")).lower()
+        if returned_sha and returned_sha != sha256:
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge checksum mismatch for {name!r}"
             )
-            return self._to_file(meta.json())
-        created = await self.find_child(parent_id, name)
-        if created is None:
-            raise ArchiveStorageError("Google Drive upload completed but the file cannot be resolved")
-        return created
+        item = self._to_file(dict(result.get("file") or {}))
+        if not item.id:
+            raise ArchiveStorageError("Apps Script Drive bridge upload returned no file id")
+        if item.size is not None and item.size != len(data):
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge uploaded size mismatch for {name!r}"
+            )
+        return item
 
     async def status(self) -> dict[str, Any]:
-        resp = await self._request(
-            "GET",
-            f"{DRIVE_FILES_URL}/{self.root_folder_id}",
-            params={"fields": "id,name,mimeType", "supportsAllDrives": "true"},
-        )
-        body = resp.json()
+        data = await self._post("health")
+        actual_root = str(data.get("root_id", ""))
+        root_name = str(data.get("root_name", ""))
+        if actual_root != self.root_folder_id:
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge root mismatch: {actual_root!r} != {self.root_folder_id!r}"
+            )
         return {
             "configured": True,
             "reachable": True,
-            "backend": "google_drive",
-            "root_folder_id": str(body.get("id", "")),
-            "root_name": str(body.get("name", "")),
+            "backend": "google_drive_apps_script_bridge",
+            "root_folder_id": actual_root,
+            "root_name": root_name,
+            "bridge_version": data.get("version"),
         }
 
 

@@ -22,10 +22,12 @@ def test_canonical_map_fixes_storage_boundaries():
     storage = SYSTEM_MAP["storage_policy"]
     assert storage["primary_archive_storage"] == "Google Drive"
     assert storage["google_drive_root"] == "MCP архив базы данных"
-    assert "OAuth refresh credential kept in Yandex Lockbox" in storage["google_drive_auth"]
+    assert "Apps Script" in storage["google_drive_auth"]
+    assert "Yandex Lockbox" in storage["google_drive_auth"]
     assert "job state" in storage["yandex_object_storage"]
     assert "backup" in storage["yandex_object_storage"]
-    assert storage["google_cloud"] == "not part of the runtime architecture; only Google Drive API is used as archive storage"
+    assert "not part of the runtime architecture" in storage["google_cloud"]
+    assert "OAuth" in storage["google_cloud"]
     assert SYSTEM_MAP["archive_policy"]["canonical_source_of_truth"] == "Google Drive annual CSV plus reports registry"
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["report_type"] == 1
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
@@ -36,6 +38,7 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert ARCHITECTURE_VERSION in SYSTEM_INSTRUCTIONS
     assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
     assert "Google Drive" in SYSTEM_INSTRUCTIONS
+    assert "Apps Script" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in SYSTEM_INSTRUCTIONS
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
@@ -58,7 +61,9 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert ARCHITECTURE_VERSION in architecture
     assert "core/system_map.py" in architecture
     assert "Canonical marketplace archive: **Google Drive**" in architecture
+    assert "Google Apps Script" in architecture
     assert "Yandex Object Storage" in architecture
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
+    assert "Google Apps Script" in agents
     assert "Yandex Object Storage" in agents
