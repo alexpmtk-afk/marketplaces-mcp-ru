@@ -12,6 +12,8 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -22,16 +24,24 @@ from .archive_google import ArchiveStorageNotConfigured
 CHUNK_GRANULARITY = 256 * 1024
 DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024
 _RANGE_RE = re.compile(r"bytes=0-(\d+)$")
-_TRANSIENT_STATUSES = {408, 425, 429, 500, 502, 503, 504}
-_RESTART_SESSION_STATUSES = {400, 401, 403, 404, 410}
+_AMBIGUOUS_TRANSIENT_STATUSES = {408, 500, 502, 503, 504}
+_BACKOFF_ONLY_STATUSES = {425, 429}
+_RATE_LIMIT_REASONS = {"rateLimitExceeded", "userRateLimitExceeded"}
 
 
 class ResumableUploadError(RuntimeError):
     """Drive resumable upload failed without exposing the session URI."""
 
-    def __init__(self, message: str, *, retryable: bool = False) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        retryable: bool = False,
+        retry_after_seconds: float = 0.0,
+    ) -> None:
         super().__init__(message)
         self.retryable = bool(retryable)
+        self.retry_after_seconds = max(0.0, float(retry_after_seconds or 0.0))
 
 
 @dataclass(frozen=True)
@@ -89,7 +99,10 @@ class GoogleDriveResumableUploader:
     async def _request(self, method: str, session_uri: str, **kwargs: Any) -> httpx.Response:
         url = self._validate_session_uri(session_uri)
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+            # A resumable session URI is a bearer-like capability. Never follow
+            # redirects for direct chunk/status requests: fail closed instead of
+            # forwarding upload bytes or the opaque capability to another host.
+            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
                 return await client.request(method, url, **kwargs)
         except httpx.HTTPError as exc:
             raise ResumableUploadError(
@@ -102,6 +115,47 @@ class GoogleDriveResumableUploader:
         value = str(response.headers.get("Range") or "").strip()
         match = _RANGE_RE.fullmatch(value)
         return int(match.group(1)) + 1 if match else 0
+
+    @staticmethod
+    def _retry_after(response: httpx.Response) -> float:
+        raw = str(response.headers.get("Retry-After") or "").strip()
+        if not raw:
+            return 0.0
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            try:
+                when = parsedate_to_datetime(raw)
+                if when.tzinfo is None:
+                    when = when.replace(tzinfo=timezone.utc)
+                return max(0.0, (when - datetime.now(timezone.utc)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                return 0.0
+
+    @staticmethod
+    def _is_rate_limit_403(response: httpx.Response) -> bool:
+        if response.status_code != 403:
+            return False
+        try:
+            payload = response.json()
+        except ValueError:
+            return False
+        error = payload.get("error") if isinstance(payload, dict) else None
+        entries = error.get("errors") if isinstance(error, dict) else None
+        if not isinstance(entries, list):
+            return False
+        return any(
+            isinstance(item, dict) and str(item.get("reason") or "") in _RATE_LIMIT_REASONS
+            for item in entries
+        )
+
+    @classmethod
+    def _retryable_response(cls, response: httpx.Response) -> bool:
+        return (
+            response.status_code in _AMBIGUOUS_TRANSIENT_STATUSES
+            or response.status_code in _BACKOFF_ONLY_STATUSES
+            or cls._is_rate_limit_403(response)
+        )
 
     async def start_session(
         self,
@@ -137,11 +191,14 @@ class GoogleDriveResumableUploader:
             return UploadProgress("complete", int(total_bytes), self._json_dict(response))
         if response.status_code == 308:
             return UploadProgress("incomplete", self._confirmed_offset(response), None)
-        if response.status_code in _RESTART_SESSION_STATUSES:
+        # Google Drive explicitly documents 404 as an expired resumable session.
+        # Other 4xx responses fail closed unless they are a recognized rate limit.
+        if response.status_code == 404:
             return UploadProgress("expired", 0, None)
         raise ResumableUploadError(
             f"Google Drive resumable status failed with HTTP {response.status_code}",
-            retryable=response.status_code in _TRANSIENT_STATUSES,
+            retryable=self._retryable_response(response),
+            retry_after_seconds=self._retry_after(response),
         )
 
     async def upload_chunk(
@@ -183,10 +240,18 @@ class GoogleDriveResumableUploader:
             return UploadProgress("complete", int(total_bytes), self._json_dict(response))
         if response.status_code == 308:
             return UploadProgress("incomplete", self._confirmed_offset(response), None)
-        if response.status_code in _RESTART_SESSION_STATUSES:
+        if response.status_code == 404:
             return UploadProgress("expired", 0, None)
-        if response.status_code in _TRANSIENT_STATUSES:
+        if response.status_code in _AMBIGUOUS_TRANSIENT_STATUSES:
+            # A failed/timeout-like upload request may still have persisted bytes;
+            # query Drive before deciding what to resend.
             return await self.query_status(session_uri, total_bytes)
+        if response.status_code in _BACKOFF_ONLY_STATUSES or self._is_rate_limit_403(response):
+            raise ResumableUploadError(
+                f"Google Drive resumable chunk throttled with HTTP {response.status_code}",
+                retryable=True,
+                retry_after_seconds=self._retry_after(response),
+            )
         raise ResumableUploadError(
             f"Google Drive resumable chunk failed with HTTP {response.status_code}"
         )
