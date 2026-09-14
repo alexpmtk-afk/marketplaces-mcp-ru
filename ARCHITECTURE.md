@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v15`
+**Version:** `2026-09-14.v16`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -15,7 +15,7 @@ Supporting services:
 - Canonical marketplace archive: **Google Drive** folder `MCP архив базы данных`.
 - Durable queue/job state, staging, immutable annual candidates and resumable-upload state: **Yandex Object Storage**.
 - Secondary byte-for-byte backup of canonical archive files: Yandex Object Storage.
-- Google Drive control plane: owner-operated **Google Apps Script** web-app bridge. It handles small archive operations and creates resumable sessions for large files using the owner's Apps Script OAuth context. The bridge is authenticated by the existing shared secret in Yandex Lockbox.
+- Google Drive control plane: owner-operated **Google Apps Script** web-app bridge. It handles small archive operations and creates resumable sessions for large files using the owner's Apps Script OAuth context. It also verifies metadata and performs the final verified staging-to-canonical promotion. The bridge is authenticated by the existing shared secret in Yandex Lockbox.
 - Large annual CSV bytes: direct **Google Drive API resumable upload** from Yandex to the session URI returned by Apps Script. No Google OAuth refresh token is stored in Yandex.
 - Yandex Object Storage authentication: temporary IAM token obtained by the Serverless Container from its runtime service-account metadata; no static archive key is required.
 
@@ -23,8 +23,9 @@ Supporting services:
 
 - Google Cloud is not a runtime provider for Marketplaces MCP. The archive upload path does not require a separate server-side Google OAuth client or refresh-token store.
 - Google Drive annual CSV files and the report registry are the archive source of truth.
-- Apps Script remains the narrow trusted Google control-plane bridge for small Drive operations, reads, metadata/status, folder resolution and resumable-session creation.
-- **Large annual CSV file bytes must not be transported through Apps Script as one base64 JSON POST.** Apps Script brokers only the resumable session; Yandex sends chunks directly to the official Drive session URI.
+- Apps Script remains the narrow trusted Google control-plane bridge for small Drive operations, reads, metadata/status, folder resolution, resumable-session creation and final verified promotion.
+- **Large annual CSV file bytes must not be transported through Apps Script as one base64 JSON POST.** Apps Script brokers the resumable session; Yandex sends chunks directly to the official Drive session URI.
+- **Large annual resumable uploads must not write directly into the existing canonical file.** They upload to a non-canonical staging filename first. The old canonical file remains untouched until the staged file passes exact Drive size/SHA256 verification and the Yandex backup has been written.
 - The Apps Script shared secret remains only in Script Properties/Yandex Lockbox. The resumable session URI is a bearer-like capability and must never be logged or returned to users.
 - Yandex Object Storage must not replace Drive as canonical data; it is used for durable queue/staging, immutable upload candidates, resume state and backup.
 - Local files or chat memory are never authoritative shared state.
@@ -37,14 +38,17 @@ Supporting services:
 - Queue state and temporary per-report staging remain in Yandex Object Storage so in-flight jobs survive deployments and client disconnects.
 - Large-file finalization is split into durable stages:
   1. `PREPARE` builds one immutable annual candidate in Yandex Object Storage and records its size/SHA256.
-  2. `UPLOAD_ANNUAL` asks Apps Script to create/update an official Google Drive resumable session, then transfers at most one bounded chunk per worker step directly from Yandex to that session URI.
-  3. Google Drive is treated as authoritative for the confirmed byte offset; an interrupted worker queries the resumable session instead of blindly resending the full file.
-  4. After the Drive file is complete, Apps Script returns metadata only; size/checksum are verified without downloading the whole file through Apps Script.
-  5. The same candidate is mirrored byte-for-byte to the canonical Yandex backup path.
-  6. Only then does `COMMIT` update `reports_registry.csv` and durable job progress.
-- The resumable session URI, confirmed byte offset, target file identity and candidate identity/checksums are durable worker state. Session URIs are bearer-like capabilities and must never be emitted to logs or user responses.
-- Non-final resumable chunks must be multiples of 256 KiB. The v1 default is 4 MiB.
-- If the Apps Script bridge does not support resumable-session creation, the job must fail closed in a waiting-for-configuration state while preserving the candidate and existing progress. It must never fall back to the old large Apps Script/base64 upload.
+  2. `UPLOAD_ANNUAL` asks Apps Script to create an official Google Drive resumable session for a **non-canonical staging filename**, then transfers at most one bounded chunk per worker step directly from Yandex to that session URI.
+  3. Google Drive is authoritative for the confirmed byte offset. After interruption, the worker queries the session and uses the returned `Range`; it never assumes all bytes sent were persisted.
+  4. If a resumable session expires or becomes unusable, the worker starts a new session from the immutable candidate. Transient failures use bounded exponential backoff with jitter.
+  5. After the staged Drive file is complete, exact byte count and Drive `sha256Checksum` must equal the immutable candidate. This verification uses metadata only; the large file is not downloaded through Apps Script.
+  6. The same candidate is mirrored byte-for-byte to the canonical Yandex backup path and verified for size.
+  7. Only after steps 5-6 pass, Apps Script performs `promote_verified`: it confirms the staged file ID, parent, size and SHA256, renames that verified file to the canonical annual filename, and then trashes the explicitly identified previous canonical file.
+  8. Promotion is retry-safe. If execution stops after the rename, the worker can detect an already-promoted canonical file with the expected size/SHA256 and continue without repeating provider download or `PREPARE`.
+  9. Only after verified promotion does `COMMIT` update `reports_registry.csv` and durable job progress.
+- The resumable session URI, confirmed byte offset, staging file identity, previous canonical file identity, candidate identity/checksums and retry state are durable worker state. Session URIs are bearer-like capabilities and must never be emitted to logs or user responses.
+- Non-final resumable chunks must be multiples of 256 KiB. The default is 4 MiB; the final chunk may be smaller.
+- If the Apps Script bridge does not support the required resumable/promotion controls, the job must fail closed while preserving the candidate and existing progress. It must never fall back to the old large Apps Script/base64 upload or a direct canonical overwrite.
 - Existing canonical files left in Yandex by the previous architecture may be migrated to Drive on first content read when Drive does not yet contain that file. Provider data is not re-downloaded for this migration.
 - Update is idempotent and registry-driven; already-complete provider reports are not downloaded again.
 - WB finance rows are deduplicated by `(reportId, rrdId)` before the annual CSV is written.
@@ -67,14 +71,16 @@ Runtime configuration:
 - `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET` — shared secret injected from Yandex Lockbox;
 - `MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID` — expected fixed archive root ID.
 
-The bridge supports health/status, folder resolution, named-file stat/read, small writes, metadata lookup and resumable-session creation under the fixed archive root. For `resumable_start`, Apps Script uses `ScriptApp.getOAuthToken()` only inside Google to start the official Drive upload session and returns the opaque session URI; the Google access token itself never leaves Apps Script.
+The bridge supports health/status, folder resolution, named-file stat/read, small writes, metadata lookup, resumable-session creation, diagnostic cleanup, and verified staging-to-canonical promotion under the fixed archive root. For `resumable_start`, Apps Script uses `ScriptApp.getOAuthToken()` only inside Google to start the official Drive upload session and returns the opaque session URI; the Google access token itself never leaves Apps Script.
+
+`promote_verified` is deliberately narrow: it accepts an explicit staged file ID, explicit previous canonical file ID, target folder, canonical filename, expected byte count and expected SHA256. It verifies the staged file before renaming it and only then trashes the old canonical file. This prevents a partially uploaded or wrong file from replacing the working archive.
 
 ### Direct Drive API — large annual CSV bytes
 
 Runtime configuration:
-- `MARKETPLACE_MCP_DRIVE_RESUMABLE_CHUNK_BYTES` — optional chunk size; must be a multiple of 256 KiB; v1 default 4 MiB.
+- `MARKETPLACE_MCP_DRIVE_RESUMABLE_CHUNK_BYTES` — optional chunk size; must be a multiple of 256 KiB; default 4 MiB.
 
-The Yandex worker stores the opaque Drive session URI only in durable Yandex job state and sends at most one chunk per worker step directly to that URI. Subsequent Drive resumable `PUT` requests use the session URI returned by Google; the runtime does not hold a Google refresh token. On interruption the worker queries Google for the confirmed offset before continuing.
+The Yandex worker stores the opaque Drive session URI only in durable Yandex job state and sends at most one chunk per worker step directly to that URI. Subsequent Drive resumable `PUT` requests use the session URI returned by Google; the runtime does not hold a Google refresh token. On interruption the worker queries Google for the confirmed offset before continuing. Expired sessions are restarted from the immutable candidate rather than replaying WB/API acquisition or `PREPARE`.
 
 ## WB Advertising M0
 
