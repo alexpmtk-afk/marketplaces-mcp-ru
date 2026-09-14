@@ -254,11 +254,28 @@ def test_natural_all_orders_question_never_uses_preliminary_statistics_feed():
     assert wb.client.calls == []
 
 
-def test_natural_sales_question_is_understood_but_not_executed_without_formula():
+def test_natural_sales_question_routes_to_approved_semantic_archive(monkeypatch):
     wb = _wb([])
+    archive_store = object()
+    captured = {}
+
+    async def fake_execute(store, **kwargs):
+        captured["store"] = store
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "capability_id": "sale_and_return_operations",
+            "calculation": {
+                "sales_and_returns_by_currency": [
+                    {"currency": "RUB", "net_sales_amount": 12345.0}
+                ]
+            },
+        }
+
+    monkeypatch.setattr(router, "execute_semantic_archive_question", fake_execute)
 
     result = asyncio.run(execute_business_query(
-        {"wb": wb, "_archive_store": object()},
+        {"wb": wb, "_archive_store": archive_store},
         marketplace="wb",
         seller="wb_novokshenov",
         date_from="2026-08-01",
@@ -266,9 +283,14 @@ def test_natural_sales_question_is_understood_but_not_executed_without_formula()
         question="Какая была сумма продаж за август?",
     ))
 
-    assert result["ok"] is False
-    assert result["error_type"] == "source_not_suitable"
-    assert result["details"]["capability_id"] == "sale_and_return_operations"
+    assert result["ok"] is True
+    assert result["route"] == "semantic_archive"
+    assert result["capability_id"] == "sale_and_return_operations"
+    assert result["semantic_question"] == "Какая была сумма продаж за август?"
+    assert captured["store"] is archive_store
+    assert captured["seller"] == "wb_novokshenov"
+    assert captured["date_from"].isoformat() == "2026-08-01"
+    assert captured["date_to"].isoformat() == "2026-08-31"
     assert wb.client.calls == []
 
 
