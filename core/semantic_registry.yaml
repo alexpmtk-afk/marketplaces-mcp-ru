@@ -1,4 +1,4 @@
-version: 2026-09-14.v3
+version: 2026-09-14.v4
 policy:
   fail_closed: true
   recognized_does_not_mean_available: true
@@ -58,7 +58,7 @@ datasets:
     report_type: 1
     delimiter: ';'
     file_pattern: '{cabinet}__weekly_main__{year}.csv'
-    schema_status: OBSERVED_AND_SEMANTICALLY_CATALOGUED_2026_09_14
+    schema_status: OFFICIAL_HELP_AUDITED_92_FIELDS_2026_09_14
     field_count: 92
     fields:
     - reportId
@@ -197,21 +197,21 @@ datasets:
         safe_uses: [поиск поставки, различение контекста FBW]
         limitations: [Нулевое значение не означает отсутствие продажи.]
       dlvPrc:
-        meaning_ru: Зафиксированный коэффициент склада/логистики, применённый к расчёту.
+        meaning_ru: Фиксированный коэффициент склада по поставке, который действовал на момент планирования поставки продавцом.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ применённого коэффициента]
-        limitations: [Не использовать как текущий тариф склада.]
+        safe_uses: [анализ исторически зафиксированного при планировании коэффициента]
+        limitations: [В отчёте сохраняется именно зафиксированный коэффициент даже после окончания срока фиксации; после окончания фиксации фактическая стоимость логистики может рассчитываться по коэффициенту, действовавшему на складе в момент заказа. Не считать dlvPrc фактически применённым коэффициентом после окончания фиксации или текущим тарифом склада.]
       fixTariffDateFrom:
-        meaning_ru: Начало периода действия зафиксированного тарифа/коэффициента.
+        meaning_ru: Дата начала действия фиксации коэффициента склада.
         role: date
         semantic_status: REVIEWED
-        safe_uses: [анализ применённого тарифа]
+        safe_uses: [граница периода фиксации коэффициента]
       fixTariffDateTo:
-        meaning_ru: Окончание периода действия зафиксированного тарифа/коэффициента.
+        meaning_ru: Дата конца действия фиксации коэффициента склада.
         role: date
         semantic_status: REVIEWED
-        safe_uses: [анализ применённого тарифа]
+        safe_uses: [граница периода фиксации коэффициента]
       subjectName:
         meaning_ru: Предмет (категория) товара.
         role: dimension
@@ -362,10 +362,10 @@ datasets:
         safe_uses: [диагностика старых периодов]
         limitations: [Для современных собственных промо использовать sellerPromoId/sellerPromoDiscount, если заполнены.]
       spp:
-        meaning_ru: Скидка покупателю, финансируемая Wildberries, в процентах.
+        meaning_ru: Платформенная скидка покупателю, которую Wildberries предоставляет за свой счёт, в процентах.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ скидки WB]
+        safe_uses: [анализ платформенной скидки WB]
         limitations: [Не суммировать как денежную сумму.]
       kvwBase:
         meaning_ru: Базовый коэффициент вознаграждения/комиссии Wildberries без НДС.
@@ -385,10 +385,11 @@ datasets:
         semantic_status: REVIEWED
         safe_uses: [диагностика старых периодов]
       isKgvpV2:
-        meaning_ru: Исторический признак корректировки комиссии/промо-механики; в актуальных отчётах обычно 0.
+        meaning_ru: Исторический размер изменения коэффициента вознаграждения Wildberries из-за участия продавца в акции со сниженной комиссией, %; в актуальных отчётах обычно 0.
         role: legacy
         semantic_status: REVIEWED
-        safe_uses: [диагностика старых периодов]
+        safe_uses: [диагностика исторического изменения кВВ из-за акции]
+        limitations: [Не трактовать как булевый признак промо и не использовать как текущую настройку акции.]
       ppvzSalesCommission:
         meaning_ru: Вознаграждение Wildberries по продаже до отдельных услуг сторонних агентов, без НДС.
         role: measure
@@ -487,11 +488,11 @@ datasets:
         safe_uses: [суммирование штрафов, анализ штрафов по товару/периоду]
         limitations: [Причину штрафа брать из bonusTypeName и/или sellerOperName.]
       additionalPayment:
-        meaning_ru: Корректировка вознаграждения/дополнительное начисление или удержание по правилам WB.
+        meaning_ru: Корректировка вознаграждения Wildberries по строке.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ корректировок]
-        limitations: [Причину/тип интерпретировать вместе с bonusTypeName/sellerOperName.]
+        safe_uses: [анализ корректировок вознаграждения WB]
+        limitations: [Удержание в официальной детализации отображается суммой без знака, выплата продавцу — со знаком «−»; причину/тип интерпретировать вместе с bonusTypeName/sellerOperName и не неттировать автоматически с другими полями.]
       rebillLogisticCost:
         meaning_ru: Перевыставленная/возмещаемая стоимость логистики стороннего перевозчика.
         role: measure
@@ -543,32 +544,35 @@ datasets:
         safe_uses: [анализ Wibes-скидки]
         limitations: [Не суммировать как деньги.]
       cashbackAmount:
-        meaning_ru: Сумма кешбэка, удержанная/возвращённая по операции.
+        meaning_ru: Сумма, удержанная за начисленные покупателю баллы программы лояльности; для возвратной операции отражает возврат соответствующей суммы.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ кешбэка]
+        safe_uses: [анализ списания/возврата кешбэка, начисленного за счёт продавца]
+        limitations: [Интерпретировать вместе с docTypeName; не смешивать с cashbackDiscount и cashbackCommissionChange.]
       cashbackDiscount:
-        meaning_ru: Сумма скидки/компенсации, связанной с использованием кешбэка/лояльности.
+        meaning_ru: Компенсация скидки по программе лояльности — сумма кешбэка, которую покупатель потратил на оплату товара.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ скидки по кешбэку]
+        safe_uses: [анализ компенсации скидки при оплате кешбэком]
+        limitations: [Не смешивать с начисленным покупателю кешбэком cashbackAmount.]
       cashbackCommissionChange:
-        meaning_ru: Изменение комиссии, связанное с программой кешбэка продавца.
+        meaning_ru: Стоимость участия продавца в программе лояльности — комиссия за установленный продавцом кешбэк либо её возврат в соответствующей операции.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ влияния кешбэка на комиссию]
+        safe_uses: [анализ стоимости участия в программе лояльности]
+        limitations: [Интерпретировать вместе с docTypeName; не смешивать с cashbackAmount и cashbackDiscount.]
       paymentSchedule:
-        meaning_ru: Параметр/признак графика выплат или финансового сервиса, если применён к строке.
-        role: dimension
+        meaning_ru: Сумма комиссии за разовое изменение срока перечисления денежных средств — услугу «Вывести сейчас».
+        role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ специальных схем выплат]
-        limitations: [Интерпретировать только при заполненном значении и подтверждённом типе операции.]
+        safe_uses: [анализ комиссии за услугу «Вывести сейчас»]
+        limitations: [Отображается в контексте операции «Разовое изменение срока перечисления денежных средств»; не трактовать как график выплат или обычный параметр расписания.]
       deliveryMethod:
         meaning_ru: Фактическая модель/способ продажи и отгрузки, отражённый в строке — например FBS/FBW и габаритный контекст.
         role: dimension
         semantic_status: REVIEWED
         safe_uses: [ответ на вопрос по какой схеме фактически прошла отражённая операция, группировка продаж/логистики по модели]
-        limitations: [Это исторически наблюдаемая схема в отчёте, а не гарантия текущей настройки товара/склада.]
+        limitations: [Заполняется прежде всего для логистических строк и является исторически наблюдаемой схемой в отчёте, а не гарантией текущей настройки товара/склада.]
       sellerPromoId:
         meaning_ru: Идентификатор собственной промоакции продавца.
         role: identifier
@@ -631,11 +635,11 @@ datasets:
         semantic_status: REVIEWED
         safe_uses: [фильтр операций с социальным сертификатом]
       warehouseLogisticsCoeff:
-        meaning_ru: Коэффициент складской логистики, применённый к операции.
+        meaning_ru: Коэффициент складской логистики, отражённый для операции.
         role: measure
         semantic_status: REVIEWED
-        safe_uses: [анализ применённого коэффициента логистики]
-        limitations: [Не использовать как текущий тариф склада.]
+        safe_uses: [анализ коэффициента логистики, отражённого в исторической операции]
+        limitations: [Не использовать как текущий тариф склада и не подменять им смысл фиксированного коэффициента dlvPrc.]
       orderUid:
         meaning_ru: Идентификатор корзины/транзакции заказа, связывающий заказ с детализацией.
         role: identifier
@@ -717,7 +721,7 @@ capabilities:
     status: AVAILABLE_WITH_LIMITATION
     fields: [dlvPrc, fixTariffDateFrom, fixTariffDateTo, warehouseLogisticsCoeff, officeName]
     scope: coefficients_attached_to_reported_operations
-    guardrail: These are applied historical coefficients, not current live tariffs.
+    guardrail: dlvPrc is the historical coefficient fixed when the supply was planned, not proof of the coefficient actually charged after its fixation period. warehouseLogisticsCoeff is a separate coefficient recorded on the operation. Neither field is a current live tariff.
   logistics:
     source_id: wb_weekly_finance_main
     status: AVAILABLE
@@ -767,7 +771,7 @@ capabilities:
     status: AVAILABLE_WITH_LIMITATION
     fields: [spp, sellerPromoId, sellerPromoDiscount, loyaltyId, loyaltyDiscount, uuidPromocode, salePricePromocodeDiscountPrc, articleSubstitution, salePriceAffiliatedDiscountPrc, cashbackAmount, cashbackDiscount, cashbackCommissionChange, wibesDiscountPercent, installmentCofinancingAmount]
     scope: discount_and_loyalty_attributes_present_in_rows
-    guardrail: Legacy fields salePercent/productDiscountForReport/sellerPromo are not treated as current promotion truth.
+    guardrail: Legacy fields salePercent/productDiscountForReport/sellerPromo are not treated as current promotion truth. Cashback money fields remain separate and are never collapsed into one generic amount.
   b2b:
     source_id: wb_weekly_finance_main
     status: AVAILABLE_WITH_LIMITATION
@@ -816,5 +820,8 @@ references:
   official_wb:
   - 'Wildberries Seller Help: Детализация еженедельного отчёта реализации'
   - 'Wildberries Seller Help: Еженедельные отчёты реализации'
+  - 'Wildberries Seller Help: Фиксация тарифов: тарифы на поставку и на остаток'
   - 'Wildberries API: Финансовые отчёты и детализация'
   archive_observation: Canonical wb_weekly_finance_main header observed on 2026-09-14; 92 columns.
+  official_audit: docs/WB_WEEKLY_FIELDS_OFFICIAL_AUDIT_2026_09_14.md
+  api_schema_drift_note: Current WB API response also exposes agencyVat, but it is absent from the observed 92-column canonical archive and has no approved archive semantic binding; therefore it is not executable by Semantic Core.
