@@ -1,17 +1,17 @@
 """Durable, rate-aware ingestion queue for WB Advertising Archive V1.
 
-The queue performs at most one real WB Promotion API call per worker step.
-Provider responses are normalized into durable Yandex staging files first.
-Canonical Google Drive commit and coverage COMMIT are a separate phase so a
-partial provider run can never masquerade as a complete archive.
+One worker step performs at most one WB Promotion API request. Provider data is
+normalized into durable Yandex job staging; canonical Drive publication and
+coverage are handled later by the verified advertising archive worker.
 """
 from __future__ import annotations
 
 import json
 import math
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from .archive_coverage import request_key
 from .rate_limit import redis_connection_kwargs, redis_url_from_env
@@ -38,11 +38,29 @@ from .wb_finance_archive import ArchiveLock
 QUEUE_VERSION = 1
 QUEUE_KEY = "marketplace-archive:v3:wb-advertising:due"
 JOB_FOLDER = ("app", "jobs", "wb-advertising")
-CLUSTER_PERIOD_DAYS = 31  # conservative internal chunk, even though WB documents no tighter v1 period cap
+CLUSTER_PERIOD_DAYS = 31
+MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _moscow_today() -> date:
+    return datetime.now(MOSCOW_TZ).date()
+
+
+def closed_history_period(year: int) -> tuple[str, str]:
+    """Return only closed calendar days; current year ends yesterday Moscow."""
+    year = int(year)
+    today = _moscow_today()
+    if year < 2024 or year > today.year:
+        raise ValueError("year must be between 2024 and the current year")
+    start = date(year, 1, 1)
+    end = date(year, 12, 31) if year < today.year else today - timedelta(days=1)
+    if end < start:
+        raise ValueError("current year has no closed advertising days yet")
+    return start.isoformat(), end.isoformat()
 
 
 def _retry_after(payload: dict[str, Any]) -> float:
@@ -83,8 +101,6 @@ def _request_lock_key(cabinet: str, request: dict[str, Any]) -> str:
 
 
 class WBAdvertisingArchiveJobQueue:
-    """Persistent WB advertising ingestion queue with durable staged progress."""
-
     def __init__(self, wb_module: Any, store: Any) -> None:
         self.wb = wb_module
         self.store = store
@@ -207,13 +223,12 @@ class WBAdvertisingArchiveJobQueue:
 
     async def enqueue(self, *, year: int, seller: str) -> dict[str, Any]:
         year = int(year)
-        if year < 2024 or year > date.today().year:
-            raise ValueError("year must be between 2024 and the current year")
+        closed_history_period(year)
         cabinet = self.normalize_cabinet(seller)
         job_id = self.job_id(cabinet, year)
         existing = await self._load(job_id)
         if existing is not None:
-            if existing.get("status") not in {"READY_TO_COMMIT", "COMPLETE"}:
+            if existing.get("status") != "COMPLETE":
                 await self._schedule(job_id, 0)
             return {
                 "ok": True,
@@ -222,7 +237,6 @@ class WBAdvertisingArchiveJobQueue:
                 "status": existing.get("status"),
                 "phase": existing.get("phase"),
             }
-        # Resolve once up front only to fail closed before creating a job that can never run.
         self._resolve_creds(cabinet)
         now = _utc_now()
         state = {
@@ -265,6 +279,7 @@ class WBAdvertisingArchiveJobQueue:
             "fetch_progress": [int(state.get("fetch_index", 0) or 0), len(state.get("fetch_plan") or [])],
             "cluster_progress": [int(state.get("cluster_index", 0) or 0), len(state.get("cluster_plan") or [])],
             "staged_datasets": state.get("staged_datasets") or {},
+            "commit": state.get("commit") or {},
             "last_retry_after_seconds": state.get("last_retry_after_seconds", 0),
             "last_error": state.get("last_error"),
             "updated_at_utc": state.get("updated_at_utc"),
@@ -280,18 +295,21 @@ class WBAdvertisingArchiveJobQueue:
         if state is None:
             await self._unschedule(selected)
             return {"ok": False, "error": "advertising_archive_job_not_found", "job_id": selected}
-        if state.get("status") in {"READY_TO_COMMIT", "COMPLETE"}:
+        if state.get("status") == "COMPLETE":
             await self._unschedule(selected)
-            return {"ok": True, "job_id": selected, "status": state.get("status"), "action": "noop"}
+            return {"ok": True, "job_id": selected, "status": "COMPLETE", "action": "noop"}
+        if state.get("status") in {"READY_TO_COMMIT", "COMMITTING", "PROMOTION_PENDING", "WAITING_COMMIT_RETRY", "READY_TO_FINALIZE"}:
+            return {"ok": True, "job_id": selected, "status": state.get("status"), "action": "commit_phase_required"}
 
         phase = str(state.get("phase") or "")
         cabinet = str(state["cabinet"])
+        start, end = closed_history_period(int(state["year"]))
         if phase == "DISCOVER":
             request = {
                 "operation_id": "wb_get_adv_promotion_count",
                 "dataset": "ads_campaign_roster_snapshots",
-                "date_from": f"{state['year']}-01-01",
-                "date_to": f"{state['year']}-12-31",
+                "date_from": start,
+                "date_to": end,
                 "scope": {},
             }
         elif phase == "FETCH":
@@ -379,11 +397,12 @@ class WBAdvertisingArchiveJobQueue:
         state["campaign_ids"] = sorted({int(row["campaign_id"]) for row in roster})
         state["fullstats_campaign_ids"] = eligible_fullstats_campaign_ids(roster)
         state["staged_datasets"]["ads_campaign_roster_snapshots"] = stats
+        start, end = closed_history_period(int(state["year"]))
         state["completed_requests"].append({
             "operation_id": "wb_get_adv_promotion_count",
             "datasets": ["ads_campaign_roster_snapshots"],
-            "date_from": f"{state['year']}-01-01",
-            "date_to": f"{state['year']}-12-31",
+            "date_from": start,
+            "date_to": end,
             "scope": {},
             "observed_at": observed_at,
         })
@@ -395,12 +414,10 @@ class WBAdvertisingArchiveJobQueue:
         return {"ok": True, "job_id": state["job_id"], "action": "campaign_roster_staged", "campaigns": len(roster), "fullstats_campaigns": len(state["fullstats_campaign_ids"])}
 
     async def _plan_step(self, state: dict[str, Any]) -> dict[str, Any]:
-        year = int(state["year"])
-        start, end = f"{year}-01-01", f"{year}-12-31"
+        start, end = closed_history_period(int(state["year"]))
         all_ids = [int(value) for value in state.get("campaign_ids") or []]
         fullstats_ids = [int(value) for value in state.get("fullstats_campaign_ids") or []]
         plan: list[dict[str, Any]] = []
-
         for ids in _chunks(all_ids, 50):
             plan.append({
                 "kind": "campaign_info",
@@ -420,11 +437,7 @@ class WBAdvertisingArchiveJobQueue:
                 "date_from": item["date_from"],
                 "date_to": item["date_to"],
                 "scope": {"campaign_ids": ids},
-                "query": {
-                    "ids": ",".join(str(value) for value in ids),
-                    "beginDate": item["date_from"],
-                    "endDate": item["date_to"],
-                },
+                "query": {"ids": ",".join(str(value) for value in ids), "beginDate": item["date_from"], "endDate": item["date_to"]},
             })
         for operation_id, dataset in (("wb_get_adv_upd", "ads_expenses"), ("wb_get_adv_payments", "ads_payments")):
             for item in plan_period_requests(operation_id, start, end):
@@ -458,19 +471,12 @@ class WBAdvertisingArchiveJobQueue:
             await self._save(state)
             await self._schedule(str(state["job_id"]), 0)
             return {"ok": True, "job_id": state["job_id"], "action": "base_fetch_complete"}
-
         request = dict(plan[index])
         creds = self._resolve_creds(str(state["cabinet"]))
-        payload = await self._provider_call(
-            str(request["operation_id"]),
-            creds,
-            query=request.get("query"),
-            json_body=request.get("json_body"),
-        )
+        payload = await self._provider_call(str(request["operation_id"]), creds, query=request.get("query"), json_body=request.get("json_body"))
         waiting = await self._wait_or_fail(state, payload)
         if waiting is not None:
             return waiting
-
         kind = str(request.get("kind") or "")
         staged: dict[str, Any] = {}
         observed_at = _utc_now()
@@ -498,7 +504,6 @@ class WBAdvertisingArchiveJobQueue:
             staged["ads_search_cluster_daily"] = await self._merge_stage(str(state["job_id"]), "ads_search_cluster_daily", rows)
         else:
             raise RuntimeError(f"Unsupported advertising fetch kind: {kind}")
-
         state["staged_datasets"].update(staged)
         state["completed_requests"].append({
             "operation_id": request["operation_id"],
@@ -531,8 +536,8 @@ class WBAdvertisingArchiveJobQueue:
             for row in product_rows
             if int(row.get("campaign_id") or 0) > 0 and int(row.get("nm_id") or 0) > 0
         })
-        year = int(state["year"])
-        periods = split_date_range(f"{year}-01-01", f"{year}-12-31", max_days=CLUSTER_PERIOD_DAYS)
+        start_date, end_date = closed_history_period(int(state["year"]))
+        periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
         plan: list[dict[str, Any]] = []
         for start, end in periods:
             for chunk in _chunks(pairs, 100):
@@ -561,7 +566,7 @@ class WBAdvertisingArchiveJobQueue:
         state["status"] = "READY_TO_COMMIT"
         state["last_error"] = None
         await self._save(state)
-        await self._unschedule(str(state["job_id"]))
+        await self._schedule(str(state["job_id"]), 0)
         return {
             "ok": True,
             "job_id": state["job_id"],
