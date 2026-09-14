@@ -132,10 +132,36 @@ def test_worker_step_is_bounded_to_one_provider_call(monkeypatch):
     before = len(client.calls)
     third = asyncio.run(queue.worker_step(job_id))
     assert len(client.calls) - before == 1
-    assert third["action"] == "report_finalized"
-    assert third["status"] == "COMPLETE"
+    assert third["action"] == "report_download_complete"
+    assert third["status"] == "QUEUED"
     _, finish_kwargs = client.calls[-1]
     assert finish_kwargs["json_body"]["rrdId"] == 10
+
+    before = len(client.calls)
+    prepared = asyncio.run(queue.worker_step(job_id))
+    assert len(client.calls) - before == 0
+    assert prepared["action"] == "report_finalize_prepared"
+    state = asyncio.run(queue.status(job_id))
+    assert state["finalize_phase"] == "UPLOAD_ANNUAL"
+    assert state["finalize_report_id"] == 101
+
+    before = len(client.calls)
+    uploaded = asyncio.run(queue.worker_step(job_id))
+    assert len(client.calls) - before == 0
+    assert uploaded["action"] == "report_annual_uploaded"
+    state = asyncio.run(queue.status(job_id))
+    assert state["finalize_phase"] == "COMMIT"
+
+    before = len(client.calls)
+    committed = asyncio.run(queue.worker_step(job_id))
+    assert len(client.calls) - before == 0
+    assert committed["action"] == "report_finalized"
+    assert committed["status"] == "COMPLETE"
+    state = asyncio.run(queue.status(job_id))
+    assert state["finalize_phase"] is None
+    assert state["finalize_report_id"] == 0
+    assert state["report_index"] == 1
+    assert state["completed_report_ids"] == [101]
 
 
 def test_rate_limit_reschedules_without_sleep(monkeypatch):
