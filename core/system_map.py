@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v9"
+ARCHITECTURE_VERSION = "2026-09-14.v10"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -107,9 +107,11 @@ SYSTEM_MAP: dict[str, Any] = {
             "storage_charge",
             "acceptance_charge",
             "sale_and_return_operations",
+            "logistics",
+            "deductions_and_adjustments",
         ],
         "execution_gate": "FULL_COVERAGE from COMPLETE reports_registry.csv fragments plus canonical annual file presence",
-        "money_policy": "sum values exactly as reported except formulas that explicitly define subtraction by operation type; never combine different currencies into one total",
+        "money_policy": "sum values exactly as reported except formulas that explicitly define subtraction by operation type; never combine different currencies and never silently net different financial components",
         "question_policy": {
             "preferred_input": "the user's original natural-language question",
             "legacy_metric": "retained only for backward compatibility",
@@ -129,12 +131,15 @@ SYSTEM_MAP: dict[str, Any] = {
             "registry coverage without the corresponding canonical annual file fails closed",
             "penalty, paidStorage and paidAcceptance sums preserve provider sign and currency",
             "sales and returns use saleDt and explicit docTypeName buckets: Продажа minus Возврат for both retailAmount and quantity",
+            "logistics keeps deliveryService and rebillLogisticCost separate and reports deliveryAmount/returnAmount only as logistics counts",
+            "deductions keep deduction and additionalPayment separate; additionalPayment is a WB-remuneration adjustment and is not relabeled as seller payout",
+            "different financial components are never silently netted into one amount",
             "commissions and other recognized capabilities remain non-executable until separate formulas are approved",
         ],
         "runtime_integration": (
-            "marketplace_business_query accepts the original question; approved penalties/storage/acceptance "
-            "and sales/returns route to the coverage-gated archive executor. Other concepts fail closed or "
-            "identify another required source. Legacy metric routing remains for compatibility."
+            "marketplace_business_query accepts the original question; approved penalties/storage/acceptance, "
+            "sales/returns, logistics and deductions/adjustments route to the coverage-gated archive executor. "
+            "Other concepts fail closed or identify another required source. Legacy metric routing remains for compatibility."
         ),
     },
     "routing_policy": {
@@ -170,8 +175,10 @@ Yandex Object Storage is required for durable queue/job state, staging, and a se
 Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.
-Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Different currencies are never combined into one total.
-marketplace_business_query now routes natural questions for penalties, storage charges, paid acceptance, and sales/returns into the gated archive executor. Sales/returns use saleDt and explicit docTypeName buckets, with Продажа minus Возврат for both retailAmount and quantity.
+Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Different currencies are never combined into one total, and distinct report components are not silently netted together.
+marketplace_business_query routes approved natural questions for penalties, storage charges, paid acceptance, sales/returns, logistics and deductions/adjustments into the gated archive executor.
+Sales/returns use saleDt and explicit docTypeName buckets, with Продажа minus Возврат for both retailAmount and quantity.
+Logistics keeps deliveryService and rebillLogisticCost separate; deliveryAmount and returnAmount are logistics counts only. Deductions keep deduction and additionalPayment separate; additionalPayment is a WB-remuneration adjustment, not an assumed seller payout.
 WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
 WB Advertising M0 is Wildberries-only and read-only: use dedicated server-side wb_ads Promotion credentials; current campaign state is live from WB Promotion API; M0 advertising-attribution metrics must never be presented as actual business profit.
 The advertising Drive folder scaffold is not proof that Advertising Archive V1 ingestion or historical coverage exists. Do not route historical ad analytics to the archive until dataset bindings, registry coverage and validation are implemented and accepted.
