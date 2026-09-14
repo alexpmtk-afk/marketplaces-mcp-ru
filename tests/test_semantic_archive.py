@@ -28,7 +28,11 @@ class FakeStore:
                 "rrdId",
                 "reportType",
                 "rrDate",
+                "saleDt",
                 "currency",
+                "docTypeName",
+                "quantity",
+                "retailAmount",
                 "penalty",
                 "bonusTypeName",
                 "sellerOperName",
@@ -106,7 +110,11 @@ def _annual_rows():
             "rrdId": 1,
             "reportType": 1,
             "rrDate": "2026-08-05",
+            "saleDt": "",
             "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
             "penalty": "100.50",
             "bonusTypeName": "Штраф A",
             "sellerOperName": "Штраф",
@@ -119,7 +127,11 @@ def _annual_rows():
             "rrdId": 2,
             "reportType": 1,
             "rrDate": "2026-08-06",
+            "saleDt": "",
             "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
             "penalty": "49.50",
             "bonusTypeName": "Штраф B",
             "sellerOperName": "Штраф",
@@ -132,7 +144,11 @@ def _annual_rows():
             "rrdId": 3,
             "reportType": 1,
             "rrDate": "2026-08-12",
+            "saleDt": "",
             "currency": "RUB",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
             "penalty": "0",
             "bonusTypeName": "",
             "sellerOperName": "Хранение",
@@ -145,7 +161,11 @@ def _annual_rows():
             "rrdId": 4,
             "reportType": 1,
             "rrDate": "2026-08-15",
+            "saleDt": "",
             "currency": "USD",
+            "docTypeName": "",
+            "quantity": "0",
+            "retailAmount": "0",
             "penalty": "3.00",
             "bonusTypeName": "Штраф C",
             "sellerOperName": "Штраф",
@@ -153,15 +173,67 @@ def _annual_rows():
             "paidAcceptance": "0",
             "nmId": "111",
         },
+        {
+            "reportId": 101,
+            "rrdId": 5,
+            "reportType": 1,
+            "rrDate": "2026-08-07",
+            "saleDt": "2026-08-07T12:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "Продажа",
+            "quantity": "1",
+            "retailAmount": "100.00",
+            "penalty": "0",
+            "bonusTypeName": "",
+            "sellerOperName": "Продажа",
+            "paidStorage": "0",
+            "paidAcceptance": "0",
+            "nmId": "111",
+        },
+        {
+            "reportId": 101,
+            "rrdId": 6,
+            "reportType": 1,
+            "rrDate": "2026-08-08",
+            "saleDt": "2026-08-08T13:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "Возврат",
+            "quantity": "1",
+            "retailAmount": "30.00",
+            "penalty": "0",
+            "bonusTypeName": "",
+            "sellerOperName": "Возврат",
+            "paidStorage": "0",
+            "paidAcceptance": "0",
+            "nmId": "111",
+        },
+        {
+            "reportId": 101,
+            "rrdId": 7,
+            "reportType": 1,
+            "rrDate": "2026-08-08",
+            "saleDt": "2026-08-08T14:00:00Z",
+            "currency": "RUB",
+            "docTypeName": "Продажа",
+            "quantity": "0",
+            "retailAmount": "0",
+            "penalty": "0",
+            "bonusTypeName": "",
+            "sellerOperName": "Компенсация скидки по программе лояльности",
+            "paidStorage": "0",
+            "paidAcceptance": "0",
+            "nmId": "111",
+        },
     ]
 
 
-def test_execution_registry_only_approves_three_safe_capabilities():
+def test_execution_registry_approves_four_safe_capabilities():
     execution = load_semantic_execution()
     assert set(execution["executors"]) == {
         "penalties",
         "storage_charge",
         "acceptance_charge",
+        "sale_and_return_operations",
     }
     assert execution["policy"]["require_full_coverage"] is True
     assert execution["policy"]["cross_currency_sum_forbidden"] is True
@@ -246,7 +318,7 @@ def test_storage_and_acceptance_sum_as_reported_with_product_filter():
     ]
 
 
-def test_recognized_sales_remains_blocked_without_approved_formula():
+def test_sales_and_returns_use_explicit_doc_type_subtraction():
     store = FakeStore(_registry_rows(full=True), _annual_rows())
     result = asyncio.run(
         execute_semantic_archive_question(
@@ -255,11 +327,27 @@ def test_recognized_sales_remains_blocked_without_approved_formula():
             seller="wb_novokshenov",
             date_from="2026-08-05",
             date_to="2026-08-12",
+            nm_ids=[111],
         )
     )
-    assert result["ok"] is False
-    assert result["error"] == "semantic_execution_not_approved"
-    assert result["execution_allowed"] is False
+    assert result["ok"] is True
+    assert result["capability_id"] == "sale_and_return_operations"
+    assert result["provenance"]["date_field"] == "saleDt"
+    assert result["provenance"]["sum_rule"] == "sale_minus_return_by_doc_type"
+    assert result["calculation"]["cross_currency_total"] is None
+    assert result["calculation"]["sales_and_returns_by_currency"] == [
+        {
+            "currency": "RUB",
+            "sale_amount": 100.0,
+            "return_amount": 30.0,
+            "net_sales_amount": 70.0,
+            "sale_units": 1.0,
+            "return_units": 1.0,
+            "net_sales_units": 0.0,
+            "sale_rows": 2,
+            "return_rows": 1,
+        }
+    ]
 
 
 def test_coverage_gap_prevents_archive_calculation():
@@ -292,3 +380,20 @@ def test_sql_builder_uses_only_registered_fields_and_date_axis():
     assert '"currency"' in sql
     assert '"nmId"' in sql
     assert "2026-08-05" in sql and "2026-08-12" in sql
+
+
+def test_sales_sql_uses_sale_date_and_explicit_operation_buckets():
+    execution = load_semantic_execution()
+    sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["sale_and_return_operations"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+        nm_ids=[111],
+    )
+    assert '"saleDt"' in sql
+    assert '"docTypeName"' in sql
+    assert '"retailAmount"' in sql
+    assert '"quantity"' in sql
+    assert "'Продажа'" in sql
+    assert "'Возврат'" in sql
