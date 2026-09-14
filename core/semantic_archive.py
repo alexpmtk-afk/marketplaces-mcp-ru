@@ -67,7 +67,7 @@ def validate_semantic_execution(
     dataset = get_dataset(DATASET, registry_data)
     dataset_fields = set(dataset["fields"])
     executors = _require_mapping(execution.get("executors"), "semantic executors")
-    allowed_modes = {"sum_by_currency", "grouped_reason_amount"}
+    allowed_modes = {"sum_by_currency", "grouped_reason_amount", "sale_return_summary"}
 
     for capability_id, value in executors.items():
         spec = _require_mapping(value, f"semantic executor {capability_id}")
@@ -117,6 +117,19 @@ def validate_semantic_execution(
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} has invalid reason fields"
                 )
+        if spec["mode"] == "sale_return_summary":
+            for key in ("operation_field", "unit_field"):
+                field = spec.get(key)
+                if field not in dataset_fields or field not in capability["fields"]:
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has invalid {key} {field!r}"
+                    )
+            for key in ("sale_value", "return_value"):
+                value = spec.get(key)
+                if not isinstance(value, str) or not value.strip():
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} must define {key}"
+                    )
 
 
 def _resolve_archive_cabinet(seller: str) -> str:
@@ -234,6 +247,10 @@ def _quote_identifier(value: str) -> str:
     return f'"{value}"'
 
 
+def _quote_literal(value: str) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
+
+
 def _numeric_expr(field: str) -> str:
     identifier = _quote_identifier(field)
     return f"COALESCE(TRY_CAST(NULLIF(TRIM({identifier}), '') AS DOUBLE), 0.0)"
@@ -319,6 +336,23 @@ def build_semantic_archive_sql(
             "GROUP BY 1, 2, 3 ORDER BY ABS(SUM("
             + amount
             + ")) DESC, 1, 2, 3"
+        )
+
+    if executor["mode"] == "sale_return_summary":
+        operation = "TRIM(" + _quote_identifier(str(executor["operation_field"])) + ")"
+        units = _numeric_expr(str(executor["unit_field"]))
+        sale_value = _quote_literal(str(executor["sale_value"]))
+        return_value = _quote_literal(str(executor["return_value"]))
+        return (
+            f"SELECT {currency} AS currency, "
+            f"SUM(CASE WHEN {operation} = {sale_value} THEN {amount} ELSE 0 END) AS sale_amount, "
+            f"SUM(CASE WHEN {operation} = {return_value} THEN {amount} ELSE 0 END) AS return_amount, "
+            f"SUM(CASE WHEN {operation} = {sale_value} THEN {units} ELSE 0 END) AS sale_units, "
+            f"SUM(CASE WHEN {operation} = {return_value} THEN {units} ELSE 0 END) AS return_units, "
+            f"SUM(CASE WHEN {operation} = {sale_value} THEN 1 ELSE 0 END) AS sale_rows, "
+            f"SUM(CASE WHEN {operation} = {return_value} THEN 1 ELSE 0 END) AS return_rows "
+            f"FROM {table} WHERE {where} AND {operation} IN ({sale_value}, {return_value}) "
+            "GROUP BY 1 ORDER BY 1"
         )
 
     raise SemanticArchiveExecutionError(
@@ -411,6 +445,52 @@ def _aggregate_execution_results(
                 for currency, amount in sorted(totals.items())
             ],
             "breakdown": breakdown,
+            "cross_currency_total": None,
+        }
+
+    if mode == "sale_return_summary":
+        totals: dict[str, dict[str, float | int]] = {}
+        for result in year_results:
+            for row in _rows_as_dicts(result):
+                currency = str(row.get("currency") or "UNKNOWN")
+                bucket = totals.setdefault(
+                    currency,
+                    {
+                        "sale_amount": 0.0,
+                        "return_amount": 0.0,
+                        "sale_units": 0.0,
+                        "return_units": 0.0,
+                        "sale_rows": 0,
+                        "return_rows": 0,
+                    },
+                )
+                for key in ("sale_amount", "return_amount", "sale_units", "return_units"):
+                    bucket[key] = float(bucket[key]) + float(row.get(key) or 0.0)
+                for key in ("sale_rows", "return_rows"):
+                    bucket[key] = int(bucket[key]) + int(row.get(key) or 0)
+
+        by_currency: list[dict[str, Any]] = []
+        for currency in sorted(totals):
+            bucket = totals[currency]
+            sale_amount = float(bucket["sale_amount"])
+            return_amount = float(bucket["return_amount"])
+            sale_units = float(bucket["sale_units"])
+            return_units = float(bucket["return_units"])
+            by_currency.append(
+                {
+                    "currency": currency,
+                    "sale_amount": round(sale_amount, 6),
+                    "return_amount": round(return_amount, 6),
+                    "net_sales_amount": round(sale_amount - return_amount, 6),
+                    "sale_units": round(sale_units, 6),
+                    "return_units": round(return_units, 6),
+                    "net_sales_units": round(sale_units - return_units, 6),
+                    "sale_rows": int(bucket["sale_rows"]),
+                    "return_rows": int(bucket["return_rows"]),
+                }
+            )
+        return {
+            "sales_and_returns_by_currency": by_currency,
             "cross_currency_total": None,
         }
 
@@ -532,6 +612,11 @@ async def execute_semantic_archive_question(
         mode=str(executor["mode"]),
         year_results=year_results,
     )
+    sum_rule = (
+        "sale_minus_return_by_doc_type"
+        if executor["mode"] == "sale_return_summary"
+        else "as_reported_no_sign_conversion"
+    )
     return {
         "ok": True,
         "marketplace": "wb",
@@ -551,7 +636,7 @@ async def execute_semantic_archive_question(
             "currency_field": executor["currency_field"],
             "mode": executor["mode"],
             "semantics": executor.get("semantics"),
-            "sum_rule": "as_reported_no_sign_conversion",
+            "sum_rule": sum_rule,
             "currency_rule": "never_sum_across_currencies",
             "product_filter": deepcopy(nm_ids) if nm_ids else None,
         },
