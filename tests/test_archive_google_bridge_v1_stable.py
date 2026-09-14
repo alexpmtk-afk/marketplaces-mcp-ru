@@ -73,7 +73,7 @@ def _ready(file_id: str, raw: bytes, *, uri: str = "https://drive.usercontent.go
     }
 
 
-def test_alpha2_large_download_ready_path_verifies_before_return(monkeypatch):
+def test_stable_large_download_ready_path_verifies_before_return(monkeypatch):
     store = _store()
     raw = b"annual-csv-large-payload"
     calls: list[str] = []
@@ -98,7 +98,7 @@ def test_alpha2_large_download_ready_path_verifies_before_return(monkeypatch):
     assert len(_DirectClient.seen_urls) == 1
 
 
-def test_alpha2_large_download_polls_opaque_ticket_only_in_memory(monkeypatch):
+def test_stable_large_download_polls_opaque_ticket_only_in_memory(monkeypatch):
     store = _store()
     raw = b"poll-then-download"
     calls: list[tuple[str, dict]] = []
@@ -138,7 +138,7 @@ def test_alpha2_large_download_polls_opaque_ticket_only_in_memory(monkeypatch):
     assert [action for action, _ in calls] == ["large_download_start", "large_download_poll"]
 
 
-def test_alpha2_large_download_fails_closed_on_exact_size_mismatch(monkeypatch):
+def test_stable_large_download_fails_closed_on_exact_size_mismatch(monkeypatch):
     store = _store()
     raw = b"expected"
 
@@ -157,7 +157,7 @@ def test_alpha2_large_download_fails_closed_on_exact_size_mismatch(monkeypatch):
     assert exc.value.code == "SIZE_MISMATCH"
 
 
-def test_alpha2_large_download_fails_closed_on_sha256_mismatch(monkeypatch):
+def test_stable_large_download_fails_closed_on_sha256_mismatch(monkeypatch):
     store = _store()
     raw = b"expected"
 
@@ -176,7 +176,7 @@ def test_alpha2_large_download_fails_closed_on_sha256_mismatch(monkeypatch):
     assert exc.value.code == "SHA256_MISMATCH"
 
 
-def test_alpha2_rejects_non_google_uri_without_echoing_capability():
+def test_stable_rejects_non_google_uri_without_echoing_capability():
     store = _store()
     secret_uri = "https://evil.example/download?bearer=DO_NOT_ECHO"
     raw = b"payload"
@@ -194,7 +194,7 @@ def test_alpha2_rejects_non_google_uri_without_echoing_capability():
     assert secret_uri not in str(exc.value)
 
 
-def test_alpha2_download_named_uses_verified_large_path_after_small_limit(monkeypatch):
+def test_stable_download_named_uses_verified_large_path_after_small_limit(monkeypatch):
     store = _store()
     raw = b"verified-annual"
     item = DriveFile(

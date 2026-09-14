@@ -33,7 +33,7 @@ def _response_for(body: dict, result: dict | None = None, *, ok: bool = True, er
     payload = {
         "ok": ok,
         "protocol_version": 1,
-        "bridge_release": "1.0.0-alpha.1",
+        "bridge_release": "1.0.0",
         "project_id": "marketplaces",
         "request_id": body["request_id"],
         "action": body["action"],
@@ -53,24 +53,18 @@ def _response_for(body: dict, result: dict | None = None, *, ok: bool = True, er
     )
 
 
-def test_protocol_v1_is_opt_in_and_requires_dedicated_env(monkeypatch):
+def test_protocol_v1_is_the_only_runtime_env_contract(monkeypatch):
     for name in (
-        "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL",
         "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_URL",
         "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_SECRET",
         "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_ROOT_ID",
     ):
         monkeypatch.delenv(name, raising=False)
+    # Legacy variables must not configure the canonical client.
     monkeypatch.setenv("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL", "https://script.google.com/macros/s/legacy/exec")
     monkeypatch.setenv("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET", "legacy-secret")
     monkeypatch.setenv("MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID", "legacy-root")
-
-    legacy = GoogleDriveArchiveStore.from_env()
-    assert legacy.is_protocol_v1 is False
-    assert legacy.bridge_url.endswith("/legacy/exec")
-
-    monkeypatch.setenv("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL", "v1")
-    with pytest.raises(Exception, match="dedicated"):
+    with pytest.raises(Exception, match="BRIDGE_V1"):
         GoogleDriveArchiveStore.from_env()
 
     monkeypatch.setenv("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_URL", V1_URL)
@@ -78,9 +72,9 @@ def test_protocol_v1_is_opt_in_and_requires_dedicated_env(monkeypatch):
     monkeypatch.setenv("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_ROOT_ID", ROOT_ID)
     v1 = GoogleDriveArchiveStore.from_env()
     assert v1.is_protocol_v1 is True
+    assert v1.protocol_version == 1
     assert v1.project_id == "marketplaces"
     assert v1.bridge_url == V1_URL
-
 
 def test_protocol_v1_rejects_non_marketplaces_project_id():
     with pytest.raises(Exception, match="project_id=marketplaces"):
@@ -212,7 +206,7 @@ def test_v1_deep_health_fails_closed_on_project_root_or_guard_mismatch(monkeypat
             mode = modes.pop(0)
             result = {
                 "protocol_version": 1,
-                "bridge_release": "1.0.0-alpha.1",
+                "bridge_release": "1.0.0",
                 "project_id": "marketplaces",
                 "root_id": ROOT_ID,
                 "root_name": "MCP архив базы данных",
@@ -304,7 +298,7 @@ def test_v1_large_read_fails_closed_until_shared_transport_is_accepted(monkeypat
     assert exc.value.code == "NOT_IMPLEMENTED"
 
 
-def test_v1_health_reports_large_download_not_ready_without_blocking_transport(monkeypatch):
+def test_v1_health_fails_closed_when_required_large_download_is_missing(monkeypatch):
     store = _v1_store()
 
     class FakeClient:
@@ -323,7 +317,7 @@ def test_v1_health_reports_large_download_not_ready_without_blocking_transport(m
                 json,
                 {
                     "protocol_version": 1,
-                    "bridge_release": "1.0.0-alpha.1",
+                    "bridge_release": "1.0.0",
                     "project_id": "marketplaces",
                     "root_id": ROOT_ID,
                     "root_name": "MCP архив базы данных",
@@ -339,8 +333,7 @@ def test_v1_health_reports_large_download_not_ready_without_blocking_transport(m
             )
 
     monkeypatch.setattr(archive_google.httpx, "AsyncClient", FakeClient)
-    status = asyncio.run(store.status())
-    assert status["bridge_protocol_version"] == 1
-    assert status["project_id"] == "marketplaces"
-    assert status["root_folder_id"] == ROOT_ID
-    assert status["large_download_ready"] is False
+    with pytest.raises(ArchiveStorageError) as exc:
+        asyncio.run(store.status())
+    assert exc.value.code == "LARGE_DOWNLOAD_REQUIRED"
+
