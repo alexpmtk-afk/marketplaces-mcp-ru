@@ -23,6 +23,10 @@ class ArchiveStorageNotConfigured(RuntimeError):
 class ArchiveStorageError(RuntimeError):
     """The Google Apps Script Drive bridge rejected or failed an operation."""
 
+    def __init__(self, message: str, *, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.retryable = bool(retryable)
+
 
 @dataclass(frozen=True)
 class DriveFile:
@@ -96,6 +100,9 @@ class GoogleDriveArchiveStore:
         last_response: httpx.Response | None = None
         for attempt in range(1, self._MAX_ATTEMPTS + 1):
             try:
+                # Apps Script /exec legitimately redirects to googleusercontent,
+                # so this control-plane client must follow redirects. Large file
+                # bytes never pass through this client.
                 async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                     resp = await client.post(self.bridge_url, json=body, headers={"Accept": "application/json"})
                 last_response = resp
@@ -104,19 +111,33 @@ class GoogleDriveArchiveStore:
                 if attempt < self._MAX_ATTEMPTS:
                     await asyncio.sleep(0.75 * attempt)
                     continue
-                raise ArchiveStorageError(f"Apps Script Drive bridge request failed after {attempt} attempts: {type(exc).__name__}") from exc
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge request failed after {attempt} attempts: {type(exc).__name__}",
+                    retryable=True,
+                ) from exc
             if resp.is_success:
                 break
-            if resp.status_code in self._RETRYABLE_HTTP_STATUSES and attempt < self._MAX_ATTEMPTS:
+            retryable = resp.status_code in self._RETRYABLE_HTTP_STATUSES
+            if retryable and attempt < self._MAX_ATTEMPTS:
                 await asyncio.sleep(0.75 * attempt)
                 continue
-            raise ArchiveStorageError(f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}")
+            raise ArchiveStorageError(
+                f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}",
+                retryable=retryable,
+            )
         else:
             if last_error is not None:
-                raise ArchiveStorageError(f"Apps Script Drive bridge request failed: {type(last_error).__name__}") from last_error
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge request failed: {type(last_error).__name__}",
+                    retryable=True,
+                ) from last_error
             if last_response is not None:
-                raise ArchiveStorageError(f"Apps Script Drive bridge HTTP {last_response.status_code}: {last_response.text[:500]}")
-            raise ArchiveStorageError("Apps Script Drive bridge request failed")
+                status = last_response.status_code
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge HTTP {status}: {last_response.text[:500]}",
+                    retryable=status in self._RETRYABLE_HTTP_STATUSES,
+                )
+            raise ArchiveStorageError("Apps Script Drive bridge request failed", retryable=True)
         try:
             data = resp.json()
         except ValueError as exc:
