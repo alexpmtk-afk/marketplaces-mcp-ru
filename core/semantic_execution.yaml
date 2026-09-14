@@ -1,4 +1,4 @@
-version: 2026-09-14.v4
+version: 2026-09-14.v5
 policy:
   fail_closed: true
   require_full_coverage: true
@@ -117,3 +117,13 @@ executors:
     product_filter_field: nmId
     data_class: PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING
     semantics: acquiringFee in the weekly realization detail is the weekly payment-acceptance/acquiring amount reflected in that report. Keep Продажа and Возврат explicit and report net as Продажа minus Возврат. This is not the final monthly payment-acceptance expense under the separate acquiring-expense report/offer reconciliation.
+  observed_fulfillment_method:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    mode: distinct_observations
+    primary_dimension: deliveryMethod
+    product_filter_field: nmId
+    data_class: HISTORICAL_OBSERVED_FULFILLMENT
+    semantics: Return the distinct non-empty deliveryMethod values actually observed in weekly-report rows during the fully covered period, with observation count and first/last reported dates. This is historical evidence only and must never be presented as the seller's or product's current fulfillment configuration.
