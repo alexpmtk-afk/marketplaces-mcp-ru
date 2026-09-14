@@ -689,12 +689,12 @@ def test_current_fulfillment_never_falls_back_to_historical_observations():
     assert result["resolution"]["concept_id"] == "current_fulfillment_configuration"
 
 
-def test_historical_tariff_context_returns_applied_coefficients_only():
+def test_historical_tariff_context_returns_recorded_coefficients_only():
     store = FakeStore(_registry_rows(full=True), _annual_rows())
     result = asyncio.run(
         execute_semantic_archive_question(
             store,
-            question="Какой коэффициент склада применялся к товару за период?",
+            question="Какой коэффициент склада был зафиксирован для товара за период?",
             seller="wb_novokshenov",
             date_from="2026-08-05",
             date_to="2026-08-12",
@@ -704,7 +704,7 @@ def test_historical_tariff_context_returns_applied_coefficients_only():
     assert result["ok"] is True
     assert result["capability_id"] == "warehouse_tariff_context"
     assert result["semantic_status"] == "AVAILABLE_WITH_LIMITATION"
-    assert result["provenance"]["data_class"] == "HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT"
+    assert result["provenance"]["data_class"] == "HISTORICAL_RECORDED_WAREHOUSE_TARIFF_CONTEXT"
     assert result["provenance"]["current_state_inference_forbidden"] is True
     assert result["calculation"]["historical_only"] is True
     assert result["calculation"]["current_configuration_confirmed"] is False
