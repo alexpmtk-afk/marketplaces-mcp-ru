@@ -35,7 +35,7 @@ QUEUE_VERSION = 1
 QUEUE_KEY = "marketplace-archive:v2:wb-finance:due"
 JOB_FOLDER = ("app", "jobs", "wb-finance")
 MAX_DISCOVERY_PAGE = 1000
-DETAIL_PAGE_LIMIT = 20000
+DETAIL_PAGE_LIMIT = 5000
 
 
 def _utc_now() -> str:
