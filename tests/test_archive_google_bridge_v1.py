@@ -33,7 +33,7 @@ def _response_for(body: dict, result: dict | None = None, *, ok: bool = True, er
     payload = {
         "ok": ok,
         "protocol_version": 1,
-        "bridge_release": "1.0.0-alpha.1",
+        "bridge_release": "1.0.0",
         "project_id": "marketplaces",
         "request_id": body["request_id"],
         "action": body["action"],
@@ -212,7 +212,7 @@ def test_v1_deep_health_fails_closed_on_project_root_or_guard_mismatch(monkeypat
             mode = modes.pop(0)
             result = {
                 "protocol_version": 1,
-                "bridge_release": "1.0.0-alpha.1",
+                "bridge_release": "1.0.0",
                 "project_id": "marketplaces",
                 "root_id": ROOT_ID,
                 "root_name": "MCP архив базы данных",
@@ -323,7 +323,7 @@ def test_v1_health_reports_large_download_not_ready_without_blocking_transport(m
                 json,
                 {
                     "protocol_version": 1,
-                    "bridge_release": "1.0.0-alpha.1",
+                    "bridge_release": "1.0.0",
                     "project_id": "marketplaces",
                     "root_id": ROOT_ID,
                     "root_name": "MCP архив базы данных",

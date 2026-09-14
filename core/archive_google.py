@@ -1,8 +1,8 @@
 """Google Drive archive backend via a project-isolated Google Apps Script bridge.
 
-Production remains on the legacy Marketplaces bridge route until an isolated
-Protocol-v1 Marketplaces deployment, secret/Lockbox binding and live acceptance
-are available. Protocol v1 is opt-in and never falls back to legacy credentials.
+Shared Google Drive Bridge Protocol v1.0.0 is the final archive transport.
+The legacy Marketplaces route is retained only as an explicit rollback profile;
+Protocol v1 never falls back to legacy credentials or deployment state.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ import httpx
 
 MARKETPLACES_BRIDGE_PROJECT_ID = "marketplaces"
 BRIDGE_PROTOCOL_V1 = 1
+BRIDGE_RELEASE_V1 = "1.0.0"
 _LEGACY_MODE = "legacy"
 _V1_MODES = {"1", "v1", "protocol-v1"}
 _MUTATING_V1_ACTIONS = {
@@ -838,6 +839,11 @@ class GoogleDriveArchiveStore:
                 raise ArchiveStorageError(
                     f"Bridge v1 root mismatch: {actual_root!r} != {self.root_folder_id!r}",
                     code="ROOT_MISMATCH",
+                )
+            if str(data.get("bridge_release") or "") != BRIDGE_RELEASE_V1:
+                raise ArchiveStorageError(
+                    f"Bridge v1 release mismatch: {data.get('bridge_release')!r} != {BRIDGE_RELEASE_V1!r}",
+                    code="BRIDGE_RELEASE_MISMATCH",
                 )
             if capabilities.get("fixed_root_file_id_guard") is not True:
                 raise ArchiveStorageError(
