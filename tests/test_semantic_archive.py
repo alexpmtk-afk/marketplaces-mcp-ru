@@ -49,6 +49,8 @@ class FakeStore:
                 "acquiringFee",
                 "paymentProcessing",
                 "acquiringBank",
+                "deliveryMethod",
+                "officeName",
                 "nmId",
             ],
             annual_rows,
@@ -204,6 +206,8 @@ def _annual_rows():
             "acquiringFee": "10.00",
             "paymentProcessing": "Компенсация платёжных услуг",
             "acquiringBank": "Вайлдберриз Банк",
+            "deliveryMethod": "FBS, (МГТ)",
+            "officeName": "Воронеж МП МП",
             "nmId": "111",
         },
         {
@@ -226,6 +230,8 @@ def _annual_rows():
             "acquiringFee": "3.00",
             "paymentProcessing": "Компенсация платёжных услуг",
             "acquiringBank": "Вайлдберриз Банк",
+            "deliveryMethod": "FBS, (МГТ)",
+            "officeName": "Воронеж МП МП",
             "nmId": "111",
         },
         {
@@ -243,6 +249,8 @@ def _annual_rows():
             "sellerOperName": "Компенсация скидки по программе лояльности",
             "paidStorage": "0",
             "paidAcceptance": "0",
+            "deliveryMethod": "FBW, (МГТ, коробка)",
+            "officeName": "Электросталь",
             "nmId": "111",
         },
         {
@@ -348,7 +356,7 @@ def _annual_rows():
     ]
 
 
-def test_execution_registry_approves_eight_safe_capabilities():
+def test_execution_registry_approves_nine_safe_capabilities():
     execution = load_semantic_execution()
     assert set(execution["executors"]) == {
         "penalties",
@@ -359,6 +367,7 @@ def test_execution_registry_approves_eight_safe_capabilities():
         "deductions_and_adjustments",
         "commission_and_wb_reward",
         "acquiring_and_payment_processing",
+        "observed_fulfillment_method",
     }
     assert execution["policy"]["require_full_coverage"] is True
     assert execution["policy"]["cross_currency_sum_forbidden"] is True
@@ -605,6 +614,64 @@ def test_weekly_acquiring_is_explicitly_preliminary_and_split_by_payment_context
     ]
 
 
+def test_historical_fulfillment_returns_observed_methods_and_warehouse_only():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="По какой схеме отгружался товар за период?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+            nm_ids=[111],
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "observed_fulfillment_method"
+    assert result["semantic_status"] == "AVAILABLE_WITH_LIMITATION"
+    assert result["provenance"]["data_class"] == "HISTORICAL_OBSERVED_FULFILLMENT"
+    assert result["provenance"]["current_state_inference_forbidden"] is True
+    assert result["calculation"]["historical_only"] is True
+    assert result["calculation"]["current_configuration_confirmed"] is False
+    assert result["calculation"]["distinct_values"] == [
+        "FBS, (МГТ)",
+        "FBW, (МГТ, коробка)",
+    ]
+    assert result["calculation"]["observations"] == [
+        {
+            "value": "FBS, (МГТ)",
+            "officeName": "Воронеж МП МП",
+            "observation_rows": 2,
+            "first_observed_date": "2026-08-07",
+            "last_observed_date": "2026-08-08",
+        },
+        {
+            "value": "FBW, (МГТ, коробка)",
+            "officeName": "Электросталь",
+            "observation_rows": 1,
+            "first_observed_date": "2026-08-08",
+            "last_observed_date": "2026-08-08",
+        },
+    ]
+
+
+def test_current_fulfillment_never_falls_back_to_historical_observations():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Какая схема отгрузки сейчас у товара?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+            nm_ids=[111],
+        )
+    )
+    assert result["ok"] is False
+    assert result["error"] == "semantic_source_not_executable"
+    assert result["resolution"]["concept_id"] == "current_fulfillment_configuration"
+
+
 def test_rate_and_final_acquiring_questions_fail_closed_instead_of_using_money_executor():
     store = FakeStore(_registry_rows(full=True), _annual_rows())
     rate = asyncio.run(
@@ -724,3 +791,22 @@ def test_reward_and_acquiring_sql_use_only_explicit_money_fields():
     assert '"acquiringBank"' in acquiring_sql
     assert '"saleDt"' in acquiring_sql
     assert '"docTypeName"' in acquiring_sql
+
+
+def test_fulfillment_sql_is_observation_only_and_uses_historical_date_axis():
+    execution = load_semantic_execution()
+    sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["observed_fulfillment_method"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+        nm_ids=[111],
+    )
+    assert '"deliveryMethod"' in sql
+    assert '"officeName"' in sql
+    assert '"rrDate"' in sql
+    assert '"nmId"' in sql
+    assert "COUNT(*) AS observation_rows" in sql
+    assert "MIN(" in sql and "MAX(" in sql
+    assert '"currency"' not in sql
+    assert '"retailAmount"' not in sql
