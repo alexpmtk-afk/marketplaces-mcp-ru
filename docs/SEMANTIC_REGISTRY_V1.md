@@ -34,6 +34,8 @@ For those concepts the resolver must require another approved source rather than
 
 Archive execution requires `FULL_COVERAGE` in `reports_registry.csv` and the canonical annual Google Drive files. Monetary calculations do not mix currencies. Historical attributes are never presented as current configuration. `orderDt` / `orderUid` in weekly finance never become a substitute for the complete order flow.
 
+Historical fulfillment is classified as `HISTORICAL_OBSERVED_FULFILLMENT`. Historical warehouse-tariff context is classified as `HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT`.
+
 ## Source basis
 
 Semantics are based on the observed 92-column canonical archive header plus current Wildberries Seller Help / Finance API documentation for the weekly realization report and its detailed rows.
