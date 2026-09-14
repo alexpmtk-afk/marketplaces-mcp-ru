@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+from core.registry import Catalog
 from core.wb_advertising_data import (
     ARCHIVE_STATUS,
     DATASETS,
@@ -9,6 +12,8 @@ from core.wb_advertising_data import (
     advertising_data_map,
     required_provider_operations,
 )
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_contract_exposes_required_layers_and_status():
@@ -69,3 +74,23 @@ def test_required_provider_operations_cover_archive_v1_sources():
         "wb_get_adv_payments",
         "wb_get_api_advert_adverts",
     } <= ops
+
+
+def test_runtime_catalog_contains_read_only_advertising_sources():
+    catalog = Catalog.from_yaml(ROOT / "wb_mcp" / "endpoints.yaml")
+    expected = {
+        "wb_get_api_advert_adverts": "/api/advert/v2/adverts",
+        "wb_get_adv_fullstats": "/adv/v3/fullstats",
+        "wb_post_adv_normquery_stats_v1": "/adv/v1/normquery/stats",
+        "wb_get_adv_upd": "/adv/v1/upd",
+        "wb_get_adv_payments": "/adv/v1/payments",
+        "wb_get_adv_balance": "/adv/v1/balance",
+        "wb_post_adv_normquery_get_bids": "/adv/v0/normquery/get-bids",
+        "wb_post_adv_normquery_get_minus": "/adv/v0/normquery/get-minus",
+        "wb_adv_budget": "/adv/v1/budget",
+    }
+    for operation_id, path in expected.items():
+        spec = catalog.get(operation_id)
+        assert spec is not None, operation_id
+        assert spec.path == path
+        assert spec.safety == "read"
