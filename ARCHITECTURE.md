@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v12`
+**Version:** `2026-09-14.v13`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -69,7 +69,8 @@ Current approved archive calculations:
 - `deductions_and_adjustments` — use `rrDate` and keep `deduction` and `additionalPayment` separate. `additionalPayment` is treated only as the report field for WB-remuneration adjustment; it is not relabeled as a seller payout and is not netted against deductions;
 - `commission_and_wb_reward` — use `saleDt` and explicit `Продажа` / `Возврат` buckets. Monetary WB reward is calculated only from `vw` (without VAT) and `vwNds`; the combined reported reward including VAT is `vw + vwNds`. The executor never converts `commissionPercent`, `kvw` or `kvwBase` into money and never adds `acquiringFee`, `ppvzReward` or `ppvzSalesCommission` to WB reward;
 - `acquiring_and_payment_processing` — use `saleDt`, explicit `Продажа` / `Возврат` buckets and the reported `acquiringFee`, optionally broken down by `paymentProcessing` and `acquiringBank`. Its data class is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`;
-- `observed_fulfillment_method` — use `rrDate` and return distinct non-empty historical `deliveryMethod` observations, with `officeName` warehouse context, observation count, and first/last observed date. Its data class is `HISTORICAL_OBSERVED_FULFILLMENT`.
+- `observed_fulfillment_method` — return distinct historical `deliveryMethod` values with `officeName`, first/last `rrDate` and observation counts. Its data class is `HISTORICAL_OBSERVED_FULFILLMENT`;
+- `warehouse_tariff_context` — return historical `dlvPrc` values observed in report rows together with `officeName`, `fixTariffDateFrom`, `fixTariffDateTo` and separately reported `warehouseLogisticsCoeff`. Its data class is `HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT`.
 
 The sales/returns formula follows the official Wildberries weekly-realization rule: the weekly `Продажа` amount is the detailed report's realized-goods amount for document type `Продажа` minus the same amount for document type `Возврат`. The canonical archive also confirms that return `retailAmount` values are stored as positive values, so the server performs the subtraction explicitly rather than inferring a sign.
 
@@ -81,7 +82,9 @@ For monetary WB reward, the weekly detail contains several commission-related pe
 
 For payment acceptance/acquiring, the weekly report's `acquiringFee` is treated as the weekly amount reflected in that report. Wildberries' current offer distinguishes preliminary weekly withholding/advancing of payment-acceptance expenses from the final actual monthly calculation. Therefore `acquiringFee` is returned only as `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`. A request for final/actual monthly acquiring expenses requires the separate `Отчёт об издержках на приём платежей`, which is not present in the canonical archive and must not be substituted by weekly `acquiringFee`.
 
-For fulfillment, `deliveryMethod` is treated only as an observed historical attribute of weekly-report rows. The executor groups non-empty `deliveryMethod` values, preserves `officeName` as warehouse context, and reports first/last `rrDate` plus observation count. This supports questions such as “по какой схеме отгружался товар за период?”, but the result is explicitly `HISTORICAL_OBSERVED_FULFILLMENT`; it does not prove the seller's or product's current configured fulfillment method.
+For historical fulfillment, `deliveryMethod` and `officeName` are treated only as observations attached to rows actually present in the covered weekly-report period. A historical answer may therefore say which FBS/FBW/etc. methods and warehouses were observed, with first/last report dates and row counts. It never confirms the product's or seller's current fulfillment configuration.
+
+For historical warehouse tariffs/coefficient context, Wildberries documents that the weekly report keeps the fixed warehouse coefficient that applied when the supply was planned, and keeps the fixation-period start/end dates even after the fixation period expires. The executor therefore treats `dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `officeName` and separately reported `warehouseLogisticsCoeff` as historical row context only. A current/actual tariff question must use the live Wildberries tariffs source and must never fall back to these historical values.
 
 Every approved calculation is subject to these gates:
 1. the original question must resolve to the registered capability;
@@ -92,7 +95,7 @@ Every approved calculation is subject to these gates:
 6. different currencies are never combined into one amount;
 7. formulas that require operation-type subtraction must encode that subtraction explicitly rather than infer it from the sign of a monetary field;
 8. distinct financial components are never silently netted unless a separate approved formula explicitly defines that netting;
-9. historical observations are never promoted to current-state truth.
+9. historical observation executors never promote archived values into current-state truth.
 
 ### Natural-question routing
 
@@ -105,7 +108,8 @@ Rules:
 - logistics and deductions return registered components separately rather than inventing a combined total;
 - a monetary commission/reward question may use `vw` / `vwNds`, while a rate/percentage commission question does not use the monetary executor;
 - a weekly acquiring question may use `acquiringFee` with the preliminary-data warning, while a final/actual acquiring-expense question requires the separate final report and fails closed while that report is absent;
-- a historical fulfillment question may use `deliveryMethod` / `officeName` observations for the covered period; a current-fulfillment question never falls back to those historical rows;
+- a historical fulfillment question may use `deliveryMethod`/`officeName`, while a current fulfillment/configuration question does not;
+- a historical applied-coefficient question may use `dlvPrc` plus fixation dates and warehouse context, while an actual/current coefficient or tariff question requires a live Wildberries tariffs source;
 - if the question is understood but its calculation contract is not approved, execution stops rather than guessing;
 - if the required source is not in the current database, the server returns that source requirement instead of substituting a similar field/report;
 - ambiguous or unknown questions fail closed.
@@ -171,7 +175,8 @@ The bridge supports only narrow archive operations: health/status, named-file st
 - Complete-order questions never fall back to WB Statistics Orders.
 - Commission-rate questions never fall back to a monetary `vw`/`vwNds` calculation.
 - Final/actual payment-acceptance expense questions never fall back to preliminary weekly `acquiringFee`.
-- Current-fulfillment questions never fall back to historical `deliveryMethod` / `officeName` observations.
+- Current fulfillment/configuration questions never fall back to historical `deliveryMethod`/`officeName`.
+- Current warehouse tariff/coefficient questions never fall back to historical `dlvPrc`/`warehouseLogisticsCoeff`.
 - Advertising current campaign state/control is always live from WB Promotion API.
 - Advertising closed-period analytics become archive-first only after Advertising Archive V1 dataset bindings, registry coverage and validation are implemented and accepted.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
