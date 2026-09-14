@@ -1,4 +1,4 @@
-version: 2026-09-14.v2
+version: 2026-09-14.v3
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -68,7 +68,7 @@ routes:
     priority: 1450
     target_type: capability
     target_id: observed_fulfillment_method
-    match_any: [схема отгрузки, схеме отгрузки, модель отгрузки, схема поставки, схеме поставки, как отгружался, как отгружалась, как отгружалось, как отгружается, deliverymethod, fbs, fbw, fbo, со склада продавца, со склада wildberries, со склада вайлдберриз]
+    match_any: [схема отгрузки, схеме отгрузки, модель отгрузки, схема поставки, схеме поставки, схеме отгружался, схеме отгружалась, схеме отгружалось, схеме отгружается, как отгружался, как отгружалась, как отгружалось, как отгружается, deliverymethod, fbs, fbw, fbo, со склада продавца, со склада wildberries, со склада вайлдберриз]
 
   - id: warehouse_tariff_context
     priority: 1425
