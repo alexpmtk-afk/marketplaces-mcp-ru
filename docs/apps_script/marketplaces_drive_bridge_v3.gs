@@ -5,18 +5,25 @@
  * as a control plane:
  * - resumable_start: authenticate the initial Drive resumable request;
  * - metadata_by_id: obtain Drive size/checksums without moving file bytes;
- * - promote_verified: after exact ID/name/parent/size/SHA256 verification,
- *   rename the staged upload to the canonical filename and only then trash the
- *   explicitly identified previous canonical;
- * - trash_by_id: cleanup verified diagnostic copies.
+ * - promote_verified: promote an exact SHA256-verified staging file;
+ * - trash_by_id: cleanup diagnostic copies only.
  *
- * Large file bytes never pass through Apps Script. The resumable session URI is
- * a bearer credential and must never be logged.
+ * Security boundary: every ID-based operation is restricted to the fixed
+ * archive root. Large file bytes never pass through Apps Script. The resumable
+ * session URI is a bearer capability and must never be logged.
  */
 const ARCHIVE_ROOT_ID='1UVKUcFfDhCDk6nMHX1mWg9cRL05DT-OJ';
 const ARCHIVE_ROOT_NAME='MCP архив базы данных';
 const SECRET_PROPERTY='MCP_DRIVE_BRIDGE_SECRET';
 const BRIDGE_VERSION=3;
+const BRIDGE_CAPABILITIES={
+  resumable_start:true,
+  sha256_metadata:true,
+  staged_promotion:true,
+  diagnostic_cleanup:true,
+  archive_root_id_guard:true,
+  drive_api_preflight:true
+};
 
 function setupBridge(){
   const props=PropertiesService.getScriptProperties();
@@ -27,14 +34,27 @@ function setupBridge(){
   }
   const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
   if(root.getName()!==ARCHIVE_ROOT_NAME) throw new Error('wrong_root');
+
+  // Fail during setup, not during a production upload, if the script cannot
+  // call Drive REST with its current Cloud project/scopes.
+  const apiRoot=driveApiMetadata_(ARCHIVE_ROOT_ID);
+  if(String(apiRoot.id||'')!==ARCHIVE_ROOT_ID) throw new Error('drive_api_preflight_failed');
   console.log('ROOT_OK='+root.getName());
+  console.log('DRIVE_API_OK='+apiRoot.id);
   return 'READY';
 }
 
 function doGet(){
   try{
     const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
-    return json_({ok:true,service:'marketplaces-mcp-drive-bridge',version:BRIDGE_VERSION,root_id:root.getId(),root_name:root.getName()});
+    return json_({
+      ok:true,
+      service:'marketplaces-mcp-drive-bridge',
+      version:BRIDGE_VERSION,
+      root_id:root.getId(),
+      root_name:root.getName(),
+      capabilities:BRIDGE_CAPABILITIES
+    });
   }catch(err){
     const message=String(err&&err.message||err);
     return json_({ok:false,error:message,retryable:isRetryableError_(message)});
@@ -51,7 +71,13 @@ function doPost(e){
 
     if(action==='health'){
       const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
-      return json_({ok:true,version:BRIDGE_VERSION,root_id:root.getId(),root_name:root.getName()});
+      return json_({
+        ok:true,
+        version:BRIDGE_VERSION,
+        root_id:root.getId(),
+        root_name:root.getName(),
+        capabilities:BRIDGE_CAPABILITIES
+      });
     }
     if(action==='stat'){
       const file=findFile_(String(body.path||''),String(body.filename||''));
@@ -63,18 +89,22 @@ function doPost(e){
       return json_({ok:true,found:true,file:metadata_(file),content_base64:Utilities.base64Encode(file.getBlob().getBytes())});
     }
     if(action==='read_by_id'){
-      const file=DriveApp.getFileById(String(body.file_id||'').trim());
+      const file=assertFileInsideArchive_(String(body.file_id||'').trim());
       return json_({ok:true,found:true,file:metadata_(file),content_base64:Utilities.base64Encode(file.getBlob().getBytes())});
     }
     if(action==='metadata_by_id'){
       const fileId=String(body.file_id||'').trim();
       if(!fileId) return json_({ok:false,error:'missing_file_id'});
+      assertFileInsideArchive_(fileId);
       return json_({ok:true,found:true,file:driveApiMetadata_(fileId)});
     }
     if(action==='trash_by_id'){
       const fileId=String(body.file_id||'').trim();
       if(!fileId) return json_({ok:false,error:'missing_file_id'});
-      const file=DriveApp.getFileById(fileId);
+      const file=assertFileInsideArchive_(fileId);
+      if(!/^\..+\.diagnostic-report-\d+\.csv$/.test(file.getName())){
+        return json_({ok:false,error:'trash_only_allowed_for_diagnostic_copy'});
+      }
       file.setTrashed(true);
       return json_({ok:true,file_id:fileId,trashed:true});
     }
@@ -126,6 +156,7 @@ function promoteVerified_(body){
   const folder=resolveFolder_(path,false);
   if(!folder) throw new Error('target_folder_missing');
 
+  assertFileInsideArchive_(fileId);
   const before=driveApiMetadata_(fileId);
   if(before.trashed) throw new Error('candidate_trashed');
   if(Number(before.size||0)!==expectedBytes) throw new Error('candidate_size_mismatch');
@@ -134,10 +165,9 @@ function promoteVerified_(body){
   const beforeName=String(before.name||'');
   if(beforeName!==stagingName&&beforeName!==canonicalName) throw new Error('candidate_wrong_name');
 
-  // Validate the exact old canonical BEFORE renaming the candidate, so a bad
-  // durable previous-file ID can never cause an unrelated file to be trashed.
   let previous=null;
   if(previousId&&previousId!==fileId){
+    assertFileInsideArchive_(previousId);
     previous=driveApiMetadata_(previousId);
     if(!previous.trashed){
       if(!Array.isArray(previous.parents)||previous.parents.indexOf(folder.getId())<0) throw new Error('previous_wrong_parent');
@@ -145,10 +175,8 @@ function promoteVerified_(body){
     }
   }
 
-  // Promote the verified staged file first. The script lock serializes all
-  // bridge operations, so MCP readers cannot observe the short duplicate-name
-  // interval between rename and trash. A retry with the same explicit IDs is
-  // idempotent if the response is lost after this point.
+  // Promote the verified candidate first. If the response is lost after the
+  // rename, an exact-ID retry is safe and will finish previous-file cleanup.
   const candidate=DriveApp.getFileById(fileId);
   if(candidate.getName()!==canonicalName) candidate.setName(canonicalName);
 
@@ -163,8 +191,6 @@ function promoteVerified_(body){
     if(String(after.sha256Checksum||'').toLowerCase()!==expectedSha) throw new Error('promoted_sha256_mismatch');
     return {ok:true,file:after,previous_file_trashed:!!(previousId&&previousId!==fileId)};
   }catch(err){
-    // The candidate may already have been renamed. Mark the response retryable
-    // so the durable worker re-enters this exact-ID idempotent promotion path.
     return {ok:false,error:'promotion_post_rename_retry',retryable:true};
   }
 }
@@ -208,11 +234,36 @@ function driveApiMetadata_(fileId){
   const response=UrlFetchApp.fetch(url,{
     method:'get',
     headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken(),Accept:'application/json'},
-    muteHttpExceptions:true
+    muteHttpExceptions:true,
+    followRedirects:false
   });
   const code=response.getResponseCode();
   if(code<200||code>=300) throw new Error('drive_metadata_http_'+code);
   return JSON.parse(response.getContentText()||'{}');
+}
+
+function assertFileInsideArchive_(fileId){
+  if(!fileId) throw new Error('missing_file_id');
+  const file=DriveApp.getFileById(fileId);
+  const parents=file.getParents();
+  let inside=false;
+  while(parents.hasNext()){
+    if(folderInsideArchive_(parents.next())){inside=true;break;}
+  }
+  if(!inside) throw new Error('file_outside_archive_root');
+  return file;
+}
+
+function folderInsideArchive_(folder){
+  let current=folder;
+  for(let depth=0;depth<32;depth++){
+    if(current.getId()===ARCHIVE_ROOT_ID) return true;
+    const parents=current.getParents();
+    if(!parents.hasNext()) return false;
+    current=parents.next();
+    if(parents.hasNext()) throw new Error('folder_has_multiple_parents');
+  }
+  throw new Error('archive_parent_depth_exceeded');
 }
 
 function isRetryableError_(message){
