@@ -6,6 +6,7 @@ Google Drive archive root. The bridge secret is injected from Yandex Lockbox.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import os
@@ -35,6 +36,9 @@ class DriveFile:
 
 class GoogleDriveArchiveStore:
     """Async client for the authenticated Apps Script Drive bridge."""
+
+    _MAX_ATTEMPTS = 3
+    _RETRYABLE_HTTP_STATUSES = {404, 408, 425, 429, 500, 502, 503, 504}
 
     def __init__(
         self,
@@ -96,19 +100,56 @@ class GoogleDriveArchiveStore:
 
     async def _post(self, action: str, **payload: Any) -> dict[str, Any]:
         body = {"secret": self.bridge_secret, "action": action, **payload}
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                resp = await client.post(
-                    self.bridge_url,
-                    json=body,
-                    headers={"Accept": "application/json"},
-                )
-        except httpx.HTTPError as exc:
-            raise ArchiveStorageError(f"Apps Script Drive bridge request failed: {exc}") from exc
-        if not resp.is_success:
+        last_error: Exception | None = None
+        last_response: httpx.Response | None = None
+
+        for attempt in range(1, self._MAX_ATTEMPTS + 1):
+            try:
+                # Always start a retry from the stable Apps Script /exec URL.
+                # ContentService responses are redirected to a short-lived
+                # script.googleusercontent.com URL which must never become the
+                # retry target.
+                async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                    resp = await client.post(
+                        self.bridge_url,
+                        json=body,
+                        headers={"Accept": "application/json"},
+                    )
+                last_response = resp
+            except httpx.HTTPError as exc:
+                last_error = exc
+                if attempt < self._MAX_ATTEMPTS:
+                    await asyncio.sleep(0.75 * attempt)
+                    continue
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge request failed after {attempt} attempts: {exc}"
+                ) from exc
+
+            if resp.is_success:
+                break
+
+            if (
+                resp.status_code in self._RETRYABLE_HTTP_STATUSES
+                and attempt < self._MAX_ATTEMPTS
+            ):
+                await asyncio.sleep(0.75 * attempt)
+                continue
+
             raise ArchiveStorageError(
                 f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}"
             )
+        else:  # pragma: no cover - loop exits via success or explicit failure
+            if last_error is not None:
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge request failed: {last_error}"
+                ) from last_error
+            if last_response is not None:
+                raise ArchiveStorageError(
+                    f"Apps Script Drive bridge HTTP {last_response.status_code}: "
+                    f"{last_response.text[:500]}"
+                )
+            raise ArchiveStorageError("Apps Script Drive bridge request failed")
+
         try:
             data = resp.json()
         except ValueError as exc:
