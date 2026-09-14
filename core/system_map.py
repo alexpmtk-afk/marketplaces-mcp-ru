@@ -53,9 +53,17 @@ SYSTEM_MAP: dict[str, Any] = {
     },
     "archive_policy": {
         "shared_server_state": True,
+        "canonical_source_of_truth": "Google Drive annual CSV plus reports registry",
+        "registry": "reports_registry.csv",
+        "google_drive_path": "Мой диск/Marketplaces/MCP архив базы данных",
         "default_update_scope": "all configured marketplace cabinets",
+        "update_behavior": "compare registry -> request only missing report IDs -> update annual CSV",
         "idempotent": True,
         "registry_required": True,
+        "deduplication": {
+            "rows": "dataset-specific stable keys; WB weekly finance uses (reportId, rrdId)",
+            "registry": "(cabinet, dataset, report_id)",
+        },
         "annual_partitioning": "one logical annual dataset per marketplace/cabinet/dataset/year",
         "annual_csv_pattern": "<cabinet>__<dataset>__<year>.csv",
         "large_file_upload": {
