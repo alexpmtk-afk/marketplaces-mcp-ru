@@ -74,6 +74,7 @@ def validate_semantic_execution(
         "sale_return_summary",
         "component_breakdown",
         "sale_return_component_summary",
+        "distinct_observations",
     }
 
     for capability_id, value in executors.items():
@@ -91,35 +92,48 @@ def validate_semantic_execution(
             raise SemanticArchiveExecutionError(
                 f"semantic executor {capability_id} must use {DATASET}"
             )
-        if spec.get("mode") not in allowed_modes:
+        mode = spec.get("mode")
+        if mode not in allowed_modes:
             raise SemanticArchiveExecutionError(
                 f"semantic executor {capability_id} has an unsupported mode"
             )
-        for key in ("date_field", "amount_field", "currency_field"):
+
+        required_fields = ["date_field"]
+        if mode != "distinct_observations":
+            required_fields.extend(["amount_field", "currency_field"])
+        for key in required_fields:
             field = spec.get(key)
             if field not in dataset_fields:
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} references unknown field {field!r}"
                 )
+
         if spec["date_field"] not in capability["fields"]:
             date_meta = field_catalog.get(spec["date_field"]) or {}
             if (
-                spec["mode"] not in {"component_breakdown", "sale_return_component_summary"}
+                mode
+                not in {
+                    "component_breakdown",
+                    "sale_return_component_summary",
+                    "distinct_observations",
+                }
                 or date_meta.get("role") != "date"
             ):
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} date field is outside capability semantics"
                 )
-        if spec["amount_field"] not in capability["fields"]:
+        if mode != "distinct_observations" and spec["amount_field"] not in capability["fields"]:
             raise SemanticArchiveExecutionError(
                 f"semantic executor {capability_id} amount field is outside capability semantics"
             )
+
         product_filter_field = spec.get("product_filter_field")
         if product_filter_field and product_filter_field not in dataset_fields:
             raise SemanticArchiveExecutionError(
                 f"semantic executor {capability_id} has an unknown product filter field"
             )
-        if spec["mode"] == "grouped_reason_amount":
+
+        if mode == "grouped_reason_amount":
             reason_fields = spec.get("reason_fields")
             if (
                 not isinstance(reason_fields, list)
@@ -129,7 +143,8 @@ def validate_semantic_execution(
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} has invalid reason fields"
                 )
-        if spec["mode"] == "sale_return_summary":
+
+        if mode == "sale_return_summary":
             for key in ("operation_field", "unit_field"):
                 field = spec.get(key)
                 if field not in dataset_fields or field not in capability["fields"]:
@@ -142,7 +157,8 @@ def validate_semantic_execution(
                     raise SemanticArchiveExecutionError(
                         f"semantic executor {capability_id} must define {key}"
                     )
-        if spec["mode"] == "component_breakdown":
+
+        if mode == "component_breakdown":
             if "sellerOperName" not in capability["fields"]:
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} requires sellerOperName semantics"
@@ -184,7 +200,8 @@ def validate_semantic_execution(
                     raise SemanticArchiveExecutionError(
                         f"semantic executor {capability_id} has invalid count field {field!r}"
                     )
-        if spec["mode"] == "sale_return_component_summary":
+
+        if mode == "sale_return_component_summary":
             operation_field = spec.get("operation_field")
             operation_meta = field_catalog.get(operation_field) or {}
             if operation_field not in dataset_fields or operation_meta.get("role") != "operation":
@@ -239,6 +256,37 @@ def validate_semantic_execution(
                     raise SemanticArchiveExecutionError(
                         f"semantic executor {capability_id} has invalid combined component {alias!r}"
                     )
+
+        if mode == "distinct_observations":
+            primary_dimension = spec.get("primary_dimension")
+            if primary_dimension not in dataset_fields or primary_dimension not in capability["fields"]:
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} has invalid primary dimension {primary_dimension!r}"
+                )
+            primary_meta = field_catalog.get(primary_dimension) or {}
+            if primary_meta.get("role") not in {"dimension", "identifier", "flag"}:
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} primary dimension has unsafe role"
+                )
+            context_dimensions = spec.get("context_dimensions") or []
+            if not isinstance(context_dimensions, list) or any(
+                field not in dataset_fields or field not in capability["fields"]
+                for field in context_dimensions
+            ):
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} has invalid context dimensions"
+                )
+            for field in context_dimensions:
+                meta = field_catalog.get(field) or {}
+                if meta.get("role") not in {"dimension", "identifier", "flag"}:
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} context dimension {field!r} has unsafe role"
+                    )
+            data_class = spec.get("data_class")
+            if not isinstance(data_class, str) or not data_class.strip():
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} must define historical data_class"
+                )
 
 
 def _resolve_archive_cabinet(seller: str) -> str:
@@ -423,27 +471,54 @@ def build_semantic_archive_sql(
         raise SemanticArchiveExecutionError("Unsafe or unsupported archive cabinet")
 
     table = _quote_identifier(cabinet)
+    mode = str(executor["mode"])
     date_field = str(executor["date_field"])
-    amount_field = str(executor["amount_field"])
-    currency_field = str(executor["currency_field"])
-    amount = _numeric_expr(amount_field)
     date_value = _date_expr(date_field)
-    currency = (
-        "COALESCE(NULLIF(TRIM(" + _quote_identifier(currency_field) + "), ''), 'UNKNOWN')"
-    )
     where = (
         f"{date_value} BETWEEN DATE '{start.isoformat()}' AND DATE '{end.isoformat()}'"
         + _nm_filter(executor.get("product_filter_field"), nm_ids)
     )
 
-    if executor["mode"] == "sum_by_currency":
+    if mode == "distinct_observations":
+        primary_field = str(executor["primary_dimension"])
+        primary_raw = "NULLIF(TRIM(" + _quote_identifier(primary_field) + "), '')"
+        context_fields = [str(field) for field in (executor.get("context_dimensions") or [])]
+        select_parts = [f"{primary_raw} AS observation"]
+        for field in context_fields:
+            select_parts.append(
+                f"{_dimension_expr(field)} AS {_quote_identifier(field)}"
+            )
+        select_parts.extend(
+            [
+                "COUNT(*) AS observation_rows",
+                f"MIN({date_value}) AS first_observed_date",
+                f"MAX({date_value}) AS last_observed_date",
+            ]
+        )
+        group_count = 1 + len(context_fields)
+        group_sql = ", ".join(str(index) for index in range(1, group_count + 1))
+        return (
+            "SELECT "
+            + ", ".join(select_parts)
+            + f" FROM {table} WHERE {where} AND {primary_raw} IS NOT NULL "
+            + f"GROUP BY {group_sql} ORDER BY observation_rows DESC, {group_sql}"
+        )
+
+    amount_field = str(executor["amount_field"])
+    currency_field = str(executor["currency_field"])
+    amount = _numeric_expr(amount_field)
+    currency = (
+        "COALESCE(NULLIF(TRIM(" + _quote_identifier(currency_field) + "), ''), 'UNKNOWN')"
+    )
+
+    if mode == "sum_by_currency":
         return (
             f"SELECT {currency} AS currency, SUM({amount}) AS amount, "
             f"SUM(CASE WHEN {amount} <> 0 THEN 1 ELSE 0 END) AS operation_rows "
             f"FROM {table} WHERE {where} GROUP BY 1 ORDER BY 1"
         )
 
-    if executor["mode"] == "grouped_reason_amount":
+    if mode == "grouped_reason_amount":
         reason_fields = [str(value) for value in executor["reason_fields"]]
         reason = _reason_expr(reason_fields)
         operation = (
@@ -460,7 +535,7 @@ def build_semantic_archive_sql(
             + ")) DESC, 1, 2, 3"
         )
 
-    if executor["mode"] == "sale_return_summary":
+    if mode == "sale_return_summary":
         operation = "TRIM(" + _quote_identifier(str(executor["operation_field"])) + ")"
         units = _numeric_expr(str(executor["unit_field"]))
         sale_value = _quote_literal(str(executor["sale_value"]))
@@ -477,7 +552,7 @@ def build_semantic_archive_sql(
             "GROUP BY 1 ORDER BY 1"
         )
 
-    if executor["mode"] == "component_breakdown":
+    if mode == "component_breakdown":
         reason_fields = [str(value) for value in (executor.get("reason_fields") or [])]
         reason = _reason_expr(reason_fields)
         operation = (
@@ -508,7 +583,7 @@ def build_semantic_archive_sql(
             "GROUP BY 1, 2, 3 ORDER BY 1, 2, 3"
         )
 
-    if executor["mode"] == "sale_return_component_summary":
+    if mode == "sale_return_component_summary":
         operation = "TRIM(" + _quote_identifier(str(executor["operation_field"])) + ")"
         sale_value = _quote_literal(str(executor["sale_value"]))
         return_value = _quote_literal(str(executor["return_value"]))
@@ -825,6 +900,71 @@ def _aggregate_execution_results(
             "cross_currency_total": None,
         }
 
+    if mode == "distinct_observations":
+        if not isinstance(executor, dict):
+            raise SemanticArchiveExecutionError(
+                "distinct_observations aggregation requires executor metadata"
+            )
+        context_fields = [str(field) for field in (executor.get("context_dimensions") or [])]
+        grouped: dict[tuple[str, ...], dict[str, Any]] = {}
+        distinct_values: set[str] = set()
+        for result in year_results:
+            for row in _rows_as_dicts(result):
+                observation = str(row.get("observation") or "").strip()
+                if not observation:
+                    continue
+                distinct_values.add(observation)
+                context_values = [
+                    str(row.get(field) or "Не указано") for field in context_fields
+                ]
+                key = tuple([observation] + context_values)
+                first_seen = str(row.get("first_observed_date") or "")
+                last_seen = str(row.get("last_observed_date") or "")
+                bucket = grouped.setdefault(
+                    key,
+                    {
+                        "observation_rows": 0,
+                        "first_observed_date": first_seen,
+                        "last_observed_date": last_seen,
+                    },
+                )
+                bucket["observation_rows"] = int(bucket["observation_rows"]) + int(
+                    row.get("observation_rows") or 0
+                )
+                if first_seen and (
+                    not bucket["first_observed_date"]
+                    or first_seen < str(bucket["first_observed_date"])
+                ):
+                    bucket["first_observed_date"] = first_seen
+                if last_seen and (
+                    not bucket["last_observed_date"]
+                    or last_seen > str(bucket["last_observed_date"])
+                ):
+                    bucket["last_observed_date"] = last_seen
+
+        observations: list[dict[str, Any]] = []
+        for key, bucket in grouped.items():
+            item: dict[str, Any] = {"value": key[0]}
+            for index, field in enumerate(context_fields, start=1):
+                item[field] = key[index]
+            item["observation_rows"] = int(bucket["observation_rows"])
+            item["first_observed_date"] = str(bucket["first_observed_date"])
+            item["last_observed_date"] = str(bucket["last_observed_date"])
+            observations.append(item)
+        observations.sort(
+            key=lambda item: (
+                -int(item["observation_rows"]),
+                str(item["value"]),
+                *[str(item.get(field) or "") for field in context_fields],
+            )
+        )
+        return {
+            "distinct_values": sorted(distinct_values),
+            "observations": observations,
+            "historical_only": True,
+            "current_configuration_confirmed": False,
+        }
+
     raise SemanticArchiveExecutionError(f"Unsupported aggregation mode {mode!r}")
 
 
@@ -950,19 +1090,23 @@ async def execute_semantic_archive_question(
         sum_rule = "separate_components_as_reported_no_cross_component_netting"
     elif executor["mode"] == "sale_return_component_summary":
         sum_rule = "sale_minus_return_by_doc_type_for_registered_components"
+    elif executor["mode"] == "distinct_observations":
+        sum_rule = "historical_distinct_observations_no_current_state_inference"
     else:
         sum_rule = "as_reported_no_sign_conversion"
 
     provenance: dict[str, Any] = {
         "date_field": executor["date_field"],
-        "amount_field": executor["amount_field"],
-        "currency_field": executor["currency_field"],
         "mode": executor["mode"],
         "semantics": executor.get("semantics"),
         "sum_rule": sum_rule,
-        "currency_rule": "never_sum_across_currencies",
         "product_filter": deepcopy(nm_ids) if nm_ids else None,
     }
+    if executor.get("amount_field"):
+        provenance["amount_field"] = executor["amount_field"]
+    if executor.get("currency_field"):
+        provenance["currency_field"] = executor["currency_field"]
+        provenance["currency_rule"] = "never_sum_across_currencies"
     if executor["mode"] == "component_breakdown":
         provenance["component_fields"] = deepcopy(executor["components"])
         provenance["count_component_fields"] = deepcopy(
@@ -978,6 +1122,13 @@ async def execute_semantic_archive_question(
         )
         if executor.get("data_class"):
             provenance["data_class"] = str(executor["data_class"])
+    if executor["mode"] == "distinct_observations":
+        provenance["primary_dimension"] = str(executor["primary_dimension"])
+        provenance["context_dimensions"] = deepcopy(
+            executor.get("context_dimensions") or []
+        )
+        provenance["data_class"] = str(executor["data_class"])
+        provenance["current_state_inference_forbidden"] = True
 
     return {
         "ok": True,
