@@ -6,12 +6,19 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 ## Canonical architecture — read before architecture/storage/deployment work
 - The machine-readable source of truth is `core/system_map.py` (`SYSTEM_MAP`, `SYSTEM_INSTRUCTIONS`).
 - Human mirror: `ARCHITECTURE.md`.
-- Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
+- Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
 - Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the report registry are the source of truth.
-- Google Drive access uses the owner's deployed Google Apps Script web-app bridge. Its shared bridge secret lives in Yandex Lockbox; the MCP must not depend on a Google Cloud OAuth refresh token.
-- The Apps Script bridge is only the transport/authentication surface into the fixed archive root; it must not become a parallel source of truth.
-- **Yandex Object Storage** remains required for durable archive queue/job state, per-report staging, and a secondary byte-for-byte backup of canonical Drive files.
+- Google Drive access is deliberately hybrid:
+  - the owner's deployed **Google Apps Script** web-app bridge handles small archive operations, reads, metadata/status and folder resolution;
+  - large annual CSV writes use the official **Google Drive API resumable upload** path directly from the Yandex-hosted runtime/worker.
+- The Apps Script shared secret lives in Yandex Lockbox. Direct Drive API OAuth client/refresh-token material also lives only in Yandex Lockbox and is injected at runtime; never print either secret or a resumable session URI.
+- A Google OAuth client may be issued once for Drive authorization, but no Marketplaces MCP workload or archive storage runs in Google Cloud.
+- Large annual CSV files must **not** be sent through Apps Script as one base64 JSON POST. A resumable worker persists the confirmed byte offset and resumes from Google Drive's acknowledged position after interruption.
+- The Apps Script bridge and the resumable uploader are transport/authentication surfaces only; neither is a parallel source of truth.
+- **Yandex Object Storage** remains required for durable archive queue/job state, per-report staging, immutable annual candidates, resumable-upload state, and a secondary byte-for-byte backup of canonical Drive files.
 - Yandex Object Storage runtime auth uses the Serverless Container service account and a temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
+- Canonical large-file commit order is strict: PREPARE immutable candidate in Yandex -> resumable Drive upload -> verify Drive result -> Yandex byte-for-byte backup -> COMMIT registry/job progress.
+- Never recreate an in-flight job or redo PREPARE merely because an upload connection failed; continue from durable state and the confirmed Drive offset.
 - Canonical archive writes must succeed on Google Drive first; do not silently fall back to Yandex as the source of truth.
 - Existing canonical files left in Yandex by the prior architecture may be migrated to Drive on read without re-downloading marketplace data.
 - Chat-local memory/files are never authoritative shared state.

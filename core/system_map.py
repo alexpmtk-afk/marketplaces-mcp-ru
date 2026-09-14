@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v5"
+ARCHITECTURE_VERSION = "2026-09-14.v6"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -23,22 +23,63 @@ SYSTEM_MAP: dict[str, Any] = {
         "primary_archive_storage": "Google Drive",
         "canonical_archive_data": "annual marketplace CSV files plus reports registry",
         "google_drive_root": "MCP архив базы данных",
-        "google_drive_auth": "owner-operated Google Apps Script web-app bridge; shared bridge secret kept in Yandex Lockbox",
-        "google_drive_bridge": "Apps Script executes as the Drive owner and exposes only archive read/write/status operations under the fixed archive root",
-        "yandex_object_storage": "durable archive job state, staging, and byte-for-byte backup of canonical files",
-        "archive_write_order": "Google Drive canonical write first; Yandex backup second",
+        "google_drive_auth": (
+            "hybrid Drive access: owner-operated Google Apps Script bridge for small archive operations; "
+            "direct Google Drive API OAuth refresh token kept in Yandex Lockbox for resumable large annual-file writes"
+        ),
+        "google_drive_bridge": (
+            "Apps Script executes as the Drive owner and exposes narrow archive read/write/status operations "
+            "under the fixed archive root; it is not used to transport large annual CSV files"
+        ),
+        "google_drive_large_upload": (
+            "large annual CSV candidates are uploaded directly from Yandex to the official Google Drive API "
+            "with resumable sessions and bounded chunks; confirmed byte offset is persisted durably"
+        ),
+        "google_drive_oauth_secret": (
+            "server-side OAuth client/refresh-token material is stored only in Yandex Lockbox and injected at runtime; "
+            "tokens and resumable session URIs must never be printed to logs"
+        ),
+        "yandex_object_storage": "durable archive job state, staging, upload resume state, and byte-for-byte backup of canonical files",
+        "archive_write_order": (
+            "prepare immutable candidate in Yandex Object Storage; verify resumable Google Drive canonical write; "
+            "write byte-for-byte Yandex backup; only then COMMIT the report registry/job progress"
+        ),
         "read_through_migration": "if a canonical file is absent on Drive but exists in Yandex Object Storage, copy it to Drive before use",
-        "google_cloud": "not part of the runtime architecture; no Google Cloud OAuth runtime dependency is required",
+        "google_cloud": (
+            "not part of the runtime architecture; a Google OAuth client may be issued once for Drive authorization, "
+            "but no Marketplaces MCP workload or archive storage runs in Google Cloud"
+        ),
         "client_local_files": "never authoritative for shared server state",
     },
     "archive_policy": {
         "shared_server_state": True,
+        "canonical_source_of_truth": "Google Drive annual CSV plus reports registry",
+        "registry": "reports_registry.csv",
+        "google_drive_path": "Мой диск/Marketplaces/MCP архив базы данных",
         "default_update_scope": "all configured marketplace cabinets",
+        "update_behavior": "compare registry -> request only missing report IDs -> update annual CSV",
         "idempotent": True,
         "registry_required": True,
+        "deduplication": {
+            "rows": "dataset-specific stable keys; WB weekly finance uses (reportId, rrdId)",
+            "registry": "(cabinet, dataset, report_id)",
+        },
         "annual_partitioning": "one logical annual dataset per marketplace/cabinet/dataset/year",
         "annual_csv_pattern": "<cabinet>__<dataset>__<year>.csv",
-        "canonical_source_of_truth": "Google Drive annual CSV plus reports registry",
+        "large_file_upload": {
+            "transport": "Google Drive API resumable upload",
+            "apps_script_large_upload": "forbidden",
+            "worker_model": "MCP/queue persists work; each worker step starts a session or uploads at most one bounded chunk",
+            "resume_state": [
+                "resumable session URI",
+                "candidate identity",
+                "candidate bytes/SHA256",
+                "confirmed byte offset",
+                "target Drive file id/name",
+            ],
+            "chunk_rule": "non-final chunks are multiples of 256 KiB; v1 default is 4 MiB",
+            "commit_rule": "registry/progress COMMIT occurs only after canonical Drive verification and Yandex backup",
+        },
         "wb_weekly_finance_main": {
             "period": "weekly",
             "report_type": 1,
@@ -107,10 +148,12 @@ SYSTEM_MAP: dict[str, Any] = {
 
 SYSTEM_INSTRUCTIONS = f"""CANONICAL MARKETPLACES MCP ARCHITECTURE — {ARCHITECTURE_VERSION}
 Treat marketplace_system_map as the source of truth for this MCP.
-Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
+Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
 Canonical marketplace archive data is stored on Google Drive under the server-owned archive root: annual CSV files and the report registry are the source of truth.
-Yandex Object Storage is required for durable queue/job state, staging, and a secondary byte-for-byte backup of canonical archive files.
-Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
+Yandex Object Storage is required for durable queue/job state, staging, resumable-upload state, and a secondary byte-for-byte backup of canonical archive files.
+Small Google Drive archive operations use the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
+Large annual CSV files must NOT be transported through Apps Script/base64. They use the official Google Drive API resumable upload path with OAuth refresh-token material stored only in Yandex Lockbox.
+A large-file worker must persist confirmed byte offsets, resume after interruption, verify the canonical Drive result, write the Yandex backup, and only then COMMIT registry/job progress.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 WB Advertising M0 is Wildberries-only and read-only: use dedicated server-side wb_ads Promotion credentials; current campaign state is live from WB Promotion API; M0 advertising-attribution metrics must never be presented as actual business profit.
 The advertising Drive folder scaffold is not proof that Advertising Archive V1 ingestion or historical coverage exists. Do not route historical ad analytics to the archive until dataset bindings, registry coverage and validation are implemented and accepted.
