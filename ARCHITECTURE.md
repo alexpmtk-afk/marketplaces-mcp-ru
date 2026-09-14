@@ -2,6 +2,8 @@
 
 Canonical version: 2026-09-14.v13
 
+Machine-readable source of truth: `core/system_map.py`.
+
 ## Runtime and storage
 
 Runtime infrastructure is Yandex Cloud. Google Cloud is not part of the runtime architecture.
@@ -47,7 +49,7 @@ Archive execution requires exact `FULL_COVERAGE` from COMPLETE fragments in `rep
 
 Sales/returns use `saleDt` and explicit `docTypeName` buckets, with Продажа minus Возврат for the approved `retailAmount` / `quantity` calculation. Logistics keeps `deliveryService` and `rebillLogisticCost` separate. Deductions keep `deduction` and `additionalPayment` separate and are never silently netted. Monetary WB reward uses `vw` and `vwNds`; it is not derived from `commissionPercent/kvw/kvwBase`. Weekly `acquiringFee` is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`, not the final monthly acquiring expense.
 
-Historical fulfillment observations use `deliveryMethod`, `officeName` and `rrDate`; they never confirm current fulfillment configuration. Historical warehouse tariff context uses `dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `warehouseLogisticsCoeff` and `officeName`; it never confirms the current live warehouse tariff.
+Historical fulfillment observations use `deliveryMethod`, `officeName` and `rrDate`; their data class is `HISTORICAL_OBSERVED_FULFILLMENT` and they never confirm current fulfillment configuration. Historical warehouse tariff context uses `dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `warehouseLogisticsCoeff` and `officeName`; its data class is `HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT` and it never confirms the current live warehouse tariff.
 
 ## Hard source boundaries
 
