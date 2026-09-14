@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v6`
+**Version:** `2026-09-14.v7`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -46,14 +46,15 @@ Supporting services:
 
 ## Semantic Core
 
-The Semantic Core is a server-side knowledge, routing and gated archive-execution layer that sits before business query execution.
+The Semantic Core is now partially connected to the runtime business-query entry point.
 
 Current components:
 - `core/semantic_registry.yaml` — semantic passport of the currently available archive dataset and all 92 physical fields of the WB weekly realization detail;
 - `core/semantic_intents.yaml` — deterministic mapping of common business wording to registered capabilities or to a required external source;
 - `core/semantic_resolver.py` — fail-closed resolver producing one of: `AVAILABLE`, `AVAILABLE_WITH_LIMITATION`, `REQUIRES_OTHER_SOURCE`, `AMBIGUOUS`, `UNKNOWN`;
 - `core/semantic_execution.yaml` — explicit allow-list of business capabilities that are approved for archive calculation;
-- `core/semantic_archive.py` — coverage evaluator, safe SQL planner and archive executor for approved calculations.
+- `core/semantic_archive.py` — coverage evaluator, safe SQL planner and archive executor for approved calculations;
+- `marketplace_business_query` — runtime entry point that now accepts the user's original question and routes approved semantic capabilities.
 
 Current database truth:
 - `wb_weekly_finance_main` is the only business report treated as present in the canonical archive;
@@ -65,23 +66,33 @@ Current approved archive calculations:
 - `acceptance_charge` — sum `paidAcceptance` exactly as reported by report currency.
 
 Every approved calculation is subject to these gates:
-1. the question must resolve to the registered capability;
+1. the original question must resolve to the registered capability;
 2. the capability must be explicitly present in `semantic_execution.yaml`;
 3. `reports_registry.csv` must prove `FULL_COVERAGE` for the entire requested period using `COMPLETE` fragments;
 4. the referenced canonical annual file must exist on Google Drive;
 5. only registered fields and a generated read-only query plan may be used;
 6. values keep the provider sign; different currencies are never combined into one amount.
 
-Guardrails:
-- exact physical field questions may resolve directly to that field's registered semantics;
-- complete marketplace orders must never be reconstructed from `orderDt`/`orderUid` in weekly finance;
-- `deliveryMethod` and warehouse/tariff fields describe historical reported operations and must not be presented as current seller/product configuration;
-- explicit current-state questions do not fall back to historical weekly finance;
-- unknown or ambiguous requests fail closed;
-- registry coverage alone is not sufficient when the canonical annual CSV is missing;
-- sales, commissions, logistics totals and all other recognized capabilities remain non-executable until a separate calculation contract is approved.
+### Natural-question routing
 
-The gated archive executor is **not yet wired into `marketplace_business_query` runtime execution**. That integration remains a separate controlled step.
+`marketplace_business_query` prefers the user's original natural-language question. The older `metric` parameter remains only for backward compatibility.
+
+Rules:
+- the original question outranks a conflicting legacy metric hint;
+- if the question maps to one of the three approved archive calculations, the request goes through the coverage-gated archive executor;
+- if the question is understood but its calculation contract is not approved, execution stops rather than guessing;
+- if the required source is not in the current database, the server returns that source requirement instead of substituting a similar field/report;
+- ambiguous or unknown questions fail closed.
+
+### Orders guardrail
+
+Wildberries officially describes `/api/v1/supplier/orders` as an operational/preliminary source. It may omit orders for which payment is not confirmed, including delayed or installment-payment cases. Therefore:
+- this feed may still be used by the legacy operational route;
+- any result from it is explicitly marked `PRELIMINARY_NOT_ALL_ORDERS`;
+- a natural question meaning “all/complete orders” must **not** be answered from that feed;
+- such a question remains `REQUIRES_OTHER_SOURCE` until the complete Order Feed (or another officially equivalent source) is available and approved.
+
+This prevents the server from confusing “data available from an operational API” with “complete business truth”.
 
 ## Google Drive bridge contract
 
@@ -95,9 +106,10 @@ The bridge supports only narrow archive operations: health/status, named-file st
 ## Routing rules
 
 - “Обнови данные по базе данных” and equivalent intents use the server archive update workflow for all configured cabinets by default.
-- Business questions are semantically resolved before archive fields or another source are selected.
+- Business questions preserve the original wording and are semantically resolved before archive fields or another source are selected.
 - Historical archive calculation is allowed only for an explicitly approved capability with `FULL_COVERAGE` and canonical annual-file presence.
-- Current/uncovered periods use provider APIs or an explicit gap/backfill workflow; partial archive data is never silently returned as complete.
+- Current/uncovered periods use an explicitly suitable provider/API source or return a source/coverage gap; partial archive data is never silently returned as complete.
+- Complete-order questions never fall back to WB Statistics Orders.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
 
 ## Change control

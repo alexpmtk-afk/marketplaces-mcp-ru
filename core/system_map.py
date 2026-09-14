@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v6"
+ARCHITECTURE_VERSION = "2026-09-14.v7"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -51,12 +51,13 @@ SYSTEM_MAP: dict[str, Any] = {
         },
     },
     "semantic_core": {
-        "status": "KNOWLEDGE_RESOLVER_AND_GATED_ARCHIVE_EXECUTOR_PRESENT_NOT_RUNTIME_ROUTED",
+        "status": "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED",
         "registry": "core/semantic_registry.yaml",
         "intent_catalog": "core/semantic_intents.yaml",
         "resolver": "core/semantic_resolver.py",
         "execution_registry": "core/semantic_execution.yaml",
         "archive_executor": "core/semantic_archive.py",
+        "runtime_entry": "marketplace_business_query",
         "current_archive_dataset": "wb_weekly_finance_main",
         "current_archive_schema": "92 physical columns, each with reviewed semantic meaning/safe uses/limitations",
         "resolution_outcomes": [
@@ -73,10 +74,17 @@ SYSTEM_MAP: dict[str, Any] = {
         ],
         "execution_gate": "FULL_COVERAGE from COMPLETE reports_registry.csv fragments plus canonical annual file presence",
         "money_policy": "sum values exactly as reported; never combine different currencies into one total",
+        "question_policy": {
+            "preferred_input": "the user's original natural-language question",
+            "legacy_metric": "retained only for backward compatibility",
+            "precedence": "question overrides conflicting legacy metric",
+            "clarification": "fail closed only when meaning/source cannot be safely resolved; do not silently substitute a similar metric",
+        },
         "rules": [
             "exact physical field references resolve to field semantics first",
             "only registered capabilities may select archive fields",
             "questions about complete marketplace orders must not be answered from orderDt/orderUid in weekly finance",
+            "WB Statistics Orders is operational/preliminary and may omit some orders; it is not complete marketplace-order truth",
             "historical fulfillment may use deliveryMethod but must not be presented as current configuration",
             "explicit current-state questions must not fall back to historical weekly archive",
             "unknown or ambiguous questions fail closed",
@@ -86,14 +94,20 @@ SYSTEM_MAP: dict[str, Any] = {
             "penalty, paidStorage and paidAcceptance sums preserve provider sign and currency",
             "sales, commissions and other recognized capabilities remain non-executable until separate formulas are approved",
         ],
-        "runtime_integration": "gated archive executor exists and is tested, but is not yet wired into marketplace_business_query",
+        "runtime_integration": (
+            "marketplace_business_query accepts the original question; approved penalties/storage/acceptance "
+            "route to the coverage-gated archive executor. Other concepts fail closed or identify another "
+            "required source. Legacy metric routing remains for compatibility."
+        ),
     },
     "routing_policy": {
         "update_database": "route to the server archive update workflow; compare canonical registry and fetch only missing provider reports",
+        "natural_business_question": "preserve the user's original wording and resolve it through Semantic Core before source selection",
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
-        "current_or_uncovered": "use provider APIs or explicit gap/backfill workflow; never silently query a partial archive",
+        "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
+        "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
-        "business_semantics": "resolve the question through the Semantic Core before selecting archive fields or another source",
+        "business_semantics": "the original question outranks a conflicting legacy metric hint",
     },
     "change_control": {
         "new_cloud_provider": "FORBIDDEN without explicit architecture change",
@@ -117,9 +131,11 @@ Canonical marketplace archive data is stored on Google Drive under the server-ow
 Yandex Object Storage is required for durable queue/job state, staging, and a secondary byte-for-byte backup of canonical archive files.
 Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
-Business questions must pass through the server Semantic Core before archive fields are selected. Unknown, ambiguous, current-state, or unsupported questions must fail closed instead of being guessed from similar historical columns.
+For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.
 Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from COMPLETE registry fragments and the canonical annual file exists. Values are summed exactly as reported and different currencies are never combined into one total.
-The gated semantic archive executor is present for penalties, storage charges and paid acceptance, but is not yet wired into marketplace_business_query runtime execution. Other recognized capabilities remain knowledge-only until their calculation contracts are separately approved.
+marketplace_business_query now routes natural questions for penalties, storage charges and paid acceptance into the gated archive executor. Other recognized capabilities remain blocked until their own execution contracts or suitable sources are approved.
+WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
+Unknown, ambiguous, current-state, unsupported or uncovered questions must fail closed or identify the required source instead of being guessed from similar fields.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """
 
