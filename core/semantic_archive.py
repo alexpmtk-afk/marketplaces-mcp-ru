@@ -73,6 +73,7 @@ def validate_semantic_execution(
         "grouped_reason_amount",
         "sale_return_summary",
         "component_breakdown",
+        "sale_return_component_summary",
     }
 
     for capability_id, value in executors.items():
@@ -102,7 +103,10 @@ def validate_semantic_execution(
                 )
         if spec["date_field"] not in capability["fields"]:
             date_meta = field_catalog.get(spec["date_field"]) or {}
-            if spec["mode"] != "component_breakdown" or date_meta.get("role") != "date":
+            if (
+                spec["mode"] not in {"component_breakdown", "sale_return_component_summary"}
+                or date_meta.get("role") != "date"
+            ):
                 raise SemanticArchiveExecutionError(
                     f"semantic executor {capability_id} date field is outside capability semantics"
                 )
@@ -179,6 +183,61 @@ def validate_semantic_execution(
                 if field not in dataset_fields or field not in capability["fields"]:
                     raise SemanticArchiveExecutionError(
                         f"semantic executor {capability_id} has invalid count field {field!r}"
+                    )
+        if spec["mode"] == "sale_return_component_summary":
+            operation_field = spec.get("operation_field")
+            operation_meta = field_catalog.get(operation_field) or {}
+            if operation_field not in dataset_fields or operation_meta.get("role") != "operation":
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} has invalid operation field {operation_field!r}"
+                )
+            for key in ("sale_value", "return_value"):
+                operation_value = spec.get(key)
+                if not isinstance(operation_value, str) or not operation_value.strip():
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} must define {key}"
+                    )
+            components = _require_mapping(
+                spec.get("components"), f"semantic executor {capability_id} components"
+            )
+            if not components:
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} must define components"
+                )
+            for alias, field in components.items():
+                if not _IDENTIFIER.fullmatch(str(alias)):
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has unsafe component alias {alias!r}"
+                    )
+                if field not in dataset_fields or field not in capability["fields"]:
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has invalid component field {field!r}"
+                    )
+            breakdown_fields = spec.get("breakdown_fields") or []
+            if not isinstance(breakdown_fields, list) or any(
+                field not in dataset_fields or field not in capability["fields"]
+                for field in breakdown_fields
+            ):
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} has invalid breakdown fields"
+                )
+            combined = spec.get("combined_components") or {}
+            if not isinstance(combined, dict):
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} combined_components must be a mapping"
+                )
+            for alias, members in combined.items():
+                if not _IDENTIFIER.fullmatch(str(alias)):
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has unsafe combined alias {alias!r}"
+                    )
+                if (
+                    not isinstance(members, list)
+                    or not members
+                    or any(member not in components for member in members)
+                ):
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has invalid combined component {alias!r}"
                     )
 
 
@@ -340,6 +399,14 @@ def _reason_expr(reason_fields: list[str]) -> str:
     return fallback
 
 
+def _dimension_expr(field: str) -> str:
+    return (
+        "COALESCE(NULLIF(TRIM("
+        + _quote_identifier(field)
+        + "), ''), 'Не указано')"
+    )
+
+
 def build_semantic_archive_sql(
     *,
     cabinet: str,
@@ -439,6 +506,45 @@ def build_semantic_archive_sql(
             f"SELECT {currency} AS currency, {reason} AS reason, {operation} AS operation, "
             f"{select_sql} FROM {table} WHERE {where} AND ({nonzero_sql}) "
             "GROUP BY 1, 2, 3 ORDER BY 1, 2, 3"
+        )
+
+    if executor["mode"] == "sale_return_component_summary":
+        operation = "TRIM(" + _quote_identifier(str(executor["operation_field"])) + ")"
+        sale_value = _quote_literal(str(executor["sale_value"]))
+        return_value = _quote_literal(str(executor["return_value"]))
+        breakdown_fields = [str(field) for field in (executor.get("breakdown_fields") or [])]
+        dimensions = [_dimension_expr(field) for field in breakdown_fields]
+        select_parts = [f"{currency} AS currency"]
+        for field, expr in zip(breakdown_fields, dimensions):
+            select_parts.append(f"{expr} AS {_quote_identifier(field)}")
+        nonzero_conditions: list[str] = []
+        for alias, field in executor["components"].items():
+            value = _numeric_expr(str(field))
+            alias_name = str(alias)
+            select_parts.append(
+                f"SUM(CASE WHEN {operation} = {sale_value} THEN {value} ELSE 0 END) "
+                f"AS {_quote_identifier('sale_' + alias_name)}"
+            )
+            select_parts.append(
+                f"SUM(CASE WHEN {operation} = {return_value} THEN {value} ELSE 0 END) "
+                f"AS {_quote_identifier('return_' + alias_name)}"
+            )
+            nonzero_conditions.append(f"{value} <> 0")
+        select_parts.append(
+            f"SUM(CASE WHEN {operation} = {sale_value} THEN 1 ELSE 0 END) AS sale_rows"
+        )
+        select_parts.append(
+            f"SUM(CASE WHEN {operation} = {return_value} THEN 1 ELSE 0 END) AS return_rows"
+        )
+        group_count = 1 + len(breakdown_fields)
+        group_sql = ", ".join(str(index) for index in range(1, group_count + 1))
+        order_sql = group_sql
+        nonzero_sql = " OR ".join(nonzero_conditions)
+        return (
+            "SELECT " + ", ".join(select_parts)
+            + f" FROM {table} WHERE {where} "
+            + f"AND {operation} IN ({sale_value}, {return_value}) "
+            + f"AND ({nonzero_sql}) GROUP BY {group_sql} ORDER BY {order_sql}"
         )
 
     raise SemanticArchiveExecutionError(
@@ -640,6 +746,85 @@ def _aggregate_execution_results(
             "cross_component_total": None,
         }
 
+    if mode == "sale_return_component_summary":
+        if not isinstance(executor, dict):
+            raise SemanticArchiveExecutionError(
+                "sale_return_component_summary aggregation requires executor metadata"
+            )
+        component_keys = [str(key) for key in executor["components"]]
+        breakdown_fields = [str(field) for field in (executor.get("breakdown_fields") or [])]
+        combined_components = executor.get("combined_components") or {}
+        totals: dict[str, dict[str, float | int]] = {}
+        grouped: dict[tuple[str, ...], dict[str, float | int]] = {}
+
+        def _empty_bucket() -> dict[str, float | int]:
+            values: dict[str, float | int] = {"sale_rows": 0, "return_rows": 0}
+            for key in component_keys:
+                values["sale_" + key] = 0.0
+                values["return_" + key] = 0.0
+            return values
+
+        for result in year_results:
+            for row in _rows_as_dicts(result):
+                currency = str(row.get("currency") or "UNKNOWN")
+                total_bucket = totals.setdefault(currency, _empty_bucket())
+                group_key = tuple(
+                    [currency]
+                    + [str(row.get(field) or "Не указано") for field in breakdown_fields]
+                )
+                group_bucket = grouped.setdefault(group_key, _empty_bucket())
+                for key in component_keys:
+                    for prefix in ("sale_", "return_"):
+                        field_name = prefix + key
+                        value = float(row.get(field_name) or 0.0)
+                        total_bucket[field_name] = float(total_bucket[field_name]) + value
+                        group_bucket[field_name] = float(group_bucket[field_name]) + value
+                for row_key in ("sale_rows", "return_rows"):
+                    value = int(row.get(row_key) or 0)
+                    total_bucket[row_key] = int(total_bucket[row_key]) + value
+                    group_bucket[row_key] = int(group_bucket[row_key]) + value
+
+        def _render_bucket(base: dict[str, Any], bucket: dict[str, float | int]) -> dict[str, Any]:
+            item = dict(base)
+            for key in component_keys:
+                sale_amount = float(bucket["sale_" + key])
+                return_amount = float(bucket["return_" + key])
+                item["sale_" + key] = round(sale_amount, 6)
+                item["return_" + key] = round(return_amount, 6)
+                item["net_" + key] = round(sale_amount - return_amount, 6)
+            for alias, members in combined_components.items():
+                sale_total = sum(float(bucket["sale_" + member]) for member in members)
+                return_total = sum(float(bucket["return_" + member]) for member in members)
+                item["sale_" + str(alias)] = round(sale_total, 6)
+                item["return_" + str(alias)] = round(return_total, 6)
+                item["net_" + str(alias)] = round(sale_total - return_total, 6)
+            item["sale_rows"] = int(bucket["sale_rows"])
+            item["return_rows"] = int(bucket["return_rows"])
+            return item
+
+        by_currency = [
+            _render_bucket({"currency": currency}, totals[currency])
+            for currency in sorted(totals)
+        ]
+        breakdown: list[dict[str, Any]] = []
+        if breakdown_fields:
+            for group_key, bucket in grouped.items():
+                base: dict[str, Any] = {"currency": group_key[0]}
+                for index, field in enumerate(breakdown_fields, start=1):
+                    base[field] = group_key[index]
+                breakdown.append(_render_bucket(base, bucket))
+            breakdown.sort(
+                key=lambda item: tuple(
+                    [str(item["currency"])]
+                    + [str(item.get(field) or "") for field in breakdown_fields]
+                )
+            )
+        return {
+            "components_by_currency": by_currency,
+            "breakdown": breakdown,
+            "cross_currency_total": None,
+        }
+
     raise SemanticArchiveExecutionError(f"Unsupported aggregation mode {mode!r}")
 
 
@@ -763,6 +948,8 @@ async def execute_semantic_archive_question(
         sum_rule = "sale_minus_return_by_doc_type"
     elif executor["mode"] == "component_breakdown":
         sum_rule = "separate_components_as_reported_no_cross_component_netting"
+    elif executor["mode"] == "sale_return_component_summary":
+        sum_rule = "sale_minus_return_by_doc_type_for_registered_components"
     else:
         sum_rule = "as_reported_no_sign_conversion"
 
@@ -781,6 +968,16 @@ async def execute_semantic_archive_question(
         provenance["count_component_fields"] = deepcopy(
             executor.get("count_components") or {}
         )
+    if executor["mode"] == "sale_return_component_summary":
+        provenance["component_fields"] = deepcopy(executor["components"])
+        provenance["combined_components"] = deepcopy(
+            executor.get("combined_components") or {}
+        )
+        provenance["breakdown_fields"] = deepcopy(
+            executor.get("breakdown_fields") or []
+        )
+        if executor.get("data_class"):
+            provenance["data_class"] = str(executor["data_class"])
 
     return {
         "ok": True,
