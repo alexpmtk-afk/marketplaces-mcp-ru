@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v10`
+**Version:** `2026-09-14.v11`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -66,13 +66,19 @@ Current approved archive calculations:
 - `acceptance_charge` — sum `paidAcceptance` exactly as reported by report currency;
 - `sale_and_return_operations` — by `saleDt`, split rows by `docTypeName`: `Продажа` and `Возврат`; calculate sale amount/units, return amount/units and net result as `Продажа - Возврат` using `retailAmount` and `quantity`;
 - `logistics` — use `rrDate` and keep `deliveryService` and `rebillLogisticCost` as separate monetary components; `deliveryAmount` and `returnAmount` are reported only as logistics counts; breakdown is preserved by `sellerOperName` and `bonusTypeName`;
-- `deductions_and_adjustments` — use `rrDate` and keep `deduction` and `additionalPayment` separate. `additionalPayment` is treated only as the report field for WB-remuneration adjustment; it is not relabeled as a seller payout and is not netted against deductions.
+- `deductions_and_adjustments` — use `rrDate` and keep `deduction` and `additionalPayment` separate. `additionalPayment` is treated only as the report field for WB-remuneration adjustment; it is not relabeled as a seller payout and is not netted against deductions;
+- `commission_and_wb_reward` — use `saleDt` and explicit `Продажа` / `Возврат` buckets. Monetary WB reward is calculated only from `vw` (without VAT) and `vwNds`; the combined reported reward including VAT is `vw + vwNds`. The executor never converts `commissionPercent`, `kvw` or `kvwBase` into money and never adds `acquiringFee`, `ppvzReward` or `ppvzSalesCommission` to WB reward;
+- `acquiring_and_payment_processing` — use `saleDt`, explicit `Продажа` / `Возврат` buckets and the reported `acquiringFee`, optionally broken down by `paymentProcessing` and `acquiringBank`. Its data class is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`.
 
 The sales/returns formula follows the official Wildberries weekly-realization rule: the weekly `Продажа` amount is the detailed report's realized-goods amount for document type `Продажа` minus the same amount for document type `Возврат`. The canonical archive also confirms that return `retailAmount` values are stored as positive values, so the server performs the subtraction explicitly rather than inferring a sign.
 
 For logistics, canonical archive inspection confirms `deliveryService` is populated on rows such as `Логистика`, `Доставка` and `Коррекция логистики`, while `rebillLogisticCost` is populated separately on reimbursement-of-transport/warehouse-cost rows. These fields are therefore not silently merged. Negative logistics corrections are preserved exactly as reported.
 
 For deductions, canonical archive inspection confirms `deduction` is populated on `Удержание` rows and can include reasons such as WB Promotion services in `bonusTypeName`. `additionalPayment` remains a separate WB-remuneration-adjustment field. No cross-component net amount is invented.
+
+For monetary WB reward, the weekly detail contains several commission-related percentage/intermediate fields. The executable money contract deliberately uses only the explicit monetary fields `vw` and `vwNds`. A question such as “какой процент комиссии?” is therefore not allowed to fall through to the money executor; percentage/rate analysis remains a separate not-yet-approved calculation.
+
+For payment acceptance/acquiring, the weekly report's `acquiringFee` is treated as the weekly amount reflected in that report. Wildberries' current offer distinguishes preliminary weekly withholding/advancing of payment-acceptance expenses from the final actual monthly calculation. Therefore `acquiringFee` is returned only as `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`. A request for final/actual monthly acquiring expenses requires the separate `Отчёт об издержках на приём платежей`, which is not present in the canonical archive and must not be substituted by weekly `acquiringFee`.
 
 Every approved calculation is subject to these gates:
 1. the original question must resolve to the registered capability;
@@ -93,6 +99,8 @@ Rules:
 - if the question maps to one of the approved archive calculations, the request goes through the coverage-gated archive executor;
 - sales/returns questions use `saleDt` and explicit `docTypeName` buckets, not `orderDt` and not free-form operation-name guessing;
 - logistics and deductions return registered components separately rather than inventing a combined total;
+- a monetary commission/reward question may use `vw` / `vwNds`, while a rate/percentage commission question does not use the monetary executor;
+- a weekly acquiring question may use `acquiringFee` with the preliminary-data warning, while a final/actual acquiring-expense question requires the separate final report and fails closed while that report is absent;
 - if the question is understood but its calculation contract is not approved, execution stops rather than guessing;
 - if the required source is not in the current database, the server returns that source requirement instead of substituting a similar field/report;
 - ambiguous or unknown questions fail closed.
@@ -156,6 +164,8 @@ The bridge supports only narrow archive operations: health/status, named-file st
 - Historical archive calculation is allowed only for an explicitly approved capability with `FULL_COVERAGE` and canonical annual-file presence.
 - Current/uncovered periods use an explicitly suitable provider/API source or return a source/coverage gap; partial archive data is never silently returned as complete.
 - Complete-order questions never fall back to WB Statistics Orders.
+- Commission-rate questions never fall back to a monetary `vw`/`vwNds` calculation.
+- Final/actual payment-acceptance expense questions never fall back to preliminary weekly `acquiringFee`.
 - Advertising current campaign state/control is always live from WB Promotion API.
 - Advertising closed-period analytics become archive-first only after Advertising Archive V1 dataset bindings, registry coverage and validation are implemented and accepted.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
