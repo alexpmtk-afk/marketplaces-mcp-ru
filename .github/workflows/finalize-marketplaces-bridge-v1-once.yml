@@ -1,0 +1,81 @@
+name: Finalize Marketplaces Bridge v1 once
+
+on:
+  push:
+    branches:
+      - bridge-v1-final
+    paths:
+      - scripts/finalize_marketplaces_bridge_v1.py
+      - .github/workflows/finalize-marketplaces-bridge-v1-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bridge-v1-final
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply deterministic canonical v1 patch
+        run: python scripts/finalize_marketplaces_bridge_v1.py
+      - name: Remove active legacy/v3 source and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            docs/apps_script/marketplaces_drive_bridge_v3.gs \
+            docs/apps_script/appsscript.json \
+            docs/DRIVE_RESUMABLE_V3_HARDENING.md \
+            tests/test_apps_script_bridge_v3_hardening.py \
+            tests/test_archive_google_bridge.py \
+            tests/test_archive_google_bridge_v1_alpha2.py
+      - name: Validate canonical client shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile core/archive_google.py
+          grep -Fq 'BRIDGE_RELEASE = "1.0.0"' core/archive_google.py
+          ! grep -q '_post_legacy' core/archive_google.py
+          ! grep -q '_LEGACY_MODE' core/archive_google.py
+          ! grep -q 'MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL' core/archive_google.py
+          ! grep -q 'MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL' .env.example
+          test -f tests/test_archive_google_bridge_v1_stable.py
+          test ! -f tests/test_archive_google_bridge_v1_alpha2.py
+          test ! -f docs/apps_script/marketplaces_drive_bridge_v3.gs
+          echo MARKETPLACES_V1_ONLY_STATIC=PASS
+      - name: Run archive and full tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+          pytest -q tests/test_archive_google_bridge_v1.py tests/test_archive_google_bridge_v1_stable.py tests/test_archive_drive_resumable.py tests/test_archive_drive_resumable_hardening.py tests/test_archive_hybrid.py tests/test_archive_hybrid_metadata.py tests/test_archive_resumable_worker.py tests/test_archive_resumable_diagnostic.py
+          pytest -q
+      - name: Commit canonical generated state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A \
+            core/archive_google.py \
+            .env.example \
+            docs/SHARED_GOOGLE_DRIVE_BRIDGE_V1.md \
+            docs/apps_script \
+            docs/DRIVE_RESUMABLE_V3_HARDENING.md \
+            tests/test_archive_google_bridge_v1.py \
+            tests/test_archive_google_bridge_v1_stable.py \
+            tests/test_archive_google_bridge_v1_alpha2.py \
+            tests/test_apps_script_bridge_v3_hardening.py \
+            tests/test_archive_google_bridge.py
+          if git diff --cached --quiet; then
+            echo 'No generated changes.'
+          else
+            git commit -m 'archive: make shared Bridge v1 the only runtime path'
+            git push origin HEAD:bridge-v1-final
+          fi
