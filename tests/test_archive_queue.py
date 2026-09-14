@@ -124,12 +124,18 @@ def test_worker_step_is_bounded_to_one_provider_call(monkeypatch):
     second = asyncio.run(queue.worker_step(job_id))
     assert len(client.calls) - before == 1
     assert second["action"] == "report_page_staged"
+    _, detail_kwargs = client.calls[-1]
+    assert archive_queue.DETAIL_PAGE_LIMIT == 20000
+    assert detail_kwargs["json_body"]["limit"] == archive_queue.DETAIL_PAGE_LIMIT
+    assert detail_kwargs["json_body"]["rrdId"] == 0
 
     before = len(client.calls)
     third = asyncio.run(queue.worker_step(job_id))
     assert len(client.calls) - before == 1
     assert third["action"] == "report_finalized"
     assert third["status"] == "COMPLETE"
+    _, finish_kwargs = client.calls[-1]
+    assert finish_kwargs["json_body"]["rrdId"] == 10
 
 
 def test_rate_limit_reschedules_without_sleep(monkeypatch):
