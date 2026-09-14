@@ -124,6 +124,7 @@ executors:
     date_field: rrDate
     mode: distinct_observations
     primary_dimension: deliveryMethod
+    context_dimensions: [officeName]
     product_filter_field: nmId
     data_class: HISTORICAL_OBSERVED_FULFILLMENT
-    semantics: Return the distinct non-empty deliveryMethod values actually observed in weekly-report rows during the fully covered period, with observation count and first/last reported dates. This is historical evidence only and must never be presented as the seller's or product's current fulfillment configuration.
+    semantics: Return the distinct non-empty deliveryMethod values actually observed in weekly-report rows during the fully covered period, with warehouse context, observation count and first/last reported dates. This is historical evidence only and must never be presented as the seller's or product's current fulfillment configuration.
