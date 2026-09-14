@@ -44,6 +44,7 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "wb_orders_history_status",
         "marketplace_archive_update",
         "marketplace_archive_worker_step",
+        "marketplace_archive_resumable_diagnostic_step",
         "marketplace_archive_job_status",
         "marketplace_archive_status",
         "marketplace_archive_query",
