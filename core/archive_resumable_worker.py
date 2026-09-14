@@ -1,10 +1,9 @@
 """Durable large-file upload step for the marketplace archive queue.
 
 The ordinary queue keeps discovery, WB download, PREPARE and COMMIT unchanged.
-Only ``UPLOAD_ANNUAL`` is intercepted here. A single worker invocation starts a
-Drive resumable session or transfers at most one bounded chunk, persists the
-confirmed offset, and returns. This lets the existing Laser Master candidate
-continue without recreating its job or calling WB again.
+Only ``UPLOAD_ANNUAL`` is intercepted here. Apps Script authenticates creation
+of a Drive resumable session; Yandex then sends at most one bounded chunk per
+worker step directly to the session URI and persists the confirmed offset.
 """
 from __future__ import annotations
 
@@ -16,7 +15,7 @@ from typing import Any
 from .archive_drive_resumable import (
     GoogleDriveResumableUploader,
     ResumableUploadError,
-    build_drive_resumable_uploader_from_env,
+    build_drive_resumable_uploader_from_bridge,
 )
 from .archive_queue import JOB_FOLDER, WBFinanceArchiveJobQueue
 from .wb_finance_archive import ArchiveLock
@@ -35,7 +34,12 @@ class WBFinanceResumableWorker:
     ) -> None:
         self.queue = queue
         self.store = store
-        self.uploader = uploader if uploader is not None else build_drive_resumable_uploader_from_env()
+        drive = getattr(store, "drive", None)
+        self.uploader = (
+            uploader
+            if uploader is not None
+            else (build_drive_resumable_uploader_from_bridge(drive) if drive is not None else None)
+        )
 
     async def worker_step(self, job_id: str = "") -> dict[str, Any]:
         selected = str(job_id).strip()
@@ -133,7 +137,7 @@ class WBFinanceResumableWorker:
             state["finalize"] = finalize
             state["status"] = "WAITING_CONFIGURATION"
             state["last_error"] = (
-                "Google Drive resumable OAuth is not configured; candidate is preserved"
+                "Google Drive resumable Apps Script session broker is not configured; candidate is preserved"
             )
             await self.queue._save(state)
             await self.queue._unschedule(job_id)
@@ -142,7 +146,7 @@ class WBFinanceResumableWorker:
                 "job_id": job_id,
                 "status": state["status"],
                 "phase": state.get("phase"),
-                "action": "drive_resumable_oauth_required",
+                "action": "drive_resumable_bridge_required",
                 "report_id": report_id,
                 "annual_bytes": expected_bytes,
                 "candidate_preserved": True,
@@ -184,6 +188,7 @@ class WBFinanceResumableWorker:
                     "offset": 0,
                     "target_file_id": session.file_id,
                     "chunk_bytes": self.uploader.chunk_size,
+                    "session_broker": "google_apps_script",
                 }
                 finalize["resumable_upload"] = upload
                 state["finalize"] = finalize
@@ -308,7 +313,11 @@ class WBFinanceResumableWorker:
     ) -> dict[str, Any]:
         job_id = str(state["job_id"])
         report_id = int(finalize.get("report_id") or 0)
-        file_id = str(file_meta.get("id") or (finalize.get("resumable_upload") or {}).get("target_file_id") or "")
+        file_id = str(
+            file_meta.get("id")
+            or (finalize.get("resumable_upload") or {}).get("target_file_id")
+            or ""
+        )
         if not file_id:
             found = await self.uploader.find_named_file(
                 await self.store.drive.ensure_folder_path(annual_parts), annual_name
@@ -325,9 +334,6 @@ class WBFinanceResumableWorker:
         if actual_size != expected_bytes or actual_md5 != expected_md5:
             raise RuntimeError("Drive resumable upload failed size/MD5 verification")
 
-        # Preserve the existing archive contract: after the canonical Drive file
-        # is verified, mirror the exact candidate bytes to the canonical Yandex
-        # backup path before committing the registry row.
         yandex = getattr(self.store, "yandex", self.store)
         candidate_data = await yandex.download_bytes(candidate_id)
         if len(candidate_data) != expected_bytes or hashlib.sha256(candidate_data).hexdigest() != expected_sha:
@@ -340,9 +346,8 @@ class WBFinanceResumableWorker:
         finalize["resumable_upload_verified"] = {
             "bytes": expected_bytes,
             "md5": expected_md5,
+            "session_broker": "google_apps_script",
         }
-        # Session URIs are bearer-like capabilities. They are no longer needed
-        # after verification and must not remain in durable job state.
         finalize.pop("resumable_upload", None)
         state["finalize"] = finalize
         state["status"] = "QUEUED"
@@ -366,9 +371,6 @@ class WBFinanceResumableWorker:
     async def _read_yandex_range(yandex: Any, file_id: str, start: int, end: int) -> bytes:
         if hasattr(yandex, "download_range"):
             return await yandex.download_range(file_id, start, end)
-        # Compatibility with the current Yandex store while v1 is rolled out:
-        # use its authenticated request primitive to avoid reading the whole
-        # candidate for every chunk.
         response = await yandex._request(
             "GET",
             yandex._object_url(file_id),

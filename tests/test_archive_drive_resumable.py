@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 
 import httpx
 import pytest
@@ -9,21 +8,35 @@ import pytest
 from core.archive_drive_resumable import (
     CHUNK_GRANULARITY,
     GoogleDriveResumableUploader,
+    ResumableUploadError,
 )
 from core.archive_google import ArchiveStorageNotConfigured
 
 
-def _oauth_json() -> str:
-    return json.dumps({
-        "client_id": "client-id",
-        "client_secret": "client-secret",
-        "refresh_token": "refresh-token",
-        "token_uri": "https://oauth2.googleapis.com/token",
-    })
+class FakeBroker:
+    def __init__(self):
+        self.starts = []
+
+    async def start_resumable_session(self, **kwargs):
+        self.starts.append(kwargs)
+        return {
+            "session_uri": (
+                "https://www.googleapis.com/upload/drive/v3/files"
+                "?uploadType=resumable&upload_id=test-session"
+            ),
+            "file_id": "drive-file-1",
+        }
+
+    async def file_metadata(self, file_id):
+        return {"id": file_id, "size": "123", "md5Checksum": "0" * 32}
+
+    async def find_child(self, parent_id, name):
+        del parent_id, name
+        return None
 
 
 def _response(status: int, *, headers=None, json_body=None) -> httpx.Response:
-    request = httpx.Request("PUT", "https://upload.example/session")
+    request = httpx.Request("PUT", "https://www.googleapis.com/upload/drive/v3/files?upload_id=x")
     if json_body is None:
         return httpx.Response(status, headers=headers or {}, request=request)
     return httpx.Response(status, headers=headers or {}, json=json_body, request=request)
@@ -32,9 +45,31 @@ def _response(status: int, *, headers=None, json_body=None) -> httpx.Response:
 def test_chunk_size_must_be_multiple_of_256_kib():
     with pytest.raises(ArchiveStorageNotConfigured):
         GoogleDriveResumableUploader(
-            oauth_json=_oauth_json(),
+            session_broker=FakeBroker(),
             chunk_size=CHUNK_GRANULARITY + 1,
         )
+
+
+def test_session_start_is_brokered_by_apps_script_without_oauth():
+    broker = FakeBroker()
+    uploader = GoogleDriveResumableUploader(
+        session_broker=broker,
+        chunk_size=CHUNK_GRANULARITY,
+    )
+    session = asyncio.run(uploader.start_session(
+        parent_id="База данных/WB/shop/2026/finance/weekly/main",
+        name="shop__weekly_main__2026.csv",
+        total_bytes=123,
+        mime_type="text/csv",
+    ))
+    assert session.file_id == "drive-file-1"
+    assert session.uri.startswith("https://www.googleapis.com/upload/drive/")
+    assert broker.starts[0]["total_bytes"] == 123
+
+
+def test_session_uri_is_restricted_to_google_drive_upload_endpoint():
+    with pytest.raises(ResumableUploadError):
+        GoogleDriveResumableUploader._validate_session_uri("https://example.com/upload/drive/session")
 
 
 def test_range_header_becomes_next_confirmed_offset():
@@ -44,19 +79,18 @@ def test_range_header_becomes_next_confirmed_offset():
 
 def test_upload_chunk_uses_drive_confirmed_range(monkeypatch):
     uploader = GoogleDriveResumableUploader(
-        oauth_json=_oauth_json(),
+        session_broker=FakeBroker(),
         chunk_size=CHUNK_GRANULARITY,
     )
 
     async def fake_request(method, url, **kwargs):
         assert method == "PUT"
-        assert url == "https://upload.example/session"
         assert kwargs["headers"]["Content-Range"] == "bytes 0-262143/524288"
         return _response(308, headers={"Range": "bytes=0-262143"})
 
     monkeypatch.setattr(uploader, "_request", fake_request)
     progress = asyncio.run(uploader.upload_chunk(
-        session_uri="https://upload.example/session",
+        session_uri="https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
         offset=0,
         total_bytes=2 * CHUNK_GRANULARITY,
         data=b"x" * CHUNK_GRANULARITY,
@@ -67,7 +101,7 @@ def test_upload_chunk_uses_drive_confirmed_range(monkeypatch):
 
 def test_status_404_marks_session_expired(monkeypatch):
     uploader = GoogleDriveResumableUploader(
-        oauth_json=_oauth_json(),
+        session_broker=FakeBroker(),
         chunk_size=CHUNK_GRANULARITY,
     )
 
@@ -77,7 +111,7 @@ def test_status_404_marks_session_expired(monkeypatch):
 
     monkeypatch.setattr(uploader, "_request", fake_request)
     progress = asyncio.run(uploader.query_status(
-        "https://upload.example/session",
+        "https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
         10 * CHUNK_GRANULARITY,
     ))
     assert progress.state == "expired"
@@ -86,7 +120,7 @@ def test_status_404_marks_session_expired(monkeypatch):
 
 def test_final_chunk_returns_drive_file_metadata(monkeypatch):
     uploader = GoogleDriveResumableUploader(
-        oauth_json=_oauth_json(),
+        session_broker=FakeBroker(),
         chunk_size=CHUNK_GRANULARITY,
     )
 
@@ -100,7 +134,7 @@ def test_final_chunk_returns_drive_file_metadata(monkeypatch):
 
     monkeypatch.setattr(uploader, "_request", fake_request)
     progress = asyncio.run(uploader.upload_chunk(
-        session_uri="https://upload.example/session",
+        session_uri="https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
         offset=0,
         total_bytes=CHUNK_GRANULARITY,
         data=b"x" * CHUNK_GRANULARITY,

@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v14"
+ARCHITECTURE_VERSION = "2026-09-14.v15"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -24,20 +24,22 @@ SYSTEM_MAP: dict[str, Any] = {
         "canonical_archive_data": "annual marketplace CSV files plus reports registry",
         "google_drive_root": "MCP архив базы данных",
         "google_drive_auth": (
-            "hybrid Drive access: owner-operated Google Apps Script bridge for small archive operations; "
-            "direct Google Drive API OAuth refresh token kept in Yandex Lockbox for resumable large annual-file writes"
+            "owner-operated Google Apps Script bridge authenticates Drive control-plane operations, including "
+            "resumable-session creation; no Google OAuth refresh token is stored in Yandex"
         ),
         "google_drive_bridge": (
             "Apps Script executes as the Drive owner and exposes narrow archive read/write/status operations "
-            "under the fixed archive root; it is not used to transport large annual CSV files"
+            "under the fixed archive root; for large files it brokers only the resumable session start, "
+            "not the file bytes"
         ),
         "google_drive_large_upload": (
-            "large annual CSV candidates are uploaded directly from Yandex to the official Google Drive API "
-            "with resumable sessions and bounded chunks; confirmed byte offset is persisted durably"
+            "Apps Script starts the official Google Drive API resumable session using its effective-user OAuth token; "
+            "Yandex then uploads bounded chunks directly to the returned Drive session URI and persists the "
+            "confirmed byte offset durably"
         ),
-        "google_drive_oauth_secret": (
-            "server-side OAuth client/refresh-token material is stored only in Yandex Lockbox and injected at runtime; "
-            "tokens and resumable session URIs must never be printed to logs"
+        "google_drive_resumable_auth": (
+            "no server-side Google refresh token is used; the resumable session URI is a bearer-like capability "
+            "kept only in durable Yandex job state and never printed to logs or user responses"
         ),
         "yandex_object_storage": "durable archive job state, staging, upload resume state, and byte-for-byte backup of canonical files",
         "archive_write_order": (
@@ -46,8 +48,8 @@ SYSTEM_MAP: dict[str, Any] = {
         ),
         "read_through_migration": "if a canonical file is absent on Drive but exists in Yandex Object Storage, copy it to Drive before use",
         "google_cloud": (
-            "not part of the runtime architecture; a Google OAuth client may be issued once for Drive authorization, "
-            "but no Marketplaces MCP workload or archive storage runs in Google Cloud"
+            "not part of the runtime architecture; no separate Google Cloud runtime or server OAuth refresh-token "
+            "store is required for the archive upload path"
         ),
         "client_local_files": "never authoritative for shared server state",
     },
@@ -68,7 +70,8 @@ SYSTEM_MAP: dict[str, Any] = {
         "annual_csv_pattern": "<cabinet>__<dataset>__<year>.csv",
         "large_file_upload": {
             "transport": "Google Drive API resumable upload",
-            "apps_script_large_upload": "forbidden",
+            "apps_script_large_upload": "file-byte transport forbidden; Apps Script may broker resumable session start only",
+            "session_broker": "Google Apps Script effective-user OAuth; no Google refresh token is stored in Yandex",
             "worker_model": "MCP/queue persists work; each worker step starts a session or uploads at most one bounded chunk",
             "resume_state": [
                 "resumable session URI",
@@ -224,8 +227,9 @@ Treat marketplace_system_map as the source of truth for this MCP.
 Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
 Canonical marketplace archive data is stored on Google Drive under the server-owned archive root: annual CSV files and the report registry are the source of truth.
 Yandex Object Storage is required for durable queue/job state, staging, resumable-upload state, and a secondary byte-for-byte backup of canonical archive files.
-Small Google Drive archive operations use the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
-Large annual CSV files must NOT be transported through Apps Script/base64. They use the official Google Drive API resumable upload path with OAuth refresh-token material stored only in Yandex Lockbox.
+The owner's Google Apps Script web-app bridge authenticates Google Drive control-plane operations; its shared secret remains in Yandex Lockbox.
+Large annual CSV file bytes must NOT be transported through Apps Script/base64. Apps Script uses its effective-user OAuth token only to create an official Google Drive resumable session, then Yandex uploads bounded chunks directly to that session URI.
+No Google OAuth refresh token is stored in Yandex for the archive upload path. Resumable session URIs are bearer-like capabilities and must never be logged or returned to users.
 A large-file worker must persist confirmed byte offsets, resume after interruption, verify the canonical Drive result, write the Yandex backup, and only then COMMIT registry/job progress.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.

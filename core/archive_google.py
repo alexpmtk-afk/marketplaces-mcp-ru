@@ -90,12 +90,14 @@ class GoogleDriveArchiveStore:
             size = int(item["size"]) if item.get("size") is not None else None
         except (TypeError, ValueError):
             size = None
+        md5 = str(item.get("md5_checksum") or item.get("md5Checksum") or "").strip() or None
         return DriveFile(
             id=str(item.get("id", "")),
             name=str(item.get("name", "")),
-            mime_type=str(item.get("mime_type", "")),
+            mime_type=str(item.get("mime_type") or item.get("mimeType") or ""),
             size=size,
-            modified_time=item.get("modified_time"),
+            md5_checksum=md5,
+            modified_time=item.get("modified_time") or item.get("modifiedTime"),
         )
 
     async def _post(self, action: str, **payload: Any) -> dict[str, Any]:
@@ -105,10 +107,6 @@ class GoogleDriveArchiveStore:
 
         for attempt in range(1, self._MAX_ATTEMPTS + 1):
             try:
-                # Always start a retry from the stable Apps Script /exec URL.
-                # ContentService responses are redirected to a short-lived
-                # script.googleusercontent.com URL which must never become the
-                # retry target.
                 async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                     resp = await client.post(
                         self.bridge_url,
@@ -128,17 +126,14 @@ class GoogleDriveArchiveStore:
             if resp.is_success:
                 break
 
-            if (
-                resp.status_code in self._RETRYABLE_HTTP_STATUSES
-                and attempt < self._MAX_ATTEMPTS
-            ):
+            if resp.status_code in self._RETRYABLE_HTTP_STATUSES and attempt < self._MAX_ATTEMPTS:
                 await asyncio.sleep(0.75 * attempt)
                 continue
 
             raise ArchiveStorageError(
                 f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}"
             )
-        else:  # pragma: no cover - loop exits via success or explicit failure
+        else:
             if last_error is not None:
                 raise ArchiveStorageError(
                     f"Apps Script Drive bridge request failed: {last_error}"
@@ -163,8 +158,6 @@ class GoogleDriveArchiveStore:
         return data
 
     async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
-        # The bridge creates missing folders lazily on write. A relative path is
-        # therefore the stable parent locator used by the hybrid store.
         return self._path(parts)
 
     async def find_child(
@@ -177,6 +170,43 @@ class GoogleDriveArchiveStore:
         if mime_type and item.mime_type and item.mime_type != mime_type:
             return None
         return item
+
+    async def file_metadata(self, file_id: str) -> dict[str, Any]:
+        data = await self._post("metadata_by_id", file_id=str(file_id))
+        item = self._to_file(dict(data.get("file") or {}))
+        if not item.id:
+            raise ArchiveStorageError("Apps Script Drive bridge metadata returned no file id")
+        return {
+            "id": item.id,
+            "name": item.name,
+            "size": item.size,
+            "md5Checksum": item.md5_checksum,
+            "mimeType": item.mime_type,
+            "modifiedTime": item.modified_time,
+        }
+
+    async def start_resumable_session(
+        self,
+        *,
+        parent_id: str,
+        name: str,
+        total_bytes: int,
+        mime_type: str = "text/csv",
+    ) -> dict[str, Any]:
+        data = await self._post(
+            "resumable_start",
+            path=self._path((parent_id,)),
+            filename=str(name),
+            mime_type=str(mime_type),
+            total_bytes=int(total_bytes),
+        )
+        session_uri = str(data.get("session_uri") or "").strip()
+        if not session_uri:
+            raise ArchiveStorageError("Apps Script Drive bridge returned no resumable session URI")
+        return {
+            "session_uri": session_uri,
+            "file_id": str(data.get("file_id") or "").strip() or None,
+        }
 
     async def download_bytes(self, file_id: str) -> bytes:
         data = await self._post("read_by_id", file_id=str(file_id))
