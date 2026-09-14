@@ -34,6 +34,21 @@ def test_canonical_map_fixes_storage_boundaries():
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
 
 
+def test_wb_advertising_m0_is_read_only_and_separate_from_profit():
+    policy = SYSTEM_MAP["advertising_policy"]
+    assert policy["current_scope"].startswith("Wildberries only")
+    assert policy["phase"] == "WB Advertising M0 read-only"
+    assert policy["credential_service"] == "wb_ads"
+    assert policy["active_campaign_status"] == 9
+    assert "wb_ads_audit_active" in policy["m0_tools"]
+    assert "advertising_attribution_operational" == policy["metric_class"]
+    assert "not actual business profit" in policy["profitability_boundary"]
+    assert policy["archive_domain"] == "База данных/WB/<cabinet>/<year>/advertising"
+    assert "not yet implemented" in policy["archive_status"]
+    assert policy["write_control_status"].startswith("not accepted in M0")
+    assert "WRITE/DESTRUCTIVE" in policy["safety_override"]
+
+
 def test_server_instructions_contain_hard_architecture_boundaries():
     assert ARCHITECTURE_VERSION in SYSTEM_INSTRUCTIONS
     assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
@@ -43,6 +58,9 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
     assert "Google Cloud is not part" in SYSTEM_INSTRUCTIONS
+    assert "WB Advertising M0" in SYSTEM_INSTRUCTIONS
+    assert "wb_ads" in SYSTEM_INSTRUCTIONS
+    assert "actual business profit" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -63,6 +81,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Canonical marketplace archive: **Google Drive**" in architecture
     assert "Google Apps Script" in architecture
     assert "Yandex Object Storage" in architecture
+    assert "WB Advertising M0" in architecture
+    assert "wb_ads" in architecture
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
     assert "Google Apps Script" in agents
