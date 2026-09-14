@@ -98,7 +98,7 @@ def test_download_named_decodes_bridge_payload():
     assert data == b"archive"
 
 
-def test_promote_verified_file_sends_exact_integrity_contract():
+def test_promote_verified_file_sends_exact_integrity_and_identity_contract():
     store = _store()
     captured = {}
     sha = hashlib.sha256(b"archive").hexdigest()
@@ -122,6 +122,7 @@ def test_promote_verified_file_sends_exact_integrity_contract():
     item = asyncio.run(store.promote_verified_file(
         parent_id="База данных/WB/test/2026/finance/weekly/main",
         file_id="staged-id",
+        staging_name=".annual.csv.upload-report-1-abcdef.tmp",
         canonical_name="annual.csv",
         expected_bytes=7,
         expected_sha256=sha,
@@ -131,9 +132,43 @@ def test_promote_verified_file_sends_exact_integrity_contract():
     assert item.id == "staged-id"
     assert item.sha256_checksum == sha
     assert captured["action"] == "promote_verified"
+    assert captured["staging_filename"] == ".annual.csv.upload-report-1-abcdef.tmp"
+    assert captured["canonical_filename"] == "annual.csv"
     assert captured["expected_bytes"] == 7
     assert captured["expected_sha256"] == sha
     assert captured["previous_file_id"] == "old-id"
+
+
+def test_promote_verified_file_requires_previous_cleanup_confirmation():
+    store = _store()
+    sha = hashlib.sha256(b"archive").hexdigest()
+
+    async def fake_post(action, **payload):
+        del action, payload
+        return {
+            "ok": True,
+            "previous_file_trashed": False,
+            "file": {
+                "id": "staged-id",
+                "name": "annual.csv",
+                "mimeType": "text/csv",
+                "size": "7",
+                "sha256Checksum": sha,
+            },
+        }
+
+    store._post = fake_post  # type: ignore[method-assign]
+    with pytest.raises(ArchiveStorageError) as exc:
+        asyncio.run(store.promote_verified_file(
+            parent_id="База данных/WB/test",
+            file_id="staged-id",
+            staging_name=".annual.csv.tmp",
+            canonical_name="annual.csv",
+            expected_bytes=7,
+            expected_sha256=sha,
+            previous_file_id="old-id",
+        ))
+    assert exc.value.retryable is True
 
 
 def test_promote_verified_file_fails_closed_on_wrong_checksum_response():
@@ -144,6 +179,7 @@ def test_promote_verified_file_fails_closed_on_wrong_checksum_response():
         del action, payload
         return {
             "ok": True,
+            "previous_file_trashed": True,
             "file": {
                 "id": "staged-id",
                 "name": "annual.csv",
@@ -158,6 +194,7 @@ def test_promote_verified_file_fails_closed_on_wrong_checksum_response():
         asyncio.run(store.promote_verified_file(
             parent_id="База данных/WB/test",
             file_id="staged-id",
+            staging_name=".annual.csv.tmp",
             canonical_name="annual.csv",
             expected_bytes=7,
             expected_sha256=sha,
@@ -209,13 +246,10 @@ def test_post_retries_transient_google_redirect_404_from_original_exec_url(monke
     class FakeClient:
         def __init__(self, *args, **kwargs):
             del args, kwargs
-
         async def __aenter__(self):
             return self
-
         async def __aexit__(self, exc_type, exc, tb):
             del exc_type, exc, tb
-
         async def post(self, url, **kwargs):
             del kwargs
             calls.append(str(url))
@@ -232,6 +266,31 @@ def test_post_retries_transient_google_redirect_404_from_original_exec_url(monke
     assert calls == [store.bridge_url, store.bridge_url]
 
 
+def test_post_honors_structured_bridge_retry_hint(monkeypatch):
+    store = _store()
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, exc_type, exc, tb):
+            del exc_type, exc, tb
+        async def post(self, url, **kwargs):
+            del kwargs
+            return httpx.Response(
+                200,
+                request=httpx.Request("POST", str(url)),
+                json={"ok": False, "error": "promotion_post_rename_retry", "retryable": True},
+            )
+
+    monkeypatch.setattr(archive_google.httpx, "AsyncClient", FakeClient)
+
+    with pytest.raises(ArchiveStorageError) as exc:
+        asyncio.run(store._post("promote_verified"))
+    assert exc.value.retryable is True
+
+
 def test_post_does_not_retry_non_transient_http_error(monkeypatch):
     store = _store()
     calls = 0
@@ -239,13 +298,10 @@ def test_post_does_not_retry_non_transient_http_error(monkeypatch):
     class FakeClient:
         def __init__(self, *args, **kwargs):
             del args, kwargs
-
         async def __aenter__(self):
             return self
-
         async def __aexit__(self, exc_type, exc, tb):
             del exc_type, exc, tb
-
         async def post(self, url, **kwargs):
             nonlocal calls
             del kwargs
