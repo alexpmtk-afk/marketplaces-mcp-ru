@@ -35,7 +35,7 @@ QUEUE_VERSION = 1
 QUEUE_KEY = "marketplace-archive:v2:wb-finance:due"
 JOB_FOLDER = ("app", "jobs", "wb-finance")
 MAX_DISCOVERY_PAGE = 1000
-DETAIL_PAGE_LIMIT = 5000
+DETAIL_PAGE_LIMIT = 100000
 
 
 def _utc_now() -> str:
@@ -177,6 +177,12 @@ class WBFinanceArchiveJobQueue:
         folder = await self.store.ensure_folder_path([*JOB_FOLDER, job_id, "staging"])
         return folder, f"report-{int(report_id)}.csv"
 
+    async def _finalize_location(self, job_id: str) -> tuple[str, str]:
+        # app/jobs is Yandex-only in HybridArchiveStore, so the large
+        # merged candidate is durable without an expensive Drive write.
+        folder = await self.store.ensure_folder_path([*JOB_FOLDER, job_id, "finalize"])
+        return folder, "annual-candidate.csv"
+
     async def _registry_location(self) -> tuple[str, str]:
         folder = await self.store.ensure_folder_path(["app", "registry"])
         return folder, "reports_registry.csv"
@@ -263,6 +269,8 @@ class WBFinanceArchiveJobQueue:
             "completed_report_ids": state.get("completed_report_ids") or [],
             "provider_calls": int(state.get("provider_calls", 0) or 0),
             "current_rrd_id": int(state.get("current_rrd_id", 0) or 0),
+            "finalize_phase": (state.get("finalize") or {}).get("phase"),
+            "finalize_report_id": int((state.get("finalize") or {}).get("report_id", 0) or 0),
             "last_retry_after_seconds": state.get("last_retry_after_seconds", 0),
             "last_error": state.get("last_error"),
             "created_at_utc": state.get("created_at_utc"),
@@ -282,7 +290,7 @@ class WBFinanceArchiveJobQueue:
         try:
             async with ArchiveLock(
                 key=f"marketplace-archive:v2:wb-finance:job:{selected}",
-                ttl_seconds=180,
+                ttl_seconds=900,
             ):
                 state = await self._load(selected)
                 if state is None:
@@ -294,6 +302,8 @@ class WBFinanceArchiveJobQueue:
                 state["status"] = "RUNNING"
                 state["last_retry_after_seconds"] = 0
                 state["last_error"] = None
+                if state.get("finalize"):
+                    return await self._finalize_step(state)
                 if state.get("phase") == "DISCOVER":
                     return await self._discover_step(state)
                 if state.get("phase") == "DOWNLOAD":
@@ -487,7 +497,19 @@ class WBFinanceArchiveJobQueue:
         status_code = int(result.get("status", 0) or 0)
         page = result.get("data") or []
         if status_code == 204 or page == []:
-            return await self._finalize_report(state, fragment)
+            state["finalize"] = {"report_id": report_id, "phase": "PREPARE"}
+            state["status"] = "QUEUED"
+            await self._save(state)
+            await self._schedule(str(state["job_id"]), 0)
+            return {
+                "ok": True,
+                "job_id": state["job_id"],
+                "status": state["status"],
+                "phase": state["phase"],
+                "action": "report_download_complete",
+                "report_id": report_id,
+                "provider_calls": state["provider_calls"],
+            }
         if not isinstance(page, list):
             raise RuntimeError(f"WB report {report_id} detail returned non-list data")
         for row in page:
@@ -522,19 +544,115 @@ class WBFinanceArchiveJobQueue:
             "provider_calls": state["provider_calls"],
         }
 
-    async def _finalize_report(self, state: dict[str, Any], fragment: dict[str, Any]) -> dict[str, Any]:
-        report_id = int(fragment["report_id"])
+    async def _finalize_step(self, state: dict[str, Any]) -> dict[str, Any]:
+        """Advance one durable, idempotent report-finalization stage.
+
+        The old implementation read, merged, uploaded the whole annual file,
+        updated the registry and saved job progress in one MCP request. As the
+        annual CSV grew, that exceeded the Serverless Container/Gateway budget.
+        Each stage below persists before the next expensive operation.
+        """
+        fragments = state.get("fragments") or []
+        index = int(state.get("report_index", 0) or 0)
+        if index >= len(fragments):
+            raise RuntimeError("Finalize state points past the fragment list")
+        fragment = fragments[index]
+        finalize = dict(state.get("finalize") or {})
+        report_id = int(finalize.get("report_id") or 0)
+        expected_report_id = int(fragment["report_id"])
+        if report_id != expected_report_id:
+            raise RuntimeError(
+                f"Finalize report mismatch: state={report_id}, expected={expected_report_id}"
+            )
+        phase = str(finalize.get("phase") or "PREPARE")
         cabinet = str(state["cabinet"])
         year = int(state["year"])
-        stage_folder, stage_name = await self._stage_location(str(state["job_id"]), report_id)
-        _, stage_data = await self.store.download_named(stage_folder, stage_name)
-        _, stage_rows = parse_csv_bytes(stage_data or b"")
-        annual_folder, annual_name = await self._annual_location(cabinet, year)
-        _, annual_data = await self.store.download_named(annual_folder, annual_name)
-        merged, stats = merge_annual_csv(annual_data, stage_rows)
-        annual_obj = await self.store.upload_bytes(annual_folder, annual_name, merged, mime_type="text/csv")
+
+        if phase == "PREPARE":
+            stage_folder, stage_name = await self._stage_location(str(state["job_id"]), report_id)
+            _, stage_data = await self.store.download_named(stage_folder, stage_name)
+            _, stage_rows = parse_csv_bytes(stage_data or b"")
+            annual_folder, annual_name = await self._annual_location(cabinet, year)
+            _, annual_data = await self.store.download_named(annual_folder, annual_name)
+            merged, stats = merge_annual_csv(annual_data, stage_rows)
+            candidate_folder, candidate_name = await self._finalize_location(str(state["job_id"]))
+            await self.store.upload_bytes(
+                candidate_folder,
+                candidate_name,
+                merged,
+                mime_type="text/csv",
+            )
+            finalize.update({
+                "phase": "UPLOAD_ANNUAL",
+                "report_rows": len(stage_rows),
+                "annual_rows": int(stats.get("total_rows", 0) or 0),
+                "annual_bytes": len(merged),
+                "annual_sha256": hashlib.sha256(merged).hexdigest(),
+                "ingested_at_utc": finalize.get("ingested_at_utc") or _utc_now(),
+            })
+            state["finalize"] = finalize
+            state["status"] = "QUEUED"
+            await self._save(state)
+            await self._schedule(str(state["job_id"]), 0)
+            return {
+                "ok": True,
+                "job_id": state["job_id"],
+                "status": state["status"],
+                "phase": state["phase"],
+                "action": "report_finalize_prepared",
+                "report_id": report_id,
+                "report_rows": finalize["report_rows"],
+                "annual_rows": finalize["annual_rows"],
+                "annual_bytes": finalize["annual_bytes"],
+                "provider_calls": state["provider_calls"],
+            }
+
+        if phase == "UPLOAD_ANNUAL":
+            candidate_folder, candidate_name = await self._finalize_location(str(state["job_id"]))
+            candidate_obj, candidate_data = await self.store.download_named(candidate_folder, candidate_name)
+            if candidate_obj is None or candidate_data is None:
+                raise RuntimeError("Durable annual finalize candidate is missing")
+            expected_bytes = int(finalize.get("annual_bytes", 0) or 0)
+            expected_sha = str(finalize.get("annual_sha256") or "")
+            actual_sha = hashlib.sha256(candidate_data).hexdigest()
+            if len(candidate_data) != expected_bytes or actual_sha != expected_sha:
+                raise RuntimeError(
+                    "Durable annual finalize candidate failed size/SHA256 verification"
+                )
+            annual_folder, annual_name = await self._annual_location(cabinet, year)
+            annual_obj = await self.store.upload_bytes(
+                annual_folder,
+                annual_name,
+                candidate_data,
+                mime_type="text/csv",
+            )
+            finalize["annual_object_id"] = annual_obj.id
+            finalize["phase"] = "COMMIT"
+            state["finalize"] = finalize
+            state["status"] = "QUEUED"
+            await self._save(state)
+            await self._schedule(str(state["job_id"]), 0)
+            return {
+                "ok": True,
+                "job_id": state["job_id"],
+                "status": state["status"],
+                "phase": state["phase"],
+                "action": "report_annual_uploaded",
+                "report_id": report_id,
+                "annual_bytes": expected_bytes,
+                "annual_sha256": expected_sha,
+                "provider_calls": state["provider_calls"],
+            }
+
+        if phase != "COMMIT":
+            raise RuntimeError(f"Unknown finalize phase: {phase}")
+
+        annual_object_id = str(finalize.get("annual_object_id") or "")
+        if not annual_object_id:
+            raise RuntimeError("Finalize COMMIT has no annual_object_id")
         registry_folder, registry_name = await self._registry_location()
         _, registry_data = await self.store.download_named(registry_folder, registry_name)
+        annual_name = f"{cabinet}__weekly_main__{year}.csv"
         record = {
             "marketplace": "wb",
             "cabinet": cabinet,
@@ -548,12 +666,12 @@ class WBFinanceArchiveJobQueue:
             "create_date": fragment.get("create_date", ""),
             "year": year,
             "annual_file": annual_name,
-            "storage_object_key": annual_obj.id,
-            "rows": len(stage_rows),
-            "bytes": len(merged),
-            "sha256": hashlib.sha256(merged).hexdigest(),
+            "storage_object_key": annual_object_id,
+            "rows": int(finalize.get("report_rows", 0) or 0),
+            "bytes": int(finalize.get("annual_bytes", 0) or 0),
+            "sha256": str(finalize.get("annual_sha256") or ""),
             "status": "COMPLETE",
-            "ingested_at_utc": _utc_now(),
+            "ingested_at_utc": str(finalize.get("ingested_at_utc") or _utc_now()),
         }
         await self.store.upload_bytes(
             registry_folder,
@@ -564,9 +682,10 @@ class WBFinanceArchiveJobQueue:
         completed = {int(x) for x in (state.get("completed_report_ids") or [])}
         completed.add(report_id)
         state["completed_report_ids"] = sorted(completed)
-        state["report_index"] = int(state.get("report_index", 0) or 0) + 1
+        state["report_index"] = index + 1
         state["current_rrd_id"] = 0
-        if int(state["report_index"]) >= len(state.get("fragments") or []):
+        state.pop("finalize", None)
+        if int(state["report_index"]) >= len(fragments):
             state["status"] = "COMPLETE"
             await self._save(state)
             await self._unschedule(str(state["job_id"]))
@@ -581,9 +700,9 @@ class WBFinanceArchiveJobQueue:
             "phase": state["phase"],
             "action": "report_finalized",
             "report_id": report_id,
-            "report_rows": len(stage_rows),
-            "annual_rows": stats.get("total_rows", 0),
-            "annual_bytes": len(merged),
-            "reports_remaining": max(0, len(state.get("fragments") or []) - int(state["report_index"])),
+            "report_rows": int(finalize.get("report_rows", 0) or 0),
+            "annual_rows": int(finalize.get("annual_rows", 0) or 0),
+            "annual_bytes": int(finalize.get("annual_bytes", 0) or 0),
+            "reports_remaining": max(0, len(fragments) - int(state["report_index"])),
             "provider_calls": state["provider_calls"],
         }

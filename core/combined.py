@@ -16,6 +16,7 @@ from .card_monitor import register_tools as register_card_monitor_tools
 from .order_history_tools import register_order_history_tools
 from .system_map import SYSTEM_INSTRUCTIONS, register_system_map_tool
 from .tools import resolve_named_cabinet
+from .wb_advertising import register_wb_advertising_tools
 from .ydb_order_history import build_order_history_store_from_env
 
 SERVICE_MODULES = ("wb_mcp.server", "ozon_mcp.server", "ozon_perf_mcp.server")
@@ -235,6 +236,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
 
     register_system_map_tool(combined)
     _register_finance_tools(combined, modules)
+    register_wb_advertising_tools(combined, modules)
     register_business_query_tool(combined, modules)
     register_order_history_tools(combined, modules, order_history_store)
     register_archive_tools(combined, modules, archive_store)
