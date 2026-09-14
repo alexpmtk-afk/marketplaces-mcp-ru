@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v8`
+**Version:** `2026-09-14.v9`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -22,7 +22,7 @@ Supporting services:
 
 - Google Cloud is not part of the runtime architecture. The MCP does not depend on a Google Cloud OAuth refresh token.
 - Google Drive annual CSV files and the report registry are the archive source of truth.
-- The Apps Script bridge is only a transport/authentication surface into the fixed archive root; it is not a second source of truth.
+- The Apps Script bridge is only a transport/authentication surface into the fixed Drive archive root; it is not a second source of truth.
 - Yandex Object Storage must not replace Drive as canonical data; it is used for durable queue/staging and backup.
 - Local files or chat memory are never authoritative shared state.
 - No new cloud provider or primary storage path may be introduced without an explicit architecture change.
@@ -66,7 +66,7 @@ Current approved archive calculations:
 - `acceptance_charge` — sum `paidAcceptance` exactly as reported by report currency;
 - `sale_and_return_operations` — by `saleDt`, split rows by `docTypeName`: `Продажа` and `Возврат`; calculate sale amount/units, return amount/units and net result as `Продажа - Возврат` using `retailAmount` and `quantity`.
 
-The sales/returns formula follows the official Wildberries weekly-realization rule: the weekly `Продажа` amount is the detailed report's realized-goods amount for document type `Продажа` minus the same amount for document type `Возврат`. The archive also confirms that return `retailAmount` values are stored as positive values, so the server performs the subtraction explicitly rather than inferring a sign.
+The sales/returns formula follows the official Wildberries weekly-realization rule: the weekly `Продажа` amount is the detailed report's realized-goods amount for document type `Продажа` minus the same amount for document type `Возврат`. The canonical archive also confirms that return `retailAmount` values are stored as positive values, so the server performs the subtraction explicitly rather than inferring a sign.
 
 Every approved calculation is subject to these gates:
 1. the original question must resolve to the registered capability;
@@ -99,6 +99,39 @@ Wildberries officially describes `/api/v1/supplier/orders` as an operational/pre
 
 This prevents the server from confusing “data available from an operational API” with “complete business truth”.
 
+## WB Advertising M0
+
+The current advertising phase is **Wildberries only**. Ozon advertising is not part of this phase.
+
+M0 is deliberately read-only and establishes the first safe business vertical:
+
+`named WB cabinet -> dedicated Promotion credential -> live active campaigns -> /adv/v3/fullstats -> normalized advertising-attribution metrics`
+
+Server tools introduced by M0:
+- `wb_ads_list_active_campaigns` — live WB campaigns with status `9` (active);
+- `wb_ads_get_campaign_stats` — normalized statistics for at most 50 campaign IDs over at most 31 calendar days;
+- `wb_ads_audit_active` — audits every currently active campaign over the last 7 full Europe/Moscow calendar days by default.
+
+Advertising credentials are a separate logical credential service named `wb_ads`. They use the same canonical business cabinet names (`wb_dmitrieva`, `wb_novokshenov`, `wb_laser_master`) but Promotion-scoped secrets are stored only server-side through the deployment-managed secret architecture/Yandex Lockbox. They must not be stored on Google Drive or in GitHub.
+
+M0 metrics have data class `advertising_attribution_operational`. They include provider-attributed spend/orders/order amount and calculated CTR, CPC, click-to-order conversion, CPO, order-based DRR and ROAS. These values **must not be presented as actual business profit**. Actual profitability requires separately approved joins to real orders/sales/buyouts, returns, finance and unit economics.
+
+The current WB fullstats contract accepts at most 50 campaign IDs and a 31-day window. Interactive M0 fails closed rather than returning a partial audit when the active campaign set exceeds one request. Durable rate-aware batching belongs to Advertising Archive V1.
+
+### Advertising archive boundary
+
+The canonical Drive scaffold is:
+
+`База данных/WB/<cabinet>/<year>/advertising/...`
+
+The intended dataset families are campaign/product/search-cluster daily statistics, campaign snapshots, financial expenses/payments, bid/product/placement/minus-phrase history and MCP action audit records.
+
+**Important:** the Drive folder scaffold is not evidence that Advertising Archive V1 ingestion, coverage or registry integration exists. Until those mechanisms are implemented and accepted, historical advertising analytics continue to use the approved live provider path. Once coverage is proven, closed historical ad periods become archive-first while current state/control remains live.
+
+### Advertising safety
+
+WB has campaign-control operations implemented as HTTP GETs. HTTP verb does not determine MCP safety. Start, pause and stop are `WRITE`; delete is `DESTRUCTIVE`. Dedicated write/control business tools are not accepted in M0 and will be added only after a separate safety-reviewed phase.
+
 ## Google Drive bridge contract
 
 The Yandex-hosted MCP talks to one deployed Apps Script web app. Runtime configuration is:
@@ -115,6 +148,8 @@ The bridge supports only narrow archive operations: health/status, named-file st
 - Historical archive calculation is allowed only for an explicitly approved capability with `FULL_COVERAGE` and canonical annual-file presence.
 - Current/uncovered periods use an explicitly suitable provider/API source or return a source/coverage gap; partial archive data is never silently returned as complete.
 - Complete-order questions never fall back to WB Statistics Orders.
+- Advertising current campaign state/control is always live from WB Promotion API.
+- Advertising closed-period analytics become archive-first only after Advertising Archive V1 dataset bindings, registry coverage and validation are implemented and accepted.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
 
 ## Change control
