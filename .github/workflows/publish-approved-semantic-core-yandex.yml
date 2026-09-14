@@ -1,0 +1,184 @@
+name: Publish approved Semantic Core to Yandex TEST
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry_id:
+        description: Existing Marketplaces TEST Container Registry ID
+        required: true
+        type: string
+      publisher_service_account_id:
+        description: Dedicated Marketplaces image publisher service account ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: marketplaces-approved-semantic-image
+  cancel-in-progress: false
+
+env:
+  APPROVED_SOURCE_SHA: 920f3f1458a1700ad350d43cf35178256e8e858f
+  OIDC_AUDIENCE: https://github.com/alexpmtk-afk
+  EXPECTED_OIDC_SUBJECT: repo:alexpmtk-afk@309119594/marketplaces-mcp-ru@1349601380:ref:refs/heads/main
+  IMAGE_NAME: marketplaces-mcp
+  REGISTRY_API: https://container-registry.api.cloud.yandex.net/container-registry/v1
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Validate dispatch boundary
+        shell: bash
+        env:
+          REGISTRY_ID: ${{ inputs.registry_id }}
+          PUBLISHER_SERVICE_ACCOUNT_ID: ${{ inputs.publisher_service_account_id }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" ]]
+          [[ "$REGISTRY_ID" =~ ^crp[a-z0-9]+$ ]]
+          [[ "$PUBLISHER_SERVICE_ACCOUNT_ID" =~ ^aje[a-z0-9]+$ ]]
+          echo 'dispatch_boundary=PASS'
+
+      - name: Checkout exact approved Semantic Core source
+        uses: actions/checkout@v4
+        with:
+          ref: 920f3f1458a1700ad350d43cf35178256e8e858f
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Prove exact approved source
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTUAL="$(git rev-parse HEAD)"
+          test "$ACTUAL" = "$APPROVED_SOURCE_SHA"
+          test -f Dockerfile
+          test -f core/semantic_core.py
+          test -f core/system_map.py
+          echo "approved_source_sha=$ACTUAL"
+          echo 'approved_semantic_source=PASS'
+
+      - name: Build exact immutable image
+        shell: bash
+        env:
+          REGISTRY_ID: ${{ inputs.registry_id }}
+        run: |
+          set -euo pipefail
+          LOCAL_IMAGE="marketplaces-mcp:semantic-${APPROVED_SOURCE_SHA}"
+          TARGET_REPOSITORY="${REGISTRY_ID}/${IMAGE_NAME}"
+          TARGET_TAG="semantic-${APPROVED_SOURCE_SHA}"
+          TARGET_IMAGE="cr.yandex/${TARGET_REPOSITORY}:${TARGET_TAG}"
+          docker build --pull --label "org.opencontainers.image.revision=${APPROVED_SOURCE_SHA}" -t "$LOCAL_IMAGE" .
+          echo "LOCAL_IMAGE=$LOCAL_IMAGE" >> "$GITHUB_ENV"
+          echo "TARGET_REPOSITORY=$TARGET_REPOSITORY" >> "$GITHUB_ENV"
+          echo "TARGET_TAG=$TARGET_TAG" >> "$GITHUB_ENV"
+          echo "TARGET_IMAGE=$TARGET_IMAGE" >> "$GITHUB_ENV"
+          echo 'semantic_image_build=PASS'
+
+      - name: Exchange GitHub OIDC for dedicated Yandex publisher token
+        shell: bash
+        env:
+          PUBLISHER_SERVICE_ACCOUNT_ID: ${{ inputs.publisher_service_account_id }}
+        run: |
+          set -euo pipefail
+          ENCODED_AUDIENCE="$(python - <<'PY'
+          import os, urllib.parse
+          print(urllib.parse.quote(os.environ['OIDC_AUDIENCE'], safe=''))
+          PY
+          )"
+          SEP='?'; [[ "$ACTIONS_ID_TOKEN_REQUEST_URL" == *'?'* ]] && SEP='&'
+          OIDC_RESPONSE="$(curl --proto '=https' --tlsv1.2 --fail --silent --show-error --retry 5 \
+            -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}${SEP}audience=${ENCODED_AUDIENCE}")"
+          OIDC_JWT="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<< "$OIDC_RESPONSE")"
+          echo "::add-mask::$OIDC_JWT"
+          python - "$OIDC_JWT" <<'PY'
+          import base64,json,os,sys
+          p=sys.argv[1].split('.')[1]; p += '=' * (-len(p)%4)
+          c=json.loads(base64.urlsafe_b64decode(p))
+          assert c.get('sub') == os.environ['EXPECTED_OIDC_SUBJECT'], c.get('sub')
+          assert c.get('aud') == os.environ['OIDC_AUDIENCE'], c.get('aud')
+          assert c.get('ref') == 'refs/heads/main', c.get('ref')
+          print('OIDC_CLAIMS_PASS')
+          PY
+          TOKEN_RESPONSE="$(curl --proto '=https' --tlsv1.2 --fail --silent --show-error --retry 5 \
+            -X POST 'https://auth.yandex.cloud/oauth/token' \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'grant_type=urn:ietf:params:oauth:grant-type:token-exchange' \
+            --data-urlencode 'requested_token_type=urn:ietf:params:oauth:token-type:access_token' \
+            --data-urlencode "audience=${PUBLISHER_SERVICE_ACCOUNT_ID}" \
+            --data-urlencode "subject_token=${OIDC_JWT}" \
+            --data-urlencode 'subject_token_type=urn:ietf:params:oauth:token-type:id_token')"
+          IAM_TOKEN="$(python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])' <<< "$TOKEN_RESPONSE")"
+          test -n "$IAM_TOKEN"
+          echo "::add-mask::$IAM_TOKEN"
+          umask 077
+          printf '%s' "$IAM_TOKEN" > "$RUNNER_TEMP/yandex-iam-token"
+          echo 'oidc_token_exchange=PASS'
+
+      - name: Push exact approved image
+        shell: bash
+        run: |
+          set -euo pipefail
+          IAM_TOKEN="$(cat "$RUNNER_TEMP/yandex-iam-token")"
+          DOCKER_CONFIG_DIR="$RUNNER_TEMP/docker-config"
+          mkdir -p "$DOCKER_CONFIG_DIR"
+          printf '%s' "$IAM_TOKEN" | docker --config "$DOCKER_CONFIG_DIR" login --username iam --password-stdin cr.yandex >/dev/null
+          docker tag "$LOCAL_IMAGE" "$TARGET_IMAGE"
+          docker --config "$DOCKER_CONFIG_DIR" push "$TARGET_IMAGE"
+          echo 'semantic_image_push=PASS'
+
+      - name: Resolve immutable digest and publish evidence
+        shell: bash
+        env:
+          REGISTRY_ID: ${{ inputs.registry_id }}
+        run: |
+          set -euo pipefail
+          IAM_TOKEN="$(cat "$RUNNER_TEMP/yandex-iam-token")"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --retry 5 \
+            -H "Authorization: Bearer ${IAM_TOKEN}" \
+            "${REGISTRY_API}/images?registryId=${REGISTRY_ID}&pageSize=1000" \
+            -o "$RUNNER_TEMP/images.json"
+          mkdir -p artifacts
+          python - "$RUNNER_TEMP/images.json" artifacts/semantic_core_yandex_image.json <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          d=json.loads(Path(sys.argv[1]).read_text())
+          matches=[x for x in d.get('images',[]) if x.get('name')==os.environ['TARGET_REPOSITORY'] and os.environ['TARGET_TAG'] in (x.get('tags') or [])]
+          assert len(matches)==1, len(matches)
+          image=matches[0]
+          digest=image.get('digest','')
+          assert digest.startswith('sha256:') and len(digest)==71, digest
+          evidence={
+            'schema':'MARKETPLACES_SEMANTIC_CORE_YANDEX_IMAGE_V1',
+            'source_sha':os.environ['APPROVED_SOURCE_SHA'],
+            'image_id':image.get('id'),
+            'image_tag':os.environ['TARGET_IMAGE'],
+            'digest':digest,
+            'immutable_url':f"cr.yandex/{os.environ['TARGET_REPOSITORY']}@{digest}",
+          }
+          Path(sys.argv[2]).write_text(json.dumps(evidence,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(evidence,sort_keys=True))
+          PY
+
+      - name: Upload immutable image evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplaces-semantic-core-yandex-image
+          path: artifacts/semantic_core_yandex_image.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Cleanup credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/yandex-iam-token" "$RUNNER_TEMP/images.json"
+          rm -rf "$RUNNER_TEMP/docker-config"
