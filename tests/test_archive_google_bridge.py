@@ -64,7 +64,7 @@ def test_upload_sends_base64_and_checksum_to_bridge():
             },
         }
 
-    store._post = fake_post  # type: ignore[method-assign]
+    store._post_legacy = fake_post  # type: ignore[method-assign]
     item = asyncio.run(store.upload_bytes("База данных/WB/test", "annual.csv", b"archive"))
 
     assert item.id == "drive-file-id"
@@ -92,7 +92,7 @@ def test_download_named_decodes_bridge_payload():
             "content_base64": base64.b64encode(b"archive").decode("ascii"),
         }
 
-    store._post = fake_post  # type: ignore[method-assign]
+    store._post_legacy = fake_post  # type: ignore[method-assign]
     item, data = asyncio.run(store.download_named("База данных/WB/test", "annual.csv"))
     assert item is not None and item.id == "drive-file-id"
     assert data == b"archive"
@@ -118,7 +118,7 @@ def test_promote_verified_file_sends_exact_integrity_and_identity_contract():
             },
         }
 
-    store._post = fake_post  # type: ignore[method-assign]
+    store._post_legacy = fake_post  # type: ignore[method-assign]
     item = asyncio.run(store.promote_verified_file(
         parent_id="База данных/WB/test/2026/finance/weekly/main",
         file_id="staged-id",
@@ -157,7 +157,7 @@ def test_promote_verified_file_requires_previous_cleanup_confirmation():
             },
         }
 
-    store._post = fake_post  # type: ignore[method-assign]
+    store._post_legacy = fake_post  # type: ignore[method-assign]
     with pytest.raises(ArchiveStorageError) as exc:
         asyncio.run(store.promote_verified_file(
             parent_id="База данных/WB/test",
@@ -189,7 +189,7 @@ def test_promote_verified_file_fails_closed_on_wrong_checksum_response():
             },
         }
 
-    store._post = fake_post  # type: ignore[method-assign]
+    store._post_legacy = fake_post  # type: ignore[method-assign]
     with pytest.raises(ArchiveStorageError, match="size/SHA256"):
         asyncio.run(store.promote_verified_file(
             parent_id="База данных/WB/test",
@@ -215,7 +215,7 @@ def test_status_fails_closed_on_wrong_drive_root():
             "root_name": "MCP архив базы данных",
         }
 
-    store._post = fake_post  # type: ignore[method-assign]
+    store._post_legacy = fake_post  # type: ignore[method-assign]
     with pytest.raises(ArchiveStorageError, match="root mismatch"):
         asyncio.run(store.status())
 
@@ -287,7 +287,7 @@ def test_post_honors_structured_bridge_retry_hint(monkeypatch):
     monkeypatch.setattr(archive_google.httpx, "AsyncClient", FakeClient)
 
     with pytest.raises(ArchiveStorageError) as exc:
-        asyncio.run(store._post("promote_verified"))
+        asyncio.run(store._post_legacy("promote_verified"))
     assert exc.value.retryable is True
 
 
