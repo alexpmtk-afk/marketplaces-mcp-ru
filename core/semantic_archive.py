@@ -66,8 +66,14 @@ def validate_semantic_execution(
 
     dataset = get_dataset(DATASET, registry_data)
     dataset_fields = set(dataset["fields"])
+    field_catalog = dataset["field_catalog"]
     executors = _require_mapping(execution.get("executors"), "semantic executors")
-    allowed_modes = {"sum_by_currency", "grouped_reason_amount", "sale_return_summary"}
+    allowed_modes = {
+        "sum_by_currency",
+        "grouped_reason_amount",
+        "sale_return_summary",
+        "component_breakdown",
+    }
 
     for capability_id, value in executors.items():
         spec = _require_mapping(value, f"semantic executor {capability_id}")
@@ -95,9 +101,11 @@ def validate_semantic_execution(
                     f"semantic executor {capability_id} references unknown field {field!r}"
                 )
         if spec["date_field"] not in capability["fields"]:
-            raise SemanticArchiveExecutionError(
-                f"semantic executor {capability_id} date field is outside capability semantics"
-            )
+            date_meta = field_catalog.get(spec["date_field"]) or {}
+            if spec["mode"] != "component_breakdown" or date_meta.get("role") != "date":
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} date field is outside capability semantics"
+                )
         if spec["amount_field"] not in capability["fields"]:
             raise SemanticArchiveExecutionError(
                 f"semantic executor {capability_id} amount field is outside capability semantics"
@@ -129,6 +137,48 @@ def validate_semantic_execution(
                 if not isinstance(value, str) or not value.strip():
                     raise SemanticArchiveExecutionError(
                         f"semantic executor {capability_id} must define {key}"
+                    )
+        if spec["mode"] == "component_breakdown":
+            if "sellerOperName" not in capability["fields"]:
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} requires sellerOperName semantics"
+                )
+            reason_fields = spec.get("reason_fields") or []
+            if not isinstance(reason_fields, list) or any(
+                field not in capability["fields"] for field in reason_fields
+            ):
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} has invalid reason fields"
+                )
+            components = _require_mapping(
+                spec.get("components"), f"semantic executor {capability_id} components"
+            )
+            if not components:
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} must define components"
+                )
+            for alias, field in components.items():
+                if not _IDENTIFIER.fullmatch(str(alias)):
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has unsafe component alias {alias!r}"
+                    )
+                if field not in dataset_fields or field not in capability["fields"]:
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has invalid component field {field!r}"
+                    )
+            count_components = spec.get("count_components") or {}
+            if not isinstance(count_components, dict):
+                raise SemanticArchiveExecutionError(
+                    f"semantic executor {capability_id} count_components must be a mapping"
+                )
+            for alias, field in count_components.items():
+                if not _IDENTIFIER.fullmatch(str(alias)):
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has unsafe count alias {alias!r}"
+                    )
+                if field not in dataset_fields or field not in capability["fields"]:
+                    raise SemanticArchiveExecutionError(
+                        f"semantic executor {capability_id} has invalid count field {field!r}"
                     )
 
 
@@ -277,6 +327,19 @@ def _nm_filter(field: str | None, nm_ids: list[int] | None) -> str:
     )
 
 
+def _reason_expr(reason_fields: list[str]) -> str:
+    fallback = "'Не указано'"
+    for field in reversed(reason_fields):
+        fallback = (
+            "COALESCE(NULLIF(TRIM("
+            + _quote_identifier(field)
+            + "), ''), "
+            + fallback
+            + ")"
+        )
+    return fallback
+
+
 def build_semantic_archive_sql(
     *,
     cabinet: str,
@@ -315,22 +378,14 @@ def build_semantic_archive_sql(
 
     if executor["mode"] == "grouped_reason_amount":
         reason_fields = [str(value) for value in executor["reason_fields"]]
-        fallback = "'Не указано'"
-        for field in reversed(reason_fields):
-            fallback = (
-                "COALESCE(NULLIF(TRIM("
-                + _quote_identifier(field)
-                + "), ''), "
-                + fallback
-                + ")"
-            )
+        reason = _reason_expr(reason_fields)
         operation = (
             "COALESCE(NULLIF(TRIM("
             + _quote_identifier("sellerOperName")
             + "), ''), 'Не указано')"
         )
         return (
-            f"SELECT {currency} AS currency, {fallback} AS reason, "
+            f"SELECT {currency} AS currency, {reason} AS reason, "
             f"{operation} AS operation, SUM({amount}) AS amount, COUNT(*) AS operation_rows "
             f"FROM {table} WHERE {where} AND {amount} <> 0 "
             "GROUP BY 1, 2, 3 ORDER BY ABS(SUM("
@@ -353,6 +408,37 @@ def build_semantic_archive_sql(
             f"SUM(CASE WHEN {operation} = {return_value} THEN 1 ELSE 0 END) AS return_rows "
             f"FROM {table} WHERE {where} AND {operation} IN ({sale_value}, {return_value}) "
             "GROUP BY 1 ORDER BY 1"
+        )
+
+    if executor["mode"] == "component_breakdown":
+        reason_fields = [str(value) for value in (executor.get("reason_fields") or [])]
+        reason = _reason_expr(reason_fields)
+        operation = (
+            "COALESCE(NULLIF(TRIM("
+            + _quote_identifier("sellerOperName")
+            + "), ''), 'Не указано')"
+        )
+        component_selects: list[str] = []
+        nonzero_conditions: list[str] = []
+        for alias, field in executor["components"].items():
+            value = _numeric_expr(str(field))
+            component_selects.append(
+                f"SUM({value}) AS {_quote_identifier(str(alias))}"
+            )
+            nonzero_conditions.append(f"{value} <> 0")
+        for alias, field in (executor.get("count_components") or {}).items():
+            value = _numeric_expr(str(field))
+            component_selects.append(
+                f"SUM({value}) AS {_quote_identifier(str(alias))}"
+            )
+            nonzero_conditions.append(f"{value} <> 0")
+        component_selects.append("COUNT(*) AS operation_rows")
+        select_sql = ", ".join(component_selects)
+        nonzero_sql = " OR ".join(nonzero_conditions)
+        return (
+            f"SELECT {currency} AS currency, {reason} AS reason, {operation} AS operation, "
+            f"{select_sql} FROM {table} WHERE {where} AND ({nonzero_sql}) "
+            "GROUP BY 1, 2, 3 ORDER BY 1, 2, 3"
         )
 
     raise SemanticArchiveExecutionError(
@@ -394,6 +480,7 @@ def _aggregate_execution_results(
     *,
     mode: str,
     year_results: list[dict[str, Any]],
+    executor: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if mode == "sum_by_currency":
         totals: dict[str, float] = defaultdict(float)
@@ -492,6 +579,65 @@ def _aggregate_execution_results(
         return {
             "sales_and_returns_by_currency": by_currency,
             "cross_currency_total": None,
+        }
+
+    if mode == "component_breakdown":
+        if not isinstance(executor, dict):
+            raise SemanticArchiveExecutionError(
+                "component_breakdown aggregation requires executor metadata"
+            )
+        component_keys = [str(key) for key in executor["components"]]
+        count_keys = [str(key) for key in (executor.get("count_components") or {})]
+        all_keys = component_keys + count_keys
+        grouped: dict[tuple[str, str, str], dict[str, float | int]] = {}
+        totals: dict[str, dict[str, float | int]] = {}
+        for result in year_results:
+            for row in _rows_as_dicts(result):
+                currency = str(row.get("currency") or "UNKNOWN")
+                reason = str(row.get("reason") or "Не указано")
+                operation = str(row.get("operation") or "Не указано")
+                total_bucket = totals.setdefault(
+                    currency,
+                    {**{key: 0.0 for key in all_keys}, "operation_rows": 0},
+                )
+                group_bucket = grouped.setdefault(
+                    (currency, reason, operation),
+                    {**{key: 0.0 for key in all_keys}, "operation_rows": 0},
+                )
+                for key in all_keys:
+                    value = float(row.get(key) or 0.0)
+                    total_bucket[key] = float(total_bucket[key]) + value
+                    group_bucket[key] = float(group_bucket[key]) + value
+                rows = int(row.get("operation_rows") or 0)
+                total_bucket["operation_rows"] = int(total_bucket["operation_rows"]) + rows
+                group_bucket["operation_rows"] = int(group_bucket["operation_rows"]) + rows
+
+        by_currency: list[dict[str, Any]] = []
+        for currency in sorted(totals):
+            bucket = totals[currency]
+            item: dict[str, Any] = {"currency": currency}
+            for key in all_keys:
+                item[key] = round(float(bucket[key]), 6)
+            item["operation_rows"] = int(bucket["operation_rows"])
+            by_currency.append(item)
+
+        breakdown: list[dict[str, Any]] = []
+        for (currency, reason, operation), bucket in grouped.items():
+            item = {
+                "currency": currency,
+                "reason": reason,
+                "operation": operation,
+            }
+            for key in all_keys:
+                item[key] = round(float(bucket[key]), 6)
+            item["operation_rows"] = int(bucket["operation_rows"])
+            breakdown.append(item)
+        breakdown.sort(key=lambda item: (item["currency"], item["operation"], item["reason"]))
+        return {
+            "components_by_currency": by_currency,
+            "breakdown": breakdown,
+            "cross_currency_total": None,
+            "cross_component_total": None,
         }
 
     raise SemanticArchiveExecutionError(f"Unsupported aggregation mode {mode!r}")
@@ -611,12 +757,31 @@ async def execute_semantic_archive_question(
     calculated = _aggregate_execution_results(
         mode=str(executor["mode"]),
         year_results=year_results,
+        executor=executor,
     )
-    sum_rule = (
-        "sale_minus_return_by_doc_type"
-        if executor["mode"] == "sale_return_summary"
-        else "as_reported_no_sign_conversion"
-    )
+    if executor["mode"] == "sale_return_summary":
+        sum_rule = "sale_minus_return_by_doc_type"
+    elif executor["mode"] == "component_breakdown":
+        sum_rule = "separate_components_as_reported_no_cross_component_netting"
+    else:
+        sum_rule = "as_reported_no_sign_conversion"
+
+    provenance: dict[str, Any] = {
+        "date_field": executor["date_field"],
+        "amount_field": executor["amount_field"],
+        "currency_field": executor["currency_field"],
+        "mode": executor["mode"],
+        "semantics": executor.get("semantics"),
+        "sum_rule": sum_rule,
+        "currency_rule": "never_sum_across_currencies",
+        "product_filter": deepcopy(nm_ids) if nm_ids else None,
+    }
+    if executor["mode"] == "component_breakdown":
+        provenance["component_fields"] = deepcopy(executor["components"])
+        provenance["count_component_fields"] = deepcopy(
+            executor.get("count_components") or {}
+        )
+
     return {
         "ok": True,
         "marketplace": "wb",
@@ -630,15 +795,6 @@ async def execute_semantic_archive_question(
         "execution_allowed": True,
         "coverage": coverage,
         "calculation": calculated,
-        "provenance": {
-            "date_field": executor["date_field"],
-            "amount_field": executor["amount_field"],
-            "currency_field": executor["currency_field"],
-            "mode": executor["mode"],
-            "semantics": executor.get("semantics"),
-            "sum_rule": sum_rule,
-            "currency_rule": "never_sum_across_currencies",
-            "product_filter": deepcopy(nm_ids) if nm_ids else None,
-        },
+        "provenance": provenance,
         "guardrail": resolution.get("guardrail"),
     }
