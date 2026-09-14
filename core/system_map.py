@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-14.v4"
+ARCHITECTURE_VERSION = "2026-09-14.v5"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -50,10 +50,46 @@ SYSTEM_MAP: dict[str, Any] = {
             "registry_deduplication": "(cabinet, dataset, report_id)",
         },
     },
+    "advertising_policy": {
+        "current_scope": "Wildberries only; Ozon advertising is explicitly out of scope for this phase",
+        "phase": "WB Advertising M0 read-only",
+        "credential_service": "wb_ads",
+        "credentials": "Promotion-scoped WB credentials are server-side only and must be injected from Yandex Lockbox; never stored on Drive/GitHub",
+        "live_state_source": "Wildberries Promotion API",
+        "active_campaign_status": 9,
+        "m0_tools": [
+            "wb_ads_list_active_campaigns",
+            "wb_ads_get_campaign_stats",
+            "wb_ads_audit_active",
+        ],
+        "m0_default_audit_period": "last 7 full Europe/Moscow calendar days ending yesterday",
+        "m0_batch_limit": "at most 50 campaign IDs in one /adv/v3/fullstats request; fail closed instead of returning a partial audit",
+        "metric_class": "advertising_attribution_operational",
+        "profitability_boundary": "advertising attribution metrics are not actual business profit; real profitability requires approved joins to sales/buyouts, returns, finance and unit economics",
+        "archive_domain": "База данных/WB/<cabinet>/<year>/advertising",
+        "archive_status": "Drive folder scaffold exists; ingestion/coverage/registry integration is not yet implemented or accepted",
+        "planned_datasets": [
+            "ads_campaign_daily",
+            "ads_product_daily",
+            "ads_search_cluster_daily",
+            "ads_campaign_snapshots",
+            "ads_expenses",
+            "ads_payments",
+            "ads_bid_history",
+            "ads_product_membership_history",
+            "ads_placement_history",
+            "ads_minus_phrase_history",
+            "ads_mcp_actions",
+        ],
+        "historical_routing": "when Advertising Archive V1 is implemented and coverage is proven, closed historical periods must be archive-first; current state/control stays live",
+        "write_control_status": "not accepted in M0; dedicated start/pause/stop/bid/budget/product/cluster control tools require a later safety-reviewed phase",
+        "safety_override": "provider GET endpoints that mutate campaign state (start/pause/stop/delete) are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb",
+    },
     "routing_policy": {
         "update_database": "route to the server archive update workflow; compare canonical registry and fetch only missing provider reports",
         "historical_queries": "read canonical Google Drive archive for covered periods before repeatedly querying provider APIs",
         "current_or_uncovered": "use provider APIs or explicit gap/backfill workflow",
+        "advertising_live_vs_archive": "campaign state/current control is live; closed advertising analytics becomes archive-first only after the ad dataset binding and coverage are implemented and proven",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
     },
     "change_control": {
@@ -76,6 +112,9 @@ Canonical marketplace archive data is stored on Google Drive under the server-ow
 Yandex Object Storage is required for durable queue/job state, staging, and a secondary byte-for-byte backup of canonical archive files.
 Google Drive access is provided by the owner's Google Apps Script web-app bridge; its shared secret must remain in Yandex Lockbox.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
+WB Advertising M0 is Wildberries-only and read-only: use dedicated server-side wb_ads Promotion credentials; current campaign state is live from WB Promotion API; M0 advertising-attribution metrics must never be presented as actual business profit.
+The advertising Drive folder scaffold is not proof that Advertising Archive V1 ingestion or historical coverage exists. Do not route historical ad analytics to the archive until dataset bindings, registry coverage and validation are implemented and accepted.
+Provider GET endpoints that change advertising state are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """
 
