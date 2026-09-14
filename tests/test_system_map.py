@@ -23,23 +23,27 @@ def test_canonical_map_fixes_storage_boundaries():
     assert storage["primary_archive_storage"] == "Google Drive"
     assert storage["google_drive_root"] == "MCP архив базы данных"
     assert "Apps Script" in storage["google_drive_auth"]
-    assert "Yandex Lockbox" in storage["google_drive_auth"]
+    assert "no Google OAuth refresh token" in storage["google_drive_auth"]
     assert "Google Drive API" in storage["google_drive_large_upload"]
     assert "resumable" in storage["google_drive_large_upload"]
+    assert "effective-user OAuth" in storage["google_drive_large_upload"]
     assert "job state" in storage["yandex_object_storage"]
     assert "backup" in storage["yandex_object_storage"]
     assert "not part of the runtime architecture" in storage["google_cloud"]
-    assert "OAuth" in storage["google_cloud"]
+    assert "no separate Google Cloud runtime" in storage["google_cloud"]
     assert SYSTEM_MAP["archive_policy"]["canonical_source_of_truth"] == "Google Drive annual CSV plus reports registry"
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["report_type"] == 1
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
     assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
 
 
-def test_large_annual_files_use_resumable_drive_api_not_apps_script():
+def test_large_annual_files_use_resumable_drive_api_not_apps_script_bytes():
     policy = SYSTEM_MAP["archive_policy"]["large_file_upload"]
     assert policy["transport"] == "Google Drive API resumable upload"
-    assert policy["apps_script_large_upload"] == "forbidden"
+    assert "file-byte transport forbidden" in policy["apps_script_large_upload"]
+    assert "session start only" in policy["apps_script_large_upload"]
+    assert "Apps Script" in policy["session_broker"]
+    assert "no Google refresh token" in policy["session_broker"]
     assert "one bounded chunk" in policy["worker_model"]
     assert "confirmed byte offset" in policy["resume_state"]
     assert "256 KiB" in policy["chunk_rule"]
@@ -157,8 +161,9 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
     assert "Google Drive" in SYSTEM_INSTRUCTIONS
     assert "Apps Script" in SYSTEM_INSTRUCTIONS
-    assert "resumable upload" in SYSTEM_INSTRUCTIONS
-    assert "OAuth refresh-token" in SYSTEM_INSTRUCTIONS
+    assert "resumable session" in SYSTEM_INSTRUCTIONS
+    assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
+    assert "effective-user OAuth token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in SYSTEM_INSTRUCTIONS
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
@@ -210,6 +215,7 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Google Apps Script" in architecture
     assert "resumable" in architecture.lower()
     assert "Google Drive API" in architecture
+    assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in architecture
     assert "WB Advertising M0" in architecture
     assert "wb_ads" in architecture
@@ -234,4 +240,5 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
     assert "Google Apps Script" in agents
     assert "resumable" in agents.lower()
+    assert "refresh token" in agents
     assert "Yandex Object Storage" in agents
