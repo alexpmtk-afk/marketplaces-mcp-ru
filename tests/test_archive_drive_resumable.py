@@ -28,7 +28,12 @@ class FakeBroker:
         }
 
     async def file_metadata(self, file_id):
-        return {"id": file_id, "size": "123", "md5Checksum": "0" * 32}
+        return {
+            "id": file_id,
+            "size": "123",
+            "md5Checksum": "0" * 32,
+            "sha256Checksum": "1" * 64,
+        }
 
     async def find_child(self, parent_id, name):
         del parent_id, name
@@ -58,7 +63,7 @@ def test_session_start_is_brokered_by_apps_script_without_oauth():
     )
     session = asyncio.run(uploader.start_session(
         parent_id="База данных/WB/shop/2026/finance/weekly/main",
-        name="shop__weekly_main__2026.csv",
+        name=".shop__weekly_main__2026.csv.upload.tmp",
         total_bytes=123,
         mime_type="text/csv",
     ))
@@ -75,6 +80,10 @@ def test_session_uri_is_restricted_to_google_drive_upload_endpoint():
 def test_range_header_becomes_next_confirmed_offset():
     response = _response(308, headers={"Range": "bytes=0-4194303"})
     assert GoogleDriveResumableUploader._confirmed_offset(response) == 4 * 1024 * 1024
+
+
+def test_missing_range_on_308_means_zero_confirmed_bytes():
+    assert GoogleDriveResumableUploader._confirmed_offset(_response(308)) == 0
 
 
 def test_upload_chunk_uses_drive_confirmed_range(monkeypatch):
@@ -99,7 +108,8 @@ def test_upload_chunk_uses_drive_confirmed_range(monkeypatch):
     assert progress.offset == CHUNK_GRANULARITY
 
 
-def test_status_404_marks_session_expired(monkeypatch):
+@pytest.mark.parametrize("status", [400, 401, 403, 404, 410])
+def test_nonrecoverable_4xx_restarts_session(monkeypatch, status):
     uploader = GoogleDriveResumableUploader(
         session_broker=FakeBroker(),
         chunk_size=CHUNK_GRANULARITY,
@@ -107,7 +117,7 @@ def test_status_404_marks_session_expired(monkeypatch):
 
     async def fake_request(method, url, **kwargs):
         del method, url, kwargs
-        return _response(404)
+        return _response(status)
 
     monkeypatch.setattr(uploader, "_request", fake_request)
     progress = asyncio.run(uploader.query_status(
@@ -116,6 +126,63 @@ def test_status_404_marks_session_expired(monkeypatch):
     ))
     assert progress.state == "expired"
     assert progress.offset == 0
+
+
+def test_transient_5xx_status_is_retryable_without_exposing_session(monkeypatch):
+    uploader = GoogleDriveResumableUploader(
+        session_broker=FakeBroker(),
+        chunk_size=CHUNK_GRANULARITY,
+    )
+
+    async def fake_request(method, url, **kwargs):
+        del method, url, kwargs
+        return _response(503)
+
+    monkeypatch.setattr(uploader, "_request", fake_request)
+    secret_uri = "https://www.googleapis.com/upload/drive/v3/files?upload_id=TOP_SECRET"
+    with pytest.raises(ResumableUploadError) as exc:
+        asyncio.run(uploader.query_status(secret_uri, 10 * CHUNK_GRANULARITY))
+    assert exc.value.retryable is True
+    assert "TOP_SECRET" not in str(exc.value)
+
+
+def test_nonfinal_chunk_must_be_multiple_of_256_kib():
+    uploader = GoogleDriveResumableUploader(
+        session_broker=FakeBroker(),
+        chunk_size=CHUNK_GRANULARITY,
+    )
+    with pytest.raises(ResumableUploadError):
+        asyncio.run(uploader.upload_chunk(
+            session_uri="https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
+            offset=0,
+            total_bytes=2 * CHUNK_GRANULARITY,
+            data=b"x" * (CHUNK_GRANULARITY - 1),
+        ))
+
+
+def test_final_chunk_may_be_smaller_than_256_kib(monkeypatch):
+    uploader = GoogleDriveResumableUploader(
+        session_broker=FakeBroker(),
+        chunk_size=CHUNK_GRANULARITY,
+    )
+
+    async def fake_request(method, url, **kwargs):
+        del method, url, kwargs
+        return _response(200, json_body={
+            "id": "drive-file-1",
+            "size": "3",
+            "sha256Checksum": "1" * 64,
+        })
+
+    monkeypatch.setattr(uploader, "_request", fake_request)
+    progress = asyncio.run(uploader.upload_chunk(
+        session_uri="https://www.googleapis.com/upload/drive/v3/files?upload_id=x",
+        offset=0,
+        total_bytes=3,
+        data=b"xyz",
+    ))
+    assert progress.state == "complete"
+    assert progress.file["id"] == "drive-file-1"
 
 
 def test_final_chunk_returns_drive_file_metadata(monkeypatch):
@@ -129,7 +196,7 @@ def test_final_chunk_returns_drive_file_metadata(monkeypatch):
         return _response(200, json_body={
             "id": "drive-file-1",
             "size": str(CHUNK_GRANULARITY),
-            "md5Checksum": "0" * 32,
+            "sha256Checksum": "1" * 64,
         })
 
     monkeypatch.setattr(uploader, "_request", fake_request)
