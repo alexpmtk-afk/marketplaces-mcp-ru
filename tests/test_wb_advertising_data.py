@@ -46,7 +46,10 @@ def test_historical_contract_preserves_provider_limits():
     assert campaign["max_days_per_request"] == 31
     assert campaign["max_campaign_ids_per_request"] == 50
     assert campaign["archive"] is True
-    assert "not relabeled as ad placement" in DATASETS["ads_product_daily"]["limitations"]
+    assert any(
+        "not relabeled as ad placement" in limitation
+        for limitation in DATASETS["ads_product_daily"]["limitations"]
+    )
 
     expenses = DATASETS["ads_expenses"]
     payments = DATASETS["ads_payments"]
