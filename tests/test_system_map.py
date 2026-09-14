@@ -68,6 +68,7 @@ def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
         "deductions_and_adjustments",
         "commission_and_wb_reward",
         "acquiring_and_payment_processing",
+        "observed_fulfillment_method",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
@@ -104,6 +105,17 @@ def test_wb_reward_and_acquiring_boundaries_are_canonical():
     assert "monetary WB reward" in semantic["runtime_integration"]
     assert "preliminary weekly acquiring" in semantic["runtime_integration"]
     assert "Commission-rate questions" in semantic["runtime_integration"]
+
+
+def test_historical_fulfillment_boundary_is_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "deliveryMethod" in rules
+    assert "officeName" in rules
+    assert "rrDate" in rules
+    assert "never confirms current fulfillment configuration" in rules
+    assert "historical fulfillment observations" in semantic["runtime_integration"]
+    assert "current-fulfillment questions fail closed" in semantic["runtime_integration"]
 
 
 def test_order_source_guardrail_is_canonical():
@@ -144,6 +156,9 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "acquiringFee" in SYSTEM_INSTRUCTIONS
     assert "PRELIMINARY" in SYSTEM_INSTRUCTIONS
     assert "final monthly" in SYSTEM_INSTRUCTIONS
+    assert "deliveryMethod" in SYSTEM_INSTRUCTIONS
+    assert "officeName" in SYSTEM_INSTRUCTIONS
+    assert "current fulfillment configuration" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
@@ -177,6 +192,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "additionalPayment" in architecture
     assert "commission_and_wb_reward" in architecture
     assert "acquiring_and_payment_processing" in architecture
+    assert "observed_fulfillment_method" in architecture
+    assert "HISTORICAL_OBSERVED_FULFILLMENT" in architecture
     assert "PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING" in architecture
     assert "PRELIMINARY_NOT_ALL_ORDERS" in architecture
     assert "core/system_map.py" in agents
