@@ -1,4 +1,4 @@
-version: 2026-09-14.v2
+version: 2026-09-14.v3
 policy:
   fail_closed: true
   recognized_does_not_mean_available: true
@@ -10,7 +10,7 @@ sources:
     marketplace: wb
     kind: archive_dataset
     database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
-    execution_status: SEMANTIC_QUERY_NOT_WIRED_YET
+    execution_status: PARTIALLY_WIRED_APPROVED_CAPABILITIES
     dataset_id: wb_weekly_finance_main
     purpose: 'Еженедельная детализация отчёта реализации: продажи, возвраты и все отражённые финансовые/сервисные операции.'
   wb_order_feed:
@@ -272,7 +272,7 @@ datasets:
         role: measure
         semantic_status: REVIEWED
         safe_uses: [анализ суммы продажи/возврата]
-        limitations: [Знак и включение в итог зависят от типа операции; не смешивать с forPay.]
+        limitations: [Для чистой реализации явно вычитать строки docTypeName=Возврат из docTypeName=Продажа; не полагаться на знак retailAmount и не смешивать с forPay.]
       salePercent:
         meaning_ru: Историческое поле скидки продавца; в актуальных отчётах обычно 0.
         role: legacy
@@ -306,7 +306,7 @@ datasets:
         meaning_ru: Дата и время продажи/выкупа, возврата/отказа либо соответствующей операции по правилам отчёта.
         role: date
         semantic_status: REVIEWED
-        safe_uses: [датировка продажи/возврата в контексте строки]
+        safe_uses: [датировка продажи/возврата в контексте строки, ось периода для утверждённого расчёта продаж/возвратов]
         limitations: [Смысл зависит от sellerOperName/docTypeName.]
       rrDate:
         meaning_ru: Расчётная дата строки в отчёте — дата отнесения операции к детализации/расчётному периоду.
@@ -699,7 +699,7 @@ capabilities:
     status: AVAILABLE
     fields: [docTypeName, sellerOperName, saleDt, rrDate, quantity, retailPrice, retailAmount, retailPriceWithDisc, forPay]
     scope: operations_present_in_weekly_realization
-    guardrail: Filter by operation type before aggregating; do not mix service rows with product sale/return rows.
+    guardrail: For the approved calculation use saleDt and explicit docTypeName buckets; compute Продажа minus Возврат for retailAmount and quantity. Do not use orderDt or infer return sign from retailAmount.
   order_context_attribute:
     source_id: wb_weekly_finance_main
     status: AVAILABLE_WITH_LIMITATION
