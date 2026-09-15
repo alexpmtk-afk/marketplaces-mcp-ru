@@ -1,0 +1,139 @@
+version: 2026-09-15.v1
+sources:
+  wb_ads_data:
+    marketplace: wb
+    kind: archive_dataset
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    execution_status: APPROVED_ADVERTISING_ATTRIBUTION_CAPABILITY
+    dataset_id: ads_campaign_daily
+    purpose: Каноническая историческая статистика рекламных кампаний Wildberries по закрытым дням.
+  wb_ads_campaign_roster:
+    marketplace: wb
+    kind: archive_dataset
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    execution_status: COVERAGE_DEPENDENCY
+    dataset_id: ads_campaign_roster_snapshots
+    purpose: Наблюдения состава рекламных кампаний, используемые для доказательства полноты advertising fullstats.
+datasets:
+  ads_campaign_daily:
+    marketplace: wb
+    report_name_ru: Wildberries Advertising — дневная статистика кампаний
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    canonical_storage: google_drive
+    delimiter: ';'
+    file_pattern: '{cabinet}__ads_campaign_daily__{year}.csv'
+    schema_status: WB_ADVERTISING_ARCHIVE_V1_CANONICAL
+    field_count: 10
+    fields: [date, campaign_id, views, clicks, cart_adds, ad_orders, advertised_items, canceled, spend, attributed_order_amount]
+    field_catalog:
+      date:
+        meaning_ru: Календарный день рекламной статистики.
+        role: date
+        safe_uses: [фильтр и группировка исторической рекламной статистики по дате]
+      campaign_id:
+        meaning_ru: Идентификатор рекламной кампании Wildberries.
+        role: identifier
+        safe_uses: [идентификация и группировка рекламной кампании]
+      views:
+        meaning_ru: Показы рекламы, возвращённые WB Promotion API для кампании и дня.
+        role: measure
+        safe_uses: [суммирование показов, расчёт CTR]
+      clicks:
+        meaning_ru: Клики по рекламе, возвращённые WB Promotion API для кампании и дня.
+        role: measure
+        safe_uses: [суммирование кликов, расчёт CTR CPC и click-to-order CR]
+      cart_adds:
+        meaning_ru: Добавления рекламируемого товара в корзину в рекламной атрибуции WB.
+        role: measure
+        safe_uses: [суммирование добавлений в корзину]
+      ad_orders:
+        meaning_ru: Заказы, атрибутированные рекламной кампании в статистике WB Promotion API.
+        role: measure
+        safe_uses: [суммирование рекламно-атрибутированных заказов, расчёт CPO и click-to-order CR]
+        limitations: [Не считать полным потоком заказов магазина.]
+      advertised_items:
+        meaning_ru: Количество рекламируемых единиц товара, отражённое статистикой WB.
+        role: measure
+        safe_uses: [суммирование рекламируемых единиц]
+      canceled:
+        meaning_ru: Количество отмен, отражённое рекламной статистикой WB.
+        role: measure
+        safe_uses: [анализ отмен в рекламной атрибуции]
+      spend:
+        meaning_ru: Расход рекламной кампании по данным WB Promotion API.
+        role: measure
+        safe_uses: [суммирование рекламных расходов, расчёт CPC CPO DRR и ROAS]
+      attributed_order_amount:
+        meaning_ru: Сумма заказов, атрибутированная рекламе WB Promotion API.
+        role: measure
+        safe_uses: [суммирование рекламно-атрибутированной суммы заказов, расчёт DRR и ROAS]
+        limitations: [Не считать общей выручкой или финансовым результатом магазина.]
+    row_dedup_key: [date, campaign_id]
+    coverage:
+      registry_file: dataset_coverage_registry.csv
+      complete_status: COMPLETE
+      period_fields: [date_from, date_to]
+      archive_route_requirement: FULL_COVERAGE
+    semantic_scope:
+      row_model: ONE_CAMPAIGN_DAY_ATTRIBUTION_STAT_ROW
+      authoritative_for:
+      - исторические показы клики рекламные расходы и рекламно-атрибутированные заказы по закрытым дням
+      - операционные рекламные коэффициенты CTR CPC CPO DRR ROAS по утверждённому контракту
+      not_authoritative_for:
+      - общая прибыльность бизнеса
+      - полный поток заказов магазина
+      - текущие незакрытые данные за сегодня
+  ads_campaign_roster_snapshots:
+    marketplace: wb
+    report_name_ru: Wildberries Advertising — снимок состава кампаний
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    canonical_storage: google_drive
+    delimiter: ';'
+    file_pattern: '{cabinet}__ads_campaign_roster_snapshots__{year}.csv'
+    schema_status: WB_ADVERTISING_ARCHIVE_V1_CANONICAL
+    field_count: 6
+    fields: [observed_at, campaign_id, campaign_type, status, change_time, fullstats_eligible]
+    field_catalog:
+      observed_at:
+        meaning_ru: Время, когда был получен снимок состава кампаний.
+        role: date
+        safe_uses: [определение времени наблюдения состава кампаний]
+      campaign_id:
+        meaning_ru: Идентификатор рекламной кампании Wildberries.
+        role: identifier
+        safe_uses: [идентификация кампании и доказательство ожидаемого состава fullstats]
+      campaign_type:
+        meaning_ru: Тип рекламной кампании в ответе WB Promotion API.
+        role: dimension
+        safe_uses: [контекст типа кампании]
+      status:
+        meaning_ru: Статус рекламной кампании в момент наблюдения.
+        role: dimension
+        safe_uses: [определение статуса кампании в снимке]
+      change_time:
+        meaning_ru: Время изменения кампании, возвращённое WB Promotion API.
+        role: date
+        safe_uses: [контекст изменения кампании]
+      fullstats_eligible:
+        meaning_ru: Признак того, что статус кампании допускает загрузку fullstats в Advertising Archive V1.
+        role: flag
+        safe_uses: [определение ожидаемого множества кампаний для проверки полноты статистики]
+    row_dedup_key: [observed_at, campaign_id]
+    coverage:
+      registry_file: dataset_coverage_registry.csv
+      complete_status: COMPLETE
+      period_fields: [date_from, date_to]
+      archive_route_requirement: FULL_COVERAGE
+    semantic_scope:
+      row_model: CAMPAIGN_ROSTER_OBSERVATION
+      authoritative_for: [доказательство состава кампаний, включённых в план архивной загрузки]
+      not_authoritative_for: [история всех изменений статуса кампании]
+capabilities:
+  advertising_performance:
+    source_id: wb_ads_data
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [date, campaign_id, views, clicks, cart_adds, ad_orders, advertised_items, canceled, spend, attributed_order_amount]
+    scope: historical_advertising_attribution_operational
+    guardrail: Доступен только для закрытых исторических дней при доказанном FULL_COVERAGE. DRR и ROAS здесь относятся к рекламной атрибуции WB и не являются общей прибыльностью бизнеса. Фильтр nm_ids требует отдельного ads_product_daily контракта и пока запрещён.
+    coverage_dependencies: [ads_campaign_roster_snapshots]
+remove_not_covered: [advertising_performance]
