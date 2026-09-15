@@ -11,6 +11,10 @@ from .semantic_advertising import (
     SemanticAdvertisingExecutionError,
     execute_semantic_advertising_question,
 )
+from .semantic_current_stock import (
+    SemanticCurrentStockExecutionError,
+    execute_current_stock_question,
+)
 from .semantic_resolver import resolve_semantic_question
 
 
@@ -26,6 +30,15 @@ def _resolution_with_period(
     normalized["period"] = {"date_from": date_from, "date_to": date_to}
     enriched["normalized_query"] = normalized
     return enriched
+
+
+def _attach_semantic_context(
+    result: dict[str, Any], *, question: str, resolution: dict[str, Any],
+) -> dict[str, Any]:
+    result["semantic_question"] = question
+    result["semantic_resolution"] = resolution
+    result["normalized_query"] = deepcopy(resolution.get("normalized_query"))
+    return result
 
 
 async def execute_business_query(
@@ -75,9 +88,46 @@ async def execute_business_query(
                     nm_ids=nm_ids,
                 )
                 if isinstance(result, dict):
-                    result["semantic_question"] = natural_question
-                    result["semantic_resolution"] = resolution
-                    result["normalized_query"] = deepcopy(resolution.get("normalized_query"))
+                    return _attach_semantic_context(
+                        result, question=natural_question, resolution=resolution,
+                    )
+                return result
+
+            if metric_id == "CURRENT_STOCK":
+                wb = modules.get("wb")
+                if wb is None:
+                    return make_error(
+                        "source_not_suitable",
+                        "Wildberries runtime module is required for the approved current-stock metric.",
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                        details={
+                            "question": natural_question,
+                            "semantic_resolution": resolution,
+                        },
+                    )
+                try:
+                    result = await execute_current_stock_question(
+                        wb,
+                        seller=seller,
+                        date_from=date_from,
+                        date_to=date_to,
+                        grouping=str(
+                            (resolution.get("normalized_query") or {}).get("grouping") or "TOTAL"
+                        ),
+                        nm_ids=nm_ids,
+                    )
+                except SemanticCurrentStockExecutionError as exc:
+                    result = make_error(
+                        "invalid_params",
+                        str(exc),
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                    )
+                if isinstance(result, dict):
+                    return _attach_semantic_context(
+                        result, question=natural_question, resolution=resolution,
+                    )
                 return result
 
             return make_error(
@@ -137,10 +187,9 @@ async def execute_business_query(
                         "capability_id": "advertising_performance",
                     },
                 )
-            result["semantic_question"] = natural_question
-            result["semantic_resolution"] = resolution
-            result["normalized_query"] = deepcopy(resolution.get("normalized_query"))
-            return result
+            return _attach_semantic_context(
+                result, question=natural_question, resolution=resolution,
+            )
 
     return await execute_legacy_business_query(
         modules,
