@@ -1,4 +1,4 @@
-version: 2026-09-15.v8
+version: 2026-09-15.v9
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -14,7 +14,20 @@ business_metrics:
     allowed_measures: [UNITS, AMOUNT_RUB, BOTH]
     allowed_groupings: [TOTAL]
     product_filter_supported: false
+    current_period_supported: true
     guardrail: Обычная метрика заказов использует оперативную статистику WB и не является полным потоком всех оформленных заказов.
+  CURRENT_STOCK:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: wb
+    source_id: wb_current_stocks
+    data_class: CURRENT_OPERATIONAL_STOCK
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL, PRODUCT, WAREHOUSE]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Текущие остатки — только live snapshot WB. Историческую дату нельзя подменять сегодняшним снимком; для прошлого периода требуется отдельный утверждённый исторический источник.
 
 routes:
   - id: ozon_any
@@ -25,8 +38,8 @@ routes:
 
   - id: current_stock
     priority: 1950
-    target_type: not_covered
-    target_id: current_stock
+    target_type: business_metric
+    target_id: CURRENT_STOCK
     match_any: [остатки, остаток товара, складской остаток, остатки сейчас, текущие остатки, остаток сейчас, сколько осталось, остатки на сегодня]
 
   - id: current_fulfillment_configuration
@@ -47,6 +60,18 @@ routes:
     target_id: advertising_performance
     match_any: [реклама, рекламная кампания, показы, клики, рекламные расходы, рекламный расход, дрр, ctr, cpc, cpo, roas]
 
+  - id: complete_order_flow
+    priority: 1890
+    target_type: not_covered
+    target_id: all_orders_placed
+    match_any: [полный поток заказов, полная история заказов, все оформленные заказы, все заказы, сколько всего заказов, все заказы без исключения, абсолютно все заказы, включая неоплаченные заказы, включая заказы с неподтвержденной оплатой]
+
+  - id: orders_business_metric
+    priority: 1880
+    target_type: business_metric
+    target_id: ORDERS
+    match_any: [сколько заказов, сумма заказов, количество заказов, заказы за, заказов за, заказы, заказов, заказали, заказано]
+
   - id: detailed_storage_calculation
     priority: 1850
     target_type: not_covered
@@ -62,7 +87,7 @@ routes:
   - id: current_state_generic
     priority: 1800
     target_type: inline_not_covered
-    reason: Еженедельный архив отражает исторические операции и не подтверждает текущее состояние на данный момент.
+    reason: Еженедельный архив отражает исторические операции и не подтверждает текущее состояние на данный момент. Конкретная operational business metric может иметь отдельный live-источник с более высоким приоритетом.
     match_any: [сейчас, на данный момент, сегодня, текущий, текущая, текущие, текущего]
 
   - id: report_period_and_identity
@@ -76,18 +101,6 @@ routes:
     target_type: capability
     target_id: order_context_attribute
     match_any: [дата заказа, время заказа, номер заказа, uid заказа, orderdt, orderuid, orderid, srid]
-
-  - id: complete_order_flow
-    priority: 1520
-    target_type: not_covered
-    target_id: all_orders_placed
-    match_any: [полный поток заказов, полная история заказов, все оформленные заказы, все заказы, сколько всего заказов, все заказы без исключения, абсолютно все заказы, включая неоплаченные заказы, включая заказы с неподтвержденной оплатой]
-
-  - id: orders_business_metric
-    priority: 1500
-    target_type: business_metric
-    target_id: ORDERS
-    match_any: [сколько заказов, сумма заказов, количество заказов, заказы за, заказов за, заказы, заказов, заказали, заказано]
 
   - id: observed_fulfillment_method
     priority: 1450
