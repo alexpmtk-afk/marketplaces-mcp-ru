@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-15.v17`
+**Version:** `2026-09-15.v18`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -17,7 +17,6 @@ Supporting services:
 - Secondary byte-for-byte backup of canonical archive files: Yandex Object Storage.
 - Google Drive control plane: owner-operated **Google Apps Script** web-app bridge. It handles small archive operations and creates resumable sessions for large files using the owner's Apps Script OAuth context. It also verifies metadata and performs the final verified staging-to-canonical promotion. The bridge is authenticated by the existing shared secret in Yandex Lockbox.
 - Large annual CSV bytes: direct **Google Drive API resumable upload** from Yandex to the session URI returned by Apps Script. No Google OAuth refresh token is stored in Yandex.
-- Yandex Object Storage authentication: temporary IAM token obtained by the Serverless Container from its runtime service-account metadata; no static archive key is required.
 
 ## Hard boundaries
 
@@ -134,15 +133,30 @@ WB has campaign-control operations implemented as HTTP GETs. HTTP verb does not 
 
 The Semantic Core is wired into runtime through `marketplace_business_query` and preserves the original natural-language question as the primary intent signal. Legacy `metric` remains compatibility-only and must not override the user's wording.
 
+The query path now has an explicit source-independent normalization step before source selection. `core/business_query_parser.py` extracts requested measure, grouping, period hint and filter hints. It does **not** choose marketplace fields or APIs; that remains the Semantic Core planner/resolver responsibility.
+
 Canonical components:
+- `core/business_query_parser.py` — normalized business dimensions before source selection;
 - `core/semantic_registry.yaml` — audited base semantic catalog;
 - `core/semantic_registry_extensions.yaml` — validated additive domain registry, currently WB Advertising;
-- `core/semantic_intents.yaml` — deterministic natural-language routing;
+- `core/semantic_intents.yaml` — deterministic natural-language routing and operational business-metric registry;
 - `core/semantic_resolver.py` — fail-closed resolver;
 - `core/semantic_execution.yaml` — approved weekly-finance executable contracts;
 - `core/semantic_archive.py` — coverage-gated weekly-finance archive execution;
 - `core/semantic_advertising.py` — coverage-gated advertising archive execution;
+- `core/semantic_current_stock.py` — seller-aware live execution of the current WB stock snapshot;
 - `core/semantic_business_router.py` — domain-aware dispatch before the legacy router.
+
+### Operational business metrics
+
+Two operational business metrics are currently registered:
+
+- `ORDERS` — WB Statistics Orders, data class `PRELIMINARY_OPERATIONAL`. Ordinary order questions, including **today**, use this source. It is not the complete marketplace order flow and must not answer explicit “all orders / complete order flow” questions.
+- `CURRENT_STOCK` — WB current warehouse stock snapshot, data class `CURRENT_OPERATIONAL_STOCK`. The primary source is the current Seller Analytics stocks endpoint; Base-token cabinets may use the official asynchronous warehouse-remains report fallback.
+
+The generic current-state rule remains a fail-closed fallback. A concrete operational metric may outrank it only when that metric has an explicitly approved source. Therefore “Сколько заказов сегодня?” can resolve to `ORDERS`, while “Какая комиссия сегодня?” remains fail-closed without an approved live commission contract.
+
+`CURRENT_STOCK` is present-state only. A past-date stock request must fail **before** provider execution and require a separate historical stock source/contract. The server must never substitute today's snapshot for historical inventory.
 
 ### 92-column weekly-report completion status
 
@@ -179,6 +193,8 @@ Advertising archive metrics retain data class `ADVERTISING_ATTRIBUTION_OPERATION
 
 The weekly realization archive is not authoritative for the complete marketplace order funnel, current stock, current fulfillment configuration, current live tariffs, detailed storage drivers, detailed acceptance operations, or Ozon data. Those concepts require another approved source and must fail closed instead of being inferred from weekly rows.
 
+Current stock now has that separate approved live source and therefore does not read weekly finance. Historical stock still has **no approved historical source** and remains fail-closed.
+
 Advertising performance is no longer inferred from weekly finance: it has its own registered canonical datasets and executor. Product-level advertising remains unsupported by the first semantic capability and must fail closed until `ads_product_daily` is approved.
 
 WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDERS`) and must not be substituted for the complete order flow.
@@ -186,7 +202,10 @@ WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDER
 ## Routing rules
 
 - “Обнови данные по базе данных” and equivalent intents use the server archive update workflow for all configured cabinets by default.
-- Natural business questions preserve the user's original wording and resolve through Semantic Core before source selection.
+- Natural business questions preserve the user's original wording, normalize source-independent business dimensions, and resolve through Semantic Core before source selection.
+- A specific approved operational business metric outranks the generic current-state guard only for its registered source; the generic rule otherwise remains fail-closed.
+- Ordinary `ORDERS` questions including today use WB Statistics Orders; explicit complete-order-flow questions remain separate.
+- `CURRENT_STOCK` uses the current seller-aware WB stock snapshot. Any past-date stock request requires a different approved historical source and never receives today's snapshot.
 - Historical questions read the canonical Google Drive archive only when semantic approval and exact coverage exist.
 - Current/uncovered periods use a suitable provider API or an explicit backfill/gap workflow; no partial archive is silently substituted.
 - Complete-order questions do not substitute WB Statistics Orders for the full marketplace order flow.
