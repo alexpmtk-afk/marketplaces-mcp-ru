@@ -261,7 +261,13 @@ def merge_annual_dataset(
     existing: bytes | None,
     new_rows: Iterable[Mapping[str, Any]],
 ) -> tuple[bytes, dict[str, Any]]:
-    """Idempotently merge one advertising dataset by its canonical stable key."""
+    """Upsert one advertising dataset by its canonical stable key.
+
+    A repeated provider fetch may contain corrected statistics for an already
+    known grain. Incoming rows therefore replace the same stable key while the
+    operation remains idempotent: replaying identical input changes no row
+    count and cannot create duplicates.
+    """
     if dataset not in DATASET_KEYS:
         raise ValueError(f"unsupported WB advertising dataset: {dataset}")
     key_fields = DATASET_KEYS[dataset]
@@ -291,9 +297,7 @@ def merge_annual_dataset(
         by_key[stable_key(row)] = dict(row)
     before = len(by_key)
     for row in incoming:
-        key = stable_key(row)
-        if key not in by_key:
-            by_key[key] = row
+        by_key[stable_key(row)] = row
 
     rows = [by_key[key] for key in sorted(by_key)]
     payload = encode_csv(fields, rows)
