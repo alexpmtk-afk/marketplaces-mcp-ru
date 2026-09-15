@@ -17,6 +17,7 @@ Supporting services:
 - Secondary byte-for-byte backup of canonical archive files: Yandex Object Storage.
 - Google Drive control plane: owner-operated **Google Apps Script** web-app bridge. It handles small archive operations and creates resumable sessions for large files using the owner's Apps Script OAuth context. It also verifies metadata and performs the final verified staging-to-canonical promotion. The bridge is authenticated by the existing shared secret in Yandex Lockbox.
 - Large annual CSV bytes: direct **Google Drive API resumable upload** from Yandex to the session URI returned by Apps Script. No Google OAuth refresh token is stored in Yandex.
+- Yandex Object Storage authentication: temporary IAM token obtained by the Serverless Container from its runtime service-account metadata; no static archive key is required.
 
 ## Hard boundaries
 
