@@ -7,7 +7,7 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - The machine-readable source of truth is `core/system_map.py` (`SYSTEM_MAP`, `SYSTEM_INSTRUCTIONS`).
 - Human mirror: `ARCHITECTURE.md`.
 - Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
-- Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the report registry are the source of truth.
+- Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the applicable coverage registries are the source of truth.
 - Google Drive access uses the owner's deployed **Google Apps Script** web-app bridge as the Google authorization/control plane:
   - small archive operations, reads, metadata/status and folder resolution go through the bridge;
   - large annual CSV writes use the official **Google Drive API resumable upload** path, but Apps Script creates the resumable session using the owner's effective-user OAuth context;
@@ -34,9 +34,15 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 ## Semantic Core boundaries
 - The canonical WB weekly realization dataset has 92 physical columns; all 92 must remain semantically catalogued in `core/semantic_registry.yaml`.
 - Weekly realization semantics are complete when every physical field has documented meaning, role, safe uses and explicit limitations where needed. Do not invent a calculation merely because a field exists.
-- Approved formulas remain separate from field semantics in `core/semantic_execution.yaml`.
+- Approved weekly-finance formulas remain separate from field semantics in `core/semantic_execution.yaml`.
+- Additive domain semantics such as WB Advertising are registered through the validated `core/semantic_registry_extensions.yaml`; they must still pass the same fail-closed registry validation as the base catalog.
 - Historical fulfillment (`HISTORICAL_OBSERVED_FULFILLMENT`) and historical warehouse-tariff context (`HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT`) must never be presented as current configuration or current live tariff.
 - `orderDt` / `orderUid` in weekly finance must never be treated as the complete marketplace order flow.
+- Historical WB advertising performance uses its own canonical source, not weekly finance: `ads_campaign_daily` plus `ads_campaign_roster_snapshots`, with proof from `dataset_coverage_registry.csv`.
+- `advertising_performance` is `ADVERTISING_ATTRIBUTION_OPERATIONAL`: DRR/ROAS, spend and attributed orders are advertising-attribution metrics, not total seller revenue, the complete order flow or business profitability.
+- Closed historical advertising execution requires `FULL_COVERAGE` for the requested period: complete roster coverage plus complete fullstats coverage for every expected eligible campaign. Partial advertising coverage must fail closed.
+- Advertising Semantic Core V1 is **cabinet-total only**. Product/`nm_id` questions require a separately approved `ads_product_daily` contract; campaign-filtered or campaign-breakdown questions require their own selector/grouping contract. Never substitute cabinet totals for a narrower question.
+- Current-day/current-state advertising remains live from the WB Promotion API and must not be inferred from the closed historical archive.
 
 ## Before every commit / push
 - `pre-commit run --all-files` (or at minimum the two local hooks below).
