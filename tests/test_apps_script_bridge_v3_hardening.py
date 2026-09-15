@@ -6,6 +6,11 @@ def test_bridge_v3_is_archive_scoped_and_preflights_drive_api():
     assert "const BRIDGE_VERSION=3" in source
     assert "archive_root_id_guard:true" in source
     assert "drive_api_preflight:true" in source
+    assert "idempotent_small_write:true" in source
+    assert "promotion_replay_safe:true" in source
+    assert "readonly_parallel:true" in source
+    assert "writeSmallReplaySafe_" in source
+    assert "withMutationLock_" in source
     assert "assertFileInsideArchive_" in source
     assert "file_outside_archive_root" in source
     assert "trash_only_allowed_for_diagnostic_copy" in source

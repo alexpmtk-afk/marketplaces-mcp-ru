@@ -1,8 +1,8 @@
-"""Google Drive archive backend via a project-isolated Google Apps Script bridge.
+"""Canonical Marketplaces Google Drive archive backend via Bridge v3.
 
-Shared Google Drive Bridge Protocol v1.0.0 is the final archive transport.
-The legacy Marketplaces route is retained only as an explicit rollback profile;
-Protocol v1 never falls back to legacy credentials or deployment state.
+Marketplaces uses one Drive transport only: the hardened project-specific
+Google Apps Script Bridge v3. Shared Bridge Protocol v1 is retired for this
+project and is never selected as a fallback.
 """
 from __future__ import annotations
 
@@ -10,27 +10,13 @@ import asyncio
 import base64
 import hashlib
 import os
-import uuid
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urlsplit
 
 import httpx
 
-MARKETPLACES_BRIDGE_PROJECT_ID = "marketplaces"
-BRIDGE_PROTOCOL_V1 = 1
-BRIDGE_RELEASE_V1 = "1.0.0"
-_LEGACY_MODE = "legacy"
-_V1_MODES = {"1", "v1", "protocol-v1"}
-_MUTATING_V1_ACTIONS = {
-    "write_small",
-    "trash_by_id",
-    "resumable_start",
-    "promote_verified",
-}
-_LARGE_DOWNLOAD_MAX_BYTES = 512 * 1024 * 1024
-_LARGE_DOWNLOAD_MAX_POLLS = 30
-_LARGE_DOWNLOAD_POLL_SECONDS = 2.0
+BRIDGE_VERSION = 3
+_RETIRED_V1_MODES = {"1", "v1", "protocol-v1"}
 
 
 class ArchiveStorageNotConfigured(RuntimeError):
@@ -64,7 +50,7 @@ class DriveFile:
 
 
 class GoogleDriveArchiveStore:
-    """Async Marketplaces client for legacy Bridge v3 or shared Protocol v1."""
+    """Async client for the canonical Marketplaces Apps Script Bridge v3."""
 
     _MAX_ATTEMPTS = 3
     _RETRYABLE_HTTP_STATUSES = {404, 408, 425, 429, 500, 502, 503, 504}
@@ -76,57 +62,28 @@ class GoogleDriveArchiveStore:
         bridge_secret: str,
         root_folder_id: str,
         timeout: float = 120.0,
-        protocol_version: int = 0,
-        project_id: str = MARKETPLACES_BRIDGE_PROJECT_ID,
     ) -> None:
         self.bridge_url = bridge_url.strip()
         self.bridge_secret = bridge_secret.strip()
         self.root_folder_id = root_folder_id.strip()
         self.timeout = float(timeout)
-        self.protocol_version = int(protocol_version or 0)
-        self.project_id = str(project_id or "").strip()
         if not all((self.bridge_url, self.bridge_secret, self.root_folder_id)):
             raise ArchiveStorageNotConfigured(
-                "Google Drive Apps Script bridge URL, secret, or archive root is incomplete"
+                "Google Drive Bridge v3 URL, secret, or archive root is incomplete"
             )
         if not self.bridge_url.startswith("https://script.google.com/macros/s/"):
-            raise ArchiveStorageNotConfigured("Google Drive Apps Script bridge URL is invalid")
-        if self.protocol_version not in {0, BRIDGE_PROTOCOL_V1}:
-            raise ArchiveStorageNotConfigured(
-                f"Unsupported Google Drive bridge protocol: {self.protocol_version}"
-            )
-        if self.protocol_version == BRIDGE_PROTOCOL_V1 and self.project_id != MARKETPLACES_BRIDGE_PROJECT_ID:
-            raise ArchiveStorageNotConfigured(
-                "Marketplaces Protocol-v1 client is pinned to project_id=marketplaces"
-            )
-
-    @property
-    def is_protocol_v1(self) -> bool:
-        return self.protocol_version == BRIDGE_PROTOCOL_V1
+            raise ArchiveStorageNotConfigured("Google Drive Bridge v3 URL is invalid")
 
     @classmethod
     def from_env(cls) -> "GoogleDriveArchiveStore":
-        mode = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL", _LEGACY_MODE).strip().lower()
-        if mode in _V1_MODES:
-            url = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_URL", "").strip()
-            secret = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_SECRET", "").strip()
-            root = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_ROOT_ID", "").strip()
-            if not url or not secret or not root:
-                raise ArchiveStorageNotConfigured(
-                    "Protocol v1 requires dedicated MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_URL, "
-                    "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_SECRET and "
-                    "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_V1_ROOT_ID"
-                )
-            return cls(
-                bridge_url=url,
-                bridge_secret=secret,
-                root_folder_id=root,
-                protocol_version=BRIDGE_PROTOCOL_V1,
-                project_id=MARKETPLACES_BRIDGE_PROJECT_ID,
-            )
-        if mode not in {_LEGACY_MODE, "v3", "0", ""}:
+        mode = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL", "v3").strip().lower()
+        if mode in _RETIRED_V1_MODES:
             raise ArchiveStorageNotConfigured(
-                f"Unknown MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_PROTOCOL={mode!r}"
+                "Shared Google Drive Bridge Protocol v1 is retired for Marketplaces; use Bridge v3"
+            )
+        if mode not in {"", "v3", "3", "legacy"}:
+            raise ArchiveStorageNotConfigured(
+                f"Unsupported Marketplaces Google Drive bridge mode: {mode!r}"
             )
         url = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL", "").strip()
         secret = os.environ.get("MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET", "").strip()
@@ -135,14 +92,9 @@ class GoogleDriveArchiveStore:
             raise ArchiveStorageNotConfigured(
                 "Set MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
                 "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET and "
-                "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID"
+                "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID for Bridge v3"
             )
-        return cls(
-            bridge_url=url,
-            bridge_secret=secret,
-            root_folder_id=root,
-            protocol_version=0,
-        )
+        return cls(bridge_url=url, bridge_secret=secret, root_folder_id=root)
 
     @staticmethod
     def _path(parts: list[str] | tuple[str, ...]) -> str:
@@ -174,41 +126,8 @@ class GoogleDriveArchiveStore:
             modified_time=item.get("modified_time") or item.get("modifiedTime"),
         )
 
-    @staticmethod
-    def _stable_idempotency_key(action: str, *parts: Any) -> str:
-        material = "\x00".join(str(part) for part in parts)
-        digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
-        return f"marketplaces:{action}:{digest}"
-
-    @staticmethod
-    def _is_sha256(value: str) -> bool:
-        return len(value) == 64 and all(ch in "0123456789abcdef" for ch in value.lower())
-
-    @staticmethod
-    def _validate_google_download_uri(uri: str) -> None:
-        try:
-            parsed = urlsplit(str(uri or ""))
-        except ValueError as exc:
-            raise ArchiveStorageError(
-                "Bridge v1 large-download URI is malformed",
-                code="INVALID_DOWNLOAD_URI",
-            ) from exc
-        host = (parsed.hostname or "").lower()
-        allowed = (
-            host == "googleapis.com"
-            or host.endswith(".googleapis.com")
-            or host == "googleusercontent.com"
-            or host.endswith(".googleusercontent.com")
-            or host == "drive.usercontent.google.com"
-        )
-        if parsed.scheme != "https" or not allowed:
-            raise ArchiveStorageError(
-                "Bridge v1 large-download URI host is not an allowed Google endpoint",
-                code="INVALID_DOWNLOAD_URI",
-            )
-
-    async def _post_legacy(self, action: str, **payload: Any) -> dict[str, Any]:
-        body = {"secret": self.bridge_secret, "action": action, **payload}
+    async def _post(self, action: str, **payload: Any) -> dict[str, Any]:
+        body = {"secret": self.bridge_secret, "action": str(action).strip().lower(), **payload}
         last_error: Exception | None = None
         last_response: httpx.Response | None = None
         for attempt in range(1, self._MAX_ATTEMPTS + 1):
@@ -226,8 +145,9 @@ class GoogleDriveArchiveStore:
                     await asyncio.sleep(0.75 * attempt)
                     continue
                 raise ArchiveStorageError(
-                    f"Apps Script Drive bridge request failed after {attempt} attempts: {type(exc).__name__}",
+                    f"Google Drive Bridge v3 request failed after {attempt} attempts: {type(exc).__name__}",
                     retryable=True,
+                    code="TRANSPORT_ERROR",
                 ) from exc
             if resp.is_success:
                 break
@@ -236,144 +156,50 @@ class GoogleDriveArchiveStore:
                 await asyncio.sleep(0.75 * attempt)
                 continue
             raise ArchiveStorageError(
-                f"Apps Script Drive bridge HTTP {resp.status_code}: {resp.text[:500]}",
+                f"Google Drive Bridge v3 HTTP {resp.status_code}: {resp.text[:500]}",
                 retryable=retryable,
+                code="HTTP_ERROR",
             )
         else:
             if last_error is not None:
                 raise ArchiveStorageError(
-                    f"Apps Script Drive bridge request failed: {type(last_error).__name__}",
+                    f"Google Drive Bridge v3 request failed: {type(last_error).__name__}",
                     retryable=True,
+                    code="TRANSPORT_ERROR",
                 ) from last_error
             if last_response is not None:
                 status = last_response.status_code
                 raise ArchiveStorageError(
-                    f"Apps Script Drive bridge HTTP {status}: {last_response.text[:500]}",
+                    f"Google Drive Bridge v3 HTTP {status}: {last_response.text[:500]}",
                     retryable=status in self._RETRYABLE_HTTP_STATUSES,
+                    code="HTTP_ERROR",
                 )
-            raise ArchiveStorageError("Apps Script Drive bridge request failed", retryable=True)
+            raise ArchiveStorageError(
+                "Google Drive Bridge v3 request failed",
+                retryable=True,
+                code="TRANSPORT_ERROR",
+            )
+
         try:
             data = resp.json()
         except ValueError as exc:
             raise ArchiveStorageError(
-                "Apps Script Drive bridge returned a non-JSON response; check web-app access settings"
+                "Google Drive Bridge v3 returned a non-JSON response; check web-app access settings",
+                code="NON_JSON_RESPONSE",
             ) from exc
         if not isinstance(data, dict) or data.get("ok") is not True:
             retryable = bool(data.get("retryable")) if isinstance(data, dict) else False
+            error = str(data.get("error") or "bridge_rejected") if isinstance(data, dict) else "invalid_response"
             raise ArchiveStorageError(
-                f"Apps Script Drive bridge rejected {action}: {str(data)[:500]}",
+                f"Google Drive Bridge v3 rejected {action}: {error}",
                 retryable=retryable,
+                code=error.upper(),
             )
         return data
 
-    async def _post_v1(
-        self,
-        action: str,
-        payload: dict[str, Any] | None = None,
-        *,
-        idempotency_key: str | None = None,
-        request_id: str | None = None,
-    ) -> dict[str, Any]:
-        action = str(action).strip().lower()
-        request_id = str(request_id or uuid.uuid4())
-        if action in _MUTATING_V1_ACTIONS and not idempotency_key:
-            raise ArchiveStorageError(
-                f"Protocol v1 mutation {action!r} requires a stable idempotency key",
-                code="IDEMPOTENCY_KEY_REQUIRED",
-            )
-        body: dict[str, Any] = {
-            "secret": self.bridge_secret,
-            "project_id": MARKETPLACES_BRIDGE_PROJECT_ID,
-            "request_id": request_id,
-            "action": action,
-            "payload": dict(payload or {}),
-        }
-        if idempotency_key:
-            body["idempotency_key"] = str(idempotency_key)
-
-        last_error: Exception | None = None
-        for attempt in range(1, self._MAX_ATTEMPTS + 1):
-            try:
-                async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                    resp = await client.post(
-                        self.bridge_url,
-                        json=body,
-                        headers={"Accept": "application/json"},
-                    )
-            except httpx.HTTPError as exc:
-                last_error = exc
-                if attempt < self._MAX_ATTEMPTS:
-                    await asyncio.sleep(0.75 * attempt)
-                    continue
-                raise ArchiveStorageError(
-                    f"Bridge v1 transport failed after {attempt} attempts: {type(exc).__name__}",
-                    retryable=True,
-                    code="TRANSPORT_ERROR",
-                ) from exc
-
-            if resp.status_code in self._RETRYABLE_HTTP_STATUSES and attempt < self._MAX_ATTEMPTS:
-                await asyncio.sleep(0.75 * attempt)
-                continue
-            if not resp.is_success:
-                raise ArchiveStorageError(
-                    f"Bridge v1 HTTP {resp.status_code}",
-                    retryable=resp.status_code in self._RETRYABLE_HTTP_STATUSES,
-                    code="HTTP_ERROR",
-                )
-            try:
-                data = resp.json()
-            except ValueError as exc:
-                raise ArchiveStorageError(
-                    "Bridge v1 returned a non-JSON response",
-                    code="NON_JSON_RESPONSE",
-                ) from exc
-            if not isinstance(data, dict):
-                raise ArchiveStorageError(
-                    "Bridge v1 response is not an object",
-                    code="INVALID_RESPONSE",
-                )
-            if int(data.get("protocol_version") or 0) != BRIDGE_PROTOCOL_V1:
-                raise ArchiveStorageError("Bridge v1 protocol mismatch", code="PROTOCOL_MISMATCH")
-            if str(data.get("project_id") or "") != MARKETPLACES_BRIDGE_PROJECT_ID:
-                raise ArchiveStorageError("Bridge v1 project mismatch", code="PROJECT_MISMATCH")
-            if str(data.get("request_id") or "") != request_id:
-                raise ArchiveStorageError("Bridge v1 request_id mismatch", code="REQUEST_ID_MISMATCH")
-            echoed_action = str(data.get("action") or "")
-            if echoed_action and echoed_action != action:
-                raise ArchiveStorageError("Bridge v1 action mismatch", code="ACTION_MISMATCH")
-            if data.get("ok") is True:
-                result = data.get("result")
-                return dict(result) if isinstance(result, dict) else {}
-
-            err = data.get("error") if isinstance(data.get("error"), dict) else {}
-            code = str(err.get("code") or "BRIDGE_REJECTED")
-            message = str(err.get("message") or "bridge rejected request")
-            retryable = bool(err.get("retryable"))
-            if retryable and attempt < self._MAX_ATTEMPTS:
-                await asyncio.sleep(0.75 * attempt)
-                continue
-            raise ArchiveStorageError(
-                f"Bridge v1 {code}: {message}",
-                retryable=retryable,
-                code=code,
-            )
-
-        raise ArchiveStorageError(
-            f"Bridge v1 transport failed: {type(last_error).__name__ if last_error else 'unknown'}",
-            retryable=True,
-            code="TRANSPORT_ERROR",
-        )
-
-    async def _call(
-        self,
-        action: str,
-        payload: dict[str, Any] | None = None,
-        *,
-        idempotency_key: str | None = None,
-    ) -> dict[str, Any]:
-        if self.is_protocol_v1:
-            return await self._post_v1(action, payload, idempotency_key=idempotency_key)
-        return await self._post_legacy(action, **dict(payload or {}))
+    # Compatibility alias for older tests/callers while the implementation is V3-only.
+    async def _post_legacy(self, action: str, **payload: Any) -> dict[str, Any]:
+        return await self._post(action, **payload)
 
     async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
         return self._path(parts)
@@ -385,10 +211,7 @@ class GoogleDriveArchiveStore:
         *,
         mime_type: str | None = None,
     ) -> DriveFile | None:
-        data = await self._call(
-            "stat",
-            {"path": self._path((parent_id,)), "filename": str(name)},
-        )
+        data = await self._post("stat", path=self._path((parent_id,)), filename=str(name))
         if not data.get("found"):
             return None
         item = self._to_file(dict(data.get("file") or {}))
@@ -397,10 +220,10 @@ class GoogleDriveArchiveStore:
         return item
 
     async def file_metadata(self, file_id: str) -> dict[str, Any]:
-        data = await self._call("metadata_by_id", {"file_id": str(file_id)})
+        data = await self._post("metadata_by_id", file_id=str(file_id))
         item = self._to_file(dict(data.get("file") or {}))
         if not item.id:
-            raise ArchiveStorageError("Apps Script Drive bridge metadata returned no file id")
+            raise ArchiveStorageError("Google Drive Bridge v3 metadata returned no file id")
         return {
             "id": item.id,
             "name": item.name,
@@ -412,16 +235,9 @@ class GoogleDriveArchiveStore:
         }
 
     async def trash_file(self, file_id: str) -> None:
-        idem = None
-        if self.is_protocol_v1:
-            idem = self._stable_idempotency_key("trash_by_id", str(file_id))
-        data = await self._call(
-            "trash_by_id",
-            {"file_id": str(file_id)},
-            idempotency_key=idem,
-        )
+        data = await self._post("trash_by_id", file_id=str(file_id))
         if data.get("trashed") is not True:
-            raise ArchiveStorageError("Apps Script Drive bridge failed to trash file")
+            raise ArchiveStorageError("Google Drive Bridge v3 failed to trash diagnostic file")
 
     async def promote_verified_file(
         self,
@@ -434,42 +250,26 @@ class GoogleDriveArchiveStore:
         expected_sha256: str,
         previous_file_id: str | None = None,
     ) -> DriveFile:
-        effective_staging_name = str(staging_name)
-        if self.is_protocol_v1:
-            current = await self.file_metadata(str(file_id))
-            if str(current.get("name") or "") and str(current.get("name")) != str(canonical_name):
-                effective_staging_name = str(current["name"])
-        payload = {
-            "path": self._path((parent_id,)),
-            "file_id": str(file_id),
-            "staging_filename": effective_staging_name,
-            "canonical_filename": str(canonical_name),
-            "expected_bytes": int(expected_bytes),
-            "expected_sha256": str(expected_sha256).lower(),
-            "previous_file_id": str(previous_file_id or ""),
-        }
-        idem = None
-        if self.is_protocol_v1:
-            idem = self._stable_idempotency_key(
-                "promote_verified",
-                payload["path"],
-                payload["file_id"],
-                payload["canonical_filename"],
-                payload["expected_bytes"],
-                payload["expected_sha256"],
-                payload["previous_file_id"],
-            )
-        data = await self._call("promote_verified", payload, idempotency_key=idem)
+        data = await self._post(
+            "promote_verified",
+            path=self._path((parent_id,)),
+            file_id=str(file_id),
+            staging_filename=str(staging_name),
+            canonical_filename=str(canonical_name),
+            expected_bytes=int(expected_bytes),
+            expected_sha256=str(expected_sha256).lower(),
+            previous_file_id=str(previous_file_id or ""),
+        )
         item = self._to_file(dict(data.get("file") or {}))
         if not item.id:
-            raise ArchiveStorageError("Apps Script Drive bridge promotion returned no file id")
+            raise ArchiveStorageError("Google Drive Bridge v3 promotion returned no file id")
         if item.id != str(file_id):
-            raise ArchiveStorageError("Apps Script Drive bridge promoted an unexpected file id")
+            raise ArchiveStorageError("Google Drive Bridge v3 promoted an unexpected file id")
         if item.name != str(canonical_name):
-            raise ArchiveStorageError("Apps Script Drive bridge promotion returned the wrong canonical name")
+            raise ArchiveStorageError("Google Drive Bridge v3 promotion returned the wrong canonical name")
         if item.size != int(expected_bytes) or item.sha256_checksum != str(expected_sha256).lower():
             raise ArchiveStorageError(
-                "Apps Script Drive bridge promotion failed final size/SHA256 verification"
+                "Google Drive Bridge v3 promotion failed final size/SHA256 verification"
             )
         if (
             previous_file_id
@@ -477,8 +277,9 @@ class GoogleDriveArchiveStore:
             and data.get("previous_file_trashed") is not True
         ):
             raise ArchiveStorageError(
-                "Apps Script Drive bridge did not confirm previous canonical cleanup",
+                "Google Drive Bridge v3 did not confirm previous canonical cleanup",
                 retryable=True,
+                code="PREVIOUS_CLEANUP_UNCONFIRMED",
             )
         return item
 
@@ -490,266 +291,38 @@ class GoogleDriveArchiveStore:
         total_bytes: int,
         mime_type: str = "text/csv",
     ) -> dict[str, Any]:
-        payload = {
-            "path": self._path((parent_id,)),
-            "filename": str(name),
-            "mime_type": str(mime_type),
-            "total_bytes": int(total_bytes),
-        }
-        idem = None
-        if self.is_protocol_v1:
-            idem = self._stable_idempotency_key(
-                "resumable_start",
-                payload["path"],
-                payload["filename"],
-                payload["mime_type"],
-                payload["total_bytes"],
-            )
-        data = await self._call("resumable_start", payload, idempotency_key=idem)
+        data = await self._post(
+            "resumable_start",
+            path=self._path((parent_id,)),
+            filename=str(name),
+            mime_type=str(mime_type),
+            total_bytes=int(total_bytes),
+        )
         session_uri = str(data.get("session_uri") or "").strip()
         if not session_uri:
-            raise ArchiveStorageError("Apps Script Drive bridge returned no resumable session URI")
+            raise ArchiveStorageError("Google Drive Bridge v3 returned no resumable session URI")
         return {
             "session_uri": session_uri,
             "file_id": str(data.get("file_id") or "").strip() or None,
-            "staging_filename": str(data.get("staging_filename") or "").strip() or None,
+            "staging_filename": str(data.get("filename") or name).strip() or None,
         }
-
-    async def start_large_download(self, file_id: str) -> dict[str, Any]:
-        if not self.is_protocol_v1:
-            raise ArchiveStorageError(
-                "Large-download capability is only defined by shared Bridge Protocol v1",
-                code="LARGE_DOWNLOAD_PROTOCOL_REQUIRED",
-            )
-        return await self._post_v1(
-            "large_download_start",
-            {"file_id": str(file_id)},
-        )
-
-    async def poll_large_download(self, download_ticket: str) -> dict[str, Any]:
-        if not self.is_protocol_v1:
-            raise ArchiveStorageError(
-                "Large-download capability is only defined by shared Bridge Protocol v1",
-                code="LARGE_DOWNLOAD_PROTOCOL_REQUIRED",
-            )
-        ticket = str(download_ticket or "").strip()
-        if not ticket:
-            raise ArchiveStorageError(
-                "Bridge v1 returned no large-download ticket",
-                retryable=True,
-                code="DOWNLOAD_TICKET_MISSING",
-            )
-        return await self._post_v1(
-            "large_download_poll",
-            {"download_ticket": ticket},
-        )
-
-    async def download_large_by_id(
-        self,
-        file_id: str,
-        *,
-        max_bytes: int = _LARGE_DOWNLOAD_MAX_BYTES,
-        max_polls: int = _LARGE_DOWNLOAD_MAX_POLLS,
-        poll_seconds: float = _LARGE_DOWNLOAD_POLL_SECONDS,
-    ) -> tuple[dict[str, Any], bytes]:
-        """Download one verified Drive blob without exposing its bearer-like URI.
-
-        The URI and optional download ticket live only inside this call. They are
-        never returned by this method, written to registry/job state, or included
-        in an exception message. Bytes are made available to callers only after
-        exact byte-count and SHA256 verification succeeds.
-        """
-        selected_file_id = str(file_id or "").strip()
-        if not selected_file_id:
-            raise ArchiveStorageError("Drive file_id is required", code="FILE_ID_REQUIRED")
-        state = await self.start_large_download(selected_file_id)
-        for poll_index in range(int(max_polls) + 1):
-            if state.get("ready") is True:
-                break
-            ticket = str(state.get("download_ticket") or "").strip()
-            if not ticket:
-                raise ArchiveStorageError(
-                    "Bridge v1 returned no large-download ticket",
-                    retryable=True,
-                    code="DOWNLOAD_TICKET_MISSING",
-                )
-            if poll_index >= int(max_polls):
-                raise ArchiveStorageError(
-                    "Drive large-download operation did not become ready",
-                    retryable=True,
-                    code="LARGE_DOWNLOAD_NOT_READY",
-                )
-            await asyncio.sleep(max(0.1, float(poll_seconds)))
-            state = await self.poll_large_download(ticket)
-        else:
-            raise ArchiveStorageError(
-                "Drive large-download operation did not become ready",
-                retryable=True,
-                code="LARGE_DOWNLOAD_NOT_READY",
-            )
-
-        returned_file_id = str(state.get("file_id") or "").strip()
-        if returned_file_id != selected_file_id:
-            raise ArchiveStorageError(
-                "Bridge v1 large-download file identity mismatch",
-                code="FILE_ID_MISMATCH",
-            )
-        uri = str(state.get("download_uri") or "").strip()
-        self._validate_google_download_uri(uri)
-        try:
-            expected_size = int(state.get("total_bytes") if state.get("total_bytes") is not None else -1)
-        except (TypeError, ValueError) as exc:
-            raise ArchiveStorageError(
-                "Bridge v1 returned no valid large-download size",
-                code="SIZE_UNAVAILABLE",
-            ) from exc
-        expected_sha = str(state.get("sha256") or "").strip().lower()
-        if expected_size < 0:
-            raise ArchiveStorageError(
-                "Bridge v1 returned no valid large-download size",
-                code="SIZE_UNAVAILABLE",
-            )
-        if expected_size > int(max_bytes):
-            raise ArchiveStorageError(
-                f"Large download exceeds Marketplaces client safety limit {int(max_bytes)} bytes",
-                code="DOWNLOAD_TOO_LARGE",
-            )
-        if not self._is_sha256(expected_sha):
-            raise ArchiveStorageError(
-                "Bridge v1 returned no valid large-download SHA256",
-                code="SHA256_UNAVAILABLE",
-            )
-
-        resource_key = str(state.get("resource_key") or "").strip()
-        headers: dict[str, str] = {"Accept": "application/octet-stream"}
-        if resource_key:
-            headers["X-Goog-Drive-Resource-Keys"] = f"{selected_file_id}/{resource_key}"
-
-        buffer = bytearray()
-        hasher = hashlib.sha256()
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as direct:
-                async with direct.stream("GET", uri, headers=headers) as response:
-                    if response.status_code in self._RETRYABLE_HTTP_STATUSES:
-                        raise ArchiveStorageError(
-                            f"Google large-download transport HTTP {response.status_code}",
-                            retryable=True,
-                            code="LARGE_DOWNLOAD_TRANSPORT_ERROR",
-                        )
-                    if not response.is_success:
-                        raise ArchiveStorageError(
-                            f"Google large-download transport HTTP {response.status_code}",
-                            retryable=False,
-                            code="LARGE_DOWNLOAD_TRANSPORT_ERROR",
-                        )
-                    async for chunk in response.aiter_bytes():
-                        if not chunk:
-                            continue
-                        buffer.extend(chunk)
-                        hasher.update(chunk)
-                        if len(buffer) > expected_size:
-                            raise ArchiveStorageError(
-                                "Large download exceeded expected Drive size",
-                                code="SIZE_MISMATCH",
-                            )
-        except ArchiveStorageError:
-            raise
-        except httpx.HTTPError as exc:
-            raise ArchiveStorageError(
-                f"Google large-download transport failed: {type(exc).__name__}",
-                retryable=True,
-                code="LARGE_DOWNLOAD_TRANSPORT_ERROR",
-            ) from exc
-
-        raw = bytes(buffer)
-        if len(raw) != expected_size:
-            raise ArchiveStorageError(
-                f"Large download size mismatch: {len(raw)} != {expected_size}",
-                code="SIZE_MISMATCH",
-            )
-        actual_sha = hasher.hexdigest()
-        if actual_sha != expected_sha:
-            raise ArchiveStorageError(
-                "Large download SHA256 mismatch",
-                code="SHA256_MISMATCH",
-            )
-        verified = {
-            "id": selected_file_id,
-            "size": expected_size,
-            "sha256Checksum": expected_sha,
-            "mimeType": state.get("mime_type"),
-            "modifiedTime": state.get("modified_time"),
-            "partialDownloadAllowed": bool(state.get("partial_download_allowed")),
-        }
-        return verified, raw
 
     async def download_bytes(self, file_id: str) -> bytes:
-        if self.is_protocol_v1:
-            _, raw = await self.download_large_by_id(str(file_id))
-            return raw
-        data = await self._post_legacy("read_by_id", file_id=str(file_id))
+        data = await self._post("read_by_id", file_id=str(file_id))
         encoded = str(data.get("content_base64", ""))
         if not encoded:
             return b""
         try:
             return base64.b64decode(encoded, validate=True)
         except ValueError as exc:
-            raise ArchiveStorageError("Apps Script Drive bridge returned invalid base64") from exc
+            raise ArchiveStorageError("Google Drive Bridge v3 returned invalid base64") from exc
 
     async def download_named(
         self,
         parent_id: str,
         name: str,
     ) -> tuple[DriveFile | None, bytes | None]:
-        if self.is_protocol_v1:
-            try:
-                data = await self._post_v1(
-                    "read_small",
-                    {"path": self._path((parent_id,)), "filename": str(name)},
-                )
-            except ArchiveStorageError as exc:
-                if exc.code != "LARGE_READ_REQUIRED":
-                    raise
-                item = await self.find_child(parent_id, name)
-                if item is None:
-                    return None, None
-                verified, raw = await self.download_large_by_id(item.id)
-                if verified["size"] != len(raw) or verified["sha256Checksum"] != hashlib.sha256(raw).hexdigest():
-                    raise ArchiveStorageError(
-                        "Verified large-download result changed before use",
-                        code="LARGE_DOWNLOAD_VERIFY_FAILED",
-                    )
-                return item, raw
-            if not data.get("found"):
-                return None, None
-            item = self._to_file(dict(data.get("file") or {}))
-            encoded = str(data.get("content_base64", ""))
-            try:
-                raw = base64.b64decode(encoded, validate=True) if encoded else b""
-            except ValueError as exc:
-                raise ArchiveStorageError(
-                    "Bridge v1 returned invalid small-read base64",
-                    code="INVALID_BASE64",
-                ) from exc
-            expected_sha = str(data.get("sha256") or item.sha256_checksum or "").lower()
-            actual_sha = hashlib.sha256(raw).hexdigest()
-            if expected_sha and expected_sha != actual_sha:
-                raise ArchiveStorageError(
-                    "Bridge v1 small-read SHA256 mismatch",
-                    code="SHA256_MISMATCH",
-                )
-            if item.size is not None and len(raw) != item.size:
-                raise ArchiveStorageError(
-                    f"Bridge v1 small-read size mismatch for {name!r}",
-                    code="SIZE_MISMATCH",
-                )
-            return item, raw
-
-        data = await self._post_legacy(
-            "read",
-            path=self._path((parent_id,)),
-            filename=str(name),
-        )
+        data = await self._post("read", path=self._path((parent_id,)), filename=str(name))
         if not data.get("found"):
             return None, None
         item = self._to_file(dict(data.get("file") or {}))
@@ -757,10 +330,10 @@ class GoogleDriveArchiveStore:
         try:
             raw = base64.b64decode(encoded, validate=True) if encoded else b""
         except ValueError as exc:
-            raise ArchiveStorageError("Apps Script Drive bridge returned invalid base64") from exc
+            raise ArchiveStorageError("Google Drive Bridge v3 returned invalid base64") from exc
         if item.size is not None and len(raw) != item.size:
             raise ArchiveStorageError(
-                f"Apps Script Drive bridge size mismatch for {name!r}: {len(raw)} != {item.size}"
+                f"Google Drive Bridge v3 size mismatch for {name!r}: {len(raw)} != {item.size}"
             )
         return item, raw
 
@@ -772,121 +345,58 @@ class GoogleDriveArchiveStore:
         *,
         mime_type: str = "text/csv",
     ) -> DriveFile:
+        """Write a bounded object with replay protection for identical content.
+
+        A lost response can cause the caller to retry. If the exact named file is
+        already present with identical bytes, return it instead of replacing it.
+        The server-side v3 source also contains the same SHA-aware replay guard.
+        """
+        existing, existing_raw = await self.download_named(parent_id, name)
+        if existing is not None and existing_raw == data:
+            return existing
+
         sha256 = hashlib.sha256(data).hexdigest()
-        path = self._path((parent_id,))
-        if self.is_protocol_v1:
-            payload = {
-                "path": path,
-                "filename": str(name),
-                "mime_type": str(mime_type),
-                "content_base64": base64.b64encode(data).decode("ascii"),
-                "sha256": sha256,
-            }
-            idem = self._stable_idempotency_key(
-                "write_small",
-                path,
-                str(name),
-                str(mime_type),
-                len(data),
-                sha256,
-            )
-            result = await self._post_v1(
-                "write_small",
-                payload,
-                idempotency_key=idem,
-            )
-        else:
-            result = await self._post_legacy(
-                "write",
-                path=path,
-                filename=str(name),
-                mime_type=mime_type,
-                content_base64=base64.b64encode(data).decode("ascii"),
-                sha256=sha256,
-            )
+        result = await self._post(
+            "write",
+            path=self._path((parent_id,)),
+            filename=str(name),
+            mime_type=mime_type,
+            content_base64=base64.b64encode(data).decode("ascii"),
+            sha256=sha256,
+        )
         returned_sha = str(result.get("sha256", "")).lower()
         if returned_sha and returned_sha != sha256:
-            raise ArchiveStorageError(f"Apps Script Drive bridge checksum mismatch for {name!r}")
+            raise ArchiveStorageError(f"Google Drive Bridge v3 checksum mismatch for {name!r}")
         item = self._to_file(dict(result.get("file") or {}))
         if not item.id:
-            raise ArchiveStorageError("Apps Script Drive bridge upload returned no file id")
+            raise ArchiveStorageError("Google Drive Bridge v3 upload returned no file id")
         if item.size is not None and item.size != len(data):
-            raise ArchiveStorageError(f"Apps Script Drive bridge uploaded size mismatch for {name!r}")
-        if self.is_protocol_v1 and item.sha256_checksum and item.sha256_checksum.lower() != sha256:
-            raise ArchiveStorageError(
-                f"Bridge v1 uploaded SHA256 mismatch for {name!r}",
-                code="SHA256_MISMATCH",
-            )
+            raise ArchiveStorageError(f"Google Drive Bridge v3 uploaded size mismatch for {name!r}")
         return item
 
     async def status(self) -> dict[str, Any]:
-        if self.is_protocol_v1:
-            data = await self._post_v1("health")
-            actual_root = str(data.get("root_id", ""))
-            root_name = str(data.get("root_name", ""))
-            capabilities = dict(data.get("capabilities") or {})
-            if int(data.get("protocol_version") or 0) != BRIDGE_PROTOCOL_V1:
-                raise ArchiveStorageError(
-                    "Bridge v1 deep health protocol mismatch",
-                    code="PROTOCOL_MISMATCH",
-                )
-            if str(data.get("project_id") or "") != MARKETPLACES_BRIDGE_PROJECT_ID:
-                raise ArchiveStorageError(
-                    "Bridge v1 deep health project mismatch",
-                    code="PROJECT_MISMATCH",
-                )
-            if actual_root != self.root_folder_id:
-                raise ArchiveStorageError(
-                    f"Bridge v1 root mismatch: {actual_root!r} != {self.root_folder_id!r}",
-                    code="ROOT_MISMATCH",
-                )
-            if str(data.get("bridge_release") or "") != BRIDGE_RELEASE_V1:
-                raise ArchiveStorageError(
-                    f"Bridge v1 release mismatch: {data.get('bridge_release')!r} != {BRIDGE_RELEASE_V1!r}",
-                    code="BRIDGE_RELEASE_MISMATCH",
-                )
-            if capabilities.get("fixed_root_file_id_guard") is not True:
-                raise ArchiveStorageError(
-                    "Bridge v1 does not advertise fixed-root file-id protection",
-                    code="ROOT_GUARD_REQUIRED",
-                )
-            if capabilities.get("idempotent_mutations") is not True:
-                raise ArchiveStorageError(
-                    "Bridge v1 does not advertise idempotent mutations",
-                    code="IDEMPOTENCY_REQUIRED",
-                )
-            large_ready = (
-                capabilities.get("drive_large_download") is True
-                and capabilities.get("drive_large_download_transport") == "drive_files_download_lro"
-            )
-            return {
-                "configured": True,
-                "reachable": True,
-                "backend": "google_drive_bridge_v1",
-                "root_folder_id": actual_root,
-                "root_name": root_name,
-                "bridge_protocol_version": BRIDGE_PROTOCOL_V1,
-                "bridge_release": data.get("bridge_release"),
-                "project_id": MARKETPLACES_BRIDGE_PROJECT_ID,
-                "capabilities": capabilities,
-                "large_download_ready": large_ready,
-            }
-
-        data = await self._post_legacy("health")
+        data = await self._post("health")
         actual_root = str(data.get("root_id", ""))
         root_name = str(data.get("root_name", ""))
+        version = int(data.get("version") or 0)
+        if version != BRIDGE_VERSION:
+            raise ArchiveStorageError(
+                f"Marketplaces Google Drive bridge version mismatch: {version} != {BRIDGE_VERSION}",
+                code="BRIDGE_VERSION_MISMATCH",
+            )
         if actual_root != self.root_folder_id:
             raise ArchiveStorageError(
-                f"Apps Script Drive bridge root mismatch: {actual_root!r} != {self.root_folder_id!r}"
+                f"Google Drive Bridge v3 root mismatch: {actual_root!r} != {self.root_folder_id!r}",
+                code="ROOT_MISMATCH",
             )
         return {
             "configured": True,
             "reachable": True,
-            "backend": "google_drive_apps_script_bridge",
+            "backend": "google_drive_apps_script_bridge_v3",
             "root_folder_id": actual_root,
             "root_name": root_name,
-            "bridge_version": data.get("version"),
-            "bridge_protocol_mode": "legacy",
+            "bridge_version": version,
+            "capabilities": dict(data.get("capabilities") or {}),
         }
 
 

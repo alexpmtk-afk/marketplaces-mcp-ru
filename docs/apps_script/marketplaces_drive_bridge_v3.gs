@@ -1,16 +1,16 @@
 /**
- * Marketplaces MCP -> Google Drive bridge v3 (hardened).
+ * Marketplaces MCP -> Google Drive Bridge v3 (canonical, hardened).
  *
- * Small files keep the existing bridge path. Large files use the bridge only
- * as a control plane:
+ * Small files use the authenticated Apps Script control path. Large files use
+ * Apps Script only as a control plane:
  * - resumable_start: authenticate the initial Drive resumable request;
  * - metadata_by_id: obtain Drive size/checksums without moving file bytes;
  * - promote_verified: promote an exact SHA256-verified staging file;
  * - trash_by_id: cleanup diagnostic copies only.
  *
  * Security boundary: every ID-based operation is restricted to the fixed
- * archive root. Large file bytes never pass through Apps Script. The resumable
- * session URI is a bearer capability and must never be logged.
+ * archive root. Large upload bytes never pass through Apps Script. The
+ * resumable session URI is a bearer capability and must never be logged.
  */
 const ARCHIVE_ROOT_ID='1UVKUcFfDhCDk6nMHX1mWg9cRL05DT-OJ';
 const ARCHIVE_ROOT_NAME='MCP архив базы данных';
@@ -20,9 +20,12 @@ const BRIDGE_CAPABILITIES={
   resumable_start:true,
   sha256_metadata:true,
   staged_promotion:true,
+  promotion_replay_safe:true,
+  idempotent_small_write:true,
   diagnostic_cleanup:true,
   archive_root_id_guard:true,
-  drive_api_preflight:true
+  drive_api_preflight:true,
+  readonly_parallel:true
 };
 
 function setupBridge(){
@@ -34,9 +37,6 @@ function setupBridge(){
   }
   const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
   if(root.getName()!==ARCHIVE_ROOT_NAME) throw new Error('wrong_root');
-
-  // Fail during setup, not during a production upload, if the script cannot
-  // call Drive REST with its current Cloud project/scopes.
   const apiRoot=driveApiMetadata_(ARCHIVE_ROOT_ID);
   if(String(apiRoot.id||'')!==ARCHIVE_ROOT_ID) throw new Error('drive_api_preflight_failed');
   console.log('ROOT_OK='+root.getName());
@@ -62,13 +62,14 @@ function doGet(){
 }
 
 function doPost(e){
-  const lock=LockService.getScriptLock(); lock.waitLock(30000);
   try{
     const body=JSON.parse((e&&e.postData&&e.postData.contents)||'{}');
     const expected=PropertiesService.getScriptProperties().getProperty(SECRET_PROPERTY);
     if(!expected||!body.secret||body.secret!==expected) return json_({ok:false,error:'unauthorized'});
     const action=String(body.action||'').trim().toLowerCase();
 
+    // Read-only requests do not take the mutation lock, so independent reads,
+    // health checks and metadata lookups can proceed concurrently.
     if(action==='health'){
       const root=DriveApp.getFolderById(ARCHIVE_ROOT_ID);
       return json_({
@@ -98,48 +99,79 @@ function doPost(e){
       assertFileInsideArchive_(fileId);
       return json_({ok:true,found:true,file:driveApiMetadata_(fileId)});
     }
-    if(action==='trash_by_id'){
-      const fileId=String(body.file_id||'').trim();
-      if(!fileId) return json_({ok:false,error:'missing_file_id'});
-      const file=assertFileInsideArchive_(fileId);
-      if(!/^\..+\.diagnostic-report-\d+\.csv$/.test(file.getName())){
-        return json_({ok:false,error:'trash_only_allowed_for_diagnostic_copy'});
+
+    // Mutations use a short serialization boundary. This preserves exact replay
+    // safety without forcing ordinary read-only calls through one global lock.
+    return withMutationLock_(function(){
+      if(action==='trash_by_id'){
+        const fileId=String(body.file_id||'').trim();
+        if(!fileId) return json_({ok:false,error:'missing_file_id'});
+        const file=assertFileInsideArchive_(fileId);
+        if(!/^\..+\.diagnostic-report-\d+\.csv$/.test(file.getName())){
+          return json_({ok:false,error:'trash_only_allowed_for_diagnostic_copy'});
+        }
+        file.setTrashed(true);
+        return json_({ok:true,file_id:fileId,trashed:true});
       }
-      file.setTrashed(true);
-      return json_({ok:true,file_id:fileId,trashed:true});
-    }
-    if(action==='promote_verified'){
-      return json_(promoteVerified_(body));
-    }
-    if(action==='resumable_start'){
-      const filename=validateFilename_(String(body.filename||''));
-      const path=String(body.path||'');
-      const mimeType=String(body.mime_type||'application/octet-stream');
-      const totalBytes=Number(body.total_bytes||0);
-      if(!Number.isFinite(totalBytes)||totalBytes<=0) return json_({ok:false,error:'invalid_total_bytes'});
-      const folder=resolveFolder_(path,true);
-      const existing=findSingleFileInFolder_(folder,filename);
-      const session=startResumableSession_(folder,existing,filename,mimeType,totalBytes);
-      return json_({ok:true,session_uri:session.session_uri,file_id:session.file_id||null,path:normalizePath_(path),filename:filename});
-    }
-    if(action==='write'){
-      const filename=validateFilename_(String(body.filename||''));
-      const path=String(body.path||'');
-      const mimeType=String(body.mime_type||'application/octet-stream');
-      const bytes=Utilities.base64Decode(String(body.content_base64||''));
-      const sha=sha256HexBytes_(bytes);
-      if(body.sha256&&String(body.sha256).toLowerCase()!==sha) return json_({ok:false,error:'sha256_mismatch',sha256:sha});
-      const folder=resolveFolder_(path,true);
-      const old=folder.getFilesByName(filename); while(old.hasNext()) old.next().setTrashed(true);
-      const file=folder.createFile(Utilities.newBlob(bytes,mimeType,filename));
-      file.setDescription('Managed by Marketplaces MCP Drive Bridge v3; sha256='+sha);
-      return json_({ok:true,file:metadata_(file),sha256:sha,path:normalizePath_(path)});
-    }
-    return json_({ok:false,error:'unknown_action'});
+      if(action==='promote_verified'){
+        return json_(promoteVerified_(body));
+      }
+      if(action==='resumable_start'){
+        const filename=validateFilename_(String(body.filename||''));
+        const path=String(body.path||'');
+        const mimeType=String(body.mime_type||'application/octet-stream');
+        const totalBytes=Number(body.total_bytes||0);
+        if(!Number.isFinite(totalBytes)||totalBytes<=0) return json_({ok:false,error:'invalid_total_bytes'});
+        const folder=resolveFolder_(path,true);
+        const existing=findSingleFileInFolder_(folder,filename);
+        const session=startResumableSession_(folder,existing,filename,mimeType,totalBytes);
+        return json_({ok:true,session_uri:session.session_uri,file_id:session.file_id||null,path:normalizePath_(path),filename:filename});
+      }
+      if(action==='write'){
+        return json_(writeSmallReplaySafe_(body));
+      }
+      return json_({ok:false,error:'unknown_action'});
+    });
   }catch(err){
     const message=String(err&&err.message||err);
     return json_({ok:false,error:message,retryable:isRetryableError_(message)});
-  }finally{lock.releaseLock();}
+  }
+}
+
+function withMutationLock_(fn){
+  const lock=LockService.getScriptLock();
+  lock.waitLock(30000);
+  try{return fn();}finally{lock.releaseLock();}
+}
+
+function writeSmallReplaySafe_(body){
+  const filename=validateFilename_(String(body.filename||''));
+  const path=String(body.path||'');
+  const mimeType=String(body.mime_type||'application/octet-stream');
+  const bytes=Utilities.base64Decode(String(body.content_base64||''));
+  const sha=sha256HexBytes_(bytes);
+  if(body.sha256&&String(body.sha256).toLowerCase()!==sha){
+    return {ok:false,error:'sha256_mismatch',sha256:sha};
+  }
+  const folder=resolveFolder_(path,true);
+  const existing=findSingleFileInFolder_(folder,filename);
+  if(existing){
+    const existingSize=Number(existing.getSize()||0);
+    let existingSha='';
+    const description=String(existing.getDescription()||'');
+    const match=description.match(/(?:^|[;\s])sha256=([0-9a-f]{64})(?:$|[;\s])/i);
+    if(match) existingSha=String(match[1]||'').toLowerCase();
+    if(existingSize===bytes.length&&!existingSha){
+      existingSha=sha256HexBytes_(existing.getBlob().getBytes());
+    }
+    if(existingSize===bytes.length&&existingSha===sha){
+      return {ok:true,file:metadata_(existing),sha256:sha,path:normalizePath_(path),replayed:true};
+    }
+    existing.setTrashed(true);
+  }
+  const file=folder.createFile(Utilities.newBlob(bytes,mimeType,filename));
+  file.setDescription('Managed by Marketplaces MCP Drive Bridge v3; sha256='+sha);
+  return {ok:true,file:metadata_(file),sha256:sha,path:normalizePath_(path),replayed:false};
 }
 
 function promoteVerified_(body){
@@ -175,8 +207,7 @@ function promoteVerified_(body){
     }
   }
 
-  // Promote the verified candidate first. If the response is lost after the
-  // rename, an exact-ID retry is safe and will finish previous-file cleanup.
+  // Promote first. An exact-ID retry is safe if the caller lost the response.
   const candidate=DriveApp.getFileById(fileId);
   if(candidate.getName()!==canonicalName) candidate.setName(canonicalName);
 
