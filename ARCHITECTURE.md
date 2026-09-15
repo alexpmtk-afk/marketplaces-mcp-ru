@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-14.v16`
+**Version:** `2026-09-15.v17`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -22,7 +22,7 @@ Supporting services:
 ## Hard boundaries
 
 - Google Cloud is not a runtime provider for Marketplaces MCP. The archive upload path does not require a separate server-side Google OAuth client or refresh-token store.
-- Google Drive annual CSV files and the report registry are the archive source of truth.
+- Google Drive annual CSV files and dataset-specific coverage registries are the archive source of truth.
 - Apps Script remains the narrow trusted Google control-plane bridge for small Drive operations, reads, metadata/status, folder resolution, resumable-session creation and final verified promotion.
 - **Large annual CSV file bytes must not be transported through Apps Script as one base64 JSON POST.** Apps Script brokers the resumable session; Yandex sends chunks directly to the official Drive session URI.
 - **Large annual resumable uploads must not write directly into the existing canonical file.** They upload to a non-canonical staging filename first. The old canonical file remains untouched until the staged file passes exact Drive size/SHA256 verification and the Yandex backup has been written.
@@ -34,7 +34,8 @@ Supporting services:
 ## Archive rules
 
 - Archive state is server-owned and shared by every client.
-- Annual CSV files and the archive registry live canonically on Google Drive under `MCP архив базы данных`.
+- Annual CSV files and coverage registries live canonically on Google Drive under `MCP архив базы данных`.
+- WB weekly-finance coverage uses `reports_registry.csv`; generic datasets such as WB Advertising use `app/registry/dataset_coverage_registry.csv`.
 - Queue state and temporary per-report staging remain in Yandex Object Storage so in-flight jobs survive deployments and client disconnects.
 - Large-file finalization is split into durable stages:
   1. `PREPARE` builds one immutable annual candidate in Yandex Object Storage and records its size/SHA256.
@@ -45,14 +46,14 @@ Supporting services:
   6. The same candidate is mirrored byte-for-byte to the canonical Yandex backup path and verified for size.
   7. Only after steps 5-6 pass, Apps Script performs `promote_verified`: it confirms the staged file ID, parent, size and SHA256, renames that verified file to the canonical annual filename, and then trashes the explicitly identified previous canonical file.
   8. Promotion is retry-safe. If execution stops after the rename, the worker can detect an already-promoted canonical file with the expected size/SHA256 and continue without repeating provider download or `PREPARE`.
-  9. Only after verified promotion does `COMMIT` update `reports_registry.csv` and durable job progress.
+  9. Only after verified promotion does `COMMIT` update the applicable coverage registry and durable job progress.
 - The resumable session URI, confirmed byte offset, staging file identity, previous canonical file identity, candidate identity/checksums and retry state are durable worker state. Session URIs are bearer-like capabilities and must never be emitted to logs or user responses.
 - Non-final resumable chunks must be multiples of 256 KiB. The default is 4 MiB; the final chunk may be smaller.
 - If the Apps Script bridge does not support the required resumable/promotion controls, the job must fail closed while preserving the candidate and existing progress. It must never fall back to the old large Apps Script/base64 upload or a direct canonical overwrite.
 - Existing canonical files left in Yandex by the previous architecture may be migrated to Drive on first content read when Drive does not yet contain that file. Provider data is not re-downloaded for this migration.
-- Update is idempotent and registry-driven; already-complete provider reports are not downloaded again.
+- Update is idempotent and registry-driven; already-complete provider reports/requests are not downloaded again.
 - WB finance rows are deduplicated by `(reportId, rrdId)` before the annual CSV is written.
-- Registry rows are deduplicated by `(cabinet, dataset, report_id)`.
+- WB Advertising `ads_campaign_daily` rows are deduplicated by `(date, campaign_id)`.
 - Partitioning: one logical annual dataset per marketplace / cabinet / dataset / year.
 - Annual file pattern: `<cabinet>__<dataset>__<year>.csv`.
 - WB weekly finance MAIN uses only `reportType=1` (`Основной`).
@@ -80,32 +81,50 @@ The bridge supports health/status, folder resolution, named-file stat/read, smal
 Runtime configuration:
 - `MARKETPLACE_MCP_DRIVE_RESUMABLE_CHUNK_BYTES` — optional chunk size; must be a multiple of 256 KiB; default 4 MiB.
 
-The Yandex worker stores the opaque Drive session URI only in durable Yandex job state and sends at most one chunk per worker step directly to that URI. Subsequent Drive resumable `PUT` requests use the session URI returned by Google; the runtime does not hold a Google refresh token. On interruption the worker queries Google for the confirmed offset before continuing. Expired sessions are restarted from the immutable candidate rather than replaying WB/API acquisition or `PREPARE`.
+The Yandex worker stores the opaque Drive session URI only in durable Yandex job state and sends at most one chunk per worker step directly to that URI. Subsequent Drive resumable `PUT` requests use the session URI returned by Google; the runtime does not hold a Google refresh token. On interruption the worker queries Google for the confirmed offset before continuing. Expired sessions are restarted from the immutable candidate rather than replaying provider acquisition or `PREPARE`.
 
-## WB Advertising M0
+## WB Advertising
 
-The current advertising phase is **Wildberries only**. Ozon advertising is not part of this phase.
+The current advertising scope is **Wildberries only**. Ozon advertising is not part of this phase.
 
-M0 is deliberately read-only and establishes the first safe business vertical:
+### Live M0
+
+M0 remains deliberately read-only:
 
 `named WB cabinet -> dedicated Promotion credential -> live active campaigns -> /adv/v3/fullstats -> normalized advertising-attribution metrics`
 
-Server tools introduced by M0:
+Server tools:
 - `wb_ads_list_active_campaigns` — live WB campaigns with status `9` (active);
 - `wb_ads_get_campaign_stats` — normalized statistics for at most 50 campaign IDs over at most 31 calendar days;
 - `wb_ads_audit_active` — audits every currently active campaign over the last 7 full Europe/Moscow calendar days by default.
 
 Advertising credentials are a separate logical credential service named `wb_ads`. Promotion-scoped secrets are stored only server-side through Yandex Lockbox and must not be stored on Google Drive or in GitHub.
 
-M0 metrics have data class `advertising_attribution_operational`. They include provider-attributed spend/orders/order amount and calculated CTR, CPC, click-to-order conversion, CPO, order-based DRR and ROAS. These values **must not be presented as actual business profit**. Actual profitability requires separately approved joins to real orders/sales/buyouts, returns, finance and unit economics.
+The metric contract is `wb_ads_m0.v1`; its data class is `advertising_attribution_operational`. It includes provider-attributed spend/orders/order amount and calculated CTR, CPC, click-to-order conversion, CPO, order-based DRR and ROAS. These values **must not be presented as actual business profit**. Actual profitability requires separately approved joins to real orders/sales/buyouts, returns, finance and unit economics.
 
-The current WB fullstats contract accepts at most 50 campaign IDs and a 31-day window. Interactive M0 fails closed rather than returning a partial audit when the active campaign set exceeds one request. Durable rate-aware batching belongs to Advertising Archive V1.
+The current WB fullstats live contract accepts at most 50 campaign IDs and a 31-day window. Interactive M0 fails closed rather than returning a partial audit when the active campaign set exceeds one request.
 
-### Advertising archive boundary
+### Advertising Archive V1
 
-The canonical Drive scaffold is `База данных/WB/<cabinet>/<year>/advertising/...`.
+Canonical Drive path: `База данных/WB/<cabinet>/<year>/advertising/...`.
 
-The Drive folder scaffold is not evidence that Advertising Archive V1 ingestion, coverage or registry integration exists. Until those mechanisms are implemented and accepted, historical advertising analytics continue to use the approved live provider path. Once coverage is proven, closed historical ad periods become archive-first while current state/control remains live.
+Advertising Archive V1 now has canonical annual datasets and generic coverage records. Registered datasets include:
+- `ads_campaign_roster_snapshots`;
+- `ads_campaign_daily`;
+- `ads_product_daily`;
+- `ads_search_cluster_daily`;
+- `ads_campaign_snapshots`;
+- `ads_expenses`;
+- `ads_payments`.
+
+`dataset_coverage_registry.csv` records COMPLETE/PASS or COMPLETE/PASS_WITH_FLAGS request coverage. For the first Semantic Core advertising capability, a closed historical cabinet-level query is executable only when:
+1. the relevant campaign-roster coverage is complete for the requested period;
+2. every roster campaign eligible for fullstats has complete `ads_campaign_daily` request coverage for the entire requested period;
+3. the canonical annual files exist.
+
+If any part is missing, the query fails closed instead of returning partial advertising totals.
+
+Semantic Core V1 uses `ads_campaign_daily` only at cabinet level. A product or `nm_id` question must **not** receive cabinet totals; it fails closed until `ads_product_daily` has its own approved semantic contract. Current-day/current-state advertising remains live and is not inferred from the closed historical archive.
 
 ### Advertising safety
 
@@ -113,14 +132,17 @@ WB has campaign-control operations implemented as HTTP GETs. HTTP verb does not 
 
 ## Semantic Core
 
-The Semantic Core is partially wired into runtime through `marketplace_business_query` and preserves the original natural-language question as the primary intent signal. Legacy `metric` remains compatibility-only and must not override the user's wording.
+The Semantic Core is wired into runtime through `marketplace_business_query` and preserves the original natural-language question as the primary intent signal. Legacy `metric` remains compatibility-only and must not override the user's wording.
 
 Canonical components:
-- `core/semantic_registry.yaml` — full semantic catalog for the physical WB weekly realization archive;
+- `core/semantic_registry.yaml` — audited base semantic catalog;
+- `core/semantic_registry_extensions.yaml` — validated additive domain registry, currently WB Advertising;
 - `core/semantic_intents.yaml` — deterministic natural-language routing;
 - `core/semantic_resolver.py` — fail-closed resolver;
-- `core/semantic_execution.yaml` — approved executable contracts;
-- `core/semantic_archive.py` — coverage-gated archive execution.
+- `core/semantic_execution.yaml` — approved weekly-finance executable contracts;
+- `core/semantic_archive.py` — coverage-gated weekly-finance archive execution;
+- `core/semantic_advertising.py` — coverage-gated advertising archive execution;
+- `core/semantic_business_router.py` — domain-aware dispatch before the legacy router.
 
 ### 92-column weekly-report completion status
 
@@ -130,7 +152,9 @@ Approved runtime calculations are an additional layer, not a requirement for sem
 
 ### Approved archive execution
 
-Archive execution requires exact `FULL_COVERAGE` from COMPLETE fragments in `reports_registry.csv` plus presence of the canonical annual file. Current approved archive capabilities are:
+All archive execution requires exact `FULL_COVERAGE` from the relevant COMPLETE coverage registry plus presence of the canonical annual file.
+
+Weekly-finance capabilities:
 - `penalties`;
 - `storage_charge`;
 - `acceptance_charge`;
@@ -142,13 +166,20 @@ Archive execution requires exact `FULL_COVERAGE` from COMPLETE fragments in `rep
 - `observed_fulfillment_method`;
 - `warehouse_tariff_context`.
 
+Advertising capability:
+- `advertising_performance` — closed historical cabinet-level WB campaign analytics from canonical `ads_campaign_daily`, guarded by roster + fullstats coverage and the `wb_ads_m0.v1` formula contract.
+
 Sales/returns use `saleDt` and explicit `docTypeName` buckets, with Продажа minus Возврат for the approved `retailAmount` / `quantity` calculation. Logistics keeps `deliveryService` and `rebillLogisticCost` separate. Deductions keep `deduction` and `additionalPayment` separate and are never silently netted. Monetary WB reward uses `vw` and `vwNds`; it is not derived from `commissionPercent/kvw/kvwBase`. Weekly `acquiringFee` is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`, not the final monthly acquiring expense.
 
 Historical fulfillment observations use `deliveryMethod`, `officeName` and `rrDate`; their data class is `HISTORICAL_OBSERVED_FULFILLMENT` and they never confirm current fulfillment configuration. Historical warehouse tariff context uses `dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `warehouseLogisticsCoeff` and `officeName`; its data class is `HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT` and it never confirms the current live warehouse tariff.
 
+Advertising archive metrics retain data class `ADVERTISING_ATTRIBUTION_OPERATIONAL`. DRR/ROAS and attributed orders are advertising-attribution metrics; they are not total seller revenue, the complete marketplace order flow or business profitability.
+
 ## Hard source boundaries
 
-The weekly realization archive is not authoritative for the complete marketplace order funnel, current stock, current fulfillment configuration, current live tariffs, detailed storage drivers, detailed acceptance operations, advertising performance, or Ozon data. Those concepts require another approved source and must fail closed instead of being inferred from weekly rows.
+The weekly realization archive is not authoritative for the complete marketplace order funnel, current stock, current fulfillment configuration, current live tariffs, detailed storage drivers, detailed acceptance operations, or Ozon data. Those concepts require another approved source and must fail closed instead of being inferred from weekly rows.
+
+Advertising performance is no longer inferred from weekly finance: it has its own registered canonical datasets and executor. Product-level advertising remains unsupported by the first semantic capability and must fail closed until `ads_product_daily` is approved.
 
 WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDERS`) and must not be substituted for the complete order flow.
 
@@ -160,8 +191,9 @@ WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDER
 - Current/uncovered periods use a suitable provider API or an explicit backfill/gap workflow; no partial archive is silently substituted.
 - Complete-order questions do not substitute WB Statistics Orders for the full marketplace order flow.
 - Current tariff questions do not use historical weekly-report coefficients as live tariff truth.
-- Advertising current campaign state/control is always live from WB Promotion API.
-- Advertising closed-period analytics become archive-first only after Advertising Archive V1 dataset bindings, registry coverage and validation are implemented and accepted.
+- Advertising current campaign state/control is live from WB Promotion API.
+- Closed cabinet-level Advertising questions are archive-first only with proven roster/fullstats `FULL_COVERAGE`.
+- Product-level advertising questions fail closed until `ads_product_daily` receives a separate semantic contract.
 - All computers/chats see the same remote state; no client may invent its own storage or architecture path.
 
 ## Change control
