@@ -1,7 +1,8 @@
-"""Semantic business-query entry point with domain-specific archive executors."""
+"""Semantic business-query entry point with domain-specific executors."""
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from typing import Any, Optional
 
 from .business_router import execute_business_query as execute_legacy_business_query
@@ -17,6 +18,16 @@ def _j(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, default=str)
 
 
+def _resolution_with_period(
+    resolution: dict[str, Any], *, date_from: str, date_to: str,
+) -> dict[str, Any]:
+    enriched = deepcopy(resolution)
+    normalized = dict(enriched.get("normalized_query") or {})
+    normalized["period"] = {"date_from": date_from, "date_to": date_to}
+    enriched["normalized_query"] = normalized
+    return enriched
+
+
 async def execute_business_query(
     modules: dict[str, Any],
     *,
@@ -28,11 +39,58 @@ async def execute_business_query(
     question: str = "",
     nm_ids: Optional[list[int]] = None,
 ) -> dict:
-    """Dispatch registered domain capabilities before the legacy finance path."""
+    """Resolve natural wording first, then execute only an approved route."""
     marketplace_key = str(marketplace or "").strip().lower()
     natural_question = str(question or "").strip()
     if natural_question and marketplace_key in {"wb", "wildberries"}:
-        resolution = resolve_semantic_question(natural_question)
+        resolution = _resolution_with_period(
+            resolve_semantic_question(natural_question),
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        if resolution.get("resolution_type") == "BUSINESS_METRIC":
+            metric_id = str(resolution.get("metric_id") or "")
+            if resolution.get("execution_allowed") is not True:
+                return make_error(
+                    "source_not_suitable",
+                    "The business metric was understood, but the requested grouping or filter does not yet have an approved execution contract.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={
+                        "question": natural_question,
+                        "semantic_resolution": resolution,
+                    },
+                )
+
+            if metric_id == "ORDERS":
+                result = await execute_legacy_business_query(
+                    modules,
+                    marketplace=marketplace,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                    metric="ORDERS",
+                    question="",
+                    nm_ids=nm_ids,
+                )
+                if isinstance(result, dict):
+                    result["semantic_question"] = natural_question
+                    result["semantic_resolution"] = resolution
+                    result["normalized_query"] = deepcopy(resolution.get("normalized_query"))
+                return result
+
+            return make_error(
+                "source_not_suitable",
+                f"Business metric {metric_id!r} is registered but has no approved runtime executor.",
+                operation_id="marketplace_business_query",
+                retryable=False,
+                details={
+                    "question": natural_question,
+                    "semantic_resolution": resolution,
+                },
+            )
+
         if (
             resolution.get("resolution_type") == "CAPABILITY"
             and resolution.get("capability_id") == "advertising_performance"
@@ -81,6 +139,7 @@ async def execute_business_query(
                 )
             result["semantic_question"] = natural_question
             result["semantic_resolution"] = resolution
+            result["normalized_query"] = deepcopy(resolution.get("normalized_query"))
             return result
 
     return await execute_legacy_business_query(

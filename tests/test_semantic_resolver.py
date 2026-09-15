@@ -16,11 +16,30 @@ def test_current_fulfillment_question_requires_other_source():
     assert result["next_action"] == "DO_NOT_QUERY_WEEKLY_ARCHIVE"
 
 
-def test_all_orders_question_does_not_count_weekly_report_order_dates():
+def test_ordinary_orders_question_resolves_to_approved_business_metric():
     result = resolve_semantic_question("Сколько заказов было за август?")
+    assert result["status"] == "AVAILABLE_WITH_LIMITATION"
+    assert result["resolution_type"] == "BUSINESS_METRIC"
+    assert result["metric_id"] == "ORDERS"
+    assert result["source_id"] == "wb_stats_orders"
+    assert result["normalized_query"]["measure"] == "UNITS"
+    assert result["normalized_query"]["grouping"] == "TOTAL"
+    assert result["execution_allowed"] is True
+
+
+def test_order_amount_question_resolves_measure_independently():
+    result = resolve_semantic_question("На какую сумму были заказы за август?")
+    assert result["resolution_type"] == "BUSINESS_METRIC"
+    assert result["metric_id"] == "ORDERS"
+    assert result["normalized_query"]["measure"] == "AMOUNT_RUB"
+
+
+def test_explicit_complete_order_flow_requires_order_feed():
+    result = resolve_semantic_question("Покажи полный поток заказов за август")
     assert result["status"] == "REQUIRES_OTHER_SOURCE"
     assert result["concept_id"] == "all_orders_placed"
     assert result["required_source_id"] == "wb_order_feed"
+    assert result["normalized_query"]["complete_order_flow"] is True
 
 
 def test_order_date_question_is_allowed_as_reported_operation_attribute():
@@ -108,4 +127,5 @@ def test_unknown_question_fails_closed():
 def test_intent_catalog_validates_against_registry():
     intents = load_semantic_intents()
     assert intents["policy"]["fail_closed_on_unknown"] is True
-    assert len(intents["routes"]) >= 22
+    assert intents["business_metrics"]["ORDERS"]["source_id"] == "wb_stats_orders"
+    assert len(intents["routes"]) >= 23

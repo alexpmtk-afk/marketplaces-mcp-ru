@@ -1,8 +1,21 @@
-version: 2026-09-15.v7
+version: 2026-09-15.v8
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
   current_state_must_not_be_inferred_from_weekly_archive: true
+
+business_metrics:
+  ORDERS:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: wb
+    source_id: wb_stats_orders
+    data_class: PRELIMINARY_OPERATIONAL
+    default_measure: BOTH
+    allowed_measures: [UNITS, AMOUNT_RUB, BOTH]
+    allowed_groupings: [TOTAL]
+    product_filter_supported: false
+    guardrail: Обычная метрика заказов использует оперативную статистику WB и не является полным потоком всех оформленных заказов.
+
 routes:
   - id: ozon_any
     priority: 2000
@@ -64,11 +77,17 @@ routes:
     target_id: order_context_attribute
     match_any: [дата заказа, время заказа, номер заказа, uid заказа, orderdt, orderuid, orderid, srid]
 
-  - id: all_orders_placed
-    priority: 1500
+  - id: complete_order_flow
+    priority: 1520
     target_type: not_covered
     target_id: all_orders_placed
-    match_any: [сколько заказов, сумма заказов, все заказы, оформленные заказы, количество заказов, заказы за, заказы, заказов]
+    match_any: [полный поток заказов, полная история заказов, все оформленные заказы, все заказы, сколько всего заказов, все заказы без исключения, абсолютно все заказы, включая неоплаченные заказы, включая заказы с неподтвержденной оплатой]
+
+  - id: orders_business_metric
+    priority: 1500
+    target_type: business_metric
+    target_id: ORDERS
+    match_any: [сколько заказов, сумма заказов, количество заказов, заказы за, заказов за, заказы, заказов, заказали, заказано]
 
   - id: observed_fulfillment_method
     priority: 1450

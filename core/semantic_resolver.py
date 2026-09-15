@@ -7,11 +7,8 @@ from typing import Any
 
 import yaml
 
-from core.semantic_registry import (
-    SemanticRegistryError,
-    get_dataset,
-    load_semantic_registry,
-)
+from core.business_query_parser import parse_business_query_dimensions
+from core.semantic_registry import get_dataset, load_semantic_registry
 
 
 INTENTS_PATH = Path(__file__).with_name("semantic_intents.yaml")
@@ -57,6 +54,20 @@ def validate_semantic_intents(
     if policy.get("fail_closed_on_unknown") is not True:
         raise SemanticResolutionError("semantic intent routing must fail closed on unknown requests")
 
+    business_metrics = intents.get("business_metrics") or {}
+    if not isinstance(business_metrics, dict):
+        raise SemanticResolutionError("business_metrics must be a mapping when present")
+    for metric_id, metric_value in business_metrics.items():
+        metric = _require_mapping(metric_value, f"business metric {metric_id}")
+        if metric.get("status") not in {"AVAILABLE", "AVAILABLE_WITH_LIMITATION"}:
+            raise SemanticResolutionError(f"business metric {metric_id} has unsupported status")
+        _require_string_list(metric.get("allowed_measures"), f"business metric {metric_id} allowed_measures")
+        _require_string_list(metric.get("allowed_groupings"), f"business metric {metric_id} allowed_groupings")
+        if metric.get("default_measure") not in metric["allowed_measures"]:
+            raise SemanticResolutionError(f"business metric {metric_id} default_measure is not allowed")
+        if not isinstance(metric.get("source_id"), str) or not metric["source_id"]:
+            raise SemanticResolutionError(f"business metric {metric_id} must define source_id")
+
     routes = intents.get("routes")
     if not isinstance(routes, list) or not routes:
         raise SemanticResolutionError("semantic intent routes must be a non-empty list")
@@ -83,6 +94,11 @@ def validate_semantic_intents(
             if target_id not in registry_data["capabilities"]:
                 raise SemanticResolutionError(
                     f"semantic route {route_id} references unknown capability {target_id!r}"
+                )
+        elif target_type == "business_metric":
+            if target_id not in business_metrics:
+                raise SemanticResolutionError(
+                    f"semantic route {route_id} references unknown business metric {target_id!r}"
                 )
         elif target_type == "not_covered":
             if target_id not in registry_data["not_covered"]:
@@ -137,10 +153,23 @@ def _route_matches(normalized_question: str, route: dict[str, Any]) -> list[str]
     return matches
 
 
+def _with_dimensions(result: dict[str, Any], dimensions: dict[str, Any]) -> dict[str, Any]:
+    result["normalized_query"] = {
+        "measure": dimensions.get("requested_measure"),
+        "grouping": dimensions.get("grouping"),
+        "period_hint": dimensions.get("period_hint"),
+        "filter_hints": deepcopy(dimensions.get("filter_hints") or []),
+        "complete_order_flow": bool(dimensions.get("complete_order_flow")),
+    }
+    return result
+
+
 def _resolve_route(
     route: dict[str, Any],
     matched_terms: list[str],
     registry: dict[str, Any],
+    intents: dict[str, Any],
+    dimensions: dict[str, Any],
 ) -> dict[str, Any]:
     target_type = route["target_type"]
     route_id = route["id"]
@@ -151,7 +180,7 @@ def _resolve_route(
         source_id = capability["source_id"]
         source = registry["sources"][source_id]
         dataset_id = source.get("dataset_id")
-        return {
+        return _with_dimensions({
             "status": capability["status"],
             "resolution_type": "CAPABILITY",
             "route_id": route_id,
@@ -164,14 +193,42 @@ def _resolve_route(
             "matched_terms": matched_terms,
             "execution_allowed": False,
             "next_action": "BUILD_QUERY_PLAN_AFTER_COVERAGE_CHECK",
+        }, dimensions)
+
+    if target_type == "business_metric":
+        metric_id = route["target_id"]
+        metric = deepcopy(intents["business_metrics"][metric_id])
+        measure = dimensions.get("requested_measure") or metric["default_measure"]
+        grouping = dimensions.get("grouping") or "TOTAL"
+        execution_allowed = (
+            measure in metric["allowed_measures"]
+            and grouping in metric["allowed_groupings"]
+        )
+        status = metric["status"] if execution_allowed else "REQUIRES_OTHER_SOURCE"
+        result = {
+            "status": status,
+            "resolution_type": "BUSINESS_METRIC",
+            "route_id": route_id,
+            "metric_id": metric_id,
+            "source_id": metric["source_id"],
+            "data_class": metric.get("data_class"),
+            "matched_terms": matched_terms,
+            "guardrail": metric.get("guardrail"),
+            "execution_allowed": execution_allowed,
+            "next_action": "EXECUTE_APPROVED_BUSINESS_METRIC" if execution_allowed else "REQUIRE_APPROVED_GROUPING_OR_FILTER_CONTRACT",
         }
+        result = _with_dimensions(result, dimensions)
+        result["normalized_query"]["metric"] = metric_id
+        result["normalized_query"]["measure"] = measure
+        result["normalized_query"]["grouping"] = grouping
+        return result
 
     if target_type == "not_covered":
         concept_id = route["target_id"]
         concept = deepcopy(registry["not_covered"][concept_id])
         required_source_id = concept.get("required_source_id")
         source = registry["sources"].get(required_source_id) if required_source_id else None
-        return {
+        return _with_dimensions({
             "status": "REQUIRES_OTHER_SOURCE",
             "resolution_type": "NOT_COVERED",
             "route_id": route_id,
@@ -182,9 +239,9 @@ def _resolve_route(
             "matched_terms": matched_terms,
             "execution_allowed": False,
             "next_action": "DO_NOT_QUERY_WEEKLY_ARCHIVE",
-        }
+        }, dimensions)
 
-    return {
+    return _with_dimensions({
         "status": "REQUIRES_OTHER_SOURCE",
         "resolution_type": "NOT_COVERED",
         "route_id": route_id,
@@ -195,7 +252,7 @@ def _resolve_route(
         "matched_terms": matched_terms,
         "execution_allowed": False,
         "next_action": "DO_NOT_QUERY_WEEKLY_ARCHIVE",
-    }
+    }, dimensions)
 
 
 def resolve_semantic_question(
@@ -209,11 +266,12 @@ def resolve_semantic_question(
     registry_data = registry if registry is not None else load_semantic_registry()
     intents_data = intents if intents is not None else load_semantic_intents()
     validate_semantic_intents(intents_data, registry_data)
+    dimensions = parse_business_query_dimensions(question)
 
     if intents_data["policy"].get("prefer_exact_field_reference") is True:
         direct_field = _resolve_exact_field_reference(question, registry_data)
         if direct_field is not None:
-            return direct_field
+            return _with_dimensions(direct_field, dimensions)
 
     normalized = _normalize(question)
     candidates: list[tuple[int, int, dict[str, Any], list[str]]] = []
@@ -224,13 +282,13 @@ def resolve_semantic_question(
             candidates.append((route["priority"], longest, route, matches))
 
     if not candidates:
-        return {
+        return _with_dimensions({
             "status": "UNKNOWN",
             "resolution_type": "UNKNOWN",
             "reason": "Запрос не сопоставлен ни с одной подтверждённой семантикой текущей базы.",
             "execution_allowed": False,
             "next_action": "DO_NOT_GUESS_OR_QUERY_ARCHIVE",
-        }
+        }, dimensions)
 
     candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
     top_priority, top_length, top_route, top_matches = candidates[0]
@@ -242,13 +300,13 @@ def resolve_semantic_question(
     if len(tied) > 1:
         targets = {(item[2].get("target_type"), item[2].get("target_id")) for item in tied}
         if len(targets) > 1:
-            return {
+            return _with_dimensions({
                 "status": "AMBIGUOUS",
                 "resolution_type": "AMBIGUOUS",
                 "reason": "Запрос одновременно соответствует нескольким несовместимым семантическим маршрутам.",
                 "candidate_routes": [item[2]["id"] for item in tied],
                 "execution_allowed": False,
                 "next_action": "CLARIFY_OR_NORMALIZE_INTENT",
-            }
+            }, dimensions)
 
-    return _resolve_route(top_route, top_matches, registry_data)
+    return _resolve_route(top_route, top_matches, registry_data, intents_data, dimensions)
