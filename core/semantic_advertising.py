@@ -18,6 +18,11 @@ COVERAGE_FOLDER = ["app", "registry"]
 COVERAGE_FILE = "dataset_coverage_registry.csv"
 MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 _PRODUCT_WORDS = re.compile(r"\b(товар|товару|товара|артикул|карточк|sku|nm\s*id|nmid)\b", re.IGNORECASE)
+_CAMPAIGN_SELECTOR = re.compile(
+    r"(?:\b(?:кампан\w*|campaign)\s*(?:id|№|#)?\s*\d+\b|"
+    r"\b(?:по\s+кампаниям|разбивк\w*\s+по\s+кампаниям|кажд\w*\s+кампан\w*)\b)",
+    re.IGNORECASE,
+)
 
 
 class SemanticAdvertisingExecutionError(RuntimeError):
@@ -215,9 +220,14 @@ async def execute_semantic_advertising_question(
         raise SemanticAdvertisingExecutionError(
             "Product-filtered advertising requires the separately registered ads_product_daily semantic contract; cabinet totals will not be substituted."
         )
-    if _PRODUCT_WORDS.search(str(question or "")):
+    question_text = str(question or "")
+    if _PRODUCT_WORDS.search(question_text):
         raise SemanticAdvertisingExecutionError(
             "This question is product-scoped, but advertising_performance V1 is cabinet-level only. ads_product_daily must be approved before execution."
+        )
+    if _CAMPAIGN_SELECTOR.search(question_text):
+        raise SemanticAdvertisingExecutionError(
+            "Campaign-filtered or campaign-breakdown advertising is not approved in advertising_performance V1; cabinet totals will not be substituted for a campaign-scoped question."
         )
 
     cabinet = _resolve_cabinet(seller)
@@ -277,6 +287,7 @@ async def execute_semantic_advertising_question(
         "source_validation": "canonical_google_drive_archive_with_dataset_coverage_registry",
         "data_class": "ADVERTISING_ATTRIBUTION_OPERATIONAL",
         "metric_contract_version": METRIC_CONTRACT_VERSION,
+        "aggregation_scope": "cabinet_total",
         "complete": True,
         "coverage": coverage,
         "campaign_ids_observed": observed_campaign_ids,
