@@ -141,6 +141,7 @@ def test_advertising_executor_uses_approved_metric_contract(monkeypatch):
     ))
     assert result["ok"] is True
     assert result["route"] == "semantic_advertising_archive"
+    assert result["aggregation_scope"] == "cabinet_total"
     assert result["coverage"]["status"] == "FULL_COVERAGE"
     assert result["metric_contract_version"] == "wb_ads_m0.v1"
     assert result["data_class"] == "ADVERTISING_ATTRIBUTION_OPERATIONAL"
@@ -183,6 +184,27 @@ def test_advertising_executor_refuses_product_substitution(monkeypatch):
         ))
 
 
+def test_advertising_executor_refuses_campaign_scope_substitution(monkeypatch):
+    monkeypatch.setattr(advertising, "_moscow_today", lambda: __import__("datetime").date(2026, 9, 15))
+    store = _seed_store()
+    with pytest.raises(advertising.SemanticAdvertisingExecutionError, match="Campaign-filtered"):
+        asyncio.run(advertising.execute_semantic_advertising_question(
+            store,
+            question="Какой ДРР был у кампании 10?",
+            seller="wb_novokshenov",
+            date_from="2026-09-01",
+            date_to="2026-09-02",
+        ))
+    with pytest.raises(advertising.SemanticAdvertisingExecutionError, match="campaign-breakdown"):
+        asyncio.run(advertising.execute_semantic_advertising_question(
+            store,
+            question="Покажи расходы по кампаниям",
+            seller="wb_novokshenov",
+            date_from="2026-09-01",
+            date_to="2026-09-02",
+        ))
+
+
 def test_business_router_dispatches_advertising_before_finance_executor(monkeypatch):
     monkeypatch.setattr(advertising, "_moscow_today", lambda: __import__("datetime").date(2026, 9, 15))
     store = _seed_store()
@@ -196,4 +218,5 @@ def test_business_router_dispatches_advertising_before_finance_executor(monkeypa
     ))
     assert result["ok"] is True
     assert result["metric"] == "ADVERTISING_PERFORMANCE"
+    assert result["aggregation_scope"] == "cabinet_total"
     assert result["semantic_resolution"]["capability_id"] == "advertising_performance"
