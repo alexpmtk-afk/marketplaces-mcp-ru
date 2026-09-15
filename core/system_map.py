@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-15.v17"
+ARCHITECTURE_VERSION = "2026-09-15.v18"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -138,10 +138,14 @@ SYSTEM_MAP: dict[str, Any] = {
         "status": "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED",
         "registry": "core/semantic_registry.yaml + validated core/semantic_registry_extensions.yaml",
         "intent_catalog": "core/semantic_intents.yaml",
+        "business_query_parser": "core/business_query_parser.py normalizes metric-independent measure/grouping/period/filter dimensions before source selection",
         "resolver": "core/semantic_resolver.py",
         "execution_registry": "core/semantic_execution.yaml for weekly finance",
         "archive_executor": "core/semantic_archive.py for weekly finance; core/semantic_advertising.py for advertising",
+        "operational_executor": "core/semantic_current_stock.py for seller-aware current WB stock; ORDERS uses the approved legacy operational executor",
         "runtime_entry": "marketplace_business_query",
+        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK"],
+        "current_stock_source": "WB Seller Analytics current stocks endpoint; Base-token fallback is the official asynchronous warehouse-remains report",
         "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
         "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
         "resolution_outcomes": [
@@ -170,13 +174,19 @@ SYSTEM_MAP: dict[str, Any] = {
             "preferred_input": "the user's original natural-language question",
             "legacy_metric": "retained only for backward compatibility",
             "precedence": "question overrides conflicting legacy metric",
+            "current_state_precedence": "a specific registered operational business metric may outrank the generic current-state guard only for its explicitly approved live/operational source",
             "clarification": "fail closed only when meaning/source cannot be safely resolved; do not silently substitute a similar metric",
         },
         "rules": [
             "exact physical field references resolve to field semantics first",
+            "business_query_parser extracts measure/grouping/period/filter before source selection and does not choose provider fields",
             "only registered capabilities may select archive fields",
             "questions about complete marketplace orders must not be answered from orderDt/orderUid in weekly finance",
             "WB Statistics Orders is operational/preliminary and may omit some orders; it is not complete marketplace-order truth",
+            "ordinary ORDERS questions including today use the approved operational Statistics Orders source; explicit complete-order-flow wording remains separate and fail-closed without the full order-feed source",
+            "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK from the live WB Seller Analytics stock source; Base tokens may use the official asynchronous warehouse-remains report fallback",
+            "CURRENT_STOCK is a present snapshot only; any past-date stock request must fail closed until a separate historical stock source/contract is approved",
+            "a generic current-state marker is only a fallback; it must not block a more specific approved operational business metric, and it must not make historical archive capabilities look current",
             "historical fulfillment may use deliveryMethod but must not be presented as current configuration",
             "historical warehouse tariff context may use dlvPrc, fixTariffDateFrom, fixTariffDateTo and warehouseLogisticsCoeff only as values observed in reported operations; it must never be presented as the current live warehouse tariff",
             "explicit current-state questions must not fall back to historical weekly archive",
@@ -200,20 +210,21 @@ SYSTEM_MAP: dict[str, Any] = {
             "different financial components are never silently netted into one amount",
         ],
         "runtime_integration": (
-            "marketplace_business_query accepts the original question; approved penalties/storage/acceptance, "
-            "sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, "
-            "historical fulfillment observations and historical warehouse tariff context route to the coverage-gated weekly-finance archive executor. "
+            "marketplace_business_query preserves the original question and first normalizes source-independent business dimensions with business_query_parser. "
+            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to the seller-aware live WB stock executor and never substitutes its current snapshot for a historical date. "
+            "Approved penalties/storage/acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context route to the coverage-gated weekly-finance archive executor. "
             "Approved closed-period cabinet-level WB advertising questions route to the dedicated coverage-gated advertising archive executor. "
-            "Product-level advertising, current-day advertising, commission-rate, final acquiring-expense and current tariff/configuration questions fail closed instead of being substituted. "
+            "Product-level advertising, current-day advertising without its live executor, commission-rate, final acquiring-expense and current tariff/configuration questions fail closed instead of being substituted. "
             "Legacy metric routing remains for compatibility."
         ),
     },
     "routing_policy": {
         "update_database": "route to the server archive update workflow; compare canonical registry and fetch only missing provider reports/requests",
-        "natural_business_question": "preserve the user's original wording and resolve it through Semantic Core before source selection",
+        "natural_business_question": "preserve the user's original wording, normalize business dimensions, and resolve through Semantic Core before source selection",
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
+        "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics stock snapshot for the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
         "current_tariffs": "do not use weekly-report historical coefficients as live tariff truth; current tariff questions require a suitable live source",
         "advertising_live_vs_archive": "campaign state/current control remains live; closed cabinet-level advertising analytics are archive-first after roster/fullstats FULL_COVERAGE proof; product-level advertising remains fail-closed until ads_product_daily is semantically approved",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
@@ -246,7 +257,11 @@ The existing canonical large file must remain untouched while chunks are uploade
 Transient upload failures must use bounded exponential backoff with jitter. Non-final chunks must be multiples of 256 KiB and the Drive Range response is authoritative for the next byte offset.
 Only after staged Drive verification, Yandex backup, and verified canonical promotion may the worker COMMIT registry/job progress.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
-For business questions, preserve the user's original wording and pass it through Semantic Core before selecting a source. The original question outranks a conflicting legacy metric hint.
+For business questions, preserve the user's original wording and pass it through Semantic Core. Normalize source-independent measure/grouping/period/filter dimensions with core/business_query_parser.py before selecting a source; the parser must not choose provider fields. The original question outranks a conflicting legacy metric hint.
+A generic current-state marker such as today/current is a fail-closed fallback. A more specific registered operational business metric may outrank it only when that metric has an explicitly approved live/operational source.
+Ordinary WB ORDERS questions, including today, use the operational/preliminary WB Statistics Orders source. They must never be presented as the complete marketplace order flow; explicit full-order-flow wording remains a separate source requirement.
+CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK and uses the seller-aware live WB Seller Analytics stocks source. Base-token cabinets may use the official asynchronous warehouse-remains report fallback. CURRENT_STOCK is today's/current snapshot only: any past-date stock question must fail closed until a separately approved historical stock source exists, and today's snapshot must never be substituted.
+WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
 Approved semantic archive calculations may execute only after FULL_COVERAGE is proven from the relevant COMPLETE coverage registry and the canonical annual file exists. Different currencies are never combined into one total, and distinct report components are not silently netted together.
 marketplace_business_query routes approved natural questions for penalties, storage charges, paid acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context into the gated weekly-finance archive executor.
 Closed historical cabinet-level WB advertising questions route through the dedicated semantic advertising executor only after campaign-roster and fullstats FULL_COVERAGE is proven from dataset_coverage_registry.csv. The advertising metric contract is wb_ads_m0.v1.
@@ -257,7 +272,6 @@ Monetary WB reward uses vw and vwNds only. Percentage fields such as commissionP
 Weekly acquiring uses acquiringFee and explicit Продажа/Возврат buckets and may show paymentProcessing/acquiringBank. It is PRELIMINARY weekly payment-acceptance withholding, not the final monthly expense. Requests for final acquiring/payment-acceptance expenses must not fall back to weekly acquiringFee.
 Historical fulfillment may use deliveryMethod/officeName. Historical warehouse tariff context may use dlvPrc, fixTariffDateFrom, fixTariffDateTo and warehouseLogisticsCoeff. Neither historical capability proves the current seller/product configuration or the current live tariff.
 Current live tariff/warehouse coefficient questions must use an explicitly suitable live WB tariff source or fail closed; never infer current tariff truth from weekly-report history.
-WB Statistics Orders is an official operational/preliminary feed and must not be presented as the complete marketplace order flow.
 WB Advertising current campaign state is Wildberries-only and read-only in M0: use dedicated server-side wb_ads Promotion credentials. Provider GET endpoints that change advertising state are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb.
 Unknown, ambiguous, current-state, unsupported or uncovered questions must fail closed or identify the required source instead of being guessed from similar fields.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.

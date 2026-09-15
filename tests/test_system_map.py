@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-15.v17"
+    assert ARCHITECTURE_VERSION == "2026-09-15.v18"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     assert SYSTEM_MAP["runtime"]["cloud"] == "Yandex Cloud only"
     storage = SYSTEM_MAP["storage_policy"]
@@ -92,17 +92,22 @@ def test_wb_advertising_live_and_archive_boundaries_are_canonical():
     assert "WRITE/DESTRUCTIVE" in policy["safety_override"]
 
 
-def test_semantic_core_is_runtime_wired_for_finance_and_advertising():
+def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_metrics():
     semantic = SYSTEM_MAP["semantic_core"]
     assert semantic["status"] == "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED"
     assert "core/semantic_registry.yaml" in semantic["registry"]
     assert "semantic_registry_extensions.yaml" in semantic["registry"]
     assert semantic["intent_catalog"] == "core/semantic_intents.yaml"
+    assert semantic["business_query_parser"].startswith("core/business_query_parser.py")
     assert semantic["resolver"] == "core/semantic_resolver.py"
     assert "semantic_execution.yaml" in semantic["execution_registry"]
     assert "semantic_archive.py" in semantic["archive_executor"]
     assert "semantic_advertising.py" in semantic["archive_executor"]
+    assert "semantic_current_stock.py" in semantic["operational_executor"]
     assert semantic["runtime_entry"] == "marketplace_business_query"
+    assert set(semantic["approved_operational_business_metrics"]) == {"ORDERS", "CURRENT_STOCK"}
+    assert "Seller Analytics" in semantic["current_stock_source"]
+    assert "warehouse-remains" in semantic["current_stock_source"]
     assert set(semantic["current_archive_datasets"]) == {
         "wb_weekly_finance_main",
         "ads_campaign_daily",
@@ -124,8 +129,24 @@ def test_semantic_core_is_runtime_wired_for_finance_and_advertising():
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert "dataset_coverage_registry.csv" in semantic["execution_gate"]
     assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
-    assert "accepts the original question" in semantic["runtime_integration"]
+    assert "operational business metric" in semantic["question_policy"]["current_state_precedence"]
+    assert "preserves the original question" in semantic["runtime_integration"]
+    assert "CURRENT_STOCK" in semantic["runtime_integration"]
     assert "advertising" in semantic["runtime_integration"].lower()
+
+
+def test_current_stock_and_today_routing_boundaries_are_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "ordinary ORDERS questions including today" in rules
+    assert "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK" in rules
+    assert "asynchronous warehouse-remains report fallback" in rules
+    assert "past-date stock request must fail closed" in rules
+    assert "generic current-state marker" in rules
+    routing = SYSTEM_MAP["routing_policy"]["current_stock"]
+    assert "current WB Seller Analytics stock snapshot" in routing
+    assert "historical stock dates" in routing
+    assert "today's snapshot" in routing
 
 
 def test_advertising_semantic_guardrails_are_canonical():
@@ -237,6 +258,10 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "advertising-attribution" in SYSTEM_INSTRUCTIONS
     assert "original wording" in SYSTEM_INSTRUCTIONS
     assert "operational/preliminary" in SYSTEM_INSTRUCTIONS
+    assert "CURRENT_STOCK" in SYSTEM_INSTRUCTIONS
+    assert "CURRENT_OPERATIONAL_STOCK" in SYSTEM_INSTRUCTIONS
+    assert "warehouse-remains report fallback" in SYSTEM_INSTRUCTIONS
+    assert "past-date stock question must fail closed" in SYSTEM_INSTRUCTIONS
     assert "saleDt" in SYSTEM_INSTRUCTIONS
     assert "Продажа minus Возврат" in SYSTEM_INSTRUCTIONS
     assert "deliveryService" in SYSTEM_INSTRUCTIONS
@@ -287,13 +312,17 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "dataset_coverage_registry.csv" in architecture
     assert "advertising_performance" in architecture
     assert "wb_ads" in architecture
+    assert "core/business_query_parser.py" in architecture
     assert "core/semantic_resolver.py" in architecture
     assert "core/semantic_execution.yaml" in architecture
     assert "core/semantic_archive.py" in architecture
     assert "core/semantic_registry_extensions.yaml" in architecture
     assert "core/semantic_advertising.py" in architecture
+    assert "core/semantic_current_stock.py" in architecture
     assert "core/semantic_business_router.py" in architecture
     assert "original natural-language question" in architecture
+    assert "CURRENT_OPERATIONAL_STOCK" in architecture
+    assert "historical stock" in architecture.lower()
     assert "sale_and_return_operations" in architecture
     assert "deliveryService" in architecture
     assert "rebillLogisticCost" in architecture
@@ -315,3 +344,5 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "non-canonical staging filename" in agents
     assert "exact Drive size/SHA256" in agents
     assert "Yandex Object Storage" in agents
+    assert "CURRENT_STOCK" in agents
+    assert "historical stock" in agents.lower()
