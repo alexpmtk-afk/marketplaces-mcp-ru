@@ -8,6 +8,7 @@ import yaml
 
 
 REGISTRY_PATH = Path(__file__).with_name("semantic_registry.yaml")
+REGISTRY_EXTENSIONS_PATH = Path(__file__).with_name("semantic_registry_extensions.yaml")
 AVAILABLE_SOURCE_STATUS = "AVAILABLE_IN_CANONICAL_ARCHIVE"
 AVAILABLE_CAPABILITY_STATUSES = {"AVAILABLE", "AVAILABLE_WITH_LIMITATION"}
 
@@ -26,6 +27,56 @@ def _require_string_list(value: Any, name: str) -> list[str]:
     if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
         raise SemanticRegistryError(f"{name} must be a non-empty string list")
     return value
+
+
+def _load_yaml_mapping(path: Path, name: str) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as fh:
+        raw = yaml.safe_load(fh)
+    return _require_mapping(raw, name)
+
+
+def _merge_registry_extensions(
+    registry: dict[str, Any],
+    extension: dict[str, Any],
+) -> dict[str, Any]:
+    """Merge additive semantic modules into one validated runtime registry.
+
+    The base registry remains the audited weekly-finance source of truth. Small
+    domain modules may add/replace sources, datasets and capabilities only via
+    this deterministic merge; the resulting single registry is then validated
+    with the same fail-closed rules as the base file.
+    """
+    merged = deepcopy(registry)
+    allowed = {"version", "sources", "datasets", "capabilities", "remove_not_covered"}
+    unknown = sorted(set(extension) - allowed)
+    if unknown:
+        raise SemanticRegistryError(f"semantic registry extension has unsupported keys: {unknown}")
+
+    for section in ("sources", "datasets", "capabilities"):
+        updates = extension.get(section) or {}
+        if not isinstance(updates, dict):
+            raise SemanticRegistryError(f"semantic registry extension {section} must be a mapping")
+        target = _require_mapping(merged.get(section), section)
+        for key, value in updates.items():
+            if not isinstance(key, str) or not key or not isinstance(value, dict):
+                raise SemanticRegistryError(f"semantic registry extension {section} has invalid entry")
+            target[key] = deepcopy(value)
+
+    removals = extension.get("remove_not_covered") or []
+    if not isinstance(removals, list) or any(not isinstance(item, str) or not item for item in removals):
+        raise SemanticRegistryError("semantic registry extension remove_not_covered must be a string list")
+    not_covered = _require_mapping(merged.get("not_covered"), "not_covered")
+    for concept_id in removals:
+        if concept_id not in not_covered:
+            raise SemanticRegistryError(
+                f"semantic registry extension cannot remove unknown not_covered concept {concept_id!r}"
+            )
+        not_covered.pop(concept_id)
+
+    extension_version = extension.get("version")
+    if extension_version:
+        merged["extension_versions"] = [str(extension_version)]
+    return merged
 
 
 def validate_semantic_registry(registry: dict[str, Any]) -> None:
@@ -191,9 +242,10 @@ def validate_semantic_registry(registry: dict[str, Any]) -> None:
 
 def load_semantic_registry(path: str | Path | None = None) -> dict[str, Any]:
     registry_path = Path(path) if path is not None else REGISTRY_PATH
-    with registry_path.open("r", encoding="utf-8") as fh:
-        raw = yaml.safe_load(fh)
-    registry = _require_mapping(raw, "registry")
+    registry = _load_yaml_mapping(registry_path, "registry")
+    if path is None and REGISTRY_EXTENSIONS_PATH.exists():
+        extension = _load_yaml_mapping(REGISTRY_EXTENSIONS_PATH, "semantic registry extension")
+        registry = _merge_registry_extensions(registry, extension)
     validate_semantic_registry(registry)
     return registry
 

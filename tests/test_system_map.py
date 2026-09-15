@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-14.v16"
+    assert ARCHITECTURE_VERSION == "2026-09-15.v17"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     assert SYSTEM_MAP["runtime"]["cloud"] == "Yandex Cloud only"
     storage = SYSTEM_MAP["storage_policy"]
@@ -39,10 +39,13 @@ def test_canonical_map_fixes_storage_boundaries():
     assert "COMMIT" in storage["archive_write_order"]
     assert "not part of the runtime architecture" in storage["google_cloud"]
     assert "no separate Google Cloud runtime" in storage["google_cloud"]
-    assert SYSTEM_MAP["archive_policy"]["canonical_source_of_truth"] == "Google Drive annual CSV plus reports registry"
-    assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["report_type"] == 1
-    assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
-    assert SYSTEM_MAP["archive_policy"]["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
+    archive = SYSTEM_MAP["archive_policy"]
+    assert archive["canonical_source_of_truth"] == "Google Drive annual CSV plus dataset-specific coverage registries"
+    assert "reports_registry.csv" in archive["registry"]
+    assert "dataset_coverage_registry.csv" in archive["registry"]
+    assert archive["wb_weekly_finance_main"]["report_type"] == 1
+    assert archive["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
+    assert archive["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
 
 
 def test_large_annual_files_use_staged_resumable_drive_api_not_canonical_overwrite():
@@ -68,31 +71,43 @@ def test_large_annual_files_use_staged_resumable_drive_api_not_canonical_overwri
     assert "COMMIT" in policy["commit_rule"]
 
 
-def test_wb_advertising_m0_is_read_only_and_separate_from_profit():
+def test_wb_advertising_live_and_archive_boundaries_are_canonical():
     policy = SYSTEM_MAP["advertising_policy"]
     assert policy["current_scope"].startswith("Wildberries only")
-    assert policy["phase"] == "WB Advertising M0 read-only"
+    assert policy["phase"] == "WB Advertising M0 live read-only + Advertising Archive V1 historical read-only"
     assert policy["credential_service"] == "wb_ads"
     assert policy["active_campaign_status"] == 9
     assert "wb_ads_audit_active" in policy["m0_tools"]
-    assert "advertising_attribution_operational" == policy["metric_class"]
+    assert policy["metric_class"] == "advertising_attribution_operational"
     assert "not actual business profit" in policy["profitability_boundary"]
     assert policy["archive_domain"] == "База данных/WB/<cabinet>/<year>/advertising"
-    assert "not yet implemented" in policy["archive_status"]
+    assert "dataset_coverage_registry.csv" in policy["archive_status"]
+    assert "ads_campaign_daily" in policy["archive_v1_datasets"]
+    assert "ads_campaign_roster_snapshots" in policy["archive_v1_datasets"]
+    assert policy["semantic_metric_contract"] == "wb_ads_m0.v1"
+    assert "cabinet-level" in policy["semantic_v1_scope"]
+    assert "ads_product_daily" in policy["semantic_v1_scope"]
+    assert "FULL_COVERAGE" in policy["historical_routing"]
     assert policy["write_control_status"].startswith("not accepted in M0")
     assert "WRITE/DESTRUCTIVE" in policy["safety_override"]
 
 
-def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
+def test_semantic_core_is_runtime_wired_for_finance_and_advertising():
     semantic = SYSTEM_MAP["semantic_core"]
     assert semantic["status"] == "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED"
-    assert semantic["registry"] == "core/semantic_registry.yaml"
+    assert "core/semantic_registry.yaml" in semantic["registry"]
+    assert "semantic_registry_extensions.yaml" in semantic["registry"]
     assert semantic["intent_catalog"] == "core/semantic_intents.yaml"
     assert semantic["resolver"] == "core/semantic_resolver.py"
-    assert semantic["execution_registry"] == "core/semantic_execution.yaml"
-    assert semantic["archive_executor"] == "core/semantic_archive.py"
+    assert "semantic_execution.yaml" in semantic["execution_registry"]
+    assert "semantic_archive.py" in semantic["archive_executor"]
+    assert "semantic_advertising.py" in semantic["archive_executor"]
     assert semantic["runtime_entry"] == "marketplace_business_query"
-    assert semantic["current_archive_dataset"] == "wb_weekly_finance_main"
+    assert set(semantic["current_archive_datasets"]) == {
+        "wb_weekly_finance_main",
+        "ads_campaign_daily",
+        "ads_campaign_roster_snapshots",
+    }
     assert set(semantic["approved_archive_executors"]) == {
         "penalties",
         "storage_charge",
@@ -104,10 +119,29 @@ def test_semantic_core_is_partially_runtime_wired_for_natural_questions():
         "acquiring_and_payment_processing",
         "observed_fulfillment_method",
         "warehouse_tariff_context",
+        "advertising_performance",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
+    assert "dataset_coverage_registry.csv" in semantic["execution_gate"]
     assert semantic["question_policy"]["precedence"] == "question overrides conflicting legacy metric"
     assert "accepts the original question" in semantic["runtime_integration"]
+    assert "advertising" in semantic["runtime_integration"].lower()
+
+
+def test_advertising_semantic_guardrails_are_canonical():
+    semantic = SYSTEM_MAP["semantic_core"]
+    rules = "\n".join(semantic["rules"])
+    assert "advertising_performance" in rules
+    assert "campaign-roster" in rules
+    assert "fullstats" in rules
+    assert "nm_id/product" in rules
+    assert "DRR/ROAS" in rules
+    assert "current-day advertising" in rules
+    routing = SYSTEM_MAP["routing_policy"]["advertising_live_vs_archive"]
+    assert "archive-first" in routing
+    assert "FULL_COVERAGE" in routing
+    assert "product-level" in routing
+    assert "fail-closed" in routing
 
 
 def test_sales_and_returns_formula_is_canonical():
@@ -139,7 +173,7 @@ def test_wb_reward_and_acquiring_boundaries_are_canonical():
     assert "final monthly" in rules.lower()
     assert "monetary WB reward" in semantic["runtime_integration"]
     assert "preliminary weekly acquiring" in semantic["runtime_integration"]
-    assert "Commission-rate questions" in semantic["runtime_integration"]
+    assert "commission-rate" in semantic["runtime_integration"].lower()
 
 
 def test_historical_fulfillment_boundary_is_canonical():
@@ -193,11 +227,14 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
     assert "Google Cloud is not a runtime provider" in SYSTEM_INSTRUCTIONS
-    assert "WB Advertising M0" in SYSTEM_INSTRUCTIONS
     assert "wb_ads" in SYSTEM_INSTRUCTIONS
     assert "actual business profit" in SYSTEM_INSTRUCTIONS
     assert "Semantic Core" in SYSTEM_INSTRUCTIONS
     assert "FULL_COVERAGE" in SYSTEM_INSTRUCTIONS
+    assert "dataset_coverage_registry.csv" in SYSTEM_INSTRUCTIONS
+    assert "wb_ads_m0.v1" in SYSTEM_INSTRUCTIONS
+    assert "Product/nm_id" in SYSTEM_INSTRUCTIONS
+    assert "advertising-attribution" in SYSTEM_INSTRUCTIONS
     assert "original wording" in SYSTEM_INSTRUCTIONS
     assert "operational/preliminary" in SYSTEM_INSTRUCTIONS
     assert "saleDt" in SYSTEM_INSTRUCTIONS
@@ -246,11 +283,16 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "old canonical file remains untouched" in architecture
     assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in architecture
-    assert "WB Advertising M0" in architecture
+    assert "Advertising Archive V1" in architecture
+    assert "dataset_coverage_registry.csv" in architecture
+    assert "advertising_performance" in architecture
     assert "wb_ads" in architecture
     assert "core/semantic_resolver.py" in architecture
     assert "core/semantic_execution.yaml" in architecture
     assert "core/semantic_archive.py" in architecture
+    assert "core/semantic_registry_extensions.yaml" in architecture
+    assert "core/semantic_advertising.py" in architecture
+    assert "core/semantic_business_router.py" in architecture
     assert "original natural-language question" in architecture
     assert "sale_and_return_operations" in architecture
     assert "deliveryService" in architecture

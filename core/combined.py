@@ -11,7 +11,7 @@ from mcp.server.fastmcp import FastMCP
 from .archive_hybrid import build_hybrid_archive_store_from_env
 from .archive_tools import register_archive_tools
 from .business_registry import resolve_business_cabinet
-from .business_router import register_business_query_tool
+from .semantic_business_router import register_business_query_tool
 from .card_monitor import register_tools as register_card_monitor_tools
 from .order_history_tools import register_order_history_tools
 from .system_map import SYSTEM_INSTRUCTIONS, register_system_map_tool

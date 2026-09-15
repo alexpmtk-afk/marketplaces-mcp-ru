@@ -107,14 +107,13 @@ def test_weekly_report_can_answer_charge_but_not_detailed_storage_driver():
     )
 
 
-def test_other_wb_and_ozon_sources_are_reference_only_not_database_presence():
+def test_missing_wb_and_ozon_sources_remain_reference_only():
     registry = load_semantic_registry()
     for source_id in (
         "wb_order_feed",
         "wb_paid_storage_report",
         "wb_acceptance_operations_report",
         "wb_stock_report",
-        "wb_ads_data",
         "ozon_reports",
     ):
         source = registry["sources"][source_id]
@@ -122,10 +121,20 @@ def test_other_wb_and_ozon_sources_are_reference_only_not_database_presence():
         assert source["execution_status"] == "REFERENCE_ONLY"
 
 
+def test_wb_advertising_source_is_now_canonical_archive_capability():
+    registry = load_semantic_registry()
+    source = registry["sources"]["wb_ads_data"]
+    assert source["database_presence"] == "AVAILABLE_IN_CANONICAL_ARCHIVE"
+    assert source["kind"] == "archive_dataset"
+    assert source["dataset_id"] == "ads_campaign_daily"
+    capability = require_available_capability("advertising_performance", registry)
+    assert capability["status"] == "AVAILABLE_WITH_LIMITATION"
+
+
 def test_validator_rejects_available_capability_backed_by_missing_source():
     registry = load_semantic_registry()
     unsafe = deepcopy(registry)
-    unsafe["capabilities"]["penalties"]["source_id"] = "wb_ads_data"
+    unsafe["capabilities"]["penalties"]["source_id"] = "wb_stock_report"
     with pytest.raises(SemanticRegistryError):
         validate_semantic_registry(unsafe)
 
