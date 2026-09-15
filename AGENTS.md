@@ -32,6 +32,11 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - If implementation and canonical architecture conflict, fail closed and surface the conflict instead of silently changing architecture.
 
 ## Semantic Core boundaries
+- Natural-language business questions are normalized by `core/business_query_parser.py` before source selection; parsing the requested measure/grouping/period/filter must remain separate from provider-field selection.
+- A generic current-state marker such as `сегодня`/`сейчас` may be bypassed only by a more specific registered business metric with an explicitly approved operational/live source. It must never make historical archive capabilities look current.
+- `ORDERS` is an operational/preliminary business metric from WB Statistics Orders. It may answer ordinary order questions including today, but it must never be presented as the complete marketplace order flow.
+- `CURRENT_STOCK` is `CURRENT_OPERATIONAL_STOCK` and uses the live WB Seller Analytics stocks source, with the official asynchronous warehouse-remains report as the Base-token fallback. It is current-snapshot only.
+- Historical stock questions must fail closed until a separately approved historical stock source/contract exists. Never answer a past-date stock question with today's `CURRENT_STOCK` snapshot.
 - The canonical WB weekly realization dataset has 92 physical columns; all 92 must remain semantically catalogued in `core/semantic_registry.yaml`.
 - Weekly realization semantics are complete when every physical field has documented meaning, role, safe uses and explicit limitations where needed. Do not invent a calculation merely because a field exists.
 - Approved weekly-finance formulas remain separate from field semantics in `core/semantic_execution.yaml`.
