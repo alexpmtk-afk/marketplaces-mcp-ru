@@ -62,6 +62,32 @@ _ROUTER_MAP = {
             "repeat clarification if the replanned request is still ambiguous or missing required context; never resolve uncertainty by silent inference"
         ),
     },
+    "execution_controller": {
+        "status": "CONTRACT_DISPATCH_V1",
+        "runtime_entry": "marketplace_execution_control",
+        "position": "after Clarification Gate and before every provider/archive/card executor",
+        "controller_version": "marketplace_execution_controller.v1",
+        "leg_contract_version": "marketplace_leg_execution.v1",
+        "states": ["READY", "READY_WITH_GATES", "CLARIFICATION_REQUIRED", "BLOCKED"],
+        "input_policy": (
+            "the controller independently rebuilds marketplace_query_plan from the user request and known context; clients do not author executor contracts"
+        ),
+        "compound_question_policy": (
+            "a multi-source compound user question must never be copied unchanged into each lower executor; every leg receives a deterministic narrow executor contract"
+        ),
+        "dispatch_policy": (
+            "invoke only the executor and exact arguments returned by marketplace_execution_control; do not rewrite, broaden, or supplement executor arguments client-side"
+        ),
+        "all_or_nothing_policy": (
+            "if any required leg lacks an executor, source, context, or deterministic semantic contract, no required leg is dispatchable"
+        ),
+        "coverage_policy": (
+            "READY_WITH_GATES may dispatch only through the returned contract; the executor must prove its coverage gate before the result is answerable"
+        ),
+        "join_policy": (
+            "wait for every required contract, preserve provenance per leg, fail closed on a missing leg, and prohibit arithmetic without an explicit approved calculation contract"
+        ),
+    },
     "availability_facts": {
         "wb_orders_historical_archive": False,
         "wb_stock_historical_archive": False,
@@ -79,14 +105,17 @@ _ROUTER_MAP = {
         "ambiguous, unknown, or context-incomplete meaning enters the clarification gate before any provider/archive read",
         "known semantic source gaps are reported as gaps and are not disguised as requests for clarification",
         "after clarification the request is replanned from the top; an old blocked/ambiguous plan is never resumed directly",
+        "after a READY or READY_WITH_GATES plan, marketplace_execution_control is the only approved source of per-leg executor arguments",
+        "compound multi-source wording is never forwarded unchanged to multiple lower executors",
+        "if one required execution contract cannot be constructed, all dispatch is withheld until the plan is repaired or the gap is reported",
     ],
 }
 
 _system_map.SYSTEM_MAP["request_source_router"] = _ROUTER_MAP
 _system_map.SYSTEM_MAP["routing_policy"]["top_level_request"] = (
     "call marketplace_query_plan first; if meaning/context is ambiguous, unknown, or incomplete, enter the clarification gate and ask the user before any data read; "
-    "otherwise create an execution plan with separate source legs, gates and blockers; then choose archive, live cabinet/API, public marketplace/card, "
-    "system-internal, hybrid, or unavailable before metric-specific Semantic Core"
+    "when the replanned request is READY or READY_WITH_GATES, call marketplace_execution_control and use only its exact per-leg executor contracts; "
+    "then execute validated archive, live cabinet/API, public marketplace/card, or system-internal legs and join only under the returned fail-closed policy"
 )
 
 _EXTRA_INSTRUCTIONS = """
@@ -96,10 +125,12 @@ The planner returns marketplace_execution_plan.v2: every required source leg has
 Before any provider, archive, card-monitor, or calculation executor is called, apply the Clarification Gate. If execution_plan.status is NEEDS_CONTEXT, ask the user only for the missing context reported by the plan. If semantic_resolution is AMBIGUOUS, explain that several business meanings are possible and ask the user to choose or clarify the intended meaning. If semantic_resolution is UNKNOWN, or the upper source class is unresolved because the business meaning is not safely identified, say that the request is not yet recognized precisely enough and ask what exact business result the user means. Never guess the closest metric.
 A recognized multi-source request is not ambiguous merely because it needs several data domains: create separate source legs and continue when each meaning is clear. Conversely, when the meaning is clear but a required source/executor is genuinely unavailable, report that source gap rather than asking an unnecessary semantic clarification.
 When clarification is required, ChatGPT/Codex must present the clarification in normal user-facing language and must not execute any data leg. After the user answers, call marketplace_query_plan again using the clarified request while preserving known marketplace, seller/cabinet, period and product context. Do not resume the old ambiguous plan directly. Repeat this loop until the replanned request is READY or READY_WITH_GATES, or until a genuine source gap is established.
+After a READY or READY_WITH_GATES plan, call marketplace_execution_control before every provider/archive/card executor. Query Execution Controller V1 is the canonical server-side owner of per-leg executor arguments. Use only the executor name and exact executor_arguments returned in dispatch_contracts; do not rewrite, broaden, merge, or supplement them client-side.
+Never pass the original compound multi-source user question unchanged into several lower executors. The controller must turn every required leg into marketplace_leg_execution.v1 with its own narrow business meaning, source contract, coverage gate, forbidden substitutions and provenance requirements. If any required leg cannot get a deterministic execution contract, dispatch_contracts must be empty and no other required leg may run as a partial answer.
 There is currently no verified populated WB historical orders archive and no historical stock archive. Recent WB orders may use the operational cabinet API only within its supported retention window; older order history must fail closed. Historical stock must fail closed and must never receive today's snapshot.
 Public marketplace/card facts are a separate source family from private seller-cabinet facts. If an on-demand public source is not connected, report that source gap instead of substituting cabinet or archive data.
 Questions that require several domains must produce separate source legs and validate each leg before joining results. All required legs are mandatory by default; if one required leg is unavailable, the final joined answer must fail closed rather than silently returning a partial answer.
-Never perform cross-source arithmetic or derived business calculations merely because two source legs exist. Arithmetic joins require an explicit approved Semantic contract, and provenance must be preserved for every leg.
+Never perform cross-source arithmetic or derived business calculations merely because two source legs exist. Arithmetic joins require an explicit approved Semantic calculation contract, and provenance must be preserved for every leg.
 """
 if "marketplace_query_plan as the first server-side planning step" not in _system_map.SYSTEM_INSTRUCTIONS:
     _system_map.SYSTEM_INSTRUCTIONS += _EXTRA_INSTRUCTIONS
