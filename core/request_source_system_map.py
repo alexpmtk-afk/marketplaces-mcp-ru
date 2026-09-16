@@ -88,6 +88,29 @@ _ROUTER_MAP = {
             "wait for every required contract, preserve provenance per leg, fail closed on a missing leg, and prohibit arithmetic without an explicit approved calculation contract"
         ),
     },
+    "join_controller": {
+        "status": "REGISTERED_JOIN_CONTRACTS_V1",
+        "runtime_entry": "marketplace_join_control",
+        "position": "after all required executor results and before multi-source synthesis or arithmetic",
+        "controller_version": "marketplace_join_controller.v1",
+        "join_contract_version": "marketplace_join_contract.v1",
+        "calculation_contract_version": "marketplace_calculation_contract.v1",
+        "states": ["READY", "CLARIFICATION_REQUIRED", "BLOCKED"],
+        "result_binding_policy": (
+            "the controller rebuilds marketplace_execution_control and binds each actual result to the exact required contract_id; missing, duplicate or unexpected results fail closed"
+        ),
+        "scope_policy": (
+            "registered joins validate semantic target, marketplace, seller/cabinet, requested period and required coverage before synthesis"
+        ),
+        "approved_v1_join": "WB sale_and_return_operations + advertising_performance side-by-side comparison only",
+        "arithmetic_policy": (
+            "cross-source arithmetic is disabled in V1; a calculation_id must resolve to a separately registered formula before any ratio, difference, total, DRR, ROAS or profitability calculation"
+        ),
+        "currency_policy": (
+            "currency alignment is never inferred; finance currencies and advertising money stay independently sourced and may not be arithmetically combined without an approved currency-aware calculation contract"
+        ),
+        "registered_cross_source_calculations": [],
+    },
     "availability_facts": {
         "wb_orders_historical_archive": False,
         "wb_stock_historical_archive": False,
@@ -108,6 +131,9 @@ _ROUTER_MAP = {
         "after a READY or READY_WITH_GATES plan, marketplace_execution_control is the only approved source of per-leg executor arguments",
         "compound multi-source wording is never forwarded unchanged to multiple lower executors",
         "if one required execution contract cannot be constructed, all dispatch is withheld until the plan is repaired or the gap is reported",
+        "after all required leg results return, marketplace_join_control is the only approved source of permission to synthesize a registered multi-source join",
+        "side-by-side comparison permission never implies arithmetic permission",
+        "no cross-source calculation is registered in Join / Calculation Contracts V1",
     ],
 }
 
@@ -115,7 +141,7 @@ _system_map.SYSTEM_MAP["request_source_router"] = _ROUTER_MAP
 _system_map.SYSTEM_MAP["routing_policy"]["top_level_request"] = (
     "call marketplace_query_plan first; if meaning/context is ambiguous, unknown, or incomplete, enter the clarification gate and ask the user before any data read; "
     "when the replanned request is READY or READY_WITH_GATES, call marketplace_execution_control and use only its exact per-leg executor contracts; "
-    "then execute validated archive, live cabinet/API, public marketplace/card, or system-internal legs and join only under the returned fail-closed policy"
+    "execute validated archive, live cabinet/API, public marketplace/card, or system-internal legs; when two or more required results must be synthesized, call marketplace_join_control with those exact contract IDs and results before presenting a joined answer or attempting arithmetic"
 )
 
 _EXTRA_INSTRUCTIONS = """
@@ -127,10 +153,12 @@ A recognized multi-source request is not ambiguous merely because it needs sever
 When clarification is required, ChatGPT/Codex must present the clarification in normal user-facing language and must not execute any data leg. After the user answers, call marketplace_query_plan again using the clarified request while preserving known marketplace, seller/cabinet, period and product context. Do not resume the old ambiguous plan directly. Repeat this loop until the replanned request is READY or READY_WITH_GATES, or until a genuine source gap is established.
 After a READY or READY_WITH_GATES plan, call marketplace_execution_control before every provider/archive/card executor. Query Execution Controller V1 is the canonical server-side owner of per-leg executor arguments. Use only the executor name and exact executor_arguments returned in dispatch_contracts; do not rewrite, broaden, merge, or supplement them client-side.
 Never pass the original compound multi-source user question unchanged into several lower executors. The controller must turn every required leg into marketplace_leg_execution.v1 with its own narrow business meaning, source contract, coverage gate, forbidden substitutions and provenance requirements. If any required leg cannot get a deterministic execution contract, dispatch_contracts must be empty and no other required leg may run as a partial answer.
+After every required multi-source executor result has returned, call marketplace_join_control before presenting a joined multi-source synthesis. Pass each result with the exact contract_id returned by marketplace_execution_control. Join Controller V1 rebuilds the execution control server-side, rejects missing/duplicate/unexpected results, checks semantic target and required coverage, and authorizes only a registered join contract.
+Join permission and arithmetic permission are separate. V1 registers only a descriptive side-by-side WB comparison of sale_and_return_operations with advertising_performance for the same requested seller/period. It does not authorize subtraction, ratios, totals, percentages, DRR, ROAS, profitability or any other derived cross-source metric. If the user asks for such arithmetic, an explicit registered marketplace_calculation_contract is required; do not invent a formula or reinterpret the advertising-attribution DRR as overall business DRR.
 There is currently no verified populated WB historical orders archive and no historical stock archive. Recent WB orders may use the operational cabinet API only within its supported retention window; older order history must fail closed. Historical stock must fail closed and must never receive today's snapshot.
 Public marketplace/card facts are a separate source family from private seller-cabinet facts. If an on-demand public source is not connected, report that source gap instead of substituting cabinet or archive data.
 Questions that require several domains must produce separate source legs and validate each leg before joining results. All required legs are mandatory by default; if one required leg is unavailable, the final joined answer must fail closed rather than silently returning a partial answer.
-Never perform cross-source arithmetic or derived business calculations merely because two source legs exist. Arithmetic joins require an explicit approved Semantic calculation contract, and provenance must be preserved for every leg.
+Never perform cross-source arithmetic or derived business calculations merely because two source legs exist. Arithmetic joins require an explicit approved Semantic calculation contract, currency alignment must be proven rather than inferred, and provenance must be preserved for every leg.
 """
 if "marketplace_query_plan as the first server-side planning step" not in _system_map.SYSTEM_INSTRUCTIONS:
     _system_map.SYSTEM_INSTRUCTIONS += _EXTRA_INSTRUCTIONS
