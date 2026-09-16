@@ -28,6 +28,19 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Existing canonical files left in Yandex by the prior architecture may be migrated to Drive on read without re-downloading marketplace data.
 - Chat-local memory/files are never authoritative shared state.
 - Do not introduce a new cloud provider, primary storage path, or parallel architecture without an explicit architecture change.
+
+### Database refresh guardrails
+- Ordinary “обнови базу данных” requests must use the registered common refresh path (`marketplace_database_update` / `core/archive_refresh.py`) rather than inventing a dataset-specific shortcut.
+- `COMPLETE` is **refresh-cycle completion only**. It never means an annual archive is permanently final. A later refresh must re-run provider discovery/coverage reconciliation.
+- Never report a database refresh as successful merely because work was queued. Wait for every requested job to reach `COMPLETE`, then require `marketplace_database_verify` to pass.
+- Every generic-refresh dataset must declare provider discovery, coverage/cursor model, stable row key, freshness/high-watermark evidence, merge semantics and completion invariants. If the contract is absent, fail closed and do not claim the dataset was refreshed.
+- Maximum date / last row is an important freshness signal where meaningful, but it is not a universal deduplication key. Prefer provider-native identity such as `reportId`, event key/fingerprint, or bounded request coverage when it is stronger.
+- Require both coverage protection and row protection: canonical coverage state determines what is missing/correction-eligible; stable-key merge prevents duplicate logical rows and permits approved corrections at the same grain.
+- Post-refresh verification must check canonical-file presence, stable-key duplicates/incomplete keys, registry/coverage consistency and date/high-watermark evidence.
+- Finance currently uses provider `reportId` coverage and row key `(reportId, rrdId)`; WB advertising uses dataset-specific stable keys and `dataset_coverage_registry.csv` request coverage.
+- Future WB/Ozon archive datasets must be registered in the refresh contract before the generic `dataset_family=all` path may include them.
+- Full contract: `docs/ARCHIVE_REFRESH_CONTRACT.md`.
+
 - Any architecture change must update `core/system_map.py`, `ARCHITECTURE.md`, guardrail tests, and pass CI/security/deployment acceptance in the same change.
 - If implementation and canonical architecture conflict, fail closed and surface the conflict instead of silently changing architecture.
 

@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-15.v18`
+**Version:** `2026-09-16.v19`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -36,6 +36,39 @@ Supporting services:
 - Archive state is server-owned and shared by every client.
 - Annual CSV files and coverage registries live canonically on Google Drive under `MCP архив базы данных`.
 - WB weekly-finance coverage uses `reports_registry.csv`; generic datasets such as WB Advertising use `app/registry/dataset_coverage_registry.csv`.
+
+### Canonical refresh contract
+
+The preferred top-level MCP entry for an ordinary request such as “обнови базу данных” is `marketplace_database_update`. The common coordinator is `core/archive_refresh.py`.
+
+An annual archive job is reusable. `COMPLETE` means only that the previous refresh cycle completed successfully; it never means the annual database is permanently final. A later refresh must re-enter dataset-specific discovery/reconciliation even when the previous job is `COMPLETE`.
+
+The mandatory lifecycle is:
+
+`REQUEST -> DISCOVER -> COMPARE COVERAGE -> FETCH/RECONCILE -> NORMALIZE -> MERGE -> VERIFY -> PUBLISH -> COMMIT COVERAGE -> COMPLETE -> POST-CHECK`
+
+A client must not report “database updated” merely because jobs were queued. Every requested job must reach `COMPLETE`, and then `marketplace_database_verify` must pass before success is claimed.
+
+Every archive dataset admitted to the generic update mechanism must declare all of the following:
+1. provider discovery rule;
+2. coverage/cursor model;
+3. exact stable row key;
+4. freshness/high-watermark evidence;
+5. merge semantics;
+6. completion invariants.
+
+Date comparison is mandatory freshness evidence where meaningful, but a maximum date is not a universal identity key. A stronger provider-native identity must remain authoritative when available: for WB weekly finance this is `reportId` at provider/coverage level and `(reportId, rrdId)` at row level; for campaign-day advertising it is `(date, campaign_id)`; event-style datasets use their provider event key/fingerprint.
+
+Two independent protections are required for every refresh:
+- **coverage protection** — provider discovery plus canonical registry/coverage state determines which provider units/ranges are missing or correction-eligible;
+- **row protection** — canonical annual merge uses the registered stable key so replay cannot create duplicate logical rows and approved corrections can upsert the same grain.
+
+`marketplace_database_verify` is the read-only post-refresh integrity gate. It checks canonical-file presence, date high-watermarks, duplicate/incomplete stable keys, and registry/coverage consistency. A dataset that has not been initialized or cannot prove its required coverage fails closed.
+
+Current registered refresh families are WB finance and WB advertising. A future WB/Ozon archive dataset must register the contract above before `marketplace_database_update(dataset_family="all")` may claim to refresh it. Full details are mirrored in `docs/ARCHIVE_REFRESH_CONTRACT.md`.
+
+### Durable publication
+
 - Queue state and temporary per-report staging remain in Yandex Object Storage so in-flight jobs survive deployments and client disconnects.
 - Large-file finalization is split into durable stages:
   1. `PREPARE` builds one immutable annual candidate in Yandex Object Storage and records its size/SHA256.
@@ -202,7 +235,7 @@ WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDER
 
 ## Routing rules
 
-- “Обнови данные по базе данных” and equivalent intents use the server archive update workflow for all configured cabinets by default.
+- “Обнови данные по базе данных” and equivalent intents route to `marketplace_database_update` for all requested registered dataset families/cabinets. A client waits for every job to reach `COMPLETE` and then calls `marketplace_database_verify`; queue acceptance alone is never reported as a successful update.
 - Natural business questions preserve the user's original wording, normalize source-independent business dimensions, and resolve through Semantic Core before source selection.
 - A specific approved operational business metric outranks the generic current-state guard only for its registered source; the generic rule otherwise remains fail-closed.
 - Ordinary `ORDERS` questions including today use WB Statistics Orders; explicit complete-order-flow questions remain separate.

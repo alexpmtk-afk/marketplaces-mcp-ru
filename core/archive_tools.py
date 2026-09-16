@@ -11,6 +11,8 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .archive_queue import WBFinanceArchiveJobQueue
+from .archive_refresh import enqueue_refresh_cycle, normalize_refresh_family, refresh_catalog
+from .archive_refresh_verify import verify_registered_archive
 from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
 from .archive_resumable_worker import WBFinanceResumableWorker
 from .wb_advertising_archive import ARCHIVE_CABINETS as ADS_ARCHIVE_CABINETS
@@ -110,28 +112,181 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
     wb = modules["wb"]
 
     @mcp.tool(
+        name="marketplace_database_refresh_catalog",
+        annotations={"title": "Marketplace database refresh contracts", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_database_refresh_catalog() -> str:
+        """Describe every archive dataset family supported by the common refresh mechanism.
+
+        Each registered family declares its provider coverage model, freshness
+        evidence, stable deduplication keys and completion invariants. Future
+        archive datasets must register here before the generic database-update
+        workflow may claim to update them.
+        """
+        return _j({
+            "ok": True,
+            "contracts": refresh_catalog(),
+            "rule": (
+                "A database refresh always re-runs dataset-specific discovery/coverage reconciliation. "
+                "COMPLETE means the previous refresh cycle completed; it never means the annual database is permanently final."
+            ),
+        })
+
+    @mcp.tool(
+        name="marketplace_database_verify",
+        annotations={"title": "Verify canonical marketplace database integrity", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_database_verify(
+        marketplace: str = "wb",
+        year: int = date.today().year,
+        seller: str = "all",
+        dataset_family: str = "all",
+    ) -> str:
+        """Verify canonical files after a refresh cycle.
+
+        Checks dataset-specific stable-key uniqueness, incomplete keys, registry
+        evidence, canonical file presence and date high-watermarks. Provider
+        freshness itself is established by the refresh DISCOVER/reconciliation
+        cycle; this tool verifies that the resulting canonical storage is
+        internally consistent with committed coverage.
+        """
+        if store is None:
+            return _not_configured()
+        marketplace = str(marketplace).strip().lower()
+        families = normalize_refresh_family(dataset_family)
+        finance_cabinets: tuple[str, ...] = ()
+        advertising_cabinets: tuple[str, ...] = ()
+        if "finance" in families:
+            finance_queue = WBFinanceArchiveJobQueue(wb, store)
+            finance_cabinets = (
+                ARCHIVE_CABINETS
+                if seller.strip().lower() == "all"
+                else (finance_queue.normalize_cabinet(seller),)
+            )
+        if "advertising" in families:
+            advertising_queue = WBAdvertisingArchiveJobQueue(wb, store)
+            advertising_cabinets = (
+                ADS_ARCHIVE_CABINETS
+                if seller.strip().lower() == "all"
+                else (advertising_queue.normalize_cabinet(seller),)
+            )
+        return _j(await verify_registered_archive(
+            store,
+            marketplace=marketplace,
+            year=int(year),
+            finance_cabinets=finance_cabinets,
+            advertising_cabinets=advertising_cabinets,
+            families=families,
+        ))
+
+    @mcp.tool(
+        name="marketplace_database_update",
+        annotations={"title": "Update canonical marketplace databases", "readOnlyHint": False, "openWorldHint": True},
+    )
+    async def marketplace_database_update(
+        marketplace: str = "wb",
+        year: int = date.today().year,
+        seller: str = "all",
+        dataset_family: str = "all",
+    ) -> str:
+        """Preferred top-level tool for requests such as "update our database".
+
+        It never treats an old COMPLETE job as permanently finished. Every
+        requested dataset family starts/resumes a fresh reconciliation cycle;
+        the family worker then compares provider truth with canonical coverage,
+        merges by its stable key and reaches COMPLETE only after its own verified
+        commit rules succeed.
+        """
+        if store is None:
+            return _not_configured()
+        marketplace = str(marketplace).strip().lower()
+        if marketplace != "wb":
+            return _j({
+                "ok": False,
+                "error": "archive_refresh_not_registered",
+                "marketplace": marketplace,
+                "message": "No generic archive refresh adapter is registered for this marketplace yet.",
+                "registered": refresh_catalog(),
+            })
+
+        families = normalize_refresh_family(dataset_family)
+        jobs: list[dict[str, Any]] = []
+        worker_tools: set[str] = set()
+        for family in families:
+            if family == "finance":
+                queue = WBFinanceArchiveJobQueue(wb, store)
+                sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+                jobs.extend([
+                    await enqueue_refresh_cycle(queue, family="finance", year=int(year), seller=item)
+                    for item in sellers
+                ])
+                worker_tools.add("marketplace_archive_worker_step")
+            elif family == "advertising":
+                queue = WBAdvertisingArchiveJobQueue(wb, store)
+                sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+                jobs.extend([
+                    await enqueue_refresh_cycle(queue, family="advertising", year=int(year), seller=item)
+                    for item in sellers
+                ])
+                worker_tools.add("marketplace_advertising_archive_worker_step")
+
+        scheduled = [job for job in jobs if job.get("scheduled")]
+        return _j({
+            "ok": True,
+            "marketplace": marketplace,
+            "year": int(year),
+            "dataset_families": list(families),
+            "queued": bool(scheduled),
+            "queued_jobs": len(scheduled),
+            "jobs": jobs,
+            "worker_tools": sorted(worker_tools),
+            "verification_tool": "marketplace_database_verify",
+            "completion_policy": (
+                "Do not report the database as updated merely because jobs were queued. "
+                "Each job must reach COMPLETE after dataset-specific discovery, stable-key merge, "
+                "canonical publication and coverage/registry commit; then call marketplace_database_verify."
+            ),
+        })
+
+    @mcp.tool(
         name="marketplace_archive_update",
-        annotations={"title": "Queue central marketplace database archive update", "readOnlyHint": False, "openWorldHint": True},
+        annotations={"title": "Queue WB weekly-finance archive refresh", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_archive_update(
         year: int = date.today().year,
         seller: str = "all",
         max_reports_per_cabinet: int = 4,
     ) -> str:
+        """Compatibility wrapper for the WB weekly-finance dataset family.
+
+        COMPLETE annual jobs are reopened into a new DISCOVER cycle so new WB
+        reportId values can be found. Canonical reports_registry.csv remains the
+        authority for what is already ingested, preventing duplicate downloads.
+        """
         del max_reports_per_cabinet
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
         sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
-        jobs = [await queue.enqueue(year=int(year), seller=item) for item in sellers]
+        jobs = [
+            await enqueue_refresh_cycle(queue, family="finance", year=int(year), seller=item)
+            for item in sellers
+        ]
+        scheduled = [job for job in jobs if job.get("scheduled")]
         return _j({
             "ok": True,
             "marketplace": "wb",
             "dataset": "wb_weekly_finance_main",
             "year": int(year),
-            "queued": True,
+            "queued": bool(scheduled),
+            "queued_jobs": len(scheduled),
             "jobs": jobs,
-            "instruction": "Process queued jobs with marketplace_archive_worker_step; no long quota wait occurs inside MCP.",
+            "verification_tool": "marketplace_database_verify",
+            "instruction": (
+                "Process queued jobs with marketplace_archive_worker_step. A previously COMPLETE annual job is "
+                "reopened at DISCOVER; reports_registry.csv filters old reportId values so only missing provider reports are ingested. "
+                "After COMPLETE, call marketplace_database_verify for canonical row/date/dedup checks."
+            ),
         })
 
     @mcp.tool(
@@ -192,27 +347,42 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
 
     @mcp.tool(
         name="marketplace_advertising_archive_update",
-        annotations={"title": "Queue WB advertising archive update", "readOnlyHint": False, "openWorldHint": True},
+        annotations={"title": "Queue WB advertising archive refresh", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_advertising_archive_update(
         year: int = date.today().year,
         seller: str = "all",
     ) -> str:
+        """Compatibility wrapper for the WB advertising archive family.
+
+        A COMPLETE job is reopened for a new provider reconciliation cycle.
+        Canonical datasets remain idempotent because each dataset upserts by its
+        registered stable key and coverage is committed only after verified
+        canonical publication.
+        """
         if store is None:
             return _not_configured()
         queue = WBAdvertisingArchiveJobQueue(wb, store)
         sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
-        jobs = [await queue.enqueue(year=int(year), seller=item) for item in sellers]
+        jobs = [
+            await enqueue_refresh_cycle(queue, family="advertising", year=int(year), seller=item)
+            for item in sellers
+        ]
+        scheduled = [job for job in jobs if job.get("scheduled")]
         return _j({
             "ok": True,
             "marketplace": "wb",
             "dataset_family": "advertising",
             "year": int(year),
-            "queued": True,
+            "queued": bool(scheduled),
+            "queued_jobs": len(scheduled),
             "jobs": jobs,
+            "verification_tool": "marketplace_database_verify",
             "instruction": (
                 "Process queued jobs with marketplace_advertising_archive_worker_step. "
-                "The same worker performs provider ingestion, verified Drive publication and coverage commit."
+                "The same worker performs provider reconciliation, stable-key annual upsert, "
+                "verified Drive publication and coverage commit. After COMPLETE, call "
+                "marketplace_database_verify for canonical row/date/dedup checks."
             ),
         })
 
