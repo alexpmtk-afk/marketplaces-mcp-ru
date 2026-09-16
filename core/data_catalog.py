@@ -1,7 +1,7 @@
 """Compatibility data-catalog views backed exclusively by Semantic Core.
 
-Historically the live infra carried a separate hard-coded data catalog.  That
-created a second place where dataset/metric routing could drift.  These helpers
+Historically the live infra carried a separate hard-coded data catalog. That
+created a second place where dataset/metric routing could drift. These helpers
 preserve the public MCP tool names while deriving every answer from the
 canonical Semantic Core registries and Source Router.
 """
@@ -14,7 +14,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .request_source_router import plan_marketplace_request
-from .semantic_core import semantic_core_view
+from .semantic_core import SEMANTIC_CORE_VERSION, semantic_core_view
 from .semantic_resolver import resolve_semantic_question
 
 DATA_CATALOG_VERSION = "marketplace_data_catalog.semantic_core_view.v1"
@@ -24,12 +24,11 @@ def build_data_catalog() -> dict[str, Any]:
     registry = semantic_core_view("registry")
     planning = semantic_core_view("planning")
     gaps = semantic_core_view("gaps")
-    versions = semantic_core_view("versions")
     return {
         "version": DATA_CATALOG_VERSION,
         "status": "SEMANTIC_CORE_VIEW",
         "source_of_truth": "marketplace_semantic_core",
-        "semantic_core_version": versions.get("semantic_registry"),
+        "semantic_core_version": SEMANTIC_CORE_VERSION,
         "policy": {
             "independent_metric_routes_forbidden": True,
             "route_through_semantic_core": True,
