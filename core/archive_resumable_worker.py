@@ -18,6 +18,10 @@ from .archive_drive_resumable import (
     build_drive_resumable_uploader_from_bridge,
 )
 from .archive_google import ArchiveStorageError
+from .archive_finalize_telemetry import (
+    record_finalize_event,
+    sync_resumable_telemetry,
+)
 from .archive_queue import JOB_FOLDER, WBFinanceArchiveJobQueue
 from .wb_finance_archive import ArchiveLock
 
@@ -116,6 +120,9 @@ class WBFinanceResumableWorker:
             raise RuntimeError("Durable annual finalize candidate is missing")
         if candidate_obj.size is not None and int(candidate_obj.size) != expected_bytes:
             raise RuntimeError("Durable annual finalize candidate failed size verification")
+        sync_resumable_telemetry(
+            state, finalize, candidate_object_id=str(candidate_obj.id)
+        )
 
         if self.uploader is None:
             state["finalize"] = finalize
@@ -265,6 +272,15 @@ class WBFinanceResumableWorker:
                 }
                 finalize["resumable_upload"] = upload
                 state["finalize"] = finalize
+                sync_resumable_telemetry(
+                    state, finalize, candidate_object_id=str(candidate_obj.id)
+                )
+                record_finalize_event(
+                    state, finalize, "RESUMABLE_SESSION_STARTED",
+                    staging_file_id=str(session.file_id or ""),
+                    previous_canonical_file_id=str(previous_canonical_id or ""),
+                    resumable_offset=0,
+                )
                 state["status"] = "QUEUED"
                 state["last_error"] = None
                 await self.queue._save(state)
@@ -377,6 +393,14 @@ class WBFinanceResumableWorker:
             upload["retry_count"] = 0
             finalize["resumable_upload"] = upload
             state["finalize"] = finalize
+            sync_resumable_telemetry(
+                state, finalize, candidate_object_id=str(candidate_obj.id)
+            )
+            record_finalize_event(
+                state, finalize, "RESUMABLE_CHUNK_CONFIRMED",
+                staging_file_id=str(upload.get("target_file_id") or ""),
+                resumable_offset=confirmed,
+            )
             state["status"] = "QUEUED"
             state["last_error"] = None
             await self.queue._save(state)
@@ -401,6 +425,11 @@ class WBFinanceResumableWorker:
                 state["status"] = "FAILED"
                 state["last_error"] = str(exc)[:1000]
                 state["finalize"] = finalize
+                sync_resumable_telemetry(state, finalize, candidate_object_id=str(candidate_obj.id))
+                record_finalize_event(
+                    state, finalize, "UPLOAD_FAILED",
+                    canonical_state="recheck_required" if promotion_attempted else "untouched",
+                )
                 await self.queue._save(state)
                 await self.queue._unschedule(job_id)
                 return {
@@ -421,6 +450,12 @@ class WBFinanceResumableWorker:
             state["status"] = "WAITING_RETRY"
             state["last_error"] = str(exc)[:1000]
             state["finalize"] = finalize
+            sync_resumable_telemetry(state, finalize, candidate_object_id=str(candidate_obj.id))
+            record_finalize_event(
+                state, finalize, "UPLOAD_WAITING_RETRY",
+                retry_count=retry_count,
+                canonical_state="recheck_required" if promotion_attempted else "untouched",
+            )
             await self.queue._save(state)
             await self.queue._schedule(job_id, delay)
             return {
@@ -479,6 +514,13 @@ class WBFinanceResumableWorker:
         upload["offset"] = expected_bytes
         finalize["resumable_upload"] = upload
         state["finalize"] = finalize
+        sync_resumable_telemetry(state, finalize, candidate_object_id=candidate_id)
+        record_finalize_event(
+            state, finalize, "PROMOTION_PENDING",
+            staging_file_id=file_id,
+            previous_canonical_file_id=str(upload.get("previous_canonical_file_id") or ""),
+            resumable_offset=expected_bytes,
+        )
         state["status"] = "PROMOTION_PENDING"
         state["last_error"] = None
         await self.queue._save(state)
@@ -541,6 +583,15 @@ class WBFinanceResumableWorker:
         report_id = int(finalize.get("report_id") or 0)
         finalize["annual_object_id"] = str(file_id)
         finalize["phase"] = "COMMIT"
+        sync_resumable_telemetry(state, finalize)
+        record_finalize_event(
+            state, finalize, "UPLOAD_ANNUAL_TO_COMMIT",
+            canonical_file_id=str(file_id),
+            candidate_bytes=expected_bytes,
+            candidate_sha256=expected_sha,
+            resumable_offset=expected_bytes,
+            transition="UPLOAD_ANNUAL->COMMIT",
+        )
         finalize["resumable_upload_verified"] = {
             "bytes": expected_bytes,
             "sha256": expected_sha,

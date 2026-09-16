@@ -15,6 +15,12 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from .archive_yandex import YandexObjectStorageArchiveStore
+from .archive_finalize_telemetry import (
+    ensure_finalize_telemetry,
+    finalize_telemetry_snapshot,
+    public_finalize_telemetry,
+    record_finalize_event,
+)
 from .business_registry import resolve_business_cabinet
 from .rate_limit import redis_connection_kwargs, redis_url_from_env
 from .tools import resolve_named_cabinet
@@ -271,6 +277,7 @@ class WBFinanceArchiveJobQueue:
             "current_rrd_id": int(state.get("current_rrd_id", 0) or 0),
             "finalize_phase": (state.get("finalize") or {}).get("phase"),
             "finalize_report_id": int((state.get("finalize") or {}).get("report_id", 0) or 0),
+            "finalize_telemetry": public_finalize_telemetry(state),
             "last_retry_after_seconds": state.get("last_retry_after_seconds", 0),
             "last_error": state.get("last_error"),
             "created_at_utc": state.get("created_at_utc"),
@@ -497,7 +504,13 @@ class WBFinanceArchiveJobQueue:
         status_code = int(result.get("status", 0) or 0)
         page = result.get("data") or []
         if status_code == 204 or page == []:
-            state["finalize"] = {"report_id": report_id, "phase": "PREPARE"}
+            finalize = {"report_id": report_id, "phase": "PREPARE"}
+            state["finalize"] = finalize
+            ensure_finalize_telemetry(state, finalize)
+            record_finalize_event(
+                state, finalize, "DOWNLOAD_TO_PREPARE",
+                transition="DOWNLOAD->PREPARE",
+            )
             state["status"] = "QUEUED"
             await self._save(state)
             await self._schedule(str(state["job_id"]), 0)
@@ -576,7 +589,7 @@ class WBFinanceArchiveJobQueue:
             _, annual_data = await self.store.download_named(annual_folder, annual_name)
             merged, stats = merge_annual_csv(annual_data, stage_rows)
             candidate_folder, candidate_name = await self._finalize_location(str(state["job_id"]))
-            await self.store.upload_bytes(
+            candidate_obj = await self.store.upload_bytes(
                 candidate_folder,
                 candidate_name,
                 merged,
@@ -591,6 +604,17 @@ class WBFinanceArchiveJobQueue:
                 "ingested_at_utc": finalize.get("ingested_at_utc") or _utc_now(),
             })
             state["finalize"] = finalize
+            ensure_finalize_telemetry(
+                state, finalize, candidate_object_id=str(getattr(candidate_obj, "id", "") or "")
+            )
+            record_finalize_event(
+                state, finalize, "PREPARE_TO_UPLOAD_ANNUAL",
+                candidate_object_id=str(getattr(candidate_obj, "id", "") or ""),
+                candidate_bytes=finalize["annual_bytes"],
+                candidate_sha256=finalize["annual_sha256"],
+                resumable_offset=0,
+                transition="PREPARE->UPLOAD_ANNUAL",
+            )
             state["status"] = "QUEUED"
             await self._save(state)
             await self._schedule(str(state["job_id"]), 0)
@@ -647,6 +671,9 @@ class WBFinanceArchiveJobQueue:
         if phase != "COMMIT":
             raise RuntimeError(f"Unknown finalize phase: {phase}")
 
+        record_finalize_event(
+            state, finalize, "COMMIT_STARTED", transition="UPLOAD_ANNUAL->COMMIT"
+        )
         annual_object_id = str(finalize.get("annual_object_id") or "")
         if not annual_object_id:
             raise RuntimeError("Finalize COMMIT has no annual_object_id")
@@ -684,6 +711,14 @@ class WBFinanceArchiveJobQueue:
         state["completed_report_ids"] = sorted(completed)
         state["report_index"] = index + 1
         state["current_rrd_id"] = 0
+        record_finalize_event(
+            state, finalize, "COMMIT_COMPLETE",
+            canonical_file_id=annual_object_id,
+            candidate_bytes=int(finalize.get("annual_bytes", 0) or 0),
+            candidate_sha256=str(finalize.get("annual_sha256") or ""),
+            transition="COMMIT->NEXT",
+        )
+        state["last_finalize_telemetry"] = finalize_telemetry_snapshot(state, finalize)
         state.pop("finalize", None)
         if int(state["report_index"]) >= len(fragments):
             state["status"] = "COMPLETE"
