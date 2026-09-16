@@ -12,6 +12,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .archive_queue import WBFinanceArchiveJobQueue
 from .archive_refresh import enqueue_refresh_cycle, normalize_refresh_family, refresh_catalog
+from .archive_refresh_verify import verify_registered_archive
 from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
 from .archive_resumable_worker import WBFinanceResumableWorker
 from .wb_advertising_archive import ARCHIVE_CABINETS as ADS_ARCHIVE_CABINETS
@@ -132,6 +133,53 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         })
 
     @mcp.tool(
+        name="marketplace_database_verify",
+        annotations={"title": "Verify canonical marketplace database integrity", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_database_verify(
+        marketplace: str = "wb",
+        year: int = date.today().year,
+        seller: str = "all",
+        dataset_family: str = "all",
+    ) -> str:
+        """Verify canonical files after a refresh cycle.
+
+        Checks dataset-specific stable-key uniqueness, incomplete keys, registry
+        evidence, canonical file presence and date high-watermarks. Provider
+        freshness itself is established by the refresh DISCOVER/reconciliation
+        cycle; this tool verifies that the resulting canonical storage is
+        internally consistent with committed coverage.
+        """
+        if store is None:
+            return _not_configured()
+        marketplace = str(marketplace).strip().lower()
+        families = normalize_refresh_family(dataset_family)
+        finance_cabinets: tuple[str, ...] = ()
+        advertising_cabinets: tuple[str, ...] = ()
+        if "finance" in families:
+            finance_queue = WBFinanceArchiveJobQueue(wb, store)
+            finance_cabinets = (
+                ARCHIVE_CABINETS
+                if seller.strip().lower() == "all"
+                else (finance_queue.normalize_cabinet(seller),)
+            )
+        if "advertising" in families:
+            advertising_queue = WBAdvertisingArchiveJobQueue(wb, store)
+            advertising_cabinets = (
+                ADS_ARCHIVE_CABINETS
+                if seller.strip().lower() == "all"
+                else (advertising_queue.normalize_cabinet(seller),)
+            )
+        return _j(await verify_registered_archive(
+            store,
+            marketplace=marketplace,
+            year=int(year),
+            finance_cabinets=finance_cabinets,
+            advertising_cabinets=advertising_cabinets,
+            families=families,
+        ))
+
+    @mcp.tool(
         name="marketplace_database_update",
         annotations={"title": "Update canonical marketplace databases", "readOnlyHint": False, "openWorldHint": True},
     )
@@ -192,10 +240,11 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             "queued_jobs": len(scheduled),
             "jobs": jobs,
             "worker_tools": sorted(worker_tools),
+            "verification_tool": "marketplace_database_verify",
             "completion_policy": (
                 "Do not report the database as updated merely because jobs were queued. "
                 "Each job must reach COMPLETE after dataset-specific discovery, stable-key merge, "
-                "canonical publication and coverage/registry commit; then re-check database freshness."
+                "canonical publication and coverage/registry commit; then call marketplace_database_verify."
             ),
         })
 
@@ -232,9 +281,11 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             "queued": bool(scheduled),
             "queued_jobs": len(scheduled),
             "jobs": jobs,
+            "verification_tool": "marketplace_database_verify",
             "instruction": (
                 "Process queued jobs with marketplace_archive_worker_step. A previously COMPLETE annual job is "
-                "reopened at DISCOVER; reports_registry.csv filters old reportId values so only missing provider reports are ingested."
+                "reopened at DISCOVER; reports_registry.csv filters old reportId values so only missing provider reports are ingested. "
+                "After COMPLETE, call marketplace_database_verify for canonical row/date/dedup checks."
             ),
         })
 
@@ -326,10 +377,12 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             "queued": bool(scheduled),
             "queued_jobs": len(scheduled),
             "jobs": jobs,
+            "verification_tool": "marketplace_database_verify",
             "instruction": (
                 "Process queued jobs with marketplace_advertising_archive_worker_step. "
                 "The same worker performs provider reconciliation, stable-key annual upsert, "
-                "verified Drive publication and coverage commit."
+                "verified Drive publication and coverage commit. After COMPLETE, call "
+                "marketplace_database_verify for canonical row/date/dedup checks."
             ),
         })
 
