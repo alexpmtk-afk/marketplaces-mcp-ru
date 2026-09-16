@@ -223,3 +223,11 @@ async def enqueue_refresh_cycle(
         "scheduled": True,
         "refresh_generation": generation,
     }
+
+
+# The coordinator is imported by every archive-tool surface. Installing the
+# planner here guarantees that every advertising queue created by those tools
+# uses durable coverage to suppress already committed historical requests.
+from .archive_refresh_advertising import install_advertising_coverage_planner
+
+install_advertising_coverage_planner()
