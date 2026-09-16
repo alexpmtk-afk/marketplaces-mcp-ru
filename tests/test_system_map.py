@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-15.v18"
+    assert ARCHITECTURE_VERSION == "2026-09-16.v19"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     assert SYSTEM_MAP["runtime"]["cloud"] == "Yandex Cloud only"
     storage = SYSTEM_MAP["storage_policy"]
@@ -43,6 +43,12 @@ def test_canonical_map_fixes_storage_boundaries():
     assert archive["canonical_source_of_truth"] == "Google Drive annual CSV plus dataset-specific coverage registries"
     assert "reports_registry.csv" in archive["registry"]
     assert "dataset_coverage_registry.csv" in archive["registry"]
+    assert archive["refresh_coordinator"].startswith("core/archive_refresh.py")
+    assert "DISCOVER" in archive["refresh_lifecycle"]
+    assert "permanently final" in archive["completion_semantics"]
+    assert "marketplace_database_verify" in archive["post_refresh_verification"]
+    assert "stable row key" in archive["dataset_registration_rule"]
+    assert "reportId" in archive["freshness_rule"]
     assert archive["wb_weekly_finance_main"]["report_type"] == 1
     assert archive["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
     assert archive["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
@@ -229,6 +235,16 @@ def test_order_source_guardrail_is_canonical():
     )
 
 
+def test_database_refresh_routing_is_canonical():
+    archive = SYSTEM_MAP["archive_policy"]
+    routing = SYSTEM_MAP["routing_policy"]["update_database"]
+    assert "marketplace_database_update" in routing
+    assert "COMPLETE" in routing
+    assert "marketplace_database_verify" in routing
+    assert "stable key" in archive["update_behavior"]
+    assert "date/high-watermark" in archive["post_refresh_verification"]
+
+
 def test_server_instructions_contain_hard_architecture_boundaries():
     assert ARCHITECTURE_VERSION in SYSTEM_INSTRUCTIONS
     assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
@@ -248,6 +264,10 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
     assert "Google Cloud is not a runtime provider" in SYSTEM_INSTRUCTIONS
+    assert "marketplace_database_update" in SYSTEM_INSTRUCTIONS
+    assert "marketplace_database_verify" in SYSTEM_INSTRUCTIONS
+    assert "permanently final" in SYSTEM_INSTRUCTIONS
+    assert "date/high-watermark" in SYSTEM_INSTRUCTIONS
     assert "wb_ads" in SYSTEM_INSTRUCTIONS
     assert "actual business profit" in SYSTEM_INSTRUCTIONS
     assert "Semantic Core" in SYSTEM_INSTRUCTIONS
@@ -306,6 +326,9 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "sha256Checksum" in architecture
     assert "promote_verified" in architecture
     assert "old canonical file remains untouched" in architecture
+    assert "marketplace_database_update" in architecture
+    assert "marketplace_database_verify" in architecture
+    assert "stable row key" in architecture
     assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in architecture
     assert "Advertising Archive V1" in architecture
@@ -344,5 +367,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "non-canonical staging filename" in agents
     assert "exact Drive size/SHA256" in agents
     assert "Yandex Object Storage" in agents
+    assert "marketplace_database_update" in agents
+    assert "marketplace_database_verify" in agents
+    assert "stable row key" in agents
     assert "CURRENT_STOCK" in agents
     assert "historical stock" in agents.lower()
