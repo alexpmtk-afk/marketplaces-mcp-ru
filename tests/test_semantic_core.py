@@ -92,16 +92,19 @@ def test_semantic_core_views_are_composed_not_parallel_registries() -> None:
     assert planning == all_layers["planning"]
     assert registry == all_layers["data_semantics"]
     assert summary["component_versions"] == all_layers["component_versions"]
+    assert summary["component_versions"]["semantic_core"] == SEMANTIC_CORE_VERSION
     assert summary["counts"]["calculation_contracts"] == 0
 
 
-def test_semantic_core_marks_system_map_canonical() -> None:
+def test_semantic_core_marks_system_map_brain_authority_without_hiding_source_gaps() -> None:
     semantic_map = system_map.SYSTEM_MAP["semantic_core"]
 
-    assert semantic_map["status"] == "CANONICAL_BRAIN"
+    assert semantic_map["status"] == "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED"
+    assert semantic_map["brain_status"] == "CANONICAL_BRAIN"
     assert semantic_map["brain_version"] == SEMANTIC_CORE_VERSION
     assert semantic_map["brain_runtime_entry"] == "marketplace_semantic_core"
     assert "marketplace_semantic_core is the canonical composed business brain" in system_map.SYSTEM_INSTRUCTIONS
+    assert "Physical source/executor coverage may still be incomplete" in system_map.SYSTEM_INSTRUCTIONS
 
 
 def test_semantic_core_tool_is_registered_read_only() -> None:
