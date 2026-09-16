@@ -4,10 +4,10 @@ V1 deliberately separates two permissions:
 1. a registered descriptive join may place independently validated leg results
    side by side while preserving their provenance;
 2. arithmetic is forbidden unless a separate calculation contract is explicitly
-   registered.  There are no cross-source arithmetic contracts in V1.
+   registered. There are no cross-source arithmetic contracts in V1.
 
 The controller rebuilds Query Execution Controller V1 from the original request,
-so callers cannot invent required legs or weaken their gates.  It then binds
+so callers cannot invent required legs or weaken their gates. It then binds
 actual executor results to the exact contract IDs returned by that controller.
 """
 from __future__ import annotations
@@ -29,9 +29,6 @@ JOIN_READY = "READY"
 JOIN_BLOCKED = "BLOCKED"
 JOIN_CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED"
 
-# A descriptive comparison is not a mathematical calculation.  V1 approves
-# only the already-established WB cabinet-level historical comparison between
-# realized sales/returns and advertising-attribution performance.
 _JOIN_CONTRACTS: dict[frozenset[tuple[str, str]], dict[str, Any]] = {
     frozenset({
         ("CAPABILITY", "sale_and_return_operations"),
@@ -49,8 +46,8 @@ _JOIN_CONTRACTS: dict[frozenset[tuple[str, str]], dict[str, Any]] = {
     },
 }
 
-# Cross-source arithmetic is intentionally empty in V1.  Existing advertising
-# DRR/ROAS remain internal to wb_ads_m0.v1 and are not redefined here.
+# Existing advertising DRR/ROAS remain internal to wb_ads_m0.v1. V1 has no
+# approved cross-source arithmetic formula.
 _CALCULATION_CONTRACTS: dict[str, dict[str, Any]] = {}
 
 _ARITHMETIC_MARKERS = re.compile(
@@ -229,8 +226,7 @@ def control_marketplace_join(
     """Validate executed legs and authorize only a registered result join.
 
     ``leg_results`` entries must be ``{"contract_id": ..., "result": {...}}``.
-    They are never trusted as a substitute for Query Execution Controller V1;
-    the exact execution contracts are rebuilt from the original request first.
+    The exact execution contracts are rebuilt from the original request first.
     """
     execution = control_marketplace_execution(
         question,
@@ -290,15 +286,6 @@ def control_marketplace_join(
                 "details": _normalize_marketplace(marketplace),
             }],
         )
-    strategy = str((execution.get("join_control") or {}).get("strategy") or "")
-    if strategy != registered["strategy"]:
-        return _block(
-            execution_control=execution,
-            blockers=[{
-                "type": "JOIN_STRATEGY_NOT_APPROVED",
-                "details": {"required": registered["strategy"], "actual": strategy},
-            }],
-        )
 
     requested_calculation = str(calculation_id or "").strip()
     arithmetic_requested = bool(_ARITHMETIC_MARKERS.search(str(question or "")))
@@ -320,6 +307,16 @@ def control_marketplace_join(
                 "details": (
                     "The wording requests derived arithmetic, but V1 has no approved cross-source calculation formula."
                 ),
+            }],
+        )
+
+    strategy = str((execution.get("join_control") or {}).get("strategy") or "")
+    if strategy != registered["strategy"]:
+        return _block(
+            execution_control=execution,
+            blockers=[{
+                "type": "JOIN_STRATEGY_NOT_APPROVED",
+                "details": {"required": registered["strategy"], "actual": strategy},
             }],
         )
 
