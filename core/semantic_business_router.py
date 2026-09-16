@@ -5,6 +5,7 @@ import json
 from copy import deepcopy
 from typing import Any, Optional
 
+from . import request_source_system_map as _request_source_system_map  # noqa: F401
 from .business_router import execute_business_query as execute_legacy_business_query
 from .errors import make_error
 from .request_source_router import register_request_source_router_tool
@@ -207,7 +208,7 @@ async def execute_business_query(
 def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None:
     """Register top-level source planning plus the business-query executor."""
 
-    # This is the canonical first step for ChatGPT/Codex.  It chooses the source
+    # This is the canonical first step for ChatGPT/Codex. It chooses the source
     # family before lower Semantic Core chooses a metric/report/API operation.
     register_request_source_router_tool(combined)
 
