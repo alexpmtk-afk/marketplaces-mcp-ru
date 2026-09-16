@@ -3,6 +3,10 @@ from __future__ import annotations
 from datetime import date
 
 from core.request_source_router import (
+    EXECUTION_BLOCKED,
+    EXECUTION_NEEDS_CONTEXT,
+    EXECUTION_READY,
+    EXECUTION_READY_WITH_GATES,
     SOURCE_CANONICAL_ARCHIVE,
     SOURCE_HYBRID,
     SOURCE_LIVE_CABINET_API,
@@ -138,3 +142,97 @@ def test_private_business_question_without_marketplace_requests_context():
     assert plan["source_family"] == SOURCE_UNAVAILABLE
     assert plan["source_status"] == "MARKETPLACE_REQUIRED"
     assert "marketplace" in plan["required_context"]
+
+
+def test_v2_single_live_metric_is_directly_executable():
+    plan = _plan(
+        "Сколько остатков сейчас на Wildberries?",
+        marketplace="wb",
+        seller="wb_novokshenov",
+        date_from="2026-09-16",
+        date_to="2026-09-16",
+    )
+    execution = plan["execution_plan"]
+    assert plan["planner"] == "marketplace_query_plan.v2"
+    assert execution["version"] == "marketplace_execution_plan.v2"
+    assert execution["mode"] == "SINGLE_SOURCE"
+    assert execution["status"] == EXECUTION_READY
+    assert execution["can_start_execution"] is True
+    assert execution["legs"][0]["executor"] == "marketplace_business_query"
+    assert execution["join"]["strategy"] == "NONE"
+
+
+def test_v2_archive_metric_is_executable_only_after_coverage_gate():
+    plan = _plan(
+        "Сколько было продаж за август?",
+        marketplace="wb",
+        seller="wb_novokshenov",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+    )
+    execution = plan["execution_plan"]
+    assert execution["status"] == EXECUTION_READY_WITH_GATES
+    assert execution["can_start_execution"] is True
+    assert execution["can_answer_without_more_validation"] is False
+    assert execution["legs"][0]["coverage_gate"] == "FULL_COVERAGE"
+
+
+def test_v2_missing_marketplace_is_a_context_block_not_a_guess():
+    plan = _plan("Сколько заказов сегодня?", seller="shop")
+    execution = plan["execution_plan"]
+    assert execution["status"] == EXECUTION_NEEDS_CONTEXT
+    assert execution["can_start_execution"] is False
+    assert execution["blockers"][0]["type"] == "MISSING_CONTEXT"
+    assert "marketplace" in execution["blockers"][0]["details"]
+
+
+def test_v2_known_source_without_executor_is_blocked():
+    plan = _plan(
+        "Сколько заказов сегодня на Ozon?",
+        marketplace="ozon",
+        seller="ozon_shop",
+        date_from="2026-09-16",
+        date_to="2026-09-16",
+    )
+    execution = plan["execution_plan"]
+    assert execution["status"] == EXECUTION_BLOCKED
+    assert execution["legs"][0]["source_family"] == SOURCE_LIVE_CABINET_API
+    assert execution["legs"][0]["executor"] is None
+
+
+def test_v2_hybrid_comparison_requires_both_legs_and_preserves_provenance():
+    plan = _plan(
+        "Сравни продажи и рекламные расходы за август",
+        marketplace="wb",
+        seller="wb_novokshenov",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+    )
+    execution = plan["execution_plan"]
+    assert execution["mode"] == "MULTI_SOURCE"
+    assert execution["status"] == EXECUTION_READY_WITH_GATES
+    assert execution["join"]["strategy"] == "SIDE_BY_SIDE_COMPARISON"
+    assert execution["join"]["requires_all_required_legs"] is True
+    assert execution["join"]["allow_partial_answer"] is False
+    assert execution["join"]["arithmetic_allowed_without_explicit_semantic_contract"] is False
+    assert {leg["purpose"] for leg in execution["legs"]} >= {"advertising", "sales_or_finance"}
+    assert all(leg["executor"] == "marketplace_business_query" for leg in execution["legs"])
+
+
+def test_v2_public_plus_historical_stock_blocks_whole_join_instead_of_substitution():
+    plan = _plan(
+        "Сравни цену на сайте и остатки товара на 1 сентября",
+        marketplace="wb",
+        seller="wb_novokshenov",
+        date_from="2026-09-01",
+        date_to="2026-09-01",
+    )
+    execution = plan["execution_plan"]
+    assert execution["mode"] == "MULTI_SOURCE"
+    assert execution["status"] == EXECUTION_BLOCKED
+    stock_leg = next(leg for leg in execution["legs"] if leg["purpose"] == "current_stock")
+    public_leg = next(leg for leg in execution["legs"] if leg["purpose"] == "public_card")
+    assert stock_leg["source_family"] == SOURCE_UNAVAILABLE
+    assert stock_leg["source_status"] == "HISTORICAL_SOURCE_ABSENT"
+    assert public_leg["source_family"] == SOURCE_PUBLIC_MARKETPLACE
+    assert execution["join"]["missing_required_leg_behavior"] == "FAIL_CLOSED"
