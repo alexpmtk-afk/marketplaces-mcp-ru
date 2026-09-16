@@ -28,6 +28,40 @@ _ROUTER_MAP = {
         "provenance_policy": "every leg keeps its own source family, source status, executor and coverage gate",
         "parallel_policy": "independent multi-source legs may execute in parallel only after each leg is validated",
     },
+    "clarification_gate": {
+        "position": "after marketplace_query_plan and before any data executor",
+        "interaction_state": "CLARIFICATION_REQUIRED",
+        "triggers": [
+            "execution_plan.status == NEEDS_CONTEXT",
+            "semantic_resolution.resolution_type == AMBIGUOUS",
+            "semantic_resolution.resolution_type == UNKNOWN",
+            "source_status == UNRESOLVED_SOURCE_CLASS when the business meaning is not safely identified",
+        ],
+        "missing_context_behavior": (
+            "ask only for the missing marketplace, seller/cabinet, exact period, product identifier, or other required context"
+        ),
+        "ambiguous_behavior": (
+            "explain that more than one business meaning is possible and ask the user to choose or clarify the intended meaning; preserve candidate routes when available"
+        ),
+        "unknown_behavior": (
+            "state that the requested business meaning is not yet recognized and ask the user what business result they want, without guessing a similar metric"
+        ),
+        "known_source_gap_behavior": (
+            "do not ask a semantic clarification when meaning is already clear and the required source/executor is genuinely unavailable; report the source gap instead"
+        ),
+        "recognized_multi_source_behavior": (
+            "do not ask for clarification merely because several source domains are required; build separate required legs when their meanings are independently clear"
+        ),
+        "assistant_response_policy": (
+            "ChatGPT/Codex must present the clarification to the user in normal language and must not execute data legs while clarification is required"
+        ),
+        "resume_policy": (
+            "after the user answers, call marketplace_query_plan again with the clarified request and preserved marketplace/seller/period context; execution may start only after the new plan is READY or READY_WITH_GATES"
+        ),
+        "loop_policy": (
+            "repeat clarification if the replanned request is still ambiguous or missing required context; never resolve uncertainty by silent inference"
+        ),
+    },
     "availability_facts": {
         "wb_orders_historical_archive": False,
         "wb_stock_historical_archive": False,
@@ -42,20 +76,26 @@ _ROUTER_MAP = {
         "multi-domain questions produce separate source legs before any join",
         "every execution leg records executor, gate, missing context and forbidden substitutes",
         "a missing required leg blocks the final joined answer instead of allowing silent partial truth",
+        "ambiguous, unknown, or context-incomplete meaning enters the clarification gate before any provider/archive read",
+        "known semantic source gaps are reported as gaps and are not disguised as requests for clarification",
+        "after clarification the request is replanned from the top; an old blocked/ambiguous plan is never resumed directly",
     ],
 }
 
 _system_map.SYSTEM_MAP["request_source_router"] = _ROUTER_MAP
 _system_map.SYSTEM_MAP["routing_policy"]["top_level_request"] = (
-    "call marketplace_query_plan first; create an execution plan with separate source legs, gates and blockers; "
-    "then choose archive, live cabinet/API, public marketplace/card, system-internal, hybrid, or unavailable "
-    "before metric-specific Semantic Core"
+    "call marketplace_query_plan first; if meaning/context is ambiguous, unknown, or incomplete, enter the clarification gate and ask the user before any data read; "
+    "otherwise create an execution plan with separate source legs, gates and blockers; then choose archive, live cabinet/API, public marketplace/card, "
+    "system-internal, hybrid, or unavailable before metric-specific Semantic Core"
 )
 
 _EXTRA_INSTRUCTIONS = """
 For every natural marketplace request, use marketplace_query_plan as the first server-side planning step before choosing archive, seller-cabinet/API, public-card/site, or other data tools.
 The top-level planner chooses a source family before lower Semantic Core chooses a metric, report, field, or endpoint. Code/module presence never proves that historical data is actually populated.
 The planner returns marketplace_execution_plan.v2: every required source leg has its own source family, source status, downstream executor, execution status, coverage gate, required context and forbidden substitutes.
+Before any provider, archive, card-monitor, or calculation executor is called, apply the Clarification Gate. If execution_plan.status is NEEDS_CONTEXT, ask the user only for the missing context reported by the plan. If semantic_resolution is AMBIGUOUS, explain that several business meanings are possible and ask the user to choose or clarify the intended meaning. If semantic_resolution is UNKNOWN, or the upper source class is unresolved because the business meaning is not safely identified, say that the request is not yet recognized precisely enough and ask what exact business result the user means. Never guess the closest metric.
+A recognized multi-source request is not ambiguous merely because it needs several data domains: create separate source legs and continue when each meaning is clear. Conversely, when the meaning is clear but a required source/executor is genuinely unavailable, report that source gap rather than asking an unnecessary semantic clarification.
+When clarification is required, ChatGPT/Codex must present the clarification in normal user-facing language and must not execute any data leg. After the user answers, call marketplace_query_plan again using the clarified request while preserving known marketplace, seller/cabinet, period and product context. Do not resume the old ambiguous plan directly. Repeat this loop until the replanned request is READY or READY_WITH_GATES, or until a genuine source gap is established.
 There is currently no verified populated WB historical orders archive and no historical stock archive. Recent WB orders may use the operational cabinet API only within its supported retention window; older order history must fail closed. Historical stock must fail closed and must never receive today's snapshot.
 Public marketplace/card facts are a separate source family from private seller-cabinet facts. If an on-demand public source is not connected, report that source gap instead of substituting cabinet or archive data.
 Questions that require several domains must produce separate source legs and validate each leg before joining results. All required legs are mandatory by default; if one required leg is unavailable, the final joined answer must fail closed rather than silently returning a partial answer.
