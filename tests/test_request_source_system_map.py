@@ -64,6 +64,24 @@ def test_execution_controller_is_between_clarification_and_data_executors():
     assert "prohibit arithmetic" in controller["join_policy"]
 
 
+def test_join_controller_and_calculation_registry_are_fail_closed():
+    join = SYSTEM_MAP["request_source_router"]["join_controller"]
+    assert join["status"] == "REGISTERED_JOIN_CONTRACTS_V1"
+    assert join["runtime_entry"] == "marketplace_join_control"
+    assert join["controller_version"] == "marketplace_join_controller.v1"
+    assert join["join_contract_version"] == "marketplace_join_contract.v1"
+    assert join["calculation_contract_version"] == "marketplace_calculation_contract.v1"
+    assert "registry presence alone never authorizes execution" in join["arithmetic_policy"]
+    registry = join["calculation_registry"]
+    assert registry["registry_version"] == "marketplace_calculation_registry.v1"
+    assert registry["contract_version"] == "marketplace_calculation_contract.v1"
+    assert registry["status"] == "VALIDATED_EMPTY_V1"
+    assert registry["registered_cross_source_calculations"] == []
+    assert registry["currency_policy"].startswith("EXPLICIT_ONLY")
+    assert "BLOCK or RETURN_NULL" in registry["zero_denominator_policy"]
+    assert registry["provenance_required"] is True
+
+
 def test_server_instructions_require_execution_planning_before_semantic_core():
     assert "marketplace_query_plan as the first server-side planning step" in SYSTEM_INSTRUCTIONS
     assert "marketplace_execution_plan.v2" in SYSTEM_INSTRUCTIONS
@@ -80,3 +98,6 @@ def test_server_instructions_require_execution_planning_before_semantic_core():
     assert "exact executor_arguments" in SYSTEM_INSTRUCTIONS
     assert "Never pass the original compound multi-source user question unchanged" in SYSTEM_INSTRUCTIONS
     assert "dispatch_contracts must be empty" in SYSTEM_INSTRUCTIONS
+    assert "Calculation Contract Registry V1" in SYSTEM_INSTRUCTIONS
+    assert "Client-authored formulas" in SYSTEM_INSTRUCTIONS
+    assert "runtime registry currently contains zero cross-source formulas" in SYSTEM_INSTRUCTIONS
