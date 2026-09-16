@@ -9,6 +9,7 @@ from . import request_source_system_map as _request_source_system_map  # noqa: F
 from .business_router import execute_business_query as execute_legacy_business_query
 from .errors import make_error
 from .request_execution_controller import register_request_execution_controller_tool
+from .request_join_controller import register_request_join_controller_tool
 from .request_source_router import register_request_source_router_tool
 from .semantic_advertising import (
     SemanticAdvertisingExecutionError,
@@ -207,12 +208,13 @@ async def execute_business_query(
 
 
 def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None:
-    """Register top-level planning, execution control, and business execution."""
+    """Register planning, execution, join control, and business execution."""
 
-    # The planner is always first. The controller is the canonical second step
-    # after Clarification Gate and before any provider/archive/card executor.
+    # The planner is always first. Execution Controller owns exact per-leg calls;
+    # Join Controller later validates completed leg results before synthesis/math.
     register_request_source_router_tool(combined)
     register_request_execution_controller_tool(combined)
+    register_request_join_controller_tool(combined)
 
     @combined.tool(
         name="marketplace_business_query",
