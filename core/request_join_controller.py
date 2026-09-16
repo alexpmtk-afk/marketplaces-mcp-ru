@@ -4,7 +4,7 @@ V1 deliberately separates two permissions:
 1. a registered descriptive join may place independently validated leg results
    side by side while preserving their provenance;
 2. arithmetic is forbidden unless a separate calculation contract is explicitly
-   registered. There are no cross-source arithmetic contracts in V1.
+   registered and has an execution implementation.
 
 The controller rebuilds Query Execution Controller V1 from the original request,
 so callers cannot invent required legs or weaken their gates. It then binds
@@ -19,11 +19,16 @@ from datetime import date
 from typing import Any, Optional
 
 from .business_registry import resolve_business_cabinet
+from .calculation_contract_registry import (
+    CONTRACT_VERSION as CALCULATION_CONTRACT_VERSION,
+    calculation_registry_summary,
+    get_calculation_contract,
+    registered_calculation_ids,
+)
 from .request_execution_controller import control_marketplace_execution
 
 JOIN_CONTROLLER_VERSION = "marketplace_join_controller.v1"
 JOIN_CONTRACT_VERSION = "marketplace_join_contract.v1"
-CALCULATION_CONTRACT_VERSION = "marketplace_calculation_contract.v1"
 
 JOIN_READY = "READY"
 JOIN_BLOCKED = "BLOCKED"
@@ -45,10 +50,6 @@ _JOIN_CONTRACTS: dict[frozenset[tuple[str, str]], dict[str, Any]] = {
         "arithmetic_allowed": False,
     },
 }
-
-# Existing advertising DRR/ROAS remain internal to wb_ads_m0.v1. V1 has no
-# approved cross-source arithmetic formula.
-_CALCULATION_CONTRACTS: dict[str, dict[str, Any]] = {}
 
 _ARITHMETIC_MARKERS = re.compile(
     r"(?:\b(?:доля|процент|процента|процентов|отношение|разница|вычти|вычесть|"
@@ -205,6 +206,7 @@ def _block(
         "arithmetic_allowed": False,
         "join_contract": None,
         "calculation_contract": None,
+        "calculation_registry": calculation_registry_summary(),
         "blockers": blockers,
         "execution_control": execution_control,
     }
@@ -226,7 +228,8 @@ def control_marketplace_join(
     """Validate executed legs and authorize only a registered result join.
 
     ``leg_results`` entries must be ``{"contract_id": ..., "result": {...}}``.
-    The exact execution contracts are rebuilt from the original request first.
+    They are never trusted as a substitute for Query Execution Controller V1;
+    the exact execution contracts are rebuilt from the original request first.
     """
     execution = control_marketplace_execution(
         question,
@@ -290,7 +293,7 @@ def control_marketplace_join(
     requested_calculation = str(calculation_id or "").strip()
     arithmetic_requested = bool(_ARITHMETIC_MARKERS.search(str(question or "")))
     if requested_calculation:
-        calculation = _CALCULATION_CONTRACTS.get(requested_calculation)
+        calculation = get_calculation_contract(requested_calculation)
         if calculation is None:
             return _block(
                 execution_control=execution,
@@ -299,13 +302,26 @@ def control_marketplace_join(
                     "details": requested_calculation,
                 }],
             )
+        # Registry approval and arithmetic execution are deliberately separate
+        # gates. The framework cannot silently become an arithmetic engine just
+        # because a future contract was added to the registry.
+        return _block(
+            execution_control=execution,
+            blockers=[{
+                "type": "CALCULATION_EXECUTOR_NOT_IMPLEMENTED",
+                "details": {
+                    "calculation_id": requested_calculation,
+                    "operation": calculation.get("operation"),
+                },
+            }],
+        )
     elif arithmetic_requested:
         return _block(
             execution_control=execution,
             blockers=[{
                 "type": "CALCULATION_CONTRACT_REQUIRED",
                 "details": (
-                    "The wording requests derived arithmetic, but V1 has no approved cross-source calculation formula."
+                    "The wording requests derived arithmetic, but no approved cross-source calculation contract is registered."
                 ),
             }],
         )
@@ -387,7 +403,8 @@ def control_marketplace_join(
         "arithmetic_allowed": False,
         "calculation_contract": None,
         "calculation_contract_version": CALCULATION_CONTRACT_VERSION,
-        "registered_cross_source_calculations": [],
+        "registered_cross_source_calculations": registered_calculation_ids(),
+        "calculation_registry": calculation_registry_summary(),
         "guardrail": (
             "This contract authorizes descriptive side-by-side comparison only. "
             "Do not derive percentages, ratios, differences, totals, DRR, ROAS or profitability from these legs."
