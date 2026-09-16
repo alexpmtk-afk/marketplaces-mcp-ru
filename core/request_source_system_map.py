@@ -104,11 +104,23 @@ _ROUTER_MAP = {
         ),
         "approved_v1_join": "WB sale_and_return_operations + advertising_performance side-by-side comparison only",
         "arithmetic_policy": (
-            "cross-source arithmetic is disabled in V1; a calculation_id must resolve to a separately registered formula before any ratio, difference, total, DRR, ROAS or profitability calculation"
+            "cross-source arithmetic requires both a validated registered calculation contract and a separate calculation execution implementation; registry presence alone never authorizes execution"
         ),
         "currency_policy": (
             "currency alignment is never inferred; finance currencies and advertising money stay independently sourced and may not be arithmetically combined without an approved currency-aware calculation contract"
         ),
+        "calculation_registry": {
+            "registry_version": "marketplace_calculation_registry.v1",
+            "contract_version": "marketplace_calculation_contract.v1",
+            "status": "VALIDATED_EMPTY_V1",
+            "registered_cross_source_calculations": [],
+            "formula_policy": "server-owned registered inputs and operation only; client-authored formulas are forbidden",
+            "scope_policy": "marketplace, seller, date_from and date_to alignment are mandatory",
+            "coverage_policy": "every input declares a real required coverage gate",
+            "currency_policy": "EXPLICIT_ONLY; implicit conversion is forbidden",
+            "zero_denominator_policy": "ratio contracts must explicitly choose BLOCK or RETURN_NULL",
+            "provenance_required": True,
+        },
         "registered_cross_source_calculations": [],
     },
     "availability_facts": {
@@ -133,7 +145,8 @@ _ROUTER_MAP = {
         "if one required execution contract cannot be constructed, all dispatch is withheld until the plan is repaired or the gap is reported",
         "after all required leg results return, marketplace_join_control is the only approved source of permission to synthesize a registered multi-source join",
         "side-by-side comparison permission never implies arithmetic permission",
-        "no cross-source calculation is registered in Join / Calculation Contracts V1",
+        "Calculation Contract Registry V1 validates formula semantics before registration and currently contains zero active formulas",
+        "a structurally valid calculation contract is not executable until it is explicitly registered and its arithmetic executor is implemented",
     ],
 }
 
@@ -154,7 +167,8 @@ When clarification is required, ChatGPT/Codex must present the clarification in 
 After a READY or READY_WITH_GATES plan, call marketplace_execution_control before every provider/archive/card executor. Query Execution Controller V1 is the canonical server-side owner of per-leg executor arguments. Use only the executor name and exact executor_arguments returned in dispatch_contracts; do not rewrite, broaden, merge, or supplement them client-side.
 Never pass the original compound multi-source user question unchanged into several lower executors. The controller must turn every required leg into marketplace_leg_execution.v1 with its own narrow business meaning, source contract, coverage gate, forbidden substitutions and provenance requirements. If any required leg cannot get a deterministic execution contract, dispatch_contracts must be empty and no other required leg may run as a partial answer.
 After every required multi-source executor result has returned, call marketplace_join_control before presenting a joined multi-source synthesis. Pass each result with the exact contract_id returned by marketplace_execution_control. Join Controller V1 rebuilds the execution control server-side, rejects missing/duplicate/unexpected results, checks semantic target and required coverage, and authorizes only a registered join contract.
-Join permission and arithmetic permission are separate. V1 registers only a descriptive side-by-side WB comparison of sale_and_return_operations with advertising_performance for the same requested seller/period. It does not authorize subtraction, ratios, totals, percentages, DRR, ROAS, profitability or any other derived cross-source metric. If the user asks for such arithmetic, an explicit registered marketplace_calculation_contract is required; do not invent a formula or reinterpret the advertising-attribution DRR as overall business DRR.
+Join permission and arithmetic permission are separate. V1 registers only a descriptive side-by-side WB comparison of sale_and_return_operations with advertising_performance for the same requested seller/period. It does not authorize subtraction, ratios, totals, percentages, DRR, ROAS, profitability or any other derived cross-source metric.
+Calculation Contract Registry V1 is the server-owned gate for future derived metrics. Every future contract must explicitly define its business meaning, registered semantic inputs and value paths, marketplace, seller/period scope alignment, source-family restrictions, per-input coverage requirement, currency policy, output data class and provenance; ratio contracts must also define zero-denominator behavior. Client-authored formulas and implicit currency conversion are forbidden. A contract that merely passes registry validation is still not executable: it must be explicitly present in the runtime registry and a separate calculation executor must be implemented. The runtime registry currently contains zero cross-source formulas.
 There is currently no verified populated WB historical orders archive and no historical stock archive. Recent WB orders may use the operational cabinet API only within its supported retention window; older order history must fail closed. Historical stock must fail closed and must never receive today's snapshot.
 Public marketplace/card facts are a separate source family from private seller-cabinet facts. If an on-demand public source is not connected, report that source gap instead of substituting cabinet or archive data.
 Questions that require several domains must produce separate source legs and validate each leg before joining results. All required legs are mandatory by default; if one required leg is unavailable, the final joined answer must fail closed rather than silently returning a partial answer.
