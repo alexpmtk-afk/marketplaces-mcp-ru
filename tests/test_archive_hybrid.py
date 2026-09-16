@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from types import SimpleNamespace
 
 from core.archive_hybrid import HybridArchiveStore
@@ -12,6 +13,9 @@ class FakeStore:
         self.files: dict[str, bytes] = {}
         self.ensure_calls: list[tuple[str, ...]] = []
         self.upload_calls: list[str] = []
+        self.download_calls: list[str] = []
+        self.metadata_calls: list[str] = []
+        self.expose_sha256 = True
 
     async def ensure_folder_path(self, parts):
         path = "/".join(str(x) for x in parts)
@@ -31,7 +35,20 @@ class FakeStore:
             mime_type="text/csv",
         )
 
+    async def file_metadata(self, file_id):
+        self.metadata_calls.append(file_id)
+        data = self.files[file_id]
+        return {
+            "id": file_id,
+            "name": file_id.rsplit("/", 1)[-1],
+            "size": len(data),
+            "sha256Checksum": hashlib.sha256(data).hexdigest() if self.expose_sha256 else None,
+            "mimeType": "text/csv",
+        }
+
     async def download_named(self, parent, name):
+        key = f"{parent}/{name}"
+        self.download_calls.append(key)
         item = await self.find_child(parent, name)
         if item is None:
             return None, None
@@ -117,7 +134,26 @@ def test_canonical_write_updates_drive_first_and_yandex_backup():
     assert item.id == drive_key
 
 
-def test_existing_drive_file_is_source_of_truth():
+def test_verified_yandex_backup_supplies_content_without_drive_blob_read():
+    store, drive, yandex = _store()
+    locator = asyncio.run(store.ensure_folder_path(["База данных", "WB", "wb_laser_master"]))
+    drive_key = "drive:База данных/WB/wb_laser_master/base.csv"
+    yandex_key = "yandex:База данных/WB/wb_laser_master/base.csv"
+    payload = b"same-canonical-bytes"
+    drive.files[drive_key] = payload
+    yandex.files[yandex_key] = payload
+
+    item, data = asyncio.run(store.download_named(locator, "base.csv"))
+
+    assert item is not None
+    assert item.id == drive_key
+    assert data == payload
+    assert drive.metadata_calls == [drive_key]
+    assert drive.download_calls == []
+    assert yandex.download_calls == [yandex_key]
+
+
+def test_stale_yandex_backup_falls_back_to_drive_canonical():
     store, drive, yandex = _store()
     locator = asyncio.run(store.ensure_folder_path(["База данных", "WB", "wb_novokshenov"]))
     drive_key = "drive:База данных/WB/wb_novokshenov/base.csv"
@@ -126,8 +162,39 @@ def test_existing_drive_file_is_source_of_truth():
     yandex.files[yandex_key] = b"yandex-stale"
 
     _, data = asyncio.run(store.download_named(locator, "base.csv"))
+
     assert data == b"drive-current"
+    assert drive.download_calls == [drive_key]
     assert drive.upload_calls == []
+
+
+def test_missing_yandex_backup_falls_back_to_drive_canonical():
+    store, drive, _ = _store()
+    locator = asyncio.run(store.ensure_folder_path(["База данных", "WB", "wb_laser_master"]))
+    drive_key = "drive:База данных/WB/wb_laser_master/base.csv"
+    drive.files[drive_key] = b"drive-only"
+
+    _, data = asyncio.run(store.download_named(locator, "base.csv"))
+
+    assert data == b"drive-only"
+    assert drive.download_calls == [drive_key]
+
+
+def test_drive_checksum_unavailable_falls_back_to_drive_canonical():
+    store, drive, yandex = _store()
+    locator = asyncio.run(store.ensure_folder_path(["База данных", "WB", "wb_laser_master"]))
+    drive_key = "drive:База данных/WB/wb_laser_master/base.csv"
+    yandex_key = "yandex:База данных/WB/wb_laser_master/base.csv"
+    payload = b"same-canonical-bytes"
+    drive.files[drive_key] = payload
+    yandex.files[yandex_key] = payload
+    drive.expose_sha256 = False
+
+    _, data = asyncio.run(store.download_named(locator, "base.csv"))
+
+    assert data == payload
+    assert drive.download_calls == [drive_key]
+    assert yandex.download_calls == []
 
 
 def test_status_reports_google_drive_as_canonical():
