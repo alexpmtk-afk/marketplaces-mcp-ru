@@ -111,9 +111,16 @@ async def verify_finance_cabinet(store: Any, *, cabinet: str, year: int) -> dict
     max_registry_date = _max_date(records, ("date_to", "logical_week_to"))
     max_canonical_date = _max_date(rows, _DATE_FIELDS[FINANCE_DATASET])
 
-    ok = bool(item is not None) and quality["duplicate_stable_key_rows"] == 0 and quality["incomplete_stable_key_rows"] == 0 and not missing_nonempty
+    initialized = bool(item is not None and records)
+    ok = (
+        initialized
+        and quality["duplicate_stable_key_rows"] == 0
+        and quality["incomplete_stable_key_rows"] == 0
+        and not missing_nonempty
+    )
     return {
         "ok": ok,
+        "initialized": initialized,
         "marketplace": "wb",
         "dataset": FINANCE_DATASET,
         "cabinet": cabinet,
@@ -173,8 +180,15 @@ async def verify_advertising_cabinet(store: Any, *, cabinet: str, year: int) -> 
             **quality,
         }
 
+    roster = datasets.get("ads_campaign_roster_snapshots") or {}
+    initialized = bool(
+        roster.get("canonical_file_present")
+        and int(roster.get("coverage_records", 0) or 0) > 0
+    )
+    all_ok = all_ok and initialized
     return {
         "ok": all_ok,
+        "initialized": initialized,
         "marketplace": "wb",
         "dataset_family": "advertising",
         "cabinet": cabinet,
