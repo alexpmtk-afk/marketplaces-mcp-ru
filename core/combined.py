@@ -12,6 +12,7 @@ from .archive_hybrid import build_hybrid_archive_store_from_env
 from .archive_tools import register_archive_tools
 from .business_registry import resolve_business_cabinet
 from .semantic_business_router import register_business_query_tool
+from .semantic_core import register_semantic_core_tool
 from .card_monitor import register_tools as register_card_monitor_tools
 from .order_history_tools import register_order_history_tools
 from .system_map import SYSTEM_INSTRUCTIONS, register_system_map_tool
@@ -235,6 +236,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
     modules["_archive_store"] = archive_store
 
     register_system_map_tool(combined)
+    register_semantic_core_tool(combined)
     _register_finance_tools(combined, modules)
     register_wb_advertising_tools(combined, modules)
     register_business_query_tool(combined, modules)
