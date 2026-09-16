@@ -4,17 +4,26 @@ Google Drive is canonical for annual database files and the report registry.
 Yandex Object Storage remains the durable home for queue/job state and staging,
 and also receives a byte-for-byte backup of canonical files.
 
-When a canonical file is missing on Drive but still exists in Object Storage,
-the first content read migrates it to Drive before returning it. Metadata-only
-probes never copy a potentially large backup file as a side effect.
+Canonical metadata always comes from Drive. When an exact Yandex backup can be
+verified against Drive's SHA256 and size, content reads use those mirrored bytes
+instead of moving a potentially large file through Apps Script. If verification
+is unavailable or fails, the store falls back to the canonical Drive content
+path. When a canonical file is missing on Drive but still exists in Object
+Storage, the first content read migrates it to Drive before returning it.
+Metadata-only probes never copy a potentially large backup file as a side effect.
 """
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 from typing import Any
 
-from .archive_google import GoogleDriveArchiveStore, build_google_archive_store_from_env
+from .archive_google import (
+    ArchiveStorageError,
+    GoogleDriveArchiveStore,
+    build_google_archive_store_from_env,
+)
 from .archive_yandex import YandexObjectStorageArchiveStore, build_yandex_archive_store_from_env
 
 _LOCATOR_PREFIX = "hybrid-v1:"
@@ -27,6 +36,11 @@ def _b64_encode(value: str) -> str:
 
 def _b64_decode(value: str) -> str:
     return base64.urlsafe_b64decode(value.encode("ascii")).decode("utf-8")
+
+
+def _is_sha256(value: str) -> bool:
+    raw = str(value or "").strip().lower()
+    return len(raw) == 64 and all(ch in "0123456789abcdef" for ch in raw)
 
 
 class HybridArchiveStore:
@@ -97,6 +111,52 @@ class HybridArchiveStore:
             mime_type=yandex_item.mime_type or mime_type,
         )
 
+    async def _verified_backup_bytes(
+        self,
+        drive_item,
+        yandex_parent: str,
+        name: str,
+    ) -> bytes | None:
+        """Return mirror bytes only when Drive metadata proves they are exact.
+
+        Bridge v3 is intentionally a control plane for large files. Its
+        ``metadata_by_id`` action returns Drive REST size/SHA256 without moving
+        the blob through Apps Script. The Yandex object is accepted as content
+        only if both properties match exactly. Any uncertainty falls back to the
+        canonical Drive content path rather than silently trusting the mirror.
+        """
+        file_id = str(getattr(drive_item, "id", "") or "").strip()
+        if not file_id:
+            return None
+        try:
+            metadata = await self.drive.file_metadata(file_id)
+        except ArchiveStorageError:
+            return None
+
+        try:
+            expected_size = int(metadata.get("size"))
+        except (TypeError, ValueError):
+            return None
+        expected_sha = str(metadata.get("sha256Checksum") or "").strip().lower()
+        if expected_size < 0 or not _is_sha256(expected_sha):
+            return None
+
+        yandex_item, yandex_data = await self.yandex.download_named(yandex_parent, name)
+        if yandex_item is None or yandex_data is None:
+            return None
+        if len(yandex_data) != expected_size:
+            return None
+        mirror_size = getattr(yandex_item, "size", None)
+        if mirror_size is not None:
+            try:
+                if int(mirror_size) != expected_size:
+                    return None
+            except (TypeError, ValueError):
+                return None
+        if hashlib.sha256(yandex_data).hexdigest() != expected_sha:
+            return None
+        return yandex_data
+
     async def find_child(
         self,
         parent_id: str,
@@ -129,9 +189,29 @@ class HybridArchiveStore:
             assert yandex_parent is not None
             return await self.yandex.download_named(yandex_parent, name)
         assert drive_parent is not None and yandex_parent is not None
-        drive_item, drive_data = await self.drive.download_named(drive_parent, name)
-        if drive_item is not None and drive_data is not None:
-            return drive_item, drive_data
+
+        # Drive remains authoritative for identity and integrity. Avoid moving
+        # large canonical bytes through Apps Script when the exact same bytes
+        # are already present in the durable Yandex backup.
+        drive_item = await self.drive.find_child(drive_parent, name)
+        if drive_item is not None:
+            verified_backup = await self._verified_backup_bytes(
+                drive_item,
+                yandex_parent,
+                name,
+            )
+            if verified_backup is not None:
+                return drive_item, verified_backup
+
+            # Mirror missing/stale or Drive checksum unavailable: preserve the
+            # old canonical behavior and read directly from Drive.
+            canonical_item, canonical_data = await self.drive.download_named(drive_parent, name)
+            if canonical_item is not None and canonical_data is not None:
+                return canonical_item, canonical_data
+            return None, None
+
+        # Canonical missing: recover the durable backup back into Drive before
+        # returning it, preserving the existing read-through migration rule.
         yandex_item, yandex_data = await self.yandex.download_named(yandex_parent, name)
         if yandex_item is None or yandex_data is None:
             return None, None
