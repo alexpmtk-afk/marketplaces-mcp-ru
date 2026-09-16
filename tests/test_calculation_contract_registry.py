@@ -112,22 +112,39 @@ def test_formula_may_reference_only_registered_inputs():
         validate_calculation_registry(_registry_with(contract))
 
 
-def test_duplicate_input_aliases_fail_closed():
+def test_duplicate_or_unsafe_input_aliases_fail_closed():
     contract = _safe_ratio_contract()
     contract["inputs"][1]["alias"] = "numerator"
     with pytest.raises(CalculationContractRegistryError, match="duplicate input alias"):
         validate_calculation_registry(_registry_with(contract))
 
+    contract = _safe_ratio_contract()
+    contract["inputs"][0]["alias"] = "numerator.value"
+    with pytest.raises(CalculationContractRegistryError, match="unsafe input alias"):
+        validate_calculation_registry(_registry_with(contract))
 
-def test_each_input_requires_real_coverage_and_specific_data_class():
+
+def test_each_input_requires_known_coverage_and_specific_data_class():
     contract = _safe_ratio_contract()
     contract["inputs"][0]["required_coverage"] = "NONE"
-    with pytest.raises(CalculationContractRegistryError, match="real coverage"):
+    with pytest.raises(CalculationContractRegistryError, match="unsupported coverage requirement"):
+        validate_calculation_registry(_registry_with(contract))
+
+    contract = _safe_ratio_contract()
+    contract["inputs"][0]["required_coverage"] = "TRUST_ME_COMPLETE"
+    with pytest.raises(CalculationContractRegistryError, match="unsupported coverage requirement"):
         validate_calculation_registry(_registry_with(contract))
 
     contract = _safe_ratio_contract()
     contract["inputs"][0]["data_class"] = "ANY"
     with pytest.raises(CalculationContractRegistryError, match="unconstrained"):
+        validate_calculation_registry(_registry_with(contract))
+
+
+def test_output_data_class_cannot_be_unconstrained():
+    contract = _safe_ratio_contract()
+    contract["output"]["data_class"] = "ANY"
+    with pytest.raises(CalculationContractRegistryError, match="output.data_class"):
         validate_calculation_registry(_registry_with(contract))
 
 
