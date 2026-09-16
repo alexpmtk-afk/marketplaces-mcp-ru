@@ -32,6 +32,25 @@ def test_top_level_source_router_is_exposed_in_runtime_architecture_map():
     assert "marketplace_query_plan" in SYSTEM_MAP["routing_policy"]["top_level_request"]
 
 
+def test_clarification_gate_is_top_level_and_fail_closed():
+    router = SYSTEM_MAP["request_source_router"]
+    clarification = router["clarification_gate"]
+    assert clarification["position"] == "after marketplace_query_plan and before any data executor"
+    assert clarification["interaction_state"] == "CLARIFICATION_REQUIRED"
+    assert any("NEEDS_CONTEXT" in item for item in clarification["triggers"])
+    assert any("AMBIGUOUS" in item for item in clarification["triggers"])
+    assert any("UNKNOWN" in item for item in clarification["triggers"])
+    assert "must not execute" in clarification["assistant_response_policy"]
+    assert "call marketplace_query_plan again" in clarification["resume_policy"]
+    assert "never resolve uncertainty by silent inference" in clarification["loop_policy"]
+
+
+def test_clarification_gate_distinguishes_unknown_from_real_source_gap():
+    clarification = SYSTEM_MAP["request_source_router"]["clarification_gate"]
+    assert "source gap" in clarification["known_source_gap_behavior"]
+    assert "do not ask for clarification" in clarification["recognized_multi_source_behavior"]
+
+
 def test_server_instructions_require_execution_planning_before_semantic_core():
     assert "marketplace_query_plan as the first server-side planning step" in SYSTEM_INSTRUCTIONS
     assert "marketplace_execution_plan.v2" in SYSTEM_INSTRUCTIONS
@@ -40,3 +59,7 @@ def test_server_instructions_require_execution_planning_before_semantic_core():
     assert "no historical stock archive" in SYSTEM_INSTRUCTIONS
     assert "fail closed" in SYSTEM_INSTRUCTIONS
     assert "cross-source arithmetic" in SYSTEM_INSTRUCTIONS
+    assert "Clarification Gate" in SYSTEM_INSTRUCTIONS
+    assert "Never guess the closest metric" in SYSTEM_INSTRUCTIONS
+    assert "must not execute any data leg" in SYSTEM_INSTRUCTIONS
+    assert "Do not resume the old ambiguous plan directly" in SYSTEM_INSTRUCTIONS
