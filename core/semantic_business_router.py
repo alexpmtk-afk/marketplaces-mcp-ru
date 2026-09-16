@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 from .business_router import execute_business_query as execute_legacy_business_query
 from .errors import make_error
+from .request_source_router import register_request_source_router_tool
 from .semantic_advertising import (
     SemanticAdvertisingExecutionError,
     execute_semantic_advertising_question,
@@ -204,7 +205,11 @@ async def execute_business_query(
 
 
 def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None:
-    """Register the canonical server-side business-query entry point."""
+    """Register top-level source planning plus the business-query executor."""
+
+    # This is the canonical first step for ChatGPT/Codex.  It chooses the source
+    # family before lower Semantic Core chooses a metric/report/API operation.
+    register_request_source_router_tool(combined)
 
     @combined.tool(
         name="marketplace_business_query",
