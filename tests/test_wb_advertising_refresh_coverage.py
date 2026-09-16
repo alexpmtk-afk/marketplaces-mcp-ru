@@ -1,4 +1,4 @@
-import pytest
+import asyncio
 
 from core.archive_coverage import coverage_record, encode_registry, request_key
 from core.archive_refresh import REFRESH_CONTRACTS
@@ -81,40 +81,42 @@ class _CoverageStore:
         return object(), self.raw
 
 
-@pytest.mark.asyncio
-async def test_filter_plan_keeps_new_tail_but_skips_exact_committed_history():
-    records = [
-        coverage_record(
-            marketplace="wb",
+def test_filter_plan_keeps_new_tail_but_skips_exact_committed_history():
+    async def run() -> None:
+        records = [
+            coverage_record(
+                marketplace="wb",
+                cabinet="wb_laser_master",
+                dataset=dataset,
+                operation_id=FULLSTATS["operation_id"],
+                date_from=FULLSTATS["date_from"],
+                date_to=FULLSTATS["date_to"],
+                scope=FULLSTATS["scope"],
+                annual_file=f"{dataset}.csv",
+                rows=100,
+                bytes_count=1000,
+                sha256="a" * 64,
+            )
+            for dataset in FULLSTATS["datasets"]
+        ]
+        queue = object.__new__(WBAdvertisingArchiveJobQueue)
+        queue.store = _CoverageStore(encode_registry(records))
+
+        new_tail = {
+            **FULLSTATS,
+            "date_from": "2026-09-01",
+            "date_to": "2026-09-15",
+        }
+        pending, skipped = await _filter_plan(
+            queue,
             cabinet="wb_laser_master",
-            dataset=dataset,
-            operation_id=FULLSTATS["operation_id"],
-            date_from=FULLSTATS["date_from"],
-            date_to=FULLSTATS["date_to"],
-            scope=FULLSTATS["scope"],
-            annual_file=f"{dataset}.csv",
-            rows=100,
-            bytes_count=1000,
-            sha256="a" * 64,
+            plan=[FULLSTATS, new_tail],
         )
-        for dataset in FULLSTATS["datasets"]
-    ]
-    queue = object.__new__(WBAdvertisingArchiveJobQueue)
-    queue.store = _CoverageStore(encode_registry(records))
 
-    new_tail = {
-        **FULLSTATS,
-        "date_from": "2026-09-01",
-        "date_to": "2026-09-15",
-    }
-    pending, skipped = await _filter_plan(
-        queue,
-        cabinet="wb_laser_master",
-        plan=[FULLSTATS, new_tail],
-    )
+        assert skipped == 1
+        assert pending == [new_tail]
 
-    assert skipped == 1
-    assert pending == [new_tail]
+    asyncio.run(run())
 
 
 def test_archive_refresh_import_installs_coverage_aware_queue_handlers():
