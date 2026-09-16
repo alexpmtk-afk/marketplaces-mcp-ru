@@ -242,7 +242,7 @@ def test_database_refresh_routing_is_canonical():
     assert "COMPLETE" in routing
     assert "marketplace_database_verify" in routing
     assert "stable key" in archive["update_behavior"]
-    assert "date/high-watermark" in archive["post_refresh_verification"]
+    assert "date high-watermarks" in archive["post_refresh_verification"]
 
 
 def test_server_instructions_contain_hard_architecture_boundaries():
@@ -266,7 +266,7 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "Google Cloud is not a runtime provider" in SYSTEM_INSTRUCTIONS
     assert "marketplace_database_update" in SYSTEM_INSTRUCTIONS
     assert "marketplace_database_verify" in SYSTEM_INSTRUCTIONS
-    assert "permanently final" in SYSTEM_INSTRUCTIONS
+    assert "permanent finality" in SYSTEM_INSTRUCTIONS
     assert "date/high-watermark" in SYSTEM_INSTRUCTIONS
     assert "wb_ads" in SYSTEM_INSTRUCTIONS
     assert "actual business profit" in SYSTEM_INSTRUCTIONS
