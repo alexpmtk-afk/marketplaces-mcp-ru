@@ -1,8 +1,8 @@
 """Canonical unified Semantic Core brain for Marketplaces MCP.
 
-This module does not duplicate business rules.  It composes the already
+This module does not duplicate business rules. It composes the already
 validated canonical contracts that own meaning, routing, execution, joins and
-calculation permissions into one server-side snapshot.  The snapshot is the
+calculation permissions into one server-side snapshot. The snapshot is the
 single place an agent can inspect the complete business-logic state while the
 underlying owner files remain the only writable sources of truth.
 """
@@ -15,6 +15,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from . import request_join_controller as _join_controller
+from . import system_map as _system_map
 from .calculation_contract_registry import calculation_registry_summary
 from .request_execution_controller import CONTROLLER_VERSION, LEG_CONTRACT_VERSION
 from .request_source_router import (
@@ -38,8 +39,8 @@ from .semantic_resolver import load_semantic_intents
 SEMANTIC_CORE_VERSION = "marketplace_semantic_core.v1"
 SEMANTIC_CORE_STATUS = "CANONICAL_BRAIN"
 
-# This manifest owns *where logic lives*, not the logic itself.  It prevents a
-# future contributor from creating a second independent business-rule catalog.
+# This manifest owns where logic lives, not the business rules themselves. That
+# prevents a future contributor from creating another independent rule catalog.
 PROCESS_OWNERSHIP: dict[str, dict[str, Any]] = {
     "UNDERSTAND": {
         "owners": ["core/business_query_parser.py", "core/semantic_intents.yaml"],
@@ -125,7 +126,7 @@ class SemanticCoreError(RuntimeError):
 def _join_registry_summary() -> dict[str, Any]:
     """Project the actual Join Controller registry without copying its rules."""
     contracts: list[dict[str, Any]] = []
-    for targets, raw in _join_controller._JOIN_CONTRACTS.items():  # package-private canonical registry
+    for targets, raw in _join_controller._JOIN_CONTRACTS.items():
         contract = deepcopy(raw)
         contract["semantic_targets"] = [
             {"type": target_type, "id": target_id}
@@ -401,6 +402,44 @@ def semantic_core_view(section: str = "summary") -> dict[str, Any]:
             f"unknown Semantic Core section {section!r}; use one of {snapshot['summary']['available_sections']}"
         )
     return deepcopy(snapshot[resolved])
+
+
+def _install_system_map_extension() -> None:
+    """Mark the composed brain canonical without duplicating its business rules."""
+    current = dict(_system_map.SYSTEM_MAP.get("semantic_core") or {})
+    current.update({
+        "status": SEMANTIC_CORE_STATUS,
+        "brain_version": SEMANTIC_CORE_VERSION,
+        "brain_runtime_entry": "marketplace_semantic_core",
+        "brain_composer": "core/semantic_core.py",
+        "brain_policy": (
+            "compose and validate canonical owner registries at runtime; do not create a second independent business-rule catalog"
+        ),
+        "canonical_flow": [
+            "UNDERSTAND",
+            "RESOLVE",
+            "PLAN_SOURCE",
+            "CLARIFY",
+            "DISPATCH",
+            "EXECUTE",
+            "JOIN",
+            "CALCULATE_IF_REGISTERED",
+            "ANSWER_WITH_PROVENANCE",
+        ],
+    })
+    _system_map.SYSTEM_MAP["semantic_core"] = current
+    _system_map.SYSTEM_MAP.setdefault("routing_policy", {})["semantic_core_brain"] = (
+        "marketplace_semantic_core is the canonical composed business-logic view; underlying owner registries remain the only writable sources of truth"
+    )
+    marker = "marketplace_semantic_core is the canonical composed business brain"
+    if marker not in _system_map.SYSTEM_INSTRUCTIONS:
+        _system_map.SYSTEM_INSTRUCTIONS += (
+            "\n" + marker + ". Consult it when inspecting business meaning, source routing, execution, join, calculation, coverage or known-gap policy. "
+            "Do not create or rely on an independent parallel business-rule catalog.\n"
+        )
+
+
+_install_system_map_extension()
 
 
 def register_semantic_core_tool(mcp: FastMCP) -> None:
