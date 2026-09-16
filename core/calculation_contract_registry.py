@@ -1,12 +1,13 @@
 """Validated registry for future cross-source marketplace calculations.
 
 The registry owns *permission to define arithmetic*, not business data reads.
-V1 intentionally ships with zero approved cross-source calculations.  This
+V1 intentionally ships with zero approved cross-source calculations. This
 module exists so future formulas cannot be enabled by adding an ad-hoc division
 inside a controller or by letting an LLM invent numerator/denominator semantics.
 """
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from typing import Any
 
@@ -23,9 +24,16 @@ _ALLOWED_SOURCE_FAMILIES = {
     "PUBLIC_MARKETPLACE_SOURCE",
     "SYSTEM_INTERNAL",
 }
+_ALLOWED_COVERAGE_REQUIREMENTS = {
+    "FULL_COVERAGE",
+    "LIVE_RETENTION_WINDOW",
+    "MONITORING_COVERAGE",
+    "SOURCE_NATIVE_COMPLETE",
+}
 _REQUIRED_SCOPE_ALIGNMENT = {"marketplace", "seller", "date_from", "date_to"}
 _ALLOWED_CURRENCY_POLICIES = {"SAME_CURRENCY_REQUIRED", "NO_CURRENCY"}
 _ALLOWED_ZERO_DENOMINATOR = {"BLOCK", "RETURN_NULL"}
+_SAFE_ALIAS = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 CALCULATION_REGISTRY: dict[str, Any] = {
     "version": REGISTRY_VERSION,
@@ -66,6 +74,10 @@ def _nonempty_text(value: Any, name: str) -> str:
 def _validate_input(spec: Any, *, contract_id: str, aliases: set[str]) -> None:
     item = _mapping(spec, f"{contract_id} input")
     alias = _nonempty_text(item.get("alias"), f"{contract_id} input.alias")
+    if not _SAFE_ALIAS.fullmatch(alias):
+        raise CalculationContractRegistryError(
+            f"{contract_id} has unsafe input alias {alias!r}"
+        )
     if alias in aliases:
         raise CalculationContractRegistryError(
             f"{contract_id} has duplicate input alias {alias!r}"
@@ -98,9 +110,9 @@ def _validate_input(spec: Any, *, contract_id: str, aliases: set[str]) -> None:
     coverage = _nonempty_text(
         item.get("required_coverage"), f"{contract_id}.{alias}.required_coverage"
     )
-    if coverage == "NONE":
+    if coverage not in _ALLOWED_COVERAGE_REQUIREMENTS:
         raise CalculationContractRegistryError(
-            f"{contract_id}.{alias} must state a real coverage requirement, not NONE"
+            f"{contract_id}.{alias} has unsupported coverage requirement {coverage!r}"
         )
 
     data_class = _nonempty_text(item.get("data_class"), f"{contract_id}.{alias}.data_class")
@@ -241,7 +253,13 @@ def validate_calculation_registry(registry: dict[str, Any] | None = None) -> Non
         output = _mapping(spec.get("output"), f"{contract_id}.output")
         _nonempty_text(output.get("metric_id"), f"{contract_id}.output.metric_id")
         _nonempty_text(output.get("unit"), f"{contract_id}.output.unit")
-        _nonempty_text(output.get("data_class"), f"{contract_id}.output.data_class")
+        output_class = _nonempty_text(
+            output.get("data_class"), f"{contract_id}.output.data_class"
+        )
+        if output_class == "ANY":
+            raise CalculationContractRegistryError(
+                f"{contract_id}.output.data_class may not be unconstrained"
+            )
 
         inputs = spec.get("inputs")
         if not isinstance(inputs, list) or len(inputs) < 2:
