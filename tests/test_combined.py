@@ -32,6 +32,7 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "ozon_perf_rate_limit_status",
         "marketplace_system_map",
         "marketplace_query_plan",
+        "marketplace_execution_control",
         "wb_list_realization_reports",
         "wb_get_realization_report_by_id",
         "wb_ads_list_active_campaigns",
