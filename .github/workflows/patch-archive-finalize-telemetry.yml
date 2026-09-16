@@ -1,0 +1,326 @@
+name: Patch Archive Finalize Telemetry
+
+on:
+  push:
+    branches:
+      - fix/archive-finalize-telemetry
+    paths:
+      - .github/workflows/patch-archive-finalize-telemetry.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/archive-finalize-telemetry
+          fetch-depth: 0
+      - name: Apply precise telemetry integration patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def must_replace(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match, got {count}: {old[:80]!r}")
+              p.write_text(text.replace(old, new), encoding="utf-8")
+
+          q = "core/archive_queue.py"
+          must_replace(
+              q,
+              "from .archive_yandex import YandexObjectStorageArchiveStore\n",
+              "from .archive_yandex import YandexObjectStorageArchiveStore\n"
+              "from .archive_finalize_telemetry import (\n"
+              "    ensure_finalize_telemetry,\n"
+              "    finalize_telemetry_snapshot,\n"
+              "    public_finalize_telemetry,\n"
+              "    record_finalize_event,\n"
+              ")\n",
+          )
+          must_replace(
+              q,
+              '            "finalize_report_id": int((state.get("finalize") or {}).get("report_id", 0) or 0),\n'
+              '            "last_retry_after_seconds": state.get("last_retry_after_seconds", 0),\n',
+              '            "finalize_report_id": int((state.get("finalize") or {}).get("report_id", 0) or 0),\n'
+              '            "finalize_telemetry": public_finalize_telemetry(state),\n'
+              '            "last_retry_after_seconds": state.get("last_retry_after_seconds", 0),\n',
+          )
+          must_replace(
+              q,
+              '            state["finalize"] = {"report_id": report_id, "phase": "PREPARE"}\n'
+              '            state["status"] = "QUEUED"\n',
+              '            finalize = {"report_id": report_id, "phase": "PREPARE"}\n'
+              '            state["finalize"] = finalize\n'
+              '            ensure_finalize_telemetry(state, finalize)\n'
+              '            record_finalize_event(\n'
+              '                state, finalize, "DOWNLOAD_TO_PREPARE",\n'
+              '                transition="DOWNLOAD->PREPARE",\n'
+              '            )\n'
+              '            state["status"] = "QUEUED"\n',
+          )
+          must_replace(
+              q,
+              '            await self.store.upload_bytes(\n'
+              '                candidate_folder,\n'
+              '                candidate_name,\n'
+              '                merged,\n'
+              '                mime_type="text/csv",\n'
+              '            )\n'
+              '            finalize.update({\n',
+              '            candidate_obj = await self.store.upload_bytes(\n'
+              '                candidate_folder,\n'
+              '                candidate_name,\n'
+              '                merged,\n'
+              '                mime_type="text/csv",\n'
+              '            )\n'
+              '            finalize.update({\n',
+          )
+          must_replace(
+              q,
+              '            state["finalize"] = finalize\n'
+              '            state["status"] = "QUEUED"\n'
+              '            await self._save(state)\n'
+              '            await self._schedule(str(state["job_id"]), 0)\n'
+              '            return {\n'
+              '                "ok": True,\n'
+              '                "job_id": state["job_id"],\n'
+              '                "status": state["status"],\n'
+              '                "phase": state["phase"],\n'
+              '                "action": "report_finalize_prepared",\n',
+              '            state["finalize"] = finalize\n'
+              '            ensure_finalize_telemetry(\n'
+              '                state, finalize, candidate_object_id=str(getattr(candidate_obj, "id", "") or "")\n'
+              '            )\n'
+              '            record_finalize_event(\n'
+              '                state, finalize, "PREPARE_TO_UPLOAD_ANNUAL",\n'
+              '                candidate_object_id=str(getattr(candidate_obj, "id", "") or ""),\n'
+              '                candidate_bytes=finalize["annual_bytes"],\n'
+              '                candidate_sha256=finalize["annual_sha256"],\n'
+              '                resumable_offset=0,\n'
+              '                transition="PREPARE->UPLOAD_ANNUAL",\n'
+              '            )\n'
+              '            state["status"] = "QUEUED"\n'
+              '            await self._save(state)\n'
+              '            await self._schedule(str(state["job_id"]), 0)\n'
+              '            return {\n'
+              '                "ok": True,\n'
+              '                "job_id": state["job_id"],\n'
+              '                "status": state["status"],\n'
+              '                "phase": state["phase"],\n'
+              '                "action": "report_finalize_prepared",\n',
+          )
+          must_replace(
+              q,
+              '        annual_object_id = str(finalize.get("annual_object_id") or "")\n'
+              '        if not annual_object_id:\n',
+              '        record_finalize_event(\n'
+              '            state, finalize, "COMMIT_STARTED", transition="UPLOAD_ANNUAL->COMMIT"\n'
+              '        )\n'
+              '        annual_object_id = str(finalize.get("annual_object_id") or "")\n'
+              '        if not annual_object_id:\n',
+          )
+          must_replace(
+              q,
+              '        state["current_rrd_id"] = 0\n'
+              '        state.pop("finalize", None)\n',
+              '        state["current_rrd_id"] = 0\n'
+              '        record_finalize_event(\n'
+              '            state, finalize, "COMMIT_COMPLETE",\n'
+              '            canonical_file_id=annual_object_id,\n'
+              '            candidate_bytes=int(finalize.get("annual_bytes", 0) or 0),\n'
+              '            candidate_sha256=str(finalize.get("annual_sha256") or ""),\n'
+              '            transition="COMMIT->NEXT",\n'
+              '        )\n'
+              '        state["last_finalize_telemetry"] = finalize_telemetry_snapshot(state, finalize)\n'
+              '        state.pop("finalize", None)\n',
+          )
+
+          w = "core/archive_resumable_worker.py"
+          must_replace(
+              w,
+              'from .archive_google import ArchiveStorageError\n',
+              'from .archive_google import ArchiveStorageError\n'
+              'from .archive_finalize_telemetry import (\n'
+              '    record_finalize_event,\n'
+              '    sync_resumable_telemetry,\n'
+              ')\n',
+          )
+          must_replace(
+              w,
+              '        if candidate_obj.size is not None and int(candidate_obj.size) != expected_bytes:\n'
+              '            raise RuntimeError("Durable annual finalize candidate failed size verification")\n\n'
+              '        if self.uploader is None:\n',
+              '        if candidate_obj.size is not None and int(candidate_obj.size) != expected_bytes:\n'
+              '            raise RuntimeError("Durable annual finalize candidate failed size verification")\n'
+              '        sync_resumable_telemetry(\n'
+              '            state, finalize, candidate_object_id=str(candidate_obj.id)\n'
+              '        )\n\n'
+              '        if self.uploader is None:\n',
+          )
+          must_replace(
+              w,
+              '                finalize["resumable_upload"] = upload\n'
+              '                state["finalize"] = finalize\n'
+              '                state["status"] = "QUEUED"\n'
+              '                state["last_error"] = None\n'
+              '                await self.queue._save(state)\n'
+              '                await self.queue._schedule(job_id, 0)\n'
+              '                return {\n'
+              '                    "ok": True,\n'
+              '                    "job_id": job_id,\n'
+              '                    "status": state["status"],\n'
+              '                    "phase": state.get("phase"),\n'
+              '                    "action": "drive_resumable_session_started",\n',
+              '                finalize["resumable_upload"] = upload\n'
+              '                state["finalize"] = finalize\n'
+              '                sync_resumable_telemetry(\n'
+              '                    state, finalize, candidate_object_id=str(candidate_obj.id)\n'
+              '                )\n'
+              '                record_finalize_event(\n'
+              '                    state, finalize, "RESUMABLE_SESSION_STARTED",\n'
+              '                    staging_file_id=str(session.file_id or ""),\n'
+              '                    previous_canonical_file_id=str(previous_canonical_id or ""),\n'
+              '                    resumable_offset=0,\n'
+              '                )\n'
+              '                state["status"] = "QUEUED"\n'
+              '                state["last_error"] = None\n'
+              '                await self.queue._save(state)\n'
+              '                await self.queue._schedule(job_id, 0)\n'
+              '                return {\n'
+              '                    "ok": True,\n'
+              '                    "job_id": job_id,\n'
+              '                    "status": state["status"],\n'
+              '                    "phase": state.get("phase"),\n'
+              '                    "action": "drive_resumable_session_started",\n',
+          )
+          must_replace(
+              w,
+              '            finalize["resumable_upload"] = upload\n'
+              '            state["finalize"] = finalize\n'
+              '            state["status"] = "QUEUED"\n'
+              '            state["last_error"] = None\n'
+              '            await self.queue._save(state)\n'
+              '            await self.queue._schedule(job_id, 0)\n'
+              '            return {\n'
+              '                "ok": True,\n'
+              '                "job_id": job_id,\n'
+              '                "status": state["status"],\n'
+              '                "phase": state.get("phase"),\n'
+              '                "action": "drive_resumable_chunk_uploaded",\n',
+              '            finalize["resumable_upload"] = upload\n'
+              '            state["finalize"] = finalize\n'
+              '            sync_resumable_telemetry(\n'
+              '                state, finalize, candidate_object_id=str(candidate_obj.id)\n'
+              '            )\n'
+              '            record_finalize_event(\n'
+              '                state, finalize, "RESUMABLE_CHUNK_CONFIRMED",\n'
+              '                staging_file_id=str(upload.get("target_file_id") or ""),\n'
+              '                resumable_offset=confirmed,\n'
+              '            )\n'
+              '            state["status"] = "QUEUED"\n'
+              '            state["last_error"] = None\n'
+              '            await self.queue._save(state)\n'
+              '            await self.queue._schedule(job_id, 0)\n'
+              '            return {\n'
+              '                "ok": True,\n'
+              '                "job_id": job_id,\n'
+              '                "status": state["status"],\n'
+              '                "phase": state.get("phase"),\n'
+              '                "action": "drive_resumable_chunk_uploaded",\n',
+          )
+          must_replace(
+              w,
+              '        upload["staged_file_id"] = file_id\n'
+              '        upload["promotion_attempted"] = True\n'
+              '        upload["offset"] = expected_bytes\n'
+              '        finalize["resumable_upload"] = upload\n'
+              '        state["finalize"] = finalize\n'
+              '        state["status"] = "PROMOTION_PENDING"\n',
+              '        upload["staged_file_id"] = file_id\n'
+              '        upload["promotion_attempted"] = True\n'
+              '        upload["offset"] = expected_bytes\n'
+              '        finalize["resumable_upload"] = upload\n'
+              '        state["finalize"] = finalize\n'
+              '        sync_resumable_telemetry(state, finalize, candidate_object_id=candidate_id)\n'
+              '        record_finalize_event(\n'
+              '            state, finalize, "PROMOTION_PENDING",\n'
+              '            staging_file_id=file_id,\n'
+              '            previous_canonical_file_id=str(upload.get("previous_canonical_file_id") or ""),\n'
+              '            resumable_offset=expected_bytes,\n'
+              '        )\n'
+              '        state["status"] = "PROMOTION_PENDING"\n',
+          )
+          must_replace(
+              w,
+              '        finalize["annual_object_id"] = str(file_id)\n'
+              '        finalize["phase"] = "COMMIT"\n'
+              '        finalize["resumable_upload_verified"] = {\n',
+              '        finalize["annual_object_id"] = str(file_id)\n'
+              '        finalize["phase"] = "COMMIT"\n'
+              '        sync_resumable_telemetry(state, finalize)\n'
+              '        record_finalize_event(\n'
+              '            state, finalize, "UPLOAD_ANNUAL_TO_COMMIT",\n'
+              '            canonical_file_id=str(file_id),\n'
+              '            candidate_bytes=expected_bytes,\n'
+              '            candidate_sha256=expected_sha,\n'
+              '            resumable_offset=expected_bytes,\n'
+              '            transition="UPLOAD_ANNUAL->COMMIT",\n'
+              '        )\n'
+              '        finalize["resumable_upload_verified"] = {\n',
+          )
+          must_replace(
+              w,
+              '                state["status"] = "FAILED"\n'
+              '                state["last_error"] = str(exc)[:1000]\n'
+              '                state["finalize"] = finalize\n'
+              '                await self.queue._save(state)\n',
+              '                state["status"] = "FAILED"\n'
+              '                state["last_error"] = str(exc)[:1000]\n'
+              '                state["finalize"] = finalize\n'
+              '                sync_resumable_telemetry(state, finalize, candidate_object_id=str(candidate_obj.id))\n'
+              '                record_finalize_event(\n'
+              '                    state, finalize, "UPLOAD_FAILED",\n'
+              '                    canonical_state="recheck_required" if promotion_attempted else "untouched",\n'
+              '                )\n'
+              '                await self.queue._save(state)\n',
+          )
+          must_replace(
+              w,
+              '            state["status"] = "WAITING_RETRY"\n'
+              '            state["last_error"] = str(exc)[:1000]\n'
+              '            state["finalize"] = finalize\n'
+              '            await self.queue._save(state)\n',
+              '            state["status"] = "WAITING_RETRY"\n'
+              '            state["last_error"] = str(exc)[:1000]\n'
+              '            state["finalize"] = finalize\n'
+              '            sync_resumable_telemetry(state, finalize, candidate_object_id=str(candidate_obj.id))\n'
+              '            record_finalize_event(\n'
+              '                state, finalize, "UPLOAD_WAITING_RETRY",\n'
+              '                retry_count=retry_count,\n'
+              '                canonical_state="recheck_required" if promotion_attempted else "untouched",\n'
+              '            )\n'
+              '            await self.queue._save(state)\n',
+          )
+
+          Path("tests/test_archive_finalize_telemetry.py").write_text('''import json\n\nfrom core.archive_finalize_telemetry import (\n    ensure_finalize_telemetry,\n    finalize_telemetry_snapshot,\n    public_finalize_telemetry,\n    record_finalize_event,\n    sync_resumable_telemetry,\n)\n\n\ndef test_telemetry_is_stable_and_never_exposes_resumable_session_uri():\n    state = {"job_id": "wb-finance-wb_laser_master-2026"}\n    finalize = {\n        "report_id": 751229976,\n        "phase": "UPLOAD_ANNUAL",\n        "annual_bytes": 36269883,\n        "annual_sha256": "a" * 64,\n        "resumable_upload": {\n            "session_uri": "https://www.googleapis.com/upload/drive/SECRET-BEARER-CAPABILITY",\n            "offset": 4194304,\n            "target_file_id": "stage-1",\n            "previous_canonical_file_id": "old-1",\n        },\n    }\n    state["finalize"] = finalize\n    first = ensure_finalize_telemetry(state, finalize, candidate_object_id="candidate-1")\n    correlation = first["correlation_id"]\n    sync_resumable_telemetry(state, finalize, candidate_object_id="candidate-1")\n    record_finalize_event(\n        state, finalize, "RESUMABLE_CHUNK_CONFIRMED",\n        staging_file_id="stage-1", resumable_offset=4194304,\n    )\n    public = public_finalize_telemetry(state)\n    assert public is not None\n    assert public["correlation_id"] == correlation\n    assert public["candidate_object_id"] == "candidate-1"\n    assert public["candidate_bytes"] == 36269883\n    assert public["candidate_sha256"] == "a" * 64\n    assert public["staging_file_id"] == "stage-1"\n    assert public["previous_canonical_file_id"] == "old-1"\n    assert public["resumable_offset"] == 4194304\n    assert "SECRET-BEARER-CAPABILITY" not in json.dumps(public)\n    assert "session_uri" not in json.dumps(public)\n    again = ensure_finalize_telemetry(state, finalize)\n    assert again["correlation_id"] == correlation\n\n\ndef test_finalize_snapshot_is_immutable_after_finalize_mutation():\n    state = {"job_id": "job-1"}\n    finalize = {"report_id": 42, "phase": "COMMIT", "annual_bytes": 10, "annual_sha256": "b" * 64}\n    state["finalize"] = finalize\n    record_finalize_event(state, finalize, "COMMIT_COMPLETE", canonical_file_id="drive-42")\n    snap = finalize_telemetry_snapshot(state, finalize)\n    finalize["telemetry"]["canonical_file_id"] = "changed-later"\n    assert snap["canonical_file_id"] == "drive-42"\n''', encoding="utf-8")
+          PY
+          rm .github/workflows/patch-archive-finalize-telemetry.yml
+          git diff --check
+          git status --short
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/archive_queue.py core/archive_resumable_worker.py tests/test_archive_finalize_telemetry.py .github/workflows/patch-archive-finalize-telemetry.yml
+          git commit -m "feat: add durable archive finalize telemetry"
+          git push origin HEAD:fix/archive-finalize-telemetry
