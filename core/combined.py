@@ -11,10 +11,11 @@ from mcp.server.fastmcp import FastMCP
 from .archive_hybrid import build_hybrid_archive_store_from_env
 from .archive_tools import register_archive_tools
 from .business_registry import resolve_business_cabinet
+from .card_monitor import register_tools as register_card_monitor_tools
+from .data_catalog import register_data_catalog_tools
+from .order_history_tools import register_order_history_tools
 from .semantic_business_router import register_business_query_tool
 from .semantic_core import register_semantic_core_tool
-from .card_monitor import register_tools as register_card_monitor_tools
-from .order_history_tools import register_order_history_tools
 from .system_map import SYSTEM_INSTRUCTIONS, register_system_map_tool
 from .tools import resolve_named_cabinet
 from .wb_advertising import register_wb_advertising_tools
@@ -237,6 +238,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
 
     register_system_map_tool(combined)
     register_semantic_core_tool(combined)
+    register_data_catalog_tools(combined)
     _register_finance_tools(combined, modules)
     register_wb_advertising_tools(combined, modules)
     register_business_query_tool(combined, modules)
