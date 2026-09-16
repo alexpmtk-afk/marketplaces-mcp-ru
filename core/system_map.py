@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-15.v18"
+ARCHITECTURE_VERSION = "2026-09-16.v19"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -61,7 +61,13 @@ SYSTEM_MAP: dict[str, Any] = {
         "registry": "reports_registry.csv for WB finance; dataset_coverage_registry.csv for generic datasets such as advertising",
         "google_drive_path": "Мой диск/Marketplaces/MCP архив базы данных",
         "default_update_scope": "all configured marketplace cabinets",
-        "update_behavior": "compare registry -> request only missing provider reports/requests -> update annual CSV",
+        "refresh_coordinator": "core/archive_refresh.py; preferred MCP entry is marketplace_database_update",
+        "refresh_lifecycle": "REQUEST -> DISCOVER -> COMPARE COVERAGE -> FETCH/RECONCILE -> NORMALIZE -> MERGE -> VERIFY -> PUBLISH -> COMMIT COVERAGE -> COMPLETE -> POST-CHECK",
+        "update_behavior": "every refresh re-runs dataset-specific provider discovery/coverage reconciliation; fetch only missing or correction-eligible provider units; merge by stable key; publish verified canonical data; commit coverage only after publication",
+        "completion_semantics": "COMPLETE means the previous refresh cycle finished; it never means an annual database is permanently final",
+        "post_refresh_verification": "marketplace_database_verify checks canonical file presence, date high-watermarks, stable-key duplicates/incomplete keys, and registry/coverage consistency after COMPLETE",
+        "dataset_registration_rule": "a future archive dataset must declare provider discovery, coverage/cursor model, stable row key, freshness evidence, merge semantics and completion invariants before marketplace_database_update may claim to refresh it",
+        "freshness_rule": "maximum row date/high-watermark is mandatory evidence where meaningful but never replaces a stronger provider-native identity such as reportId/event key/request coverage",
         "idempotent": True,
         "registry_required": True,
         "deduplication": {
@@ -219,7 +225,7 @@ SYSTEM_MAP: dict[str, Any] = {
         ),
     },
     "routing_policy": {
-        "update_database": "route to the server archive update workflow; compare canonical registry and fetch only missing provider reports/requests",
+        "update_database": "route ordinary database-refresh requests to marketplace_database_update; each registered dataset family must re-run provider discovery/coverage reconciliation, then clients must wait for COMPLETE and call marketplace_database_verify before claiming success",
         "natural_business_question": "preserve the user's original wording, normalize business dimensions, and resolve through Semantic Core before source selection",
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
@@ -257,6 +263,9 @@ The existing canonical large file must remain untouched while chunks are uploade
 Transient upload failures must use bounded exponential backoff with jitter. Non-final chunks must be multiples of 256 KiB and the Drive Range response is authoritative for the next byte offset.
 Only after staged Drive verification, Yandex backup, and verified canonical promotion may the worker COMMIT registry/job progress.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
+For an ordinary request to update/refresh the marketplace database, prefer marketplace_database_update. COMPLETE is refresh-cycle completion only, never permanent finality: every new refresh must re-run the registered dataset's provider discovery/coverage reconciliation and ingest only missing or correction-eligible data according to its stable key.
+Do not claim that a database update succeeded merely because jobs were queued. Wait until all requested jobs reach COMPLETE, then call marketplace_database_verify and require canonical-file presence, stable-key integrity, registry/coverage consistency and date/high-watermark evidence. Date is freshness evidence where meaningful but never replaces a stronger provider-native identity such as reportId, event key or canonical request coverage.
+A future archive dataset must be registered with provider discovery, coverage/cursor model, stable row key, freshness evidence, merge semantics and completion invariants before the generic database update workflow may claim to refresh it.
 For business questions, preserve the user's original wording and pass it through Semantic Core. Normalize source-independent measure/grouping/period/filter dimensions with core/business_query_parser.py before selecting a source; the parser must not choose provider fields. The original question outranks a conflicting legacy metric hint.
 A generic current-state marker such as today/current is a fail-closed fallback. A more specific registered operational business metric may outrank it only when that metric has an explicitly approved live/operational source.
 Ordinary WB ORDERS questions, including today, use the operational/preliminary WB Statistics Orders source. They must never be presented as the complete marketplace order flow; explicit full-order-flow wording remains a separate source requirement.
