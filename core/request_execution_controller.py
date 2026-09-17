@@ -314,6 +314,10 @@ def control_marketplace_execution(
         elif contract:
             prepared.append(contract)
 
+    # Required legs are all-or-nothing. Even already-prepared contracts are not
+    # exposed as dispatchable when another required leg lacks a deterministic
+    # contract. This prevents silent partial truth and side effects before a gap
+    # is resolved.
     if contract_blockers:
         return {
             "ok": False,
@@ -338,6 +342,7 @@ def control_marketplace_execution(
             "use_only_returned_executor_and_arguments": True,
             "do_not_rewrite_executor_arguments": True,
             "do_not_pass_original_compound_question_to_each_leg": True,
+            "parallel_allowed": bool(execution.get("independent_legs_can_run_in_parallel")),
         },
         "dispatch_contracts": prepared,
         "blockers": [],
