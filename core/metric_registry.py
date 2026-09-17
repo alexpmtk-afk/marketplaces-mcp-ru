@@ -11,6 +11,10 @@ import yaml
 METRIC_REGISTRY_PATH = Path(__file__).with_name("metric_registry.yaml")
 _ALLOWED_KINDS = {"RAW", "DERIVED", "BUSINESS"}
 _ALLOWED_TARGET_TYPES = {"BUSINESS_METRIC", "CAPABILITY"}
+_RU_METRIC_INFLECTIONS = {
+    "долю": "доля",
+    "доли": "доля",
+}
 
 
 class MetricRegistryError(RuntimeError):
@@ -20,7 +24,8 @@ class MetricRegistryError(RuntimeError):
 def _normalize(text: str) -> str:
     value = str(text or "").casefold().replace("ё", "е")
     value = re.sub(r"[^a-zа-я0-9_]+", " ", value)
-    return " ".join(value.split())
+    tokens = [_RU_METRIC_INFLECTIONS.get(token, token) for token in value.split()]
+    return " ".join(tokens)
 
 
 def _require_mapping(value: Any, name: str) -> dict[str, Any]:
@@ -100,8 +105,6 @@ def validate_metric_registry(data: dict[str, Any]) -> None:
                 continue
             owner = normalized_alias_owners.get(normalized)
             if owner is not None and owner != metric_id:
-                # Shared generic aliases (for example 'orders') are dangerous because
-                # they can silently map one user phrase to two distinct business meanings.
                 raise MetricRegistryError(
                     f"alias {alias!r} is shared by metrics {owner} and {metric_id}"
                 )
