@@ -15,6 +15,7 @@ _ALLOWED_TARGET_TYPES = {"BUSINESS_METRIC", "CAPABILITY"}
 _RU_METRIC_INFLECTIONS = {
     "долю": "доля",
     "доли": "доля",
+    "остаток": "остатки",
 }
 
 
