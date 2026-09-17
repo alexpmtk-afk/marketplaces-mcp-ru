@@ -1,0 +1,54 @@
+version: marketplace_metric_registry.ozon_snapshot.v1
+metrics:
+  CURRENT_STOCK:
+    provider_mappings:
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_stocks
+        fields:
+          - stocks.present
+          - stocks.reserved
+          - stocks.type
+          - sku
+          - warehouse_ids
+        provider_aliases:
+          - present
+          - reserved
+  CURRENT_SELLING_PRICE:
+    canonical_name_ru: Текущая цена продажи
+    abbreviation: null
+    kind: BUSINESS
+    units:
+      - RUB
+    aliases_ru:
+      - цена
+      - текущая цена
+      - цена товара
+      - сколько стоит
+      - стоимость товара сейчас
+    aliases_en:
+      - current price
+      - selling price
+    semantic_target:
+      type: BUSINESS_METRIC
+      id: CURRENT_SELLING_PRICE
+    provider_mappings:
+      wb:
+        status: NOT_MAPPED
+        fields: []
+        provider_aliases: []
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_prices
+        fields:
+          - price.marketing_seller_price
+          - price.currency_code
+        provider_aliases:
+          - marketing_seller_price
+    guardrail: >-
+      Seller-side current selling price after seller promotions. For Ozon the
+      canonical provider field is marketing_seller_price. It must not be
+      presented as a guaranteed final personalized buyer price because Ozon
+      buyer-specific discounts or platform subsidies may change the checkout
+      price. Historical price requires an approved historical source and must
+      never be reconstructed from the current snapshot.

@@ -29,9 +29,6 @@ CONTROL_READY_WITH_GATES = "READY_WITH_GATES"
 CONTROL_CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED"
 CONTROL_BLOCKED = "BLOCKED"
 
-# Canonical narrow phrases are deliberately server-owned. They are not LLM
-# rewrites. Each phrase is regression-tested through Semantic Core so a
-# multi-source leg cannot silently inherit the whole compound user question.
 _CANONICAL_BUSINESS_QUESTION_BY_PURPOSE = {
     "advertising": "рекламные расходы",
     "sales_or_finance": "продажи",
@@ -82,9 +79,6 @@ def _targeted_business_question(
     if not targeted:
         targeted = _CANONICAL_BUSINESS_QUESTION_BY_PURPOSE.get(str(leg.get("purpose") or ""))
 
-    # A single-source request may preserve its original wording because there is
-    # only one semantic leg. A multi-source leg must never receive the original
-    # compound question unchanged.
     if not targeted and not multi_source and semantic_target:
         targeted = original_question
 
@@ -150,13 +144,27 @@ def _build_leg_contract(
     targeted_question: str | None = None
 
     if executor == "marketplace_business_query":
-        targeted_question, verified_target, blocker = _targeted_business_question(
-            leg=leg,
-            original_question=original_question,
-            multi_source=multi_source,
-        )
-        if blocker:
-            return None, blocker
+        if purpose == "ozon_current_snapshot":
+            # The original single-source wording carries the named cabinet and
+            # product identifier required by the Ozon executor. The source
+            # planner has already admitted only the approved snapshot metrics,
+            # and the executor revalidates them before any provider read.
+            if multi_source:
+                return None, {
+                    "leg_id": leg_id,
+                    "type": "OZON_SNAPSHOT_MUST_BE_SINGLE_SOURCE",
+                    "details": "The approved Ozon current snapshot contract must execute as one fail-closed single-source leg.",
+                }
+            targeted_question = original_question
+            verified_target = semantic_target
+        else:
+            targeted_question, verified_target, blocker = _targeted_business_question(
+                leg=leg,
+                original_question=original_question,
+                multi_source=multi_source,
+            )
+            if blocker:
+                return None, blocker
         semantic_target = verified_target
         args: dict[str, Any] = {
             "marketplace": marketplace,

@@ -8,10 +8,13 @@ snapshot or with a merely similar report.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import date, timedelta
 from typing import Any
 
 from .business_query_parser import normalize_business_text
+from .metric_registry import resolve_metric_terms
+from .semantic_ozon_snapshot import requested_snapshot_metrics
 from .semantic_resolver import resolve_semantic_question
 
 SOURCE_CANONICAL_ARCHIVE = "CANONICAL_ARCHIVE"
@@ -135,6 +138,45 @@ def _is_hybrid_question(text: str) -> bool:
     return (ad and business) or (public and private)
 
 
+def _ozon_snapshot_resolution(question: str, metrics: list[str]) -> dict[str, Any]:
+    dictionary = {item["metric_id"]: item for item in resolve_metric_terms(question)}
+    canonical = [deepcopy(dictionary[metric]) for metric in metrics if metric in dictionary]
+    if len(metrics) == 1:
+        resolution: dict[str, Any] = {
+            "resolution_type": "BUSINESS_METRIC",
+            "metric_id": metrics[0],
+        }
+    else:
+        resolution = {
+            "resolution_type": "BUSINESS_METRIC_SET",
+            "metric_ids": list(metrics),
+        }
+    resolution.update({
+        "execution_allowed": True,
+        "status": "AVAILABLE_WITH_LIMITATION" if "CURRENT_SELLING_PRICE" in metrics else "AVAILABLE",
+        "route_id": "ozon_current_snapshot",
+        "source_ids": [
+            source for source in (
+                "ozon_current_prices" if "CURRENT_SELLING_PRICE" in metrics else "",
+                "ozon_current_stocks" if "CURRENT_STOCK" in metrics else "",
+            ) if source
+        ],
+        "canonical_metrics": canonical,
+        "normalized_query": {
+            "marketplace": "ozon",
+            "temporal_class": "CURRENT_SNAPSHOT",
+            "metrics": list(metrics),
+        },
+        "guardrail": (
+            "Only the approved live Ozon current-price/current-stock snapshot may execute. "
+            "Historical substitution, active-cabinet fallback, fuzzy product substitution and partial answers are forbidden."
+        ),
+    })
+    if len(canonical) == 1:
+        resolution["canonical_metric"] = canonical[0]
+    return resolution
+
+
 def _semantic_target(resolution: dict[str, Any] | None) -> dict[str, Any] | None:
     if not resolution:
         return None
@@ -149,6 +191,8 @@ def _semantic_target(resolution: dict[str, Any] | None) -> dict[str, Any] | None
 
 
 def _single_leg_purpose(source_family: str, resolution: dict[str, Any] | None) -> str:
+    if resolution and resolution.get("route_id") == "ozon_current_snapshot":
+        return "ozon_current_snapshot"
     target = _semantic_target(resolution)
     if target and target.get("id"):
         return str(target["id"]).lower()
@@ -189,9 +233,6 @@ def _normalize_execution_leg(
     forbidden_substitutes: list[str], semantic_resolution: dict[str, Any] | None,
     explicit_downstream: str | None = None,
 ) -> dict[str, Any]:
-    # Public/system legs must not inherit a missing seller requirement from a
-    # sibling private leg. An unavailable leg, however, keeps missing context so
-    # the caller can distinguish "ask for marketplace" from a true source gap.
     context_sensitive = source_family in {
         SOURCE_CANONICAL_ARCHIVE, SOURCE_LIVE_CABINET_API, SOURCE_UNAVAILABLE,
     }
@@ -475,6 +516,28 @@ def plan_marketplace_request(
             reason="The question concerns a public marketplace card/price observation, not private seller-cabinet accounting.",
             forbidden_substitutes=["seller cabinet price treated as buyer-visible site price"],
         )
+
+    if market == "ozon":
+        snapshot_metrics = requested_snapshot_metrics(question)
+        if snapshot_metrics:
+            resolution = _ozon_snapshot_resolution(question, snapshot_metrics)
+            if mode in {"HISTORICAL", "MIXED"}:
+                return make_plan(
+                    question=question, marketplace="ozon", time_mode=mode,
+                    source_family=SOURCE_UNAVAILABLE, source_status="HISTORICAL_SOURCE_ABSENT",
+                    downstream=None,
+                    reason="The approved Ozon price/stock contract is current-snapshot only; no approved historical source exists for this request.",
+                    forbidden_substitutes=["current Ozon price snapshot", "current Ozon stock snapshot", "public Ozon site"],
+                    semantic_resolution=resolution,
+                )
+            return make_plan(
+                question=question, marketplace="ozon", time_mode=mode,
+                source_family=SOURCE_LIVE_CABINET_API, source_status="AVAILABLE",
+                downstream="marketplace_business_query",
+                reason="The approved Ozon current price/stock executor reads only the explicitly resolved named seller cabinet and validates product identity before synthesis.",
+                forbidden_substitutes=["public Ozon site", "WB archive", "another seller cabinet", "historical snapshot substitution"],
+                semantic_resolution=resolution,
+            )
 
     looks_private_business = any(marker in text for marker in (
         "заказ", "остат", "продаж", "возврат", "выкуп", "реклам",
