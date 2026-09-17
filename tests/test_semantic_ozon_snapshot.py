@@ -1,6 +1,5 @@
+import asyncio
 from types import SimpleNamespace
-
-import pytest
 
 from core.metric_registry import load_metric_registry, resolve_metric_terms
 from core.semantic_ozon_snapshot import execute_ozon_current_snapshot
@@ -110,13 +109,12 @@ def test_metric_registry_registers_current_selling_price_and_ozon_stock_mapping(
     assert {item["metric_id"] for item in matches} >= {"CURRENT_SELLING_PRICE", "CURRENT_STOCK"}
 
 
-@pytest.mark.asyncio
-async def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dates():
+def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dates():
     ozon = FakeOzon([entity_response(), price_response(), stock_response()])
-    result = await execute_ozon_current_snapshot(
+    result = asyncio.run(execute_ozon_current_snapshot(
         ozon,
         question="Какая цена и остаток на Ozon LaserMaster по артикулу 3276433388?",
-    )
+    ))
 
     assert result["ok"] is True
     assert result["complete"] is True
@@ -143,43 +141,40 @@ async def test_raw_question_resolves_named_cabinet_product_price_and_stock_witho
     }
 
 
-@pytest.mark.asyncio
-async def test_unknown_cabinet_fails_before_provider_and_never_uses_active_fallback():
+def test_unknown_cabinet_fails_before_provider_and_never_uses_active_fallback():
     ozon = FakeOzon([entity_response()])
-    result = await execute_ozon_current_snapshot(
+    result = asyncio.run(execute_ozon_current_snapshot(
         ozon,
         question="Цена Ozon UnknownShop артикул 3276433388",
         seller="UnknownShop",
-    )
+    ))
     assert result["ok"] is False
     assert result["code"] == "CABINET_NOT_CONFIGURED"
     assert ozon.client.calls == []
 
 
-@pytest.mark.asyncio
-async def test_historical_stock_fails_before_provider_instead_of_using_current_snapshot():
+def test_historical_stock_fails_before_provider_instead_of_using_current_snapshot():
     ozon = FakeOzon([entity_response()])
-    result = await execute_ozon_current_snapshot(
+    result = asyncio.run(execute_ozon_current_snapshot(
         ozon,
         question="Какой остаток Ozon LaserMaster по артикулу 3276433388 на 1 августа?",
-    )
+    ))
     assert result["ok"] is False
     assert result["code"] == "HISTORICAL_SOURCE_ABSENT"
     assert "current Ozon stock snapshot" in result["forbidden_substitutes"]
     assert ozon.client.calls == []
 
 
-@pytest.mark.asyncio
-async def test_price_success_stock_failure_is_not_reported_as_complete_success():
+def test_price_success_stock_failure_is_not_reported_as_complete_success():
     ozon = FakeOzon([
         entity_response(),
         price_response(),
         {"ok": False, "error": "upstream", "retryable": True},
     ])
-    result = await execute_ozon_current_snapshot(
+    result = asyncio.run(execute_ozon_current_snapshot(
         ozon,
         question="Цена и остаток Ozon LaserMaster артикул 3276433388",
-    )
+    ))
     assert result["ok"] is False
     assert result["complete"] is False
     assert result["stage"] == "stock"
@@ -187,17 +182,16 @@ async def test_price_success_stock_failure_is_not_reported_as_complete_success()
     assert result["leg_states"]["stock"] == "FAIL"
 
 
-@pytest.mark.asyncio
-async def test_product_identity_mismatch_blocks_join():
+def test_product_identity_mismatch_blocks_join():
     ozon = FakeOzon([
         entity_response(),
         price_response(),
         stock_response(sku="9999999999"),
     ])
-    result = await execute_ozon_current_snapshot(
+    result = asyncio.run(execute_ozon_current_snapshot(
         ozon,
         question="Цена и остаток Ozon LaserMaster артикул 3276433388",
-    )
+    ))
     assert result["ok"] is False
     assert result["code"] == "PRODUCT_JOIN_MISMATCH"
     assert result["stage"] == "join"
