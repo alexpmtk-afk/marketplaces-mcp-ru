@@ -9,6 +9,7 @@ import yaml
 
 
 METRIC_REGISTRY_PATH = Path(__file__).with_name("metric_registry.yaml")
+METRIC_REGISTRY_EXTENSIONS_PATH = Path(__file__).with_name("metric_registry_extensions.yaml")
 _ALLOWED_KINDS = {"RAW", "DERIVED", "BUSINESS"}
 _ALLOWED_TARGET_TYPES = {"BUSINESS_METRIC", "CAPABILITY"}
 _RU_METRIC_INFLECTIONS = {
@@ -40,6 +41,40 @@ def _require_string_list(value: Any, name: str, *, allow_empty: bool = False) ->
     if not all(isinstance(item, str) and item for item in value):
         raise MetricRegistryError(f"{name} must contain only non-empty strings")
     return value
+
+
+def _deep_merge_mapping(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
+    merged = deepcopy(base)
+    for key, value in patch.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge_mapping(merged[key], value)
+        else:
+            merged[key] = deepcopy(value)
+    return merged
+
+
+def _merge_metric_registry_extensions(
+    registry: dict[str, Any], extension: dict[str, Any],
+) -> dict[str, Any]:
+    """Apply additive/overriding metric patches before canonical validation."""
+    allowed = {"version", "metrics"}
+    unknown = sorted(set(extension) - allowed)
+    if unknown:
+        raise MetricRegistryError(f"metric registry extension has unsupported keys: {unknown}")
+    updates = _require_mapping(extension.get("metrics"), "metric registry extension metrics")
+    metrics = _require_mapping(registry.get("metrics"), "metrics")
+    merged = deepcopy(registry)
+    target = _require_mapping(merged.get("metrics"), "metrics")
+    for metric_id, patch in updates.items():
+        if not isinstance(metric_id, str) or not metric_id or not isinstance(patch, dict):
+            raise MetricRegistryError("metric registry extension has invalid metric entry")
+        if metric_id in metrics:
+            target[metric_id] = _deep_merge_mapping(metrics[metric_id], patch)
+        else:
+            target[metric_id] = deepcopy(patch)
+    if extension.get("version"):
+        merged["extension_versions"] = [str(extension["version"])]
+    return merged
 
 
 def validate_metric_registry(data: dict[str, Any]) -> None:
@@ -116,6 +151,11 @@ def load_metric_registry(path: str | Path | None = None) -> dict[str, Any]:
     with registry_path.open("r", encoding="utf-8") as fh:
         raw = yaml.safe_load(fh)
     data = _require_mapping(raw, "metric registry")
+    if path is None and METRIC_REGISTRY_EXTENSIONS_PATH.exists():
+        with METRIC_REGISTRY_EXTENSIONS_PATH.open("r", encoding="utf-8") as fh:
+            extension_raw = yaml.safe_load(fh)
+        extension = _require_mapping(extension_raw, "metric registry extension")
+        data = _merge_metric_registry_extensions(data, extension)
     validate_metric_registry(data)
     return data
 
