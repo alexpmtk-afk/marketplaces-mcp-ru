@@ -1,8 +1,9 @@
-version: 2026-09-15.v9
+version: 2026-09-17.v10
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
   current_state_must_not_be_inferred_from_weekly_archive: true
+  canonical_metric_terminology_owner: core/metric_registry.yaml
 
 business_metrics:
   ORDERS:
