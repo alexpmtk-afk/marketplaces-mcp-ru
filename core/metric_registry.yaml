@@ -1,0 +1,315 @@
+version: marketplace_metric_registry.v1
+policy:
+  canonical_human_language: ru
+  aliases_cross_language: true
+  provider_field_is_not_business_name: true
+  metric_dictionary_grants_execution: false
+  derived_metric_requires_formula_ref: true
+  unknown_provider_mapping_must_not_be_inferred: true
+  ozon_unmapped_must_fail_closed: true
+
+metrics:
+  ORDERS:
+    canonical_name_ru: Заказы
+    kind: BUSINESS
+    units: [UNITS, RUB]
+    aliases_ru: [заказы, заказов, количество заказов, сумма заказов, заказано]
+    aliases_en: [orders, order count, order amount]
+    semantic_target: {type: BUSINESS_METRIC, id: ORDERS}
+    provider_mappings:
+      wb: {status: EXECUTOR_OWNED, source_id: wb_stats_orders, fields: []}
+      ozon: {status: NOT_MAPPED, fields: []}
+    guardrail: Оперативные заказы WB не являются полным потоком всех оформленных заказов.
+
+  CURRENT_STOCK:
+    canonical_name_ru: Текущие остатки
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru: [остатки, текущие остатки, остаток товара, сколько осталось, остатки на сегодня]
+    aliases_en: [current stock, stock on hand, inventory on hand]
+    semantic_target: {type: BUSINESS_METRIC, id: CURRENT_STOCK}
+    provider_mappings:
+      wb: {status: EXECUTOR_OWNED, source_id: wb_current_stocks, fields: []}
+      ozon: {status: NOT_MAPPED, fields: []}
+    guardrail: Это live snapshot; историческую дату нельзя подменять текущим снимком.
+
+  SALES:
+    canonical_name_ru: Продажи
+    kind: BUSINESS
+    units: [UNITS, RUB]
+    aliases_ru: [продажи, продажа, сумма продаж, количество продаж, реализация, выкупы]
+    aliases_en: [sales, sale amount, sold units]
+    semantic_target: {type: CAPABILITY, id: sale_and_return_operations}
+    provider_mappings:
+      wb:
+        status: MAPPED
+        source_id: wb_weekly_finance_main
+        fields: [docTypeName, saleDt, quantity, retailAmount]
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/semantic_execution.yaml:sale_and_return_operations
+    guardrail: Использовать только утверждённые правила операции Продажа; не считать orderDt датой продажи.
+
+  RETURNS:
+    canonical_name_ru: Возвраты
+    kind: BUSINESS
+    units: [UNITS, RUB]
+    aliases_ru: [возвраты, возврат, сумма возвратов, количество возвратов]
+    aliases_en: [returns, returned units, return amount]
+    semantic_target: {type: CAPABILITY, id: sale_and_return_operations}
+    provider_mappings:
+      wb:
+        status: MAPPED
+        source_id: wb_weekly_finance_main
+        fields: [docTypeName, saleDt, quantity, retailAmount]
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/semantic_execution.yaml:sale_and_return_operations
+    guardrail: Возврат определяется утверждённым bucket docTypeName; знак retailAmount самостоятельно не интерпретировать.
+
+  AD_VIEWS:
+    canonical_name_ru: Показы рекламы
+    kind: RAW
+    units: [COUNT]
+    aliases_ru: [показы, показы рекламы, рекламные показы]
+    aliases_en: [impressions, views, ad views]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [views], provider_aliases: [views]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  AD_CLICKS:
+    canonical_name_ru: Клики по рекламе
+    kind: RAW
+    units: [COUNT]
+    aliases_ru: [клики, клики по рекламе, рекламные клики]
+    aliases_en: [clicks, ad clicks]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [clicks], provider_aliases: [clicks]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  AD_CART_ADDS:
+    canonical_name_ru: Добавления в корзину из рекламы
+    kind: RAW
+    units: [COUNT]
+    aliases_ru: [добавления в корзину из рекламы, рекламные добавления в корзину]
+    aliases_en: [ad cart adds, cart adds, atbs]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [cart_adds], provider_aliases: [atbs]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  AD_ORDERS:
+    canonical_name_ru: Рекламные заказы
+    kind: RAW
+    units: [COUNT]
+    aliases_ru: [рекламные заказы, заказы из рекламы, заказы по рекламе]
+    aliases_en: [ad orders, attributed orders]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [ad_orders], provider_aliases: [orders]}
+      ozon: {status: NOT_MAPPED, fields: []}
+    guardrail: Это заказы в рекламной атрибуции, а не полный поток заказов магазина.
+
+  AD_ADVERTISED_ITEMS:
+    canonical_name_ru: Рекламируемые единицы
+    kind: RAW
+    units: [COUNT]
+    aliases_ru: [рекламируемые единицы, рекламируемые товары]
+    aliases_en: [advertised items, shks]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [advertised_items], provider_aliases: [shks]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  AD_CANCELED:
+    canonical_name_ru: Отмены в рекламной атрибуции
+    kind: RAW
+    units: [COUNT]
+    aliases_ru: [отмены рекламы, отмены в рекламной атрибуции, рекламные отмены]
+    aliases_en: [ad cancellations, canceled]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [canceled], provider_aliases: [canceled]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  AD_SPEND:
+    canonical_name_ru: Рекламные расходы
+    kind: RAW
+    units: [RUB]
+    aliases_ru: [рекламные расходы, рекламный расход, расходы на рекламу, затраты на рекламу]
+    aliases_en: [ad spend, advertising spend, spend]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [spend], provider_aliases: [sum]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  AD_ATTRIBUTED_ORDER_AMOUNT:
+    canonical_name_ru: Сумма заказов, атрибутированная рекламе
+    kind: RAW
+    units: [RUB]
+    aliases_ru: [атрибутированная сумма заказов, сумма заказов из рекламы, сумма рекламных заказов]
+    aliases_en: [attributed order amount, attributed revenue, sum price]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_ads_data, fields: [attributed_order_amount], provider_aliases: [sum_price]}
+      ozon: {status: NOT_MAPPED, fields: []}
+    guardrail: Не считать общей выручкой продавца.
+
+  AD_CTR:
+    canonical_name_ru: Кликабельность рекламы
+    abbreviation: CTR
+    kind: DERIVED
+    units: [PERCENT]
+    aliases_ru: [кликабельность, кликабельность рекламы, процент кликов]
+    aliases_en: [CTR, click-through rate, click through rate]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: DERIVED_FROM_CANONICAL_FIELDS, source_id: wb_ads_data, fields: [clicks, views], provider_aliases: [ctr]}
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/wb_advertising.py:wb_ads_m0.v1/ctr_pct
+
+  AD_CPC:
+    canonical_name_ru: Стоимость клика
+    abbreviation: CPC
+    kind: DERIVED
+    units: [RUB_PER_CLICK]
+    aliases_ru: [стоимость клика, цена клика]
+    aliases_en: [CPC, cost per click]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: DERIVED_FROM_CANONICAL_FIELDS, source_id: wb_ads_data, fields: [spend, clicks], provider_aliases: [cpc]}
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/wb_advertising.py:wb_ads_m0.v1/cpc
+
+  AD_CLICK_TO_ORDER_CR:
+    canonical_name_ru: Конверсия из клика в рекламный заказ
+    abbreviation: CR
+    kind: DERIVED
+    units: [PERCENT]
+    aliases_ru: [конверсия из клика в заказ, конверсия кликов в заказы]
+    aliases_en: [click-to-order CR, click to order conversion]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: DERIVED_FROM_CANONICAL_FIELDS, source_id: wb_ads_data, fields: [ad_orders, clicks], provider_aliases: [cr]}
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/wb_advertising.py:wb_ads_m0.v1/click_to_order_cr_pct
+
+  AD_CPO:
+    canonical_name_ru: Стоимость рекламного заказа
+    abbreviation: CPO
+    kind: DERIVED
+    units: [RUB_PER_ORDER]
+    aliases_ru: [стоимость рекламного заказа, стоимость заказа из рекламы, цена рекламного заказа]
+    aliases_en: [CPO, cost per order]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: DERIVED_FROM_CANONICAL_FIELDS, source_id: wb_ads_data, fields: [spend, ad_orders], provider_aliases: []}
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/wb_advertising.py:wb_ads_m0.v1/cpo
+
+  AD_DRR:
+    canonical_name_ru: Доля рекламных расходов
+    abbreviation: ДРР
+    kind: DERIVED
+    units: [PERCENT]
+    aliases_ru: [ДРР, дрр, доля рекламных расходов, доля расходов на рекламу]
+    aliases_en: [DRR, drr]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: DERIVED_FROM_CANONICAL_FIELDS, source_id: wb_ads_data, fields: [spend, attributed_order_amount], provider_aliases: []}
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/wb_advertising.py:wb_ads_m0.v1/drr_order_pct
+    guardrail: Это ДРР по рекламно-атрибутированной сумме заказов WB; не подменять им общий ДРР бизнеса.
+
+  AD_ROAS:
+    canonical_name_ru: Окупаемость рекламных расходов
+    abbreviation: ROAS
+    kind: DERIVED
+    units: [RATIO]
+    aliases_ru: [окупаемость рекламы, окупаемость рекламных расходов]
+    aliases_en: [ROAS, return on ad spend]
+    semantic_target: {type: CAPABILITY, id: advertising_performance}
+    provider_mappings:
+      wb: {status: DERIVED_FROM_CANONICAL_FIELDS, source_id: wb_ads_data, fields: [attributed_order_amount, spend], provider_aliases: []}
+      ozon: {status: NOT_MAPPED, fields: []}
+    formula_ref: core/wb_advertising.py:wb_ads_m0.v1/roas
+    guardrail: Относится к рекламной атрибуции WB, а не к общей прибыльности бизнеса.
+
+  LOGISTICS_COST:
+    canonical_name_ru: Расходы на логистику
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [логистика, расходы на логистику, стоимость логистики, стоимость доставки]
+    aliases_en: [logistics cost, delivery cost]
+    semantic_target: {type: CAPABILITY, id: logistics}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [deliveryAmount, returnAmount, deliveryService, rebillLogisticCost]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  PENALTIES:
+    canonical_name_ru: Штрафы
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [штраф, штрафы, сумма штрафов]
+    aliases_en: [penalties, fines]
+    semantic_target: {type: CAPABILITY, id: penalties}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [penalty, bonusTypeName, sellerOperName]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  STORAGE_COST:
+    canonical_name_ru: Платное хранение
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [платное хранение, стоимость хранения, сумма хранения]
+    aliases_en: [paid storage, storage cost]
+    semantic_target: {type: CAPABILITY, id: storage_charge}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [paidStorage]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  ACCEPTANCE_COST:
+    canonical_name_ru: Платная приёмка
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [платная приёмка, платная приемка, стоимость приёмки, стоимость приемки]
+    aliases_en: [paid acceptance, acceptance cost]
+    semantic_target: {type: CAPABILITY, id: acceptance_charge}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [paidAcceptance]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  DEDUCTIONS_ADJUSTMENTS:
+    canonical_name_ru: Удержания и корректировки
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [удержания, удержание, корректировки, корректировка, доплаты]
+    aliases_en: [deductions, adjustments, additional payment]
+    semantic_target: {type: CAPABILITY, id: deductions_and_adjustments}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [deduction, additionalPayment, bonusTypeName]}
+      ozon: {status: NOT_MAPPED, fields: []}
+
+  WB_COMMISSION_REWARD:
+    canonical_name_ru: Комиссия и вознаграждение Wildberries
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [комиссия wildberries, комиссия вайлдберриз, комиссия wb, сумма комиссии, вознаграждение wildberries]
+    aliases_en: [WB commission, Wildberries commission, WB reward]
+    semantic_target: {type: CAPABILITY, id: commission_and_wb_reward}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [commissionPercent, kvwBase, kvw, ppvzSalesCommission, vw, vwNds, forPay]}
+      ozon: {status: NOT_APPLICABLE, fields: []}
+    guardrail: Процент комиссии и денежная сумма комиссии — разные семантики; этот target не разрешает произвольный пересчёт ставки в деньги.
+
+  ACQUIRING_PAYMENT_PROCESSING:
+    canonical_name_ru: Эквайринг и обработка платежей
+    kind: BUSINESS
+    units: [RUB, PERCENT]
+    aliases_ru: [эквайринг, комиссия эквайринга, обработка платежа, платёжный процессинг, платежный процессинг]
+    aliases_en: [acquiring, payment processing]
+    semantic_target: {type: CAPABILITY, id: acquiring_and_payment_processing}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [acquiringFee, acquiringPercent, paymentProcessing, acquiringBank]}
+      ozon: {status: NOT_MAPPED, fields: []}
+    guardrail: Еженедельный acquiringFee не подменяет финальный месячный отчёт об издержках на приём платежей.

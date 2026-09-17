@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from core.business_query_parser import parse_business_query_dimensions
+from core.metric_registry import load_metric_registry, resolve_metric_terms
 from core.semantic_registry import get_dataset, load_semantic_registry
 
 
@@ -164,6 +165,33 @@ def _with_dimensions(result: dict[str, Any], dimensions: dict[str, Any]) -> dict
     return result
 
 
+def _attach_metric_dictionary(
+    result: dict[str, Any], metric_matches: list[dict[str, Any]],
+) -> dict[str, Any]:
+    result["canonical_metrics"] = deepcopy(metric_matches)
+    if len(metric_matches) == 1:
+        result["canonical_metric"] = deepcopy(metric_matches[0])
+    return result
+
+
+def _metric_fallback_route(metric_matches: list[dict[str, Any]]) -> dict[str, Any] | None:
+    if not metric_matches:
+        return None
+    targets = {
+        (match["semantic_target"]["type"], match["semantic_target"]["id"])
+        for match in metric_matches
+    }
+    if len(targets) != 1:
+        return None
+    target_type, target_id = next(iter(targets))
+    route_type = "business_metric" if target_type == "BUSINESS_METRIC" else "capability"
+    return {
+        "id": "metric_dictionary:" + "+".join(match["metric_id"] for match in metric_matches),
+        "target_type": route_type,
+        "target_id": target_id,
+    }
+
+
 def _resolve_route(
     route: dict[str, Any],
     matched_terms: list[str],
@@ -259,19 +287,22 @@ def resolve_semantic_question(
     question: str,
     registry: dict[str, Any] | None = None,
     intents: dict[str, Any] | None = None,
+    metric_registry: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not isinstance(question, str) or not question.strip():
         raise SemanticResolutionError("question must be a non-empty string")
 
     registry_data = registry if registry is not None else load_semantic_registry()
     intents_data = intents if intents is not None else load_semantic_intents()
+    metric_registry_data = metric_registry if metric_registry is not None else load_metric_registry()
     validate_semantic_intents(intents_data, registry_data)
     dimensions = parse_business_query_dimensions(question)
+    metric_matches = resolve_metric_terms(question, metric_registry_data)
 
     if intents_data["policy"].get("prefer_exact_field_reference") is True:
         direct_field = _resolve_exact_field_reference(question, registry_data)
         if direct_field is not None:
-            return _with_dimensions(direct_field, dimensions)
+            return _attach_metric_dictionary(_with_dimensions(direct_field, dimensions), metric_matches)
 
     normalized = _normalize(question)
     candidates: list[tuple[int, int, dict[str, Any], list[str]]] = []
@@ -281,14 +312,35 @@ def resolve_semantic_question(
             longest = max(len(_normalize(item)) for item in matches)
             candidates.append((route["priority"], longest, route, matches))
 
+    if not candidates and metric_matches:
+        fallback_route = _metric_fallback_route(metric_matches)
+        if fallback_route is None:
+            return _attach_metric_dictionary(_with_dimensions({
+                "status": "AMBIGUOUS",
+                "resolution_type": "AMBIGUOUS",
+                "reason": "Запрос содержит несколько канонических метрик с несовместимыми семантическими целями.",
+                "candidate_metrics": [match["metric_id"] for match in metric_matches],
+                "execution_allowed": False,
+                "next_action": "CLARIFY_OR_NORMALIZE_INTENT",
+            }, dimensions), metric_matches)
+        matched_terms = [
+            alias
+            for match in metric_matches
+            for alias in match.get("matched_aliases", [])
+        ]
+        result = _resolve_route(
+            fallback_route, matched_terms, registry_data, intents_data, dimensions,
+        )
+        return _attach_metric_dictionary(result, metric_matches)
+
     if not candidates:
-        return _with_dimensions({
+        return _attach_metric_dictionary(_with_dimensions({
             "status": "UNKNOWN",
             "resolution_type": "UNKNOWN",
             "reason": "Запрос не сопоставлен ни с одной подтверждённой семантикой текущей базы.",
             "execution_allowed": False,
             "next_action": "DO_NOT_GUESS_OR_QUERY_ARCHIVE",
-        }, dimensions)
+        }, dimensions), metric_matches)
 
     candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
     top_priority, top_length, top_route, top_matches = candidates[0]
@@ -300,13 +352,14 @@ def resolve_semantic_question(
     if len(tied) > 1:
         targets = {(item[2].get("target_type"), item[2].get("target_id")) for item in tied}
         if len(targets) > 1:
-            return _with_dimensions({
+            return _attach_metric_dictionary(_with_dimensions({
                 "status": "AMBIGUOUS",
                 "resolution_type": "AMBIGUOUS",
                 "reason": "Запрос одновременно соответствует нескольким несовместимым семантическим маршрутам.",
                 "candidate_routes": [item[2]["id"] for item in tied],
                 "execution_allowed": False,
                 "next_action": "CLARIFY_OR_NORMALIZE_INTENT",
-            }, dimensions)
+            }, dimensions), metric_matches)
 
-    return _resolve_route(top_route, top_matches, registry_data, intents_data, dimensions)
+    result = _resolve_route(top_route, top_matches, registry_data, intents_data, dimensions)
+    return _attach_metric_dictionary(result, metric_matches)

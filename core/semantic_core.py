@@ -16,6 +16,7 @@ from mcp.server.fastmcp import FastMCP
 from . import request_join_controller as _join_controller
 from . import system_map as _system_map
 from .calculation_contract_registry import calculation_registry_summary
+from .metric_registry import load_metric_registry
 from .request_execution_controller import CONTROLLER_VERSION, LEG_CONTRACT_VERSION
 from .request_source_router import (
     EXECUTION_BLOCKED,
@@ -40,12 +41,17 @@ SEMANTIC_CORE_STATUS = "CANONICAL_BRAIN"
 
 PROCESS_OWNERSHIP: dict[str, dict[str, Any]] = {
     "UNDERSTAND": {
-        "owners": ["core/business_query_parser.py", "core/semantic_intents.yaml"],
-        "purpose": "normalize natural-language business meaning",
+        "owners": ["core/business_query_parser.py", "core/semantic_intents.yaml", "core/metric_registry.yaml"],
+        "purpose": "normalize natural-language business meaning and canonical metric terminology",
     },
     "RESOLVE": {
-        "owners": ["core/semantic_registry.yaml", "core/semantic_registry_extensions.yaml", "core/semantic_resolver.py"],
-        "purpose": "resolve meaning to registered metrics, capabilities, sources and field semantics",
+        "owners": [
+            "core/metric_registry.py",
+            "core/semantic_registry.yaml",
+            "core/semantic_registry_extensions.yaml",
+            "core/semantic_resolver.py",
+        ],
+        "purpose": "resolve user metric vocabulary to registered metrics/capabilities and then to sources/field semantics",
     },
     "PLAN_SOURCE": {
         "owners": ["core/request_source_router.py"],
@@ -183,6 +189,7 @@ def validate_semantic_core(snapshot: dict[str, Any]) -> None:
         raise SemanticCoreError("unexpected Semantic Core identity")
     registry = snapshot["data_semantics"]
     intents = snapshot["understanding"]["intents"]
+    metric_dictionary = snapshot["metric_dictionary"]
     execution = snapshot["execution"]["archive_execution_registry"]
     calculation = snapshot["calculation_control"]
     join = snapshot["join_control"]
@@ -191,6 +198,10 @@ def validate_semantic_core(snapshot: dict[str, Any]) -> None:
         raise SemanticCoreError("data semantics must fail closed")
     if (intents.get("policy") or {}).get("fail_closed_on_unknown") is not True:
         raise SemanticCoreError("intent routing must fail closed")
+    if (metric_dictionary.get("policy") or {}).get("metric_dictionary_grants_execution") is not False:
+        raise SemanticCoreError("metric dictionary must never grant execution permission")
+    if (metric_dictionary.get("policy") or {}).get("unknown_provider_mapping_must_not_be_inferred") is not True:
+        raise SemanticCoreError("metric dictionary provider mappings must fail closed")
     if (execution.get("policy") or {}).get("fail_closed") is not True:
         raise SemanticCoreError("archive execution must fail closed")
     if (execution.get("policy") or {}).get("require_full_coverage") is not True:
@@ -206,6 +217,16 @@ def validate_semantic_core(snapshot: dict[str, Any]) -> None:
     unknown_executors = sorted(set(executors) - set(capabilities))
     if unknown_executors:
         raise SemanticCoreError(f"executors reference unknown capabilities: {unknown_executors}")
+
+    for metric_id, metric in (metric_dictionary.get("metrics") or {}).items():
+        target = metric.get("semantic_target") or {}
+        kind, target_id = target.get("type"), target.get("id")
+        if kind == "CAPABILITY" and target_id not in capabilities:
+            raise SemanticCoreError(f"metric dictionary {metric_id} references unknown capability {target_id!r}")
+        if kind == "BUSINESS_METRIC" and target_id not in metrics:
+            raise SemanticCoreError(f"metric dictionary {metric_id} references unknown business metric {target_id!r}")
+        if kind not in {"CAPABILITY", "BUSINESS_METRIC"}:
+            raise SemanticCoreError(f"metric dictionary {metric_id} has unsupported semantic target {kind!r}")
 
     for contract in join.get("contracts") or []:
         for target in contract.get("semantic_targets") or []:
@@ -232,6 +253,7 @@ def validate_semantic_core(snapshot: dict[str, Any]) -> None:
 def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
     registry = snapshot["data_semantics"]
     intents = snapshot["understanding"]["intents"]
+    metric_dictionary = snapshot["metric_dictionary"]
     execution = snapshot["execution"]["archive_execution_registry"]
     calculation = snapshot["calculation_control"]
     return {
@@ -246,6 +268,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
             "datasets": len(registry.get("datasets", {})),
             "capabilities": len(registry.get("capabilities", {})),
             "business_metrics": len(intents.get("business_metrics", {})),
+            "metric_dictionary_entries": len(metric_dictionary.get("metrics", {})),
             "intent_routes": len(intents.get("routes", [])),
             "archive_executors": len(execution.get("executors", {})),
             "join_contracts": len(snapshot["join_control"].get("contracts", [])),
@@ -254,6 +277,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
         },
         "safety": {
             "fail_closed": True,
+            "metric_dictionary_is_semantic_only": True,
             "silent_source_substitution_forbidden": True,
             "full_coverage_required_for_archive_execution": True,
             "cross_currency_arithmetic_requires_explicit_contract": True,
@@ -261,7 +285,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
             "provenance_required_for_calculations": True,
         },
         "available_sections": [
-            "understanding", "data_semantics", "planning", "execution",
+            "understanding", "metric_dictionary", "data_semantics", "planning", "execution",
             "join_control", "calculation_control", "gaps", "process_ownership",
             "component_versions", "all",
         ],
@@ -271,6 +295,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
 def build_semantic_core_snapshot() -> dict[str, Any]:
     registry = load_semantic_registry()
     intents = load_semantic_intents()
+    metric_dictionary = load_metric_registry()
     archive_execution = load_semantic_execution()
     calculation = calculation_registry_summary()
     join = _join_registry_summary()
@@ -285,8 +310,10 @@ def build_semantic_core_snapshot() -> dict[str, Any]:
         "understanding": {
             "parser_owner": "core/business_query_parser.py",
             "resolver_owner": "core/semantic_resolver.py",
+            "metric_dictionary_owner": "core/metric_registry.yaml",
             "intents": intents,
         },
+        "metric_dictionary": metric_dictionary,
         "data_semantics": registry,
         "planning": _planning_summary(),
         "execution": {
@@ -308,6 +335,7 @@ def build_semantic_core_snapshot() -> dict[str, Any]:
         "process_ownership": deepcopy(PROCESS_OWNERSHIP),
         "component_versions": {
             "semantic_core": SEMANTIC_CORE_VERSION,
+            "metric_registry": metric_dictionary.get("version"),
             "semantic_registry": registry.get("version"),
             "semantic_registry_extensions": list(registry.get("extension_versions") or []),
             "semantic_intents": intents.get("version"),
@@ -336,6 +364,8 @@ def semantic_core_view(section: str = "summary") -> dict[str, Any]:
         return snapshot
     resolved = {
         "registry": "data_semantics",
+        "metrics": "metric_dictionary",
+        "metric_registry": "metric_dictionary",
         "intents": "understanding",
         "join": "join_control",
         "calculation": "calculation_control",
@@ -357,6 +387,7 @@ def _install_system_map_extension() -> None:
         "brain_version": SEMANTIC_CORE_VERSION,
         "brain_runtime_entry": "marketplace_semantic_core",
         "brain_composer": "core/semantic_core.py",
+        "metric_dictionary": "core/metric_registry.yaml",
         "brain_policy": "compose canonical owner registries; never maintain a second business-rule catalog",
         "canonical_flow": [
             "UNDERSTAND", "RESOLVE", "PLAN_SOURCE", "CLARIFY", "DISPATCH",
@@ -370,7 +401,7 @@ def _install_system_map_extension() -> None:
     marker = "marketplace_semantic_core is the canonical composed business brain"
     if marker not in _system_map.SYSTEM_INSTRUCTIONS:
         _system_map.SYSTEM_INSTRUCTIONS += (
-            "\n" + marker + ". Consult it for business meaning, source routing, execution, join, calculation, coverage and known-gap policy. "
+            "\n" + marker + ". Consult it for business meaning, canonical metric terminology, source routing, execution, join, calculation, coverage and known-gap policy. "
             "Physical source/executor coverage may still be incomplete and must remain fail-closed. "
             "Do not create or rely on an independent parallel business-rule catalog.\n"
         )
