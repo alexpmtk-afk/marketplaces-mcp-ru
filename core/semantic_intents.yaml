@@ -1,4 +1,4 @@
-version: 2026-09-17.v10
+version: 2026-09-17.v11
 policy:
   fail_closed_on_unknown: true
   prefer_exact_field_reference: true
@@ -20,6 +20,7 @@ business_metrics:
   CURRENT_STOCK:
     status: AVAILABLE_WITH_LIMITATION
     marketplace: wb
+    marketplaces: [wb, ozon]
     source_id: wb_current_stocks
     data_class: CURRENT_OPERATIONAL_STOCK
     default_measure: UNITS
@@ -28,7 +29,19 @@ business_metrics:
     product_filter_supported: true
     current_period_supported: true
     current_only: true
-    guardrail: Текущие остатки — только live snapshot WB. Историческую дату нельзя подменять сегодняшним снимком; для прошлого периода требуется отдельный утверждённый исторический источник.
+    guardrail: Текущие остатки — только live snapshot утверждённого кабинета маркетплейса. Историческую дату нельзя подменять сегодняшним снимком; для прошлого периода требуется отдельный утверждённый исторический источник.
+  CURRENT_SELLING_PRICE:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Для Ozon используется seller-side current selling price из marketing_seller_price. Не выдавать её за гарантированную персонализированную цену покупателя; историческую цену нельзя подменять текущим снимком.
 
 routes:
   - id: ozon_any
