@@ -44,9 +44,12 @@ class EndpointSpec:
     # "result.items", "items", "result.rows", "result.operations", ...
     items_path: str = "result.items"
     rate_limit: str = ""
-    # Explicitly marks a provider-documented, parseable request quota. Generic
-    # execution is fail-closed until this is true.
+    # Explicitly marks a provider-documented, parseable method request quota.
     quota_proven: bool = False
+    # Some Ozon Seller read methods are covered by the provider-documented
+    # aggregate Client-Id quota and have no separately documented method quota.
+    # Generic execution is allowed only when this flag is explicitly set.
+    service_quota_proven: bool = False
     doc: str = ""
     # Russian (and other) search aliases so RU queries hit English summaries.
     keywords: list[str] = field(default_factory=list)
