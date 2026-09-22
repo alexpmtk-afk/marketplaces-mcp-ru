@@ -41,6 +41,39 @@ def has_proven_quota(spec: Any) -> bool:
         str(getattr(spec, "rate_limit", ""))
     ) is not None
 
+def resolve_catalog_raw_spec(
+    catalog: Catalog, *, method: str, path: str, host: Optional[str] = None,
+) -> tuple[Optional[Any], str]:
+    """Resolve an exact raw request to one approved read-only catalog contract.
+
+    Raw execution is never an independent trust path. It may only reuse an
+    existing catalog operation when method/path (and host, when supplied) match
+    exactly, the operation is read-only after verb-floor safety inference, and
+    its quota proof is executable. Unknown, ambiguous, templated, mutating, or
+    unproven requests remain fail-closed.
+    """
+    verb = str(method or "").strip().upper()
+    raw_path = str(path or "").strip()
+    raw_host = str(host or "").strip().lower()
+
+    matches = [
+        spec for spec in catalog.all()
+        if not spec.path_params
+        and spec.method.upper() == verb
+        and spec.path == raw_path
+        and (not raw_host or spec.host.lower() == raw_host)
+    ]
+    if not matches:
+        return None, "not_catalogued"
+    if len(matches) != 1:
+        return None, "ambiguous"
+    spec = matches[0]
+    if infer_safety(spec.method, spec.safety) != "read":
+        return None, "unsafe"
+    if not has_proven_quota(spec):
+        return None, "quota_unproven"
+    return spec, "approved"
+
 
 def resolve_named_cabinet(client: MarketplaceClient, cabinet: str) -> tuple[Optional[dict[str, str]], Optional[dict]]:
     """Resolve an explicitly named cabinet without touching shared active state.
@@ -294,22 +327,45 @@ def register_generic_tools(
         body: Optional[dict] = None,
         confirm_write: bool = False,
         i_understand_this_modifies_data: bool = False,
+        cabinet: str = "",
     ) -> str:
-        """Fail closed: raw paths have no proven quota contract.
+        """Resolve exact known reads through the catalog; otherwise fail closed.
 
-        Use a catalogued operation with a parseable, proven quota rule instead.
+        Raw is not a second execution policy. If method + path (+ host when
+        supplied) exactly identify one catalogued read operation with a proven
+        quota contract, the request is executed through that operation and the
+        normal rate controller. Unknown, ambiguous, templated, write/destructive,
+        or quota-unproven raw requests are refused before provider I/O.
 
         Args:
             method: HTTP verb (GET/POST/PUT/PATCH/DELETE).
-            path: full path beginning with '/', e.g. "/api/v1/supplier/sales".
-            host: host override; defaults to the service's default host.
+            path: exact provider path beginning with '/'.
+            host: optional exact provider host.
             query: query-string parameters.
             body: JSON request body.
-            confirm_write / i_understand_this_modifies_data: confirmations.
+            confirm_write / i_understand_this_modifies_data: retained for API
+                compatibility; raw never auto-approves mutations.
+            cabinet: optional exact configured cabinet name.
         Returns JSON: {"ok": true, "status", "data"} or the error envelope.
         """
-        # Raw paths have no catalog operation and therefore no proven quota rule.
-        return _j(quota_error("raw", path))
+        spec, resolution = resolve_catalog_raw_spec(
+            catalog, method=method, path=path, host=host,
+        )
+        if spec is None:
+            error = quota_error("raw", path)
+            error["raw_resolution"] = resolution
+            return _j(error)
+
+        creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
+        if cabinet_error:
+            return _j(cabinet_error)
+        resp = await client.call_spec(
+            spec, query=query, json_body=body, creds_override=creds_override,
+        )
+        if isinstance(resp, dict):
+            resp.setdefault("resolved_operation_id", spec.operation_id)
+            resp.setdefault("raw_resolution", "catalog_read")
+        return _j(resp)
 
     @mcp.tool(
         name=f"{svc}_fetch_all",
