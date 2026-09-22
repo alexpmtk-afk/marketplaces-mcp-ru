@@ -28,7 +28,7 @@ class _FakeRedis:
         self.closed = True
 
 
-def test_repair_deletes_only_impossible_wb_global_slots(monkeypatch):
+def test_repair_deletes_all_legacy_wb_global_slots(monkeypatch):
     stale = "marketplace-rate:v1:wb:cabinet-a:global"
     legit = "marketplace-rate:v1:wb:cabinet-b:global"
     fake = _FakeRedis({
@@ -47,9 +47,9 @@ def test_repair_deletes_only_impossible_wb_global_slots(monkeypatch):
     monkeypatch.setenv("MARKETPLACE_MCP_REDIS_URL", "redis://example/0")
 
     repaired = repair_legacy_wb_global_cooldowns()
-    assert repaired == 1
+    assert repaired == 2
     assert stale not in fake.values
-    assert legit in fake.values
+    assert legit not in fake.values
     assert fake.closed is True
 
 

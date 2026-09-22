@@ -61,3 +61,8 @@
 Для Ozon HTTP-метод не определяет безопасность. Большинство read-операций используют POST. `safety` должен определяться по назначению операции и официальной семантике.
 
 Для методов, явно помеченных текущим каталогом как `UNVERIFIED`, production safety не повышается автоматически даже если endpoint отвечает 200.
+
+
+### Quota proof
+
+`service_quota_proven: true` marks a catalog operation as explicitly covered by a provider-documented service-wide aggregate quota when no stricter per-method quota is documented. It does not invent a method limit; the shared service limiter still applies.

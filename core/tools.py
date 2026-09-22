@@ -35,6 +35,8 @@ def _j(obj: Any) -> str:
 
 
 def has_proven_quota(spec: Any) -> bool:
+    if bool(getattr(spec, "service_quota_proven", False)):
+        return True
     return bool(getattr(spec, "quota_proven", False)) and parse_rate_limit(
         str(getattr(spec, "rate_limit", ""))
     ) is not None

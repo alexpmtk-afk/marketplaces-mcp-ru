@@ -40,6 +40,14 @@ def test_wb_rate_limit_status_reports_no_invented_global_ceiling(monkeypatch):
     assert status["configured_global_rps"] is None
 
 
+def test_stale_wb_global_rps_from_yandex_is_ignored(monkeypatch):
+    monkeypatch.setenv("WB_GLOBAL_RPS", "5")
+    client = MarketplaceClient(config("wb", ["token"]), rate_controller=Controller())
+    status = asyncio.run(client.rate_limit_status())
+    assert status["ok"] is True
+    assert status["configured_global_rps"] is None
+
+
 def test_ozon_rate_limit_status_reports_documented_client_ceiling(monkeypatch):
     monkeypatch.delenv("OZON_GLOBAL_RPS", raising=False)
     client = MarketplaceClient(config("ozon", ["client_id", "api_key"]), rate_controller=Controller())
