@@ -145,7 +145,7 @@ def _success_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
         if parts:
             return " ".join(parts), None
 
-    if result.get("metric") == "ORDERS" and result.get("orders_count") is not None:
+    if result.get("orders_count") is not None:
         message = f"Заказов: {_format_number(result.get('orders_count'))}"
         if result.get("orders_amount") is not None:
             message += f" на сумму {_format_number(result.get('orders_amount'))} ₽."
