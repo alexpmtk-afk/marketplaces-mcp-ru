@@ -134,11 +134,36 @@ def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dat
     assert result["current_stock"]["reserved_units"] == 0
     assert result["provenance"]["join_key"] == "product_id"
     assert all(call["creds_override"]["client_id"] == "id-ozon_laser_master" for call in ozon.client.calls)
-    assert ozon.client.calls[0]["json_body"] == {
-        "offer_id": ["3276433388"],
-        "product_id": ["3276433388"],
-        "sku": ["3276433388"],
-    }
+    assert ozon.client.calls[0]["json_body"] == {"sku": ["3276433388"]}
+
+
+
+
+def test_unlabelled_numeric_identifier_falls_back_from_sku_to_product_id():
+    empty = {"ok": True, "data": {"items": []}}
+    ozon = FakeOzon([empty, entity_response(), price_response(), stock_response()])
+    result = asyncio.run(execute_ozon_current_snapshot(
+        ozon,
+        question="Цена и остаток Ozon LaserMaster 3276772809",
+    ))
+
+    assert result["ok"] is True
+    assert result["complete"] is True
+    assert ozon.client.calls[0]["json_body"] == {"sku": ["3276772809"]}
+    assert ozon.client.calls[1]["json_body"] == {"product_id": ["3276772809"]}
+    assert ozon.client.calls[2]["spec"] == "price-spec"
+    assert ozon.client.calls[3]["spec"] == "stock-spec"
+
+
+def test_explicit_product_id_uses_only_product_id_lookup():
+    ozon = FakeOzon([entity_response(), price_response(), stock_response()])
+    result = asyncio.run(execute_ozon_current_snapshot(
+        ozon,
+        question="Цена и остаток Ozon LaserMaster product_id 3276772809",
+    ))
+
+    assert result["ok"] is True
+    assert ozon.client.calls[0]["json_body"] == {"product_id": ["3276772809"]}
 
 
 def test_unknown_cabinet_fails_before_provider_and_never_uses_active_fallback():
