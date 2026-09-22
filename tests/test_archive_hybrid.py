@@ -205,3 +205,54 @@ def test_status_reports_google_drive_as_canonical():
     assert status["root_folder_id"] == "drive-root"
     assert status["root_name"] == "MCP архив базы данных"
     assert status["queue_and_staging"]["backend"] == "yandex_object_storage"
+
+
+def test_drive_only_store_reads_canonical_history_and_blocks_mutation():
+    from core.archive_hybrid import CanonicalDriveReadOnlyArchiveStore
+    from core.archive_google import ArchiveStorageError
+
+    drive = FakeStore("drive")
+    store = CanonicalDriveReadOnlyArchiveStore(drive)
+    parent = asyncio.run(store.ensure_folder_path([
+        "База данных", "WB", "wb_laser_master", "2026", "finance", "weekly", "main"
+    ]))
+    name = "wb_laser_master__weekly_main__2026.csv"
+    drive.files[f"{parent}/{name}"] = b"canonical-history"
+
+    item, data = asyncio.run(store.download_named(parent, name))
+    assert item is not None
+    assert data == b"canonical-history"
+
+    try:
+        asyncio.run(store.upload_bytes(parent, "x.csv", b"x"))
+    except ArchiveStorageError as exc:
+        assert exc.code == "DURABLE_BACKEND_NOT_CONFIGURED"
+    else:
+        raise AssertionError("drive-only REMOTE mode must fail closed on mutation")
+
+
+def test_drive_only_store_rejects_queue_paths():
+    from core.archive_hybrid import CanonicalDriveReadOnlyArchiveStore
+    from core.archive_google import ArchiveStorageError
+
+    store = CanonicalDriveReadOnlyArchiveStore(FakeStore("drive"))
+    try:
+        asyncio.run(store.ensure_folder_path(["app", "jobs", "wb-finance"]))
+    except ArchiveStorageError as exc:
+        assert exc.code == "DURABLE_BACKEND_NOT_CONFIGURED"
+    else:
+        raise AssertionError("queue state must require an explicit durable backend")
+
+
+def test_drive_only_status_marks_durable_backend_unavailable():
+    from core.archive_hybrid import CanonicalDriveReadOnlyArchiveStore
+
+    store = CanonicalDriveReadOnlyArchiveStore(FakeStore("drive"))
+    status = asyncio.run(store.status())
+
+    assert status["configured"] is True
+    assert status["reachable"] is True
+    assert status["backend"] == "google_drive_primary"
+    assert status["read_only"] is True
+    assert status["queue_and_staging"]["configured"] is False
+    assert status["backup_mirror"]["error"] == "durable_backend_not_configured"
