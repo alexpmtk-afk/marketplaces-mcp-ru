@@ -51,12 +51,14 @@ Two independent protections are required:
 
 For large annual files:
 
-1. create immutable candidate in Yandex Object Storage;
+1. create the immutable candidate in the **currently configured durable backend**;
 2. upload to non-canonical Google Drive staging via resumable upload;
 3. verify exact byte count and SHA256;
-4. write/verify byte-for-byte Yandex backup;
-5. promote verified Drive staging file to canonical name;
+4. write/verify the configured byte-for-byte durable backup;
+5. promote the verified Drive staging file to the canonical name;
 6. only then commit report/dataset coverage and job progress.
+
+Google Drive remains canonical. After the REMOTE migration, the durable backend must be proven from the actual REMOTE service environment/config before any mutating refresh or recovery. Legacy Yandex-named classes, files or local paths do not prove that Yandex Cloud is active. If the durable backend cannot be established, fail closed.
 
 This order prevents a registry from claiming data that was not safely published.
 

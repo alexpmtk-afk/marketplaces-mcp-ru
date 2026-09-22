@@ -6,28 +6,37 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 ## Canonical architecture — read before architecture/storage/deployment work
 - The machine-readable source of truth is `core/system_map.py` (`SYSTEM_MAP`, `SYSTEM_INSTRUCTIONS`).
 - Human mirror: `ARCHITECTURE.md`.
-- Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
-- Primary shared marketplace archive/storage is **Google Drive** under `MCP архив базы данных`: annual CSV files and the applicable coverage registries are the source of truth.
+- **Current production runtime is the dedicated Linux REMOTE server, not Yandex Cloud.**
+  - host: `VM-684381` / `89.208.14.36`;
+  - root: `/opt/mcp/`;
+  - Marketplaces service: `mcp-marketplaces.service`;
+  - service user: `mcp-marketplaces`;
+  - internal MCP bind: `127.0.0.1:8080` (never publish this port directly).
+- Approved external client path is:
+  `Codex / allowed client -> https://mcp892081436.duckdns.org:13267/mcp -> Keycloak OAuth -> REMOTE GPT-MCP bridge -> internal Marketplaces MCP`.
+  The bridge is local on `127.0.0.1:18181`; the internal Marketplaces bearer and server credentials are never issued to ordinary clients.
+- The retired production path `marketplaces-yandex -> Yandex API Gateway -> Yandex Serverless Container` must not be restored or used as fallback.
+- Server-side Marketplaces secrets belong on REMOTE under `/opt/mcp/secrets/marketplaces/` (runtime file `runtime.env`, restricted ownership/permissions). Do not treat Yandex Lockbox as the current production secret store.
+- Shared rate-limit / queue coordination uses the local REMOTE Redis service at `127.0.0.1:6379`; do not publish Redis externally.
+- Primary shared marketplace archive/storage is **Google Drive** under `Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных`; annual CSV files and the applicable coverage registries are the source of truth.
 - Google Drive access uses the owner's deployed **Google Apps Script** web-app bridge as the Google authorization/control plane:
   - small archive operations, reads, metadata/status and folder resolution go through the bridge;
-  - large annual CSV writes use the official **Google Drive API resumable upload** path, but Apps Script creates the resumable session using the owner's effective-user OAuth context;
-  - Apps Script performs the final verified staging-to-canonical promotion after exact Drive size/SHA256 verification and Yandex backup.
-- The Apps Script shared secret lives in Yandex Lockbox. **Do not introduce a Google OAuth refresh token into Yandex for this archive path.** The Google access token stays inside Apps Script; only the opaque resumable session URI is returned to the worker.
-- Large annual CSV file bytes must **not** be sent through Apps Script as one base64 JSON POST. Apps Script is control plane only; Yandex uploads bounded chunks directly to the returned Drive session URI.
-- **Never upload resumable large-file chunks directly into the existing canonical annual file.** Upload to a non-canonical staging filename first. The old canonical file must remain untouched until the staged file passes exact Drive size/SHA256 verification and the Yandex byte-for-byte backup is written.
-- The strict large-file order is: immutable Yandex candidate -> non-canonical Drive resumable staging -> server-confirmed offset/resume -> exact Drive size/SHA256 verification -> Yandex byte-for-byte backup -> Apps Script verified promotion to canonical + trash explicit previous canonical -> COMMIT registry/job progress.
+  - large annual CSV writes use the official **Google Drive API resumable upload** path, while Apps Script creates the resumable session using the owner's effective-user OAuth context;
+  - Apps Script performs final verified staging-to-canonical promotion after exact Drive size/SHA256 verification and the configured durable-backup verification.
+- The Apps Script shared secret is injected server-side on REMOTE. **Do not introduce a Google OAuth refresh token into the Marketplaces runtime for this archive path.** The Google access token stays inside Apps Script; only the opaque resumable session URI is returned to the worker.
+- Large annual CSV file bytes must **not** be sent through Apps Script as one base64 JSON POST. Apps Script is control plane only; the REMOTE worker uploads bounded chunks directly to the returned Drive session URI.
+- **Never upload resumable large-file chunks directly into the existing canonical annual file.** Upload to a non-canonical staging filename first. The old canonical file must remain untouched until the staged file passes exact Drive size/SHA256 verification and the configured durable backup is verified.
+- The strict large-file order is: immutable candidate in the **currently configured durable backend** -> non-canonical Drive resumable staging -> server-confirmed offset/resume -> exact Drive size/SHA256 verification -> durable byte-for-byte backup -> Apps Script verified promotion to canonical + trash explicit previous canonical -> COMMIT registry/job progress.
 - A resumable session URI is a bearer-like capability: persist it only in durable job state, never print it or return it to users.
 - Treat the Drive `Range` response as authoritative for resumed offsets; never assume all bytes sent were persisted.
 - Non-final chunks must be multiples of 256 KiB. Expired/unusable sessions restart from the immutable candidate. Transient failures use bounded exponential backoff with jitter.
 - Promotion must be retry-safe. If a crash occurs after the staged file was renamed but before durable state was saved, verify the canonical file by explicit ID/size/SHA256 and continue without re-downloading provider data or repeating PREPARE.
 - The Apps Script bridge and the resumable uploader are transport/authentication surfaces only; neither is a parallel source of truth.
-- **Yandex Object Storage** remains required for durable archive queue/job state, per-report staging, immutable annual candidates, resumable-upload state, and a secondary byte-for-byte backup of canonical Drive files.
-- Yandex Object Storage runtime auth uses the Serverless Container service account and a temporary IAM token from metadata; do not introduce static archive keys unless the canonical architecture explicitly changes.
-- Never recreate an in-flight job or redo PREPARE merely because an upload connection failed; continue from durable state and the confirmed Drive offset or restart only the resumable session from the immutable candidate.
-- Canonical archive writes must succeed on Google Drive first; do not silently fall back to Yandex as the source of truth.
-- Existing canonical files left in Yandex by the prior architecture may be migrated to Drive on read without re-downloading marketplace data.
-- Chat-local memory/files are never authoritative shared state.
-- Do not introduce a new cloud provider, primary storage path, or parallel architecture without an explicit architecture change.
+- **Archive durable backend after the REMOTE migration must be established from the actual REMOTE runtime before any mutating refresh/recovery.** Legacy file/class/path names containing `Yandex` or `yandex-object-storage` do not prove that Yandex Cloud is active.
+- `core/archive_yandex.py` and Yandex-named compatibility paths are legacy-capable implementation surfaces. Do not present them as the current production backend unless a fresh read-only REMOTE audit proves the relevant environment/configuration is active.
+- Canonical archive writes must succeed on Google Drive first; do not silently replace Drive as the source of truth.
+- Chat-local memory/files, HOME files and WORK files are never authoritative shared state.
+- Do not introduce a new runtime provider, primary storage path, or parallel architecture without an explicit architecture change.
 
 ### Database refresh guardrails
 - Ordinary “обнови базу данных” requests must use the registered common refresh path (`marketplace_database_update` / `core/archive_refresh.py`) rather than inventing a dataset-specific shortcut.

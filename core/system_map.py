@@ -6,26 +6,34 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-16.v19"
+ARCHITECTURE_VERSION = "2026-09-22.v20"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
     "status": "CANONICAL",
     "scope": "Marketplaces MCP runtime, marketplace archive, advertising, and semantic routing layer",
     "runtime": {
-        "cloud": "Yandex Cloud only",
-        "entry": "ChatGPT/Codex -> marketplaces-yandex -> Yandex API Gateway -> Yandex Serverless Container",
-        "secrets": "Yandex Lockbox",
-        "shared_rate_limit_and_locks": "Yandex Managed Redis/Valkey",
+        "production": "dedicated Linux REMOTE server",
+        "host": "VM-684381 / 89.208.14.36",
+        "server_root": "/opt/mcp/",
+        "service": "mcp-marketplaces.service",
+        "service_user": "mcp-marketplaces",
+        "internal_mcp": "http://127.0.0.1:8080/mcp",
+        "external_entry": "https://mcp892081436.duckdns.org:13267/mcp",
+        "entry": "Codex/allowed client -> OAuth/Keycloak -> REMOTE GPT-MCP bridge -> internal Marketplaces MCP",
+        "bridge": "127.0.0.1:18181; external users never receive the internal Marketplaces bearer or shell access",
+        "secrets": "/opt/mcp/secrets/marketplaces/runtime.env with restricted root:mcp-marketplaces ownership",
+        "shared_rate_limit_and_locks": "local REMOTE Redis at 127.0.0.1:6379",
+        "retired_path": "marketplaces-yandex / Yandex API Gateway / Yandex Serverless Container are legacy and must not be used as production fallback",
         "marketplace_sources": ["Wildberries official API", "Ozon official API"],
     },
     "storage_policy": {
         "primary_archive_storage": "Google Drive",
         "canonical_archive_data": "annual marketplace CSV files plus reports registry",
-        "google_drive_root": "MCP архив базы данных",
+        "google_drive_root": "Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных",
         "google_drive_auth": (
             "owner-operated Google Apps Script bridge authenticates Drive control-plane operations, including "
-            "resumable-session creation and verified staged-file promotion; no Google OAuth refresh token is stored in Yandex"
+            "resumable-session creation and verified staged-file promotion; no Google OAuth refresh token is stored in the REMOTE runtime"
         ),
         "google_drive_bridge": (
             "Apps Script executes as the Drive owner and exposes narrow archive read/write/status operations "
@@ -34,21 +42,22 @@ SYSTEM_MAP: dict[str, Any] = {
         ),
         "google_drive_large_upload": (
             "Apps Script starts the official Google Drive API resumable session using its effective-user OAuth token; "
-            "Yandex uploads bounded chunks to a non-canonical staging file, persists the server-confirmed byte offset, "
-            "verifies exact Drive size/SHA256, writes the Yandex backup, then Apps Script promotes the verified staged file "
+            "the REMOTE worker uploads bounded chunks to a non-canonical staging file, persists the server-confirmed byte offset, "
+            "verifies exact Drive size/SHA256, writes the configured durable backup, then Apps Script promotes the verified staged file "
             "to the canonical filename and trashes the previous canonical file"
         ),
         "google_drive_resumable_auth": (
             "no server-side Google refresh token is used; the resumable session URI is a bearer-like capability "
-            "kept only in durable Yandex job state and never printed to logs or user responses"
+            "kept only in the currently configured durable job state and never printed to logs or user responses"
         ),
-        "yandex_object_storage": "durable archive job state, staging, immutable annual candidate, upload resume state, and byte-for-byte backup of canonical files",
+        "durable_backend_policy": "after the REMOTE migration, the active durable backend must be established from actual REMOTE runtime/config before mutating archive work; do not infer it from legacy file/class/path names",
+        "legacy_yandex_object_storage": "legacy/migration-compatible backend only; Yandex Object Storage must not be assumed active production storage without a fresh read-only REMOTE audit",
         "archive_write_order": (
-            "prepare immutable candidate in Yandex Object Storage; upload to non-canonical Drive staging through a resumable session; "
-            "verify staged Drive size/SHA256; write byte-for-byte Yandex backup; promote the verified staged Drive file to canonical "
+            "prepare immutable candidate in the currently configured durable backend; upload to non-canonical Drive staging through a resumable session; "
+            "verify staged Drive size/SHA256; write/verify the configured durable byte-for-byte backup; promote the verified staged Drive file to canonical "
             "and trash the previous canonical; only then COMMIT the report registry/job progress"
         ),
-        "read_through_migration": "if a canonical file is absent on Drive but exists in Yandex Object Storage, copy it to Drive before use",
+        "read_through_migration": "legacy restored/Yandex-compatible backup paths may be used for explicit migration/recovery only after their actual backend is identified; Google Drive remains canonical",
         "google_cloud": (
             "not part of the runtime architecture; no separate Google Cloud runtime or server OAuth refresh-token "
             "store is required for the archive upload path"
@@ -79,7 +88,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "large_file_upload": {
             "transport": "Google Drive API resumable upload",
             "apps_script_large_upload": "file-byte transport forbidden; Apps Script may broker resumable session start, metadata verification, and final staged-file promotion only",
-            "session_broker": "Google Apps Script effective-user OAuth; no Google refresh token is stored in Yandex",
+            "session_broker": "Google Apps Script effective-user OAuth; no Google refresh token is stored in the REMOTE runtime",
             "worker_model": "MCP/queue persists work; each worker step starts a session, queries server state, or uploads at most one bounded chunk",
             "resume_state": [
                 "resumable session URI",
@@ -93,8 +102,8 @@ SYSTEM_MAP: dict[str, Any] = {
             "chunk_rule": "non-final chunks are multiples of 256 KiB; default is 4 MiB; Drive Range is authoritative for the next offset",
             "retry_rule": "expired/nonrecoverable resumable sessions restart from the immutable candidate; transient failures use bounded exponential backoff with jitter",
             "integrity_rule": "Drive staged file must match expected byte count and Drive sha256Checksum before canonical promotion",
-            "canonical_safety_rule": "large-file chunk upload must never write directly into the existing canonical file; canonical remains untouched until staging verification and Yandex backup succeed",
-            "commit_rule": "registry/progress COMMIT occurs only after staged Drive SHA256 verification, Yandex backup, and verified promotion to canonical",
+            "canonical_safety_rule": "large-file chunk upload must never write directly into the existing canonical file; canonical remains untouched until staging verification and configured durable backup succeed",
+            "commit_rule": "registry/progress COMMIT occurs only after staged Drive SHA256 verification, configured durable backup, and verified promotion to canonical",
         },
         "wb_weekly_finance_main": {
             "period": "weekly",
@@ -111,7 +120,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "current_scope": "Wildberries only; Ozon advertising is explicitly out of scope for this phase",
         "phase": "WB Advertising M0 live read-only + Advertising Archive V1 historical read-only",
         "credential_service": "wb_ads",
-        "credentials": "Promotion-scoped WB credentials are server-side only and must be injected from Yandex Lockbox; never stored on Drive/GitHub",
+        "credentials": "Promotion-scoped WB credentials are server-side only on REMOTE under the restricted Marketplaces secrets boundary; never stored on Drive/GitHub",
         "live_state_source": "Wildberries Promotion API",
         "active_campaign_status": 9,
         "m0_tools": [
@@ -253,15 +262,20 @@ SYSTEM_MAP: dict[str, Any] = {
 
 SYSTEM_INSTRUCTIONS = f"""CANONICAL MARKETPLACES MCP ARCHITECTURE — {ARCHITECTURE_VERSION}
 Treat marketplace_system_map as the source of truth for this MCP.
-Runtime infrastructure is Yandex Cloud. Google Cloud is not a runtime provider for Marketplaces MCP.
-Canonical marketplace archive data is stored on Google Drive under the server-owned archive root: annual CSV files and dataset-specific coverage registries are the source of truth.
-Yandex Object Storage is required for durable queue/job state, staging, immutable annual candidates, resumable-upload state, and a secondary byte-for-byte backup of canonical archive files.
-The owner's Google Apps Script web-app bridge authenticates Google Drive control-plane operations; its shared secret remains in Yandex Lockbox.
-Large annual CSV file bytes must NOT be transported through Apps Script/base64. Apps Script uses its effective-user OAuth token to create an official Google Drive resumable session for a non-canonical staging file, then Yandex uploads bounded chunks directly to that session URI.
-No Google OAuth refresh token is stored in Yandex for the archive upload path. Resumable session URIs are bearer-like capabilities and must never be logged or returned to users.
-The existing canonical large file must remain untouched while chunks are uploaded. The worker must persist the Drive-confirmed offset, resume or restart from the immutable candidate after interruption, verify exact staged-file size and Drive SHA256, write the Yandex byte-for-byte backup, then use Apps Script to promote the verified staged file to the canonical name and trash the previous canonical file.
+Current production runtime is the dedicated Linux REMOTE server VM-684381 / 89.208.14.36 under /opt/mcp/, not Yandex Cloud.
+The Marketplaces service is mcp-marketplaces.service running as mcp-marketplaces and bound internally to 127.0.0.1:8080. Do not publish the internal MCP port directly.
+Approved external client path is https://mcp892081436.duckdns.org:13267/mcp using OAuth/Keycloak through the REMOTE GPT-MCP bridge on 127.0.0.1:18181.
+The retired marketplaces-yandex / Yandex API Gateway / Yandex Serverless Container path is legacy and must not be used as a production fallback.
+Production Marketplaces secrets are server-side on REMOTE under /opt/mcp/secrets/marketplaces/ with restricted permissions. Do not treat Yandex Lockbox as the current production secret store.
+Shared rate-limit, lock and queue coordination uses the local REMOTE Redis at 127.0.0.1:6379; Redis is not exposed publicly.
+Canonical marketplace archive data is stored on Google Drive under Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных: annual CSV files and dataset-specific coverage registries are the source of truth.
+The owner's Google Apps Script web-app bridge authenticates Google Drive control-plane operations. Its shared secret is injected server-side on REMOTE.
+Large annual CSV file bytes must NOT be transported through Apps Script/base64. Apps Script uses its effective-user OAuth token to create an official Google Drive resumable session for a non-canonical staging file, then the REMOTE worker uploads bounded chunks directly to that session URI.
+No Google OAuth refresh token is stored in the REMOTE runtime for the archive upload path. Resumable session URIs are bearer-like capabilities and must never be logged or returned to users.
+The existing canonical large file must remain untouched while chunks are uploaded. The worker must persist the Drive-confirmed offset, resume or restart from the immutable candidate after interruption, verify exact staged-file size and Drive SHA256, verify the configured durable byte-for-byte backup, then use Apps Script to promote the verified staged file to the canonical name and trash the previous canonical file.
 Transient upload failures must use bounded exponential backoff with jitter. Non-final chunks must be multiples of 256 KiB and the Drive Range response is authoritative for the next byte offset.
-Only after staged Drive verification, Yandex backup, and verified canonical promotion may the worker COMMIT registry/job progress.
+Only after staged Drive verification, durable-backup verification, and verified canonical promotion may the worker COMMIT registry/job progress.
+After the REMOTE migration, never assume that Yandex Object Storage, YDB, Lockbox, or any legacy yandex-object-storage path is the active production durable backend merely because legacy code or names remain. Before any mutating archive refresh/recovery, perform a read-only REMOTE backend audit from actual service environment/config and fail closed if the durable backend cannot be proven.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
 For an ordinary request to update/refresh the marketplace database, prefer marketplace_database_update. COMPLETE is refresh-cycle completion only, never permanent finality: every new refresh must re-run the registered dataset's provider discovery/coverage reconciliation and ingest only missing or correction-eligible data according to its stable key.
 Do not claim that a database update succeeded merely because jobs were queued. Wait until all requested jobs reach COMPLETE, then call marketplace_database_verify and require canonical-file presence, stable-key integrity, registry/coverage consistency and date/high-watermark evidence. Date is freshness evidence where meaningful but never replaces a stronger provider-native identity such as reportId, event key or canonical request coverage.
