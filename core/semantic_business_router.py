@@ -343,17 +343,39 @@ def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None
         nm_ids: Optional[list[int]] = None,
         product_ids: Optional[list[str]] = None,
     ) -> str:
-        result = await execute_business_query(
-            modules,
-            marketplace=marketplace,
-            seller=seller,
-            date_from=date_from,
-            date_to=date_to,
-            question=question,
-            metric=metric,
-            nm_ids=nm_ids,
-            product_ids=product_ids,
-        )
+        try:
+            result = await execute_business_query(
+                modules,
+                marketplace=marketplace,
+                seller=seller,
+                date_from=date_from,
+                date_to=date_to,
+                question=question,
+                metric=metric,
+                nm_ids=nm_ids,
+                product_ids=product_ids,
+            )
+        except Exception as exc:  # last-resort user-facing boundary; diagnostics stay technical
+            technical = str(exc)
+            lowered = technical.casefold()
+            archive_failure = any(marker in lowered for marker in (
+                "archive",
+                "google drive",
+                "read_range_by_id",
+                "historical database",
+                "historical store",
+            ))
+            result = make_error(
+                "source_not_suitable" if archive_failure else "server_error",
+                technical,
+                operation_id="marketplace_business_query",
+                retryable=not archive_failure,
+                details={
+                    "question": question,
+                    "required": "historical database" if archive_failure else "marketplace runtime",
+                    "exception_type": type(exc).__name__,
+                },
+            )
         if isinstance(result, dict):
             result = present_business_result(
                 result,
