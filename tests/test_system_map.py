@@ -362,7 +362,7 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "non-canonical staging filename" in architecture
     assert "sha256Checksum" in architecture
     assert "promote_verified" in architecture
-    assert "old canonical file remains untouched" in architecture
+    assert "must not write directly into the existing canonical file" in architecture
     assert "marketplace_database_update" in architecture
     assert "marketplace_database_verify" in architecture
     assert "stable row key" in architecture
