@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +23,7 @@ from mcp.server.fastmcp import FastMCP
 from core.client import MarketplaceClient, ServiceConfig
 from core.entities import EntityIndex
 from core.registry import Catalog
+from core.runtime_contracts import assert_service_runtime_contract
 from core.safety import check_gate
 from core.tools import register_cabinet_tools, register_generic_tools, resolve_named_cabinet
 from core.workflows import Workflows, register_workflow_tools
@@ -63,6 +65,9 @@ register_generic_tools(
 )
 register_cabinet_tools(mcp, svc="ozon", client=client, catalog=catalog)
 register_workflow_tools(mcp, svc="ozon", workflows=Workflows.from_yaml(WORKFLOWS_PATH))
+
+# Standalone entrypoints must reject stale quota catalogs before MCP starts.
+assert_service_runtime_contract("ozon", sys.modules[__name__])
 
 
 def _j(obj) -> str:
