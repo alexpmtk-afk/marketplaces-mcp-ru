@@ -191,3 +191,18 @@ def test_google_drive_bridge_failure_is_plain_database_message():
         "с историческими данными по магазину LaserMaster."
     )
     assert shown["technical_message"].startswith("Google Drive Bridge v3")
+
+
+def test_wb_orders_real_result_shape_does_not_require_metric_field():
+    shown = present_business_result({
+        "ok": True,
+        "route": "operational_exact_day",
+        "source": "wb_stats_orders",
+        "orders_count": 7,
+        "orders_amount": 8177,
+        "business_completeness": "PRELIMINARY_NOT_ALL_ORDERS",
+    })
+    assert shown["user_message"] == "Заказов: 7 на сумму 8 177 ₽."
+    assert shown["user_note"] == (
+        "Это оперативные данные Wildberries; часть заказов может появляться с задержкой."
+    )
