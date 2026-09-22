@@ -14,6 +14,7 @@ from .business_registry import resolve_business_cabinet
 from .card_monitor import register_tools as register_card_monitor_tools
 from .data_catalog import register_data_catalog_tools
 from .order_history_tools import register_order_history_tools
+from .runtime_contracts import assert_runtime_contracts
 from .semantic_business_router import register_business_query_tool
 from .semantic_core import register_semantic_core_tool
 from .system_map import SYSTEM_INSTRUCTIONS, register_system_map_tool
@@ -230,6 +231,12 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
                 "openWorldHint": False,
             },
         )(_rate_status_tool(mod.client))
+
+    # Fail before any archive/store initialization if this Python process has
+    # imported a stale or incompatible critical quota catalog. A plain HTTP
+    # health check is not sufficient: RATE_LIMIT_RULE_UNPROVEN is generated
+    # before provider I/O, so the loaded contract itself must be proven here.
+    assert_runtime_contracts(modules)
 
     order_history_store = build_order_history_store_from_env()
     archive_store = build_hybrid_archive_store_from_env()
