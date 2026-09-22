@@ -113,19 +113,24 @@ def test_identical_small_write_replay_reuses_existing_file_without_write():
 
 def test_download_named_decodes_bridge_payload():
     store = _store()
+    calls = []
 
     async def fake_post(action, **payload):
-        assert action == "read"
+        calls.append(action)
         assert payload["path"] == "База данных/WB/test"
+        file = {
+            "id": "drive-file-id",
+            "name": "annual.csv",
+            "mime_type": "text/csv",
+            "size": 7,
+        }
+        if action == "stat":
+            return {"ok": True, "found": True, "file": file}
+        assert action == "read"
         return {
             "ok": True,
             "found": True,
-            "file": {
-                "id": "drive-file-id",
-                "name": "annual.csv",
-                "mime_type": "text/csv",
-                "size": 7,
-            },
+            "file": file,
             "content_base64": base64.b64encode(b"archive").decode("ascii"),
         }
 
@@ -133,6 +138,7 @@ def test_download_named_decodes_bridge_payload():
     item, data = asyncio.run(store.download_named("База данных/WB/test", "annual.csv"))
     assert item is not None and item.id == "drive-file-id"
     assert data == b"archive"
+    assert calls == ["stat", "read"]
 
 
 def test_promote_verified_file_sends_exact_integrity_and_identity_contract():
@@ -356,3 +362,146 @@ def test_post_does_not_retry_non_transient_http_error(monkeypatch):
     with pytest.raises(ArchiveStorageError, match="HTTP 401"):
         asyncio.run(store.status())
     assert calls == 1
+
+
+def test_large_download_named_uses_bounded_ranges_and_verifies_sha256(monkeypatch):
+    store = _store()
+    payload = b"A" * (archive_google._SMALL_READ_MAX_BYTES + 12345)
+    sha = hashlib.sha256(payload).hexdigest()
+    calls: list[tuple[str, dict]] = []
+
+    async def fake_post(action, **body):
+        calls.append((action, dict(body)))
+        if action == "stat":
+            return {
+                "ok": True,
+                "found": True,
+                "file": {
+                    "id": "large-id",
+                    "name": "annual.csv",
+                    "mime_type": "text/csv",
+                    "size": len(payload),
+                },
+            }
+        if action == "metadata_by_id":
+            return {
+                "ok": True,
+                "found": True,
+                "file": {
+                    "id": "large-id",
+                    "name": "annual.csv",
+                    "mimeType": "text/csv",
+                    "size": str(len(payload)),
+                    "sha256Checksum": sha,
+                },
+            }
+        assert action == "read_range_by_id"
+        offset = int(body["offset"])
+        length = int(body["length"])
+        chunk = payload[offset:offset + length]
+        return {
+            "ok": True,
+            "file_id": "large-id",
+            "offset": offset,
+            "next_offset": offset + len(chunk),
+            "total_bytes": len(payload),
+            "eof": offset + len(chunk) == len(payload),
+            "sha256": sha,
+            "content_base64": base64.b64encode(chunk).decode("ascii"),
+        }
+
+    store._post = fake_post  # type: ignore[method-assign]
+    item, data = asyncio.run(store.download_named("База данных/WB/test", "annual.csv"))
+
+    assert item is not None and item.id == "large-id"
+    assert data == payload
+    actions = [action for action, _ in calls]
+    assert actions[:2] == ["stat", "metadata_by_id"]
+    assert actions.count("read_range_by_id") == 2
+    range_calls = [body for action, body in calls if action == "read_range_by_id"]
+    assert range_calls[0]["length"] == archive_google._LARGE_READ_CHUNK_BYTES
+    assert range_calls[1]["offset"] == archive_google._LARGE_READ_CHUNK_BYTES
+
+
+def test_large_download_fails_closed_if_source_checksum_changes():
+    store = _store()
+    payload = b"B" * (archive_google._SMALL_READ_MAX_BYTES + 1)
+    sha = hashlib.sha256(payload).hexdigest()
+
+    async def fake_post(action, **body):
+        if action == "stat":
+            return {
+                "ok": True,
+                "found": True,
+                "file": {
+                    "id": "large-id",
+                    "name": "annual.csv",
+                    "mime_type": "text/csv",
+                    "size": len(payload),
+                },
+            }
+        if action == "metadata_by_id":
+            return {
+                "ok": True,
+                "file": {
+                    "id": "large-id",
+                    "name": "annual.csv",
+                    "mimeType": "text/csv",
+                    "size": str(len(payload)),
+                    "sha256Checksum": sha,
+                },
+            }
+        assert action == "read_range_by_id"
+        offset = int(body["offset"])
+        length = int(body["length"])
+        chunk = payload[offset:offset + length]
+        return {
+            "ok": True,
+            "file_id": "large-id",
+            "offset": offset,
+            "next_offset": offset + len(chunk),
+            "total_bytes": len(payload),
+            "sha256": "0" * 64,
+            "content_base64": base64.b64encode(chunk).decode("ascii"),
+        }
+
+    store._post = fake_post  # type: ignore[method-assign]
+    with pytest.raises(ArchiveStorageError) as exc:
+        asyncio.run(store.download_named("База данных/WB/test", "annual.csv"))
+    assert exc.value.code == "DOWNLOAD_SOURCE_CHANGED"
+    assert exc.value.retryable is True
+
+
+def test_large_download_requires_provider_sha256():
+    store = _store()
+    size = archive_google._SMALL_READ_MAX_BYTES + 1
+
+    async def fake_post(action, **body):
+        del body
+        if action == "stat":
+            return {
+                "ok": True,
+                "found": True,
+                "file": {
+                    "id": "large-id",
+                    "name": "annual.csv",
+                    "mime_type": "text/csv",
+                    "size": size,
+                },
+            }
+        if action == "metadata_by_id":
+            return {
+                "ok": True,
+                "file": {
+                    "id": "large-id",
+                    "name": "annual.csv",
+                    "mimeType": "text/csv",
+                    "size": str(size),
+                },
+            }
+        raise AssertionError(action)
+
+    store._post = fake_post  # type: ignore[method-assign]
+    with pytest.raises(ArchiveStorageError) as exc:
+        asyncio.run(store.download_named("База данных/WB/test", "annual.csv"))
+    assert exc.value.code == "SHA256_UNAVAILABLE"
