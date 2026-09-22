@@ -143,6 +143,96 @@ def _extract_identifier(question: str, product_ids: Optional[list[str]]) -> tupl
     }
 
 
+
+def _identifier_request_bodies(question: str, identifier: str) -> list[dict[str, list[str]]]:
+    """Return valid one-type Ozon identifier requests in deterministic order.
+
+    Ozon requires one homogeneous identifier array per product-info request.
+    Numeric values copied from Ozon product pages are commonly SKU values, so an
+    unlabelled numeric identifier is tried as SKU first, then product_id, then
+    seller offer_id. Explicit labels override that fallback order.
+    """
+    text = str(question or "").casefold().replace("ё", "е")
+    value = str(identifier).strip()
+    if re.search(r"product[\s_-]*id\s*[:№#=-]?\s*" + re.escape(value), text, re.IGNORECASE):
+        fields = ("product_id",)
+    elif re.search(r"offer[\s_-]*id\s*[:№#=-]?\s*" + re.escape(value), text, re.IGNORECASE):
+        fields = ("offer_id",)
+    elif re.search(r"sku\s*[:№#=-]?\s*" + re.escape(value), text, re.IGNORECASE):
+        fields = ("sku",)
+    elif value.isdigit():
+        fields = ("sku", "product_id", "offer_id")
+    else:
+        fields = ("offer_id", "sku", "product_id")
+    return [{field: [value]} for field in fields]
+
+
+async def _resolve_product_entity(
+    ozon: Any,
+    product_spec: Any,
+    *,
+    question: str,
+    identifier: str,
+    creds: dict[str, str],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Resolve an Ozon SKU/product_id/offer_id without mixing identifier types."""
+    attempts: list[dict[str, Any]] = []
+    for body in _identifier_request_bodies(question, identifier):
+        field = next(iter(body))
+        response = await ozon.client.call_spec(
+            product_spec,
+            json_body=body,
+            creds_override=creds,
+        )
+        if not isinstance(response, dict):
+            return None, _provider_error("entity", response)
+
+        if response.get("ok") is True:
+            items = _items(response)
+            if len(items) == 1:
+                return items[0], None
+            if len(items) > 1:
+                return None, {
+                    "ok": False,
+                    "error": "product_ambiguous",
+                    "code": "PRODUCT_AMBIGUOUS",
+                    "retryable": False,
+                    "stage": "entity",
+                    "complete": False,
+                    "match_count": len(items),
+                    "identifier_type": field,
+                }
+            attempts.append({"identifier_type": field, "result": "not_found"})
+            continue
+
+        error_name = str(response.get("error") or "").lower()
+        error_code = str(response.get("code") or "").upper()
+        # A syntactically valid one-type lookup can still reject a value that is
+        # not valid for that identifier family. Only validation/not-found allows
+        # trying the next identifier family; auth/rate/upstream failures stop.
+        if error_name in {"invalid_params", "not_found"} or error_code in {
+            "400", "404", "INVALID_ARGUMENT", "NOT_FOUND"
+        }:
+            attempts.append({
+                "identifier_type": field,
+                "result": "rejected",
+                "provider_code": response.get("code"),
+            })
+            continue
+        return None, _provider_error("entity", response)
+
+    return None, {
+        "ok": False,
+        "error": "product_not_found",
+        "code": "PRODUCT_NOT_FOUND",
+        "retryable": False,
+        "stage": "entity",
+        "complete": False,
+        "input_identifier": str(identifier),
+        "attempts": attempts,
+    }
+
+
 def requested_snapshot_metrics(question: str) -> list[str]:
     """Recognize only the registered Ozon snapshot metrics, without granting execution."""
     matched = [item["metric_id"] for item in resolve_metric_terms(question)]
@@ -331,14 +421,13 @@ async def execute_ozon_current_snapshot(
     product_spec = ozon.catalog.get("ozon_product_info_list")
     if product_spec is None:
         return {"ok": False, "error": "source_contract_missing", "code": "SOURCE_CONTRACT_MISSING", "stage": "entity", "complete": False}
-    entity_response = await ozon.client.call_spec(
+    entity_item, entity_error = await _resolve_product_entity(
+        ozon,
         product_spec,
-        json_body={"offer_id": [identifier], "product_id": [identifier], "sku": [identifier]},
-        creds_override=creds,
+        question=question,
+        identifier=identifier,
+        creds=creds,
     )
-    if not isinstance(entity_response, dict) or entity_response.get("ok") is not True:
-        return _provider_error("entity", entity_response)
-    entity_item, entity_error = _pick_single(_items(entity_response), stage="entity")
     if entity_error:
         return entity_error
     assert entity_item is not None
