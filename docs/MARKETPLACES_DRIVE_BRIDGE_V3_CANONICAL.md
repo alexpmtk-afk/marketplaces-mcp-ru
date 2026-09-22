@@ -30,6 +30,12 @@ The Bridge URL, shared secret and archive root are injected server-side on REMOT
 
 Before any mutating archive operation after the migration, establish the actual durable backend from the REMOTE service environment/config. Legacy Yandex Object Storage code may remain for migration compatibility but is not evidence of an active production backend.
 
+Read-only historical queries are different: once Bridge v3 URL/secret/root are configured,
+canonical Google Drive data must remain readable even when the former Yandex Object Storage
+backend is absent.  In that state queue/staging/candidate/backup mutations fail closed with
+`DURABLE_BACKEND_NOT_CONFIGURED`; the service must not report the canonical archive itself
+as absent.
+
 ## Scope boundary
 
 This decision applies only to Marketplaces MCP. Shared Bridge v1 assets used by other projects such as Birzha are outside this decision and must not be removed by Marketplaces cleanup.
