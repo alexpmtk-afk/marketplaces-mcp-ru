@@ -124,11 +124,19 @@ def key_prefix(service: str, cabinet_key: str) -> str:
 
 
 def configured_global_rps(service: str) -> Optional[float]:
-    """Return the documented service-wide ceiling or an explicit override."""
+    """Return the documented service-wide ceiling or an explicit override.
+
+    Wildberries has no transport-wide global ceiling in the current contract:
+    its quotas are seller + method/group scoped.  A stale WB_GLOBAL_RPS from the
+    former Yandex deployment must therefore never resurrect a global WB bucket
+    after migration to REMOTE.
+    """
     service = service.lower().strip()
-    default_rps = {"wb": None, "ozon": 50.0, "ozon_perf": 10.0}.get(service, 5.0)
+    if service == "wb":
+        return None
+    default_rps = {"ozon": 50.0, "ozon_perf": 10.0}.get(service, 5.0)
     env_name = {
-        "wb": "WB_GLOBAL_RPS", "ozon": "OZON_GLOBAL_RPS",
+        "ozon": "OZON_GLOBAL_RPS",
         "ozon_perf": "OZON_PERF_GLOBAL_RPS",
     }.get(service, "MARKETPLACE_GLOBAL_RPS")
     configured = os.environ.get(env_name, "").strip()
