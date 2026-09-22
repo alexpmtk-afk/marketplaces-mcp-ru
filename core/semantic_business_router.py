@@ -26,6 +26,7 @@ from .semantic_ozon_snapshot import (
     requested_snapshot_metrics,
 )
 from .semantic_resolver import resolve_semantic_question
+from .user_facing import present_business_result
 
 
 def _j(value: Any) -> str:
@@ -342,7 +343,7 @@ def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None
         nm_ids: Optional[list[int]] = None,
         product_ids: Optional[list[str]] = None,
     ) -> str:
-        return _j(await execute_business_query(
+        result = await execute_business_query(
             modules,
             marketplace=marketplace,
             seller=seller,
@@ -352,4 +353,12 @@ def register_business_query_tool(combined: Any, modules: dict[str, Any]) -> None
             metric=metric,
             nm_ids=nm_ids,
             product_ids=product_ids,
-        ))
+        )
+        if isinstance(result, dict):
+            result = present_business_result(
+                result,
+                question=question,
+                marketplace=marketplace,
+                seller=seller,
+            )
+        return _j(result)
