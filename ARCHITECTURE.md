@@ -1,35 +1,47 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-16.v19`
+**Version:** `2026-09-22.v20`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
 ## Runtime path
 
-`ChatGPT / Codex -> marketplaces-yandex -> Yandex API Gateway -> Yandex Serverless Container -> official WB/Ozon APIs`
+Current production runs on the dedicated Linux REMOTE server:
+
+- host: `VM-684381` / `89.208.14.36`;
+- root: `/opt/mcp/`;
+- Marketplaces service: `mcp-marketplaces.service`;
+- service user: `mcp-marketplaces`;
+- internal MCP: `http://127.0.0.1:8080/mcp`;
+- local Redis: `127.0.0.1:6379`.
+
+Approved external path:
+
+`Codex / allowed client -> https://mcp892081436.duckdns.org:13267/mcp -> OAuth/Keycloak -> REMOTE GPT-MCP bridge (127.0.0.1:18181) -> internal Marketplaces MCP -> official WB/Ozon APIs`
+
+The legacy `marketplaces-yandex -> Yandex API Gateway -> Yandex Serverless Container` route is **retired as a production path** and must not be used as fallback.
+
+Production secrets are server-side on REMOTE under `/opt/mcp/secrets/marketplaces/` with restricted permissions. Yandex Lockbox must not be described as the current production secret store.
 
 Supporting services:
-- Secrets: Yandex Lockbox.
-- Shared limiter/locks: Yandex Managed Redis/Valkey.
-- Canonical marketplace archive: **Google Drive** folder `MCP архив базы данных`.
-- Durable queue/job state, staging, immutable annual candidates and resumable-upload state: **Yandex Object Storage**.
-- Secondary byte-for-byte backup of canonical archive files: Yandex Object Storage.
-- Google Drive control plane: owner-operated **Google Apps Script** web-app bridge. It handles small archive operations and creates resumable sessions for large files using the owner's Apps Script OAuth context. It also verifies metadata and performs the final verified staging-to-canonical promotion. The bridge is authenticated by the existing shared secret in Yandex Lockbox.
-- Large annual CSV bytes: direct **Google Drive API resumable upload** from Yandex to the session URI returned by Apps Script. No Google OAuth refresh token is stored in Yandex.
-- Yandex Object Storage authentication: temporary IAM token obtained by the Serverless Container from its runtime service-account metadata; no static archive key is required.
+- Canonical marketplace archive: **Google Drive** folder `Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных`.
+- Shared limiter/locks/queue coordination: local REMOTE Redis.
+- Google Drive control plane: owner-operated **Google Apps Script** web-app bridge.
+- Large annual CSV bytes: direct **Google Drive API resumable upload** by the REMOTE worker to the opaque session URI created by Apps Script.
+- Archive durable job/staging/candidate/backup backend: **must be established from the actual REMOTE service environment/config before mutating work**. Legacy Yandex-named files/classes/paths do not prove Yandex Cloud is active.
 
-## Hard boundaries
+### Hard boundaries
 
-- Google Cloud is not a runtime provider for Marketplaces MCP. The archive upload path does not require a separate server-side Google OAuth client or refresh-token store.
 - Google Drive annual CSV files and dataset-specific coverage registries are the archive source of truth.
 - Apps Script remains the narrow trusted Google control-plane bridge for small Drive operations, reads, metadata/status, folder resolution, resumable-session creation and final verified promotion.
-- **Large annual CSV file bytes must not be transported through Apps Script as one base64 JSON POST.** Apps Script brokers the resumable session; Yandex sends chunks directly to the official Drive session URI.
-- **Large annual resumable uploads must not write directly into the existing canonical file.** They upload to a non-canonical staging filename first. The old canonical file remains untouched until the staged file passes exact Drive size/SHA256 verification and the Yandex backup has been written.
-- The Apps Script shared secret remains only in Script Properties/Yandex Lockbox. The resumable session URI is a bearer-like capability and must never be logged or returned to users.
-- Yandex Object Storage must not replace Drive as canonical data; it is used for durable queue/staging, immutable upload candidates, resume state and backup.
-- Local files or chat memory are never authoritative shared state.
-- No new cloud provider or primary storage path may be introduced without an explicit architecture change.
+- **Large annual CSV file bytes must not be transported through Apps Script as one base64 JSON POST.**
+- **Large annual resumable uploads must not write directly into the existing canonical file.** They upload to a non-canonical staging filename first.
+- The Apps Script shared secret is injected server-side on REMOTE. The resumable session URI is a bearer-like capability and must never be logged or returned to users.
+- Before any archive write/recovery after the REMOTE migration, perform a read-only backend audit and prove the actual durable backend. If it cannot be proven, fail closed.
+- Yandex Object Storage / YDB / Lockbox and legacy `yandex-object-storage` paths are legacy-capable surfaces only unless the current REMOTE runtime explicitly proves otherwise.
+- Local HOME/WORK files or chat memory are never authoritative shared state.
+- No new runtime provider or primary storage path may be introduced without an explicit architecture change.
 
 ## Archive rules
 
@@ -69,21 +81,21 @@ Current registered refresh families are WB finance and WB advertising. A future 
 
 ### Durable publication
 
-- Queue state and temporary per-report staging remain in Yandex Object Storage so in-flight jobs survive deployments and client disconnects.
+- Queue state and temporary per-report staging must remain in the currently configured durable REMOTE backend so in-flight jobs survive deployments and client disconnects.
 - Large-file finalization is split into durable stages:
-  1. `PREPARE` builds one immutable annual candidate in Yandex Object Storage and records its size/SHA256.
-  2. `UPLOAD_ANNUAL` asks Apps Script to create an official Google Drive resumable session for a **non-canonical staging filename**, then transfers at most one bounded chunk per worker step directly from Yandex to that session URI.
+  1. `PREPARE` builds one immutable annual candidate in the active durable backend and records its size/SHA256.
+  2. `UPLOAD_ANNUAL` asks Apps Script to create an official Google Drive resumable session for a **non-canonical staging filename**, then transfers at most one bounded chunk per worker step directly from the REMOTE durable candidate to that session URI.
   3. Google Drive is authoritative for the confirmed byte offset. After interruption, the worker queries the session and uses the returned `Range`; it never assumes all bytes sent were persisted.
   4. If a resumable session expires or becomes unusable, the worker starts a new session from the immutable candidate. Transient failures use bounded exponential backoff with jitter.
   5. After the staged Drive file is complete, exact byte count and Drive `sha256Checksum` must equal the immutable candidate. This verification uses metadata only; the large file is not downloaded through Apps Script.
-  6. The same candidate is mirrored byte-for-byte to the canonical Yandex backup path and verified for size.
+  6. The same candidate is mirrored byte-for-byte to the configured durable backup path and verified for size.
   7. Only after steps 5-6 pass, Apps Script performs `promote_verified`: it confirms the staged file ID, parent, size and SHA256, renames that verified file to the canonical annual filename, and then trashes the explicitly identified previous canonical file.
   8. Promotion is retry-safe. If execution stops after the rename, the worker can detect an already-promoted canonical file with the expected size/SHA256 and continue without repeating provider download or `PREPARE`.
   9. Only after verified promotion does `COMMIT` update the applicable coverage registry and durable job progress.
 - The resumable session URI, confirmed byte offset, staging file identity, previous canonical file identity, candidate identity/checksums and retry state are durable worker state. Session URIs are bearer-like capabilities and must never be emitted to logs or user responses.
 - Non-final resumable chunks must be multiples of 256 KiB. The default is 4 MiB; the final chunk may be smaller.
 - If the Apps Script bridge does not support the required resumable/promotion controls, the job must fail closed while preserving the candidate and existing progress. It must never fall back to the old large Apps Script/base64 upload or a direct canonical overwrite.
-- Existing canonical files left in Yandex by the previous architecture may be migrated to Drive on first content read when Drive does not yet contain that file. Provider data is not re-downloaded for this migration.
+- Legacy restored/Yandex-compatible backups may be migrated to Drive only through an explicitly verified recovery path when Drive lacks the canonical file; their names alone do not make Yandex Cloud current production. Provider data is not re-downloaded for this migration.
 - Update is idempotent and registry-driven; already-complete provider reports/requests are not downloaded again.
 - WB finance rows are deduplicated by `(reportId, rrdId)` before the annual CSV is written.
 - WB Advertising `ads_campaign_daily` rows are deduplicated by `(date, campaign_id)`.
@@ -102,7 +114,7 @@ Drive access uses one Google authorization surface: the owner-operated Apps Scri
 
 Runtime configuration:
 - `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL` — non-secret `/exec` URL of the deployed web app;
-- `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET` — shared secret injected from Yandex Lockbox;
+- `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET` — shared secret injected server-side on REMOTE;
 - `MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID` — expected fixed archive root ID.
 
 The bridge supports health/status, folder resolution, named-file stat/read, small writes, metadata lookup, resumable-session creation, diagnostic cleanup, and verified staging-to-canonical promotion under the fixed archive root. For `resumable_start`, Apps Script uses `ScriptApp.getOAuthToken()` only inside Google to start the official Drive upload session and returns the opaque session URI; the Google access token itself never leaves Apps Script.
@@ -114,7 +126,7 @@ The bridge supports health/status, folder resolution, named-file stat/read, smal
 Runtime configuration:
 - `MARKETPLACE_MCP_DRIVE_RESUMABLE_CHUNK_BYTES` — optional chunk size; must be a multiple of 256 KiB; default 4 MiB.
 
-The Yandex worker stores the opaque Drive session URI only in durable Yandex job state and sends at most one chunk per worker step directly to that URI. Subsequent Drive resumable `PUT` requests use the session URI returned by Google; the runtime does not hold a Google refresh token. On interruption the worker queries Google for the confirmed offset before continuing. Expired sessions are restarted from the immutable candidate rather than replaying provider acquisition or `PREPARE`.
+The REMOTE worker stores the opaque Drive session URI only in the active durable job state and sends at most one chunk per worker step directly to that URI. Subsequent Drive resumable `PUT` requests use the session URI returned by Google; the runtime does not hold a Google refresh token. On interruption the worker queries Google for the confirmed offset before continuing. Expired sessions are restarted from the immutable candidate rather than replaying provider acquisition or `PREPARE`.
 
 ## WB Advertising
 
@@ -131,7 +143,7 @@ Server tools:
 - `wb_ads_get_campaign_stats` — normalized statistics for at most 50 campaign IDs over at most 31 calendar days;
 - `wb_ads_audit_active` — audits every currently active campaign over the last 7 full Europe/Moscow calendar days by default.
 
-Advertising credentials are a separate logical credential service named `wb_ads`. Promotion-scoped secrets are stored only server-side through Yandex Lockbox and must not be stored on Google Drive or in GitHub.
+Advertising credentials are a separate logical credential service named `wb_ads`. Promotion-scoped secrets are stored only in the restricted server-side REMOTE secret boundary and must not be stored on Google Drive or in GitHub.
 
 The metric contract is `wb_ads_m0.v1`; its data class is `advertising_attribution_operational`. It includes provider-attributed spend/orders/order amount and calculated CTR, CPC, click-to-order conversion, CPO, order-based DRR and ROAS. These values **must not be presented as actual business profit**. Actual profitability requires separately approved joins to real orders/sales/buyouts, returns, finance and unit economics.
 
