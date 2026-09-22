@@ -17,6 +17,14 @@ import httpx
 
 BRIDGE_VERSION = 3
 _RETIRED_V1_MODES = {"1", "v1", "protocol-v1"}
+_SMALL_READ_MAX_BYTES = 4 * 1024 * 1024
+_LARGE_READ_CHUNK_BYTES = 4 * 1024 * 1024
+_MAX_DOWNLOAD_BYTES = 512 * 1024 * 1024
+
+
+def _is_sha256(value: str | None) -> bool:
+    raw = str(value or "").strip().lower()
+    return len(raw) == 64 and all(ch in "0123456789abcdef" for ch in raw)
 
 
 class ArchiveStorageNotConfigured(RuntimeError):
@@ -307,35 +315,143 @@ class GoogleDriveArchiveStore:
             "staging_filename": str(data.get("filename") or name).strip() or None,
         }
 
-    async def download_bytes(self, file_id: str) -> bytes:
-        data = await self._post("read_by_id", file_id=str(file_id))
-        encoded = str(data.get("content_base64", ""))
-        if not encoded:
-            return b""
+    @staticmethod
+    def _decode_content(encoded: str, *, context: str) -> bytes:
         try:
-            return base64.b64decode(encoded, validate=True)
+            return base64.b64decode(encoded, validate=True) if encoded else b""
         except ValueError as exc:
-            raise ArchiveStorageError("Google Drive Bridge v3 returned invalid base64") from exc
+            raise ArchiveStorageError(
+                f"Google Drive Bridge v3 returned invalid base64 for {context}"
+            ) from exc
+
+    async def _download_large_verified(self, item: DriveFile) -> bytes:
+        metadata = await self.file_metadata(item.id)
+        try:
+            expected_size = int(metadata.get("size"))
+        except (TypeError, ValueError) as exc:
+            raise ArchiveStorageError(
+                "Google Drive Bridge v3 returned no valid large-file size",
+                code="SIZE_UNAVAILABLE",
+            ) from exc
+        expected_sha = str(metadata.get("sha256Checksum") or "").strip().lower()
+        if expected_size < 0 or expected_size > _MAX_DOWNLOAD_BYTES:
+            raise ArchiveStorageError(
+                f"Google Drive Bridge v3 large-file size is outside safety bounds: {expected_size}",
+                code="DOWNLOAD_TOO_LARGE",
+            )
+        if not _is_sha256(expected_sha):
+            raise ArchiveStorageError(
+                "Google Drive Bridge v3 returned no valid large-file SHA256",
+                code="SHA256_UNAVAILABLE",
+            )
+
+        buffer = bytearray()
+        hasher = hashlib.sha256()
+        offset = 0
+        while offset < expected_size:
+            length = min(_LARGE_READ_CHUNK_BYTES, expected_size - offset)
+            part = await self._post(
+                "read_range_by_id",
+                file_id=item.id,
+                offset=offset,
+                length=length,
+            )
+            try:
+                part_offset = int(part.get("offset"))
+                next_offset = int(part.get("next_offset"))
+                total_bytes = int(part.get("total_bytes"))
+            except (TypeError, ValueError) as exc:
+                raise ArchiveStorageError(
+                    "Google Drive Bridge v3 returned invalid large-read offsets",
+                    code="INVALID_RANGE_RESPONSE",
+                ) from exc
+            part_sha = str(part.get("sha256") or "").strip().lower()
+            part_file_id = str(part.get("file_id") or "").strip()
+            if part_file_id != item.id or part_offset != offset:
+                raise ArchiveStorageError(
+                    "Google Drive Bridge v3 large-read identity/offset mismatch",
+                    code="DOWNLOAD_SOURCE_CHANGED",
+                    retryable=True,
+                )
+            if total_bytes != expected_size or part_sha != expected_sha:
+                raise ArchiveStorageError(
+                    "Google Drive source changed during large read",
+                    code="DOWNLOAD_SOURCE_CHANGED",
+                    retryable=True,
+                )
+            chunk = self._decode_content(
+                str(part.get("content_base64") or ""),
+                context="large-read chunk",
+            )
+            if not chunk or len(chunk) > length or next_offset != offset + len(chunk):
+                raise ArchiveStorageError(
+                    "Google Drive Bridge v3 returned an invalid large-read chunk size",
+                    code="LARGE_READ_CHUNK_SIZE_MISMATCH",
+                )
+            buffer.extend(chunk)
+            hasher.update(chunk)
+            offset = next_offset
+            if len(buffer) > expected_size:
+                raise ArchiveStorageError(
+                    "Google Drive Bridge v3 large read exceeded expected size",
+                    code="SIZE_MISMATCH",
+                )
+
+        raw = bytes(buffer)
+        if len(raw) != expected_size:
+            raise ArchiveStorageError(
+                f"Google Drive Bridge v3 large-read size mismatch: {len(raw)} != {expected_size}",
+                code="SIZE_MISMATCH",
+            )
+        if hasher.hexdigest() != expected_sha:
+            raise ArchiveStorageError(
+                "Google Drive Bridge v3 large-read SHA256 mismatch",
+                code="SHA256_MISMATCH",
+            )
+        return raw
+
+    async def download_bytes(self, file_id: str) -> bytes:
+        metadata = await self.file_metadata(str(file_id))
+        item = self._to_file(metadata)
+        if item.size is not None and item.size > _SMALL_READ_MAX_BYTES:
+            return await self._download_large_verified(item)
+        data = await self._post("read_by_id", file_id=str(file_id))
+        raw = self._decode_content(
+            str(data.get("content_base64") or ""),
+            context="read_by_id",
+        )
+        if item.size is not None and len(raw) != item.size:
+            raise ArchiveStorageError(
+                f"Google Drive Bridge v3 size mismatch for file {file_id!r}: "
+                f"{len(raw)} != {item.size}"
+            )
+        return raw
 
     async def download_named(
         self,
         parent_id: str,
         name: str,
     ) -> tuple[DriveFile | None, bytes | None]:
+        item = await self.find_child(parent_id, name)
+        if item is None:
+            return None, None
+        if item.size is not None and item.size > _SMALL_READ_MAX_BYTES:
+            return item, await self._download_large_verified(item)
+
         data = await self._post("read", path=self._path((parent_id,)), filename=str(name))
         if not data.get("found"):
             return None, None
-        item = self._to_file(dict(data.get("file") or {}))
-        encoded = str(data.get("content_base64", ""))
-        try:
-            raw = base64.b64decode(encoded, validate=True) if encoded else b""
-        except ValueError as exc:
-            raise ArchiveStorageError("Google Drive Bridge v3 returned invalid base64") from exc
-        if item.size is not None and len(raw) != item.size:
+        read_item = self._to_file(dict(data.get("file") or {}))
+        raw = self._decode_content(
+            str(data.get("content_base64") or ""),
+            context=f"read {name!r}",
+        )
+        if read_item.size is not None and len(raw) != read_item.size:
             raise ArchiveStorageError(
-                f"Google Drive Bridge v3 size mismatch for {name!r}: {len(raw)} != {item.size}"
+                f"Google Drive Bridge v3 size mismatch for {name!r}: "
+                f"{len(raw)} != {read_item.size}"
             )
-        return item, raw
+        return read_item, raw
 
     async def upload_bytes(
         self,
