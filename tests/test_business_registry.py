@@ -23,5 +23,13 @@ def test_business_entity_name_resolves_to_service_specific_cabinet():
     assert ozon is not None and ozon.cabinet == "ozon_novokshenov"
 
 
+def test_lasermaster_latin_alias_resolves_to_service_specific_cabinets():
+    wb = resolve_business_cabinet("wb", "LaserMaster")
+    ozon = resolve_business_cabinet("ozon", "laser master")
+
+    assert wb is not None and wb.cabinet == "wb_laser_master"
+    assert ozon is not None and ozon.cabinet == "ozon_laser_master"
+
+
 def test_unknown_business_seller_is_not_resolved():
     assert resolve_business_cabinet("wb", "unknown seller") is None
