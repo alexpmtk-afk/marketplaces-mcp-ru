@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL  
-**Version:** `2026-09-22.v20`
+**Version:** `2026-09-22.v21`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -178,6 +178,10 @@ WB has campaign-control operations implemented as HTTP GETs. HTTP verb does not 
 ## Semantic Core
 
 The Semantic Core is wired into runtime through `marketplace_business_query` and preserves the original natural-language question as the primary intent signal. Legacy `metric` remains compatibility-only and must not override the user's wording.
+
+### User-facing response policy
+
+High-level MCP tools expose plain Russian `user_message`, `user_reason`, and `user_note` fields for ordinary ChatGPT/Codex answers. Internal routing vocabulary such as `CANONICAL_ARCHIVE`, source-family/status codes, executor names, `fail-closed`, and forbidden-substitute diagnostics remains available in technical fields but must not be repeated in normal user-facing text unless explicitly requested. When historical data cannot be read, the default wording is plain Russian: there is no access to the historical database/data for the requested shop or period. Routine boilerplate such as «данные не подменял» or «обходные способы не использовал» is intentionally omitted from ordinary answers.
 
 The query path now has an explicit source-independent normalization step before source selection. `core/business_query_parser.py` extracts requested measure, grouping, period hint and filter hints. It does **not** choose marketplace fields or APIs; that remains the Semantic Core planner/resolver responsibility.
 
