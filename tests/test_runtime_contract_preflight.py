@@ -5,7 +5,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from core.registry import Catalog
-from core.runtime_contracts import audit_runtime_contracts
+from core.runtime_contracts import (
+    assert_service_runtime_contract,
+    audit_runtime_contracts,
+)
 from ozon_mcp import server as ozon
 from wb_mcp import server as wb
 
@@ -71,3 +74,41 @@ def test_provenance_identifies_loaded_catalog_files():
         assert provenance["module"]["sha256"]
         assert provenance["catalog"]["path"]
         assert provenance["catalog"]["sha256"]
+
+
+def test_standalone_wb_preflight_does_not_require_ozon_module():
+    assert_service_runtime_contract("wb", wb)
+
+
+def test_standalone_ozon_preflight_does_not_require_wb_module():
+    assert_service_runtime_contract("ozon", ozon)
+
+
+def test_standalone_wb_rejects_stale_price_contract():
+    wb_catalog = Catalog.from_yaml(ROOT / "wb_mcp" / "endpoints.yaml")
+    wb_catalog.get("wb_prices_list").quota_proven = False
+    stale = SimpleNamespace(catalog=wb_catalog)
+
+    try:
+        assert_service_runtime_contract("wb", stale)
+    except RuntimeError as exc:
+        message = str(exc)
+        assert "wb:wb_prices_list" in message
+        assert "RATE_LIMIT_RULE_UNPROVEN" in message
+    else:
+        raise AssertionError("stale standalone WB runtime was allowed to start")
+
+
+def test_standalone_ozon_rejects_missing_service_quota_proof():
+    ozon_catalog = Catalog.from_yaml(ROOT / "ozon_mcp" / "endpoints.yaml")
+    ozon_catalog.get("ozon_prices_get").service_quota_proven = False
+    stale = SimpleNamespace(catalog=ozon_catalog)
+
+    try:
+        assert_service_runtime_contract("ozon", stale)
+    except RuntimeError as exc:
+        message = str(exc)
+        assert "ozon:ozon_prices_get" in message
+        assert "service_quota_proven" in message
+    else:
+        raise AssertionError("stale standalone Ozon runtime was allowed to start")
