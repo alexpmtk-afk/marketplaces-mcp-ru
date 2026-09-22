@@ -272,10 +272,89 @@ class HybridArchiveStore:
         }
 
 
-def build_hybrid_archive_store_from_env() -> HybridArchiveStore | None:
-    """Fail closed unless both canonical Drive and durable Yandex are configured."""
+class CanonicalDriveReadOnlyArchiveStore:
+    """Read-only canonical archive mode for REMOTE after the Yandex migration.
+
+    Google Drive remains the business source of truth.  The old Yandex Object
+    Storage backend was used for queue/job state, staging and backup mirrors.
+    Its absence must not make already-published canonical history unreadable.
+
+    Mutations remain fail-closed until an explicit REMOTE durable backend is
+    configured; this class intentionally exposes only canonical read methods.
+    """
+
+    read_only = True
+
+    def __init__(self, drive: GoogleDriveArchiveStore) -> None:
+        self.drive = drive
+
+    @staticmethod
+    def _is_job_path(parts: list[str] | tuple[str, ...]) -> bool:
+        normalized = [str(item).strip() for item in parts if str(item).strip()]
+        return len(normalized) >= 2 and normalized[0] == "app" and normalized[1] == "jobs"
+
+    async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
+        if self._is_job_path(parts):
+            raise ArchiveStorageError(
+                "Archive queue/staging backend is not configured on REMOTE",
+                code="DURABLE_BACKEND_NOT_CONFIGURED",
+            )
+        return await self.drive.ensure_folder_path(parts)
+
+    async def find_child(self, parent_id: str, name: str, *, mime_type: str | None = None):
+        return await self.drive.find_child(parent_id, name, mime_type=mime_type)
+
+    async def download_bytes(self, file_id: str) -> bytes:
+        return await self.drive.download_bytes(file_id)
+
+    async def download_named(self, parent_id: str, name: str):
+        return await self.drive.download_named(parent_id, name)
+
+    async def upload_bytes(
+        self,
+        parent_id: str,
+        name: str,
+        data: bytes,
+        *,
+        mime_type: str = "text/csv",
+    ):
+        del parent_id, name, data, mime_type
+        raise ArchiveStorageError(
+            "Archive mutation requires an explicitly configured REMOTE durable backend",
+            code="DURABLE_BACKEND_NOT_CONFIGURED",
+        )
+
+    async def status(self) -> dict[str, Any]:
+        drive_status = await self.drive.status()
+        unavailable = {
+            "configured": False,
+            "reachable": False,
+            "backend": None,
+            "error": "durable_backend_not_configured",
+        }
+        return {
+            "configured": True,
+            "reachable": bool(drive_status.get("reachable")),
+            "backend": "google_drive_primary",
+            "root_folder_id": drive_status.get("root_folder_id"),
+            "root_name": drive_status.get("root_name"),
+            "canonical": drive_status,
+            "queue_and_staging": dict(unavailable),
+            "backup_mirror": dict(unavailable),
+            "read_only": True,
+        }
+
+
+def build_hybrid_archive_store_from_env() -> HybridArchiveStore | CanonicalDriveReadOnlyArchiveStore | None:
+    """Build REMOTE archive storage without hiding canonical Drive history.
+
+    Canonical Drive is sufficient for read-only historical queries.  A durable
+    backend is still mandatory for queue/staging/candidate/backup mutations.
+    """
     drive = build_google_archive_store_from_env()
-    yandex = build_yandex_archive_store_from_env()
-    if drive is None or yandex is None:
+    if drive is None:
         return None
+    yandex = build_yandex_archive_store_from_env()
+    if yandex is None:
+        return CanonicalDriveReadOnlyArchiveStore(drive)
     return HybridArchiveStore(drive, yandex)
