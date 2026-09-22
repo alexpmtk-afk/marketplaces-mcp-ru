@@ -25,9 +25,9 @@ endpoints:
   scope: seller
   safety: read
   service_quota_proven: true
-  summary: Product details for a set of identifiers (offer_id/product_id/sku).
+  summary: Product details for one homogeneous identifier type (offer_id, product_id, or sku).
   params:
-    body: '{offer_id:[], product_id:[], sku:[]}'
+    body: '{exactly one of offer_id:[] | product_id:[] | sku:[]}'
   doc: https://docs.ozon.ru/api/seller/
   pagination: none
   items_path: items
