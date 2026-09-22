@@ -410,7 +410,7 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "Current production runtime is the dedicated Linux REMOTE server, not Yandex Cloud" in agents
     assert "https://mcp892081436.duckdns.org:13267/mcp" in agents
     assert "must not be restored or used as fallback" in agents
-    assert "actual REMOTE durable backend" in agents
+    assert "Archive durable backend after the REMOTE migration must be established from the actual REMOTE runtime" in agents
     assert "marketplace_database_update" in agents
     assert "marketplace_database_verify" in agents
     assert "stable row key" in agents
