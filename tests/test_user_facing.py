@@ -119,3 +119,75 @@ def test_user_message_does_not_add_substitution_boilerplate():
     assert "не подмен" not in text
     assert "обход" not in text
     assert "forbidden" not in text
+
+
+def test_wb_current_stock_has_plain_russian_summary():
+    shown = present_business_result({
+        "ok": True,
+        "metric": "CURRENT_STOCK",
+        "marketplace": "WB",
+        "grouping": "TOTAL",
+        "stock_units": 42,
+    })
+    assert shown["user_message"] == "Остаток: 42 шт."
+
+
+def test_wb_sales_returns_archive_has_plain_russian_summary():
+    shown = present_business_result({
+        "ok": True,
+        "capability_id": "sale_and_return_operations",
+        "calculation": {
+            "sales_and_returns_by_currency": [{
+                "currency": "RUB",
+                "net_sales_amount": 123456.78,
+                "net_sales_units": 321,
+            }]
+        },
+    })
+    assert shown["user_message"] == (
+        "Продажи с учётом возвратов: 123456,78 ₽, 321 шт."
+    )
+
+
+def test_wb_penalties_archive_has_plain_russian_summary():
+    shown = present_business_result({
+        "ok": True,
+        "capability_id": "penalties",
+        "calculation": {
+            "totals_by_currency": [{"currency": "RUB", "amount": 1500}]
+        },
+    })
+    assert shown["user_message"] == "Штрафы: 1 500 ₽."
+
+
+def test_wb_advertising_has_plain_russian_summary():
+    shown = present_business_result({
+        "ok": True,
+        "metric": "ADVERTISING_PERFORMANCE",
+        "metrics": {
+            "spend": 1500,
+            "drr_order_pct": 12.5,
+            "roas": 8,
+            "clicks": 320,
+            "views": 10000,
+        },
+    })
+    assert shown["user_message"] == (
+        "Реклама: расходы 1 500 ₽, ДРР 12,5%, ROAS 8, клики 320, показы 10 000."
+    )
+    assert "прибыл" in shown["user_note"].casefold()
+
+
+def test_google_drive_bridge_failure_is_plain_database_message():
+    shown = present_business_result({
+        "ok": False,
+        "error": "source_not_suitable",
+        "error_type": "source_not_suitable",
+        "message": "Google Drive Bridge v3 rejected read_range_by_id: unknown_action",
+        "details": {"required": "historical database"},
+    }, seller="LaserMaster")
+    assert shown["user_message"] == (
+        "Не удалось получить данные: сейчас нет доступа к базе данных "
+        "с историческими данными по магазину LaserMaster."
+    )
+    assert shown["technical_message"].startswith("Google Drive Bridge v3")
