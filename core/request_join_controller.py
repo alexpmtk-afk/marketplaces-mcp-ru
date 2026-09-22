@@ -26,6 +26,7 @@ from .calculation_contract_registry import (
     registered_calculation_ids,
 )
 from .request_execution_controller import control_marketplace_execution
+from .user_facing import present_join_control
 
 JOIN_CONTROLLER_VERSION = "marketplace_join_controller.v1"
 JOIN_CONTRACT_VERSION = "marketplace_join_contract.v1"
@@ -436,7 +437,7 @@ def register_request_join_controller_tool(combined: Any) -> None:
         target_ids: Optional[list[str]] = None,
     ) -> str:
         """Authorize a registered join; never invent cross-source arithmetic."""
-        return _j(control_marketplace_join(
+        return _j(present_join_control(control_marketplace_join(
             question,
             marketplace=marketplace,
             seller=seller,
@@ -446,4 +447,4 @@ def register_request_join_controller_tool(combined: Any) -> None:
             calculation_id=calculation_id,
             nm_ids=nm_ids,
             target_ids=target_ids,
-        ))
+        )))
