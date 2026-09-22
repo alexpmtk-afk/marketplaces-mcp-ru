@@ -19,6 +19,7 @@ import base64
 import hashlib
 import json
 import math
+import sys
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -32,6 +33,7 @@ from core.entities import EntityIndex
 from core.errors import make_error
 from core.rate_limit import RateLimitUnavailable, build_rules
 from core.registry import Catalog
+from core.runtime_contracts import assert_service_runtime_contract
 from core.tools import register_cabinet_tools, register_generic_tools
 from core.workflows import Workflows, register_workflow_tools
 
@@ -69,6 +71,9 @@ register_generic_tools(
 )
 register_cabinet_tools(mcp, svc="wb", client=client, catalog=catalog)
 register_workflow_tools(mcp, svc="wb", workflows=Workflows.from_yaml(WORKFLOWS_PATH))
+
+# Standalone entrypoints must reject stale quota catalogs before MCP starts.
+assert_service_runtime_contract("wb", sys.modules[__name__])
 
 
 def _j(obj) -> str:
