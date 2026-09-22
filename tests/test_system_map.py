@@ -17,12 +17,23 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-16.v19"
+    assert ARCHITECTURE_VERSION == "2026-09-22.v20"
     assert SYSTEM_MAP["status"] == "CANONICAL"
-    assert SYSTEM_MAP["runtime"]["cloud"] == "Yandex Cloud only"
+    runtime = SYSTEM_MAP["runtime"]
+    assert runtime["production"] == "dedicated Linux REMOTE server"
+    assert runtime["service"] == "mcp-marketplaces.service"
+    assert runtime["service_user"] == "mcp-marketplaces"
+    assert runtime["internal_mcp"] == "http://127.0.0.1:8080/mcp"
+    assert runtime["external_entry"] == "https://mcp892081436.duckdns.org:13267/mcp"
+    assert "OAuth/Keycloak" in runtime["entry"]
+    assert "127.0.0.1:18181" in runtime["bridge"]
+    assert "/opt/mcp/secrets/marketplaces/runtime.env" in runtime["secrets"]
+    assert "127.0.0.1:6379" in runtime["shared_rate_limit_and_locks"]
+    assert "marketplaces-yandex" in runtime["retired_path"]
+    assert "must not be used as production fallback" in runtime["retired_path"]
     storage = SYSTEM_MAP["storage_policy"]
     assert storage["primary_archive_storage"] == "Google Drive"
-    assert storage["google_drive_root"] == "MCP архив базы данных"
+    assert storage["google_drive_root"] == "Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных"
     assert "Apps Script" in storage["google_drive_auth"]
     assert "no Google OAuth refresh token" in storage["google_drive_auth"]
     assert "Google Drive API" in storage["google_drive_large_upload"]
@@ -31,9 +42,9 @@ def test_canonical_map_fixes_storage_boundaries():
     assert "non-canonical staging" in storage["google_drive_large_upload"]
     assert "SHA256" in storage["google_drive_large_upload"]
     assert "promotes" in storage["google_drive_large_upload"]
-    assert "job state" in storage["yandex_object_storage"]
-    assert "immutable annual candidate" in storage["yandex_object_storage"]
-    assert "backup" in storage["yandex_object_storage"]
+    assert "actual REMOTE runtime/config" in storage["durable_backend_policy"]
+    assert "before mutating archive work" in storage["durable_backend_policy"]
+    assert "must not be assumed active production storage" in storage["legacy_yandex_object_storage"]
     assert "non-canonical Drive staging" in storage["archive_write_order"]
     assert "promote" in storage["archive_write_order"]
     assert "COMMIT" in storage["archive_write_order"]
@@ -72,7 +83,7 @@ def test_large_annual_files_use_staged_resumable_drive_api_not_canonical_overwri
     assert "sha256Checksum" in policy["integrity_rule"]
     assert "never write directly" in policy["canonical_safety_rule"]
     assert "canonical remains untouched" in policy["canonical_safety_rule"]
-    assert "Yandex backup" in policy["commit_rule"]
+    assert "configured durable backup" in policy["commit_rule"]
     assert "promotion to canonical" in policy["commit_rule"]
     assert "COMMIT" in policy["commit_rule"]
 
@@ -247,7 +258,16 @@ def test_database_refresh_routing_is_canonical():
 
 def test_server_instructions_contain_hard_architecture_boundaries():
     assert ARCHITECTURE_VERSION in SYSTEM_INSTRUCTIONS
-    assert "Yandex Cloud" in SYSTEM_INSTRUCTIONS
+    assert "dedicated Linux REMOTE server" in SYSTEM_INSTRUCTIONS
+    assert "not Yandex Cloud" in SYSTEM_INSTRUCTIONS
+    assert "https://mcp892081436.duckdns.org:13267/mcp" in SYSTEM_INSTRUCTIONS
+    assert "OAuth/Keycloak" in SYSTEM_INSTRUCTIONS
+    assert "127.0.0.1:18181" in SYSTEM_INSTRUCTIONS
+    assert "marketplaces-yandex" in SYSTEM_INSTRUCTIONS
+    assert "must not be used as a production fallback" in SYSTEM_INSTRUCTIONS
+    assert "/opt/mcp/secrets/marketplaces/" in SYSTEM_INSTRUCTIONS
+    assert "Do not treat Yandex Lockbox as the current production secret store" in SYSTEM_INSTRUCTIONS
+    assert "127.0.0.1:6379" in SYSTEM_INSTRUCTIONS
     assert "Google Drive" in SYSTEM_INSTRUCTIONS
     assert "Apps Script" in SYSTEM_INSTRUCTIONS
     assert "resumable session" in SYSTEM_INSTRUCTIONS
@@ -261,9 +281,10 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "256 KiB" in SYSTEM_INSTRUCTIONS
     assert "Drive Range" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in SYSTEM_INSTRUCTIONS
-    assert "Yandex Lockbox" in SYSTEM_INSTRUCTIONS
+    assert "legacy yandex-object-storage path" in SYSTEM_INSTRUCTIONS
+    assert "active production durable backend" in SYSTEM_INSTRUCTIONS
+    assert "read-only REMOTE backend audit" in SYSTEM_INSTRUCTIONS
     assert "source of truth" in SYSTEM_INSTRUCTIONS
-    assert "Google Cloud is not a runtime provider" in SYSTEM_INSTRUCTIONS
     assert "marketplace_database_update" in SYSTEM_INSTRUCTIONS
     assert "marketplace_database_verify" in SYSTEM_INSTRUCTIONS
     assert "permanent finality" in SYSTEM_INSTRUCTIONS
@@ -304,6 +325,22 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "fail closed" in SYSTEM_INSTRUCTIONS
 
 
+
+
+def test_retired_yandex_runtime_cannot_become_canonical_by_regression():
+    runtime = SYSTEM_MAP["runtime"]
+    assert "cloud" not in runtime
+    assert runtime["production"] == "dedicated Linux REMOTE server"
+    assert "marketplaces-yandex" not in runtime["entry"]
+    assert "Yandex API Gateway" not in runtime["entry"]
+    assert "Yandex Serverless Container" not in runtime["entry"]
+    assert "marketplaces-yandex" in runtime["retired_path"]
+    assert "legacy" in runtime["retired_path"]
+    assert SYSTEM_MAP["storage_policy"]["primary_archive_storage"] == "Google Drive"
+    assert "legacy/migration-compatible" in SYSTEM_MAP["storage_policy"]["legacy_yandex_object_storage"]
+    assert "Yandex Cloud only" not in SYSTEM_INSTRUCTIONS
+
+
 def test_system_map_tool_is_registered_for_canonical_version():
     mcp = FastMCP("architecture-map-test")
     register_system_map_tool(mcp)
@@ -331,6 +368,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "stable row key" in architecture
     assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "Yandex Object Storage" in architecture
+    assert "must be established from the actual REMOTE service environment/config" in architecture
+    assert "retired as a production path" in architecture
     assert "Advertising Archive V1" in architecture
     assert "dataset_coverage_registry.csv" in architecture
     assert "advertising_performance" in architecture
@@ -367,6 +406,10 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "non-canonical staging filename" in agents
     assert "exact Drive size/SHA256" in agents
     assert "Yandex Object Storage" in agents
+    assert "Current production runtime is the dedicated Linux REMOTE server, not Yandex Cloud" in agents
+    assert "https://mcp892081436.duckdns.org:13267/mcp" in agents
+    assert "must not be restored or used as fallback" in agents
+    assert "actual REMOTE durable backend" in agents
     assert "marketplace_database_update" in agents
     assert "marketplace_database_verify" in agents
     assert "stable row key" in agents
