@@ -107,13 +107,38 @@ def _format_number(value: Any) -> str:
     return f"{number.normalize():f}".replace(".", ",")
 
 
+def _currency_label(value: Any) -> str:
+    code = str(value or "").upper()
+    return "₽" if code == "RUB" else code
+
+
+def _format_currency_rows(
+    rows: Any,
+    *,
+    value_key: str,
+    label: str,
+) -> str | None:
+    if not isinstance(rows, list) or not rows:
+        return None
+    parts: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict) or row.get(value_key) is None:
+            continue
+        currency = _currency_label(row.get("currency"))
+        amount = _format_number(row.get(value_key))
+        parts.append(f"{amount} {currency}".rstrip())
+    if not parts:
+        return None
+    return f"{label}: " + "; ".join(parts) + "."
+
+
 def _success_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
     price = result.get("current_selling_price")
     stock = result.get("current_stock")
     if isinstance(price, dict) or isinstance(stock, dict):
         parts: list[str] = []
         if isinstance(price, dict) and price.get("amount") not in (None, ""):
-            currency = "₽" if str(price.get("currency") or "").upper() == "RUB" else str(price.get("currency") or "")
+            currency = _currency_label(price.get("currency"))
             parts.append(f"Цена: {_format_number(price.get('amount'))} {currency}".rstrip())
         if isinstance(stock, dict) and stock.get("available_units") is not None:
             parts.append(f"Остаток: {_format_number(stock.get('available_units'))} шт.")
@@ -130,6 +155,146 @@ def _success_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
         if result.get("business_completeness") == "PRELIMINARY_NOT_ALL_ORDERS":
             note = "Это оперативные данные Wildberries; часть заказов может появляться с задержкой."
         return message, note
+
+    if result.get("metric") == "CURRENT_STOCK" and result.get("stock_units") is not None:
+        grouping = str(result.get("grouping") or "TOTAL").upper()
+        message = f"Остаток: {_format_number(result.get('stock_units'))} шт."
+        if grouping == "PRODUCT" and isinstance(result.get("by_product"), list):
+            message += f" Товаров в разбивке: {len(result['by_product'])}."
+        elif grouping == "WAREHOUSE" and isinstance(result.get("by_warehouse"), list):
+            message += f" Складов в разбивке: {len(result['by_warehouse'])}."
+        return message, None
+
+    capability = str(result.get("capability_id") or "")
+    calculation = result.get("calculation") if isinstance(result.get("calculation"), dict) else {}
+
+    if capability in {"penalties", "storage_charge", "paid_acceptance"}:
+        labels = {
+            "penalties": "Штрафы",
+            "storage_charge": "Хранение",
+            "paid_acceptance": "Платная приёмка",
+        }
+        message = _format_currency_rows(
+            calculation.get("totals_by_currency"),
+            value_key="amount",
+            label=labels[capability],
+        )
+        if message:
+            return message, None
+
+    if capability == "sale_and_return_operations":
+        rows = calculation.get("sales_and_returns_by_currency")
+        if isinstance(rows, list) and rows:
+            parts: list[str] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                currency = _currency_label(row.get("currency"))
+                amount = _format_number(row.get("net_sales_amount"))
+                units = _format_number(row.get("net_sales_units"))
+                parts.append(f"{amount} {currency}, {units} шт.".rstrip())
+            if parts:
+                return "Продажи с учётом возвратов: " + "; ".join(parts), None
+
+    if capability == "logistics":
+        rows = calculation.get("components_by_currency")
+        if isinstance(rows, list) and rows:
+            parts: list[str] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                currency = _currency_label(row.get("currency"))
+                delivery = _format_number(row.get("delivery_service_amount"))
+                rebill = _format_number(row.get("rebilled_transport_warehouse_cost"))
+                parts.append(
+                    f"доставка {delivery} {currency}, перевыставленные расходы {rebill} {currency}".rstrip()
+                )
+            if parts:
+                return "Логистика: " + "; ".join(parts) + ".", None
+
+    if capability == "deductions_and_adjustments":
+        rows = calculation.get("components_by_currency")
+        if isinstance(rows, list) and rows:
+            parts: list[str] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                currency = _currency_label(row.get("currency"))
+                deduction = _format_number(row.get("deduction_amount"))
+                adjustment = _format_number(row.get("wb_reward_adjustment_amount"))
+                parts.append(
+                    f"удержания {deduction} {currency}, корректировка вознаграждения WB {adjustment} {currency}".rstrip()
+                )
+            if parts:
+                return "За период: " + "; ".join(parts) + ".", None
+
+    if capability == "commission_and_wb_reward":
+        rows = calculation.get("components_by_currency")
+        if isinstance(rows, list) and rows:
+            parts: list[str] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                currency = _currency_label(row.get("currency"))
+                amount = _format_number(row.get("net_wb_reward_including_vat"))
+                parts.append(f"{amount} {currency}".rstrip())
+            if parts:
+                return "Вознаграждение WB с учётом возвратов и НДС: " + "; ".join(parts) + ".", None
+
+    if capability == "acquiring_and_payment_processing":
+        rows = calculation.get("components_by_currency")
+        if isinstance(rows, list) and rows:
+            parts: list[str] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                currency = _currency_label(row.get("currency"))
+                amount = _format_number(row.get("net_weekly_payment_processing_fee"))
+                parts.append(f"{amount} {currency}".rstrip())
+            if parts:
+                return (
+                    "Эквайринг и приём платежей: " + "; ".join(parts) + ".",
+                    "Это предварительные данные недельного отчёта Wildberries.",
+                )
+
+    if capability in {"observed_fulfillment_method", "warehouse_tariff_context"}:
+        values = calculation.get("distinct_values")
+        if isinstance(values, list) and values:
+            shown = ", ".join(str(value) for value in values)
+            if capability == "observed_fulfillment_method":
+                return (
+                    f"В исторических данных за период встречались способы отгрузки: {shown}.",
+                    "Это история наблюдений, а не подтверждение текущей настройки.",
+                )
+            return (
+                f"В исторических данных за период встречались коэффициенты склада: {shown}.",
+                "Это исторические значения, а не текущий тариф.",
+            )
+
+    if result.get("metric") == "ADVERTISING_PERFORMANCE" and isinstance(result.get("metrics"), dict):
+        metrics = result["metrics"]
+        parts: list[str] = []
+        if metrics.get("spend") is not None:
+            parts.append(f"расходы {_format_number(metrics.get('spend'))} ₽")
+        if metrics.get("drr_order_pct") is not None:
+            parts.append(f"ДРР {_format_number(metrics.get('drr_order_pct'))}%")
+        if metrics.get("roas") is not None:
+            parts.append(f"ROAS {_format_number(metrics.get('roas'))}")
+        if metrics.get("clicks") is not None:
+            parts.append(f"клики {_format_number(metrics.get('clicks'))}")
+        if metrics.get("views") is not None:
+            parts.append(f"показы {_format_number(metrics.get('views'))}")
+        if parts:
+            return (
+                "Реклама: " + ", ".join(parts) + ".",
+                "Показатели относятся к рекламной атрибуции Wildberries, а не к общей прибыли магазина.",
+            )
+
+    if calculation:
+        return "Данные получены и рассчитаны за указанный период.", None
+
+    if result.get("ok") is True:
+        return "Данные получены.", None
 
     return None, None
 
