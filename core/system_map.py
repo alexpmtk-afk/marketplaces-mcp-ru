@@ -88,7 +88,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "large_file_upload": {
             "transport": "Google Drive API resumable upload",
             "apps_script_large_upload": "file-byte transport forbidden; Apps Script may broker resumable session start, metadata verification, and final staged-file promotion only",
-            "session_broker": "Google Apps Script effective-user OAuth; no Google refresh token is stored in Yandex",
+            "session_broker": "Google Apps Script effective-user OAuth; no Google refresh token is stored in the REMOTE runtime",
             "worker_model": "MCP/queue persists work; each worker step starts a session, queries server state, or uploads at most one bounded chunk",
             "resume_state": [
                 "resumable session URI",
@@ -102,8 +102,8 @@ SYSTEM_MAP: dict[str, Any] = {
             "chunk_rule": "non-final chunks are multiples of 256 KiB; default is 4 MiB; Drive Range is authoritative for the next offset",
             "retry_rule": "expired/nonrecoverable resumable sessions restart from the immutable candidate; transient failures use bounded exponential backoff with jitter",
             "integrity_rule": "Drive staged file must match expected byte count and Drive sha256Checksum before canonical promotion",
-            "canonical_safety_rule": "large-file chunk upload must never write directly into the existing canonical file; canonical remains untouched until staging verification and Yandex backup succeed",
-            "commit_rule": "registry/progress COMMIT occurs only after staged Drive SHA256 verification, Yandex backup, and verified promotion to canonical",
+            "canonical_safety_rule": "large-file chunk upload must never write directly into the existing canonical file; canonical remains untouched until staging verification and configured durable backup succeed",
+            "commit_rule": "registry/progress COMMIT occurs only after staged Drive SHA256 verification, configured durable backup, and verified promotion to canonical",
         },
         "wb_weekly_finance_main": {
             "period": "weekly",
