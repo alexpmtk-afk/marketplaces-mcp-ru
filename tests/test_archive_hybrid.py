@@ -256,3 +256,16 @@ def test_drive_only_status_marks_durable_backend_unavailable():
     assert status["read_only"] is True
     assert status["queue_and_staging"]["configured"] is False
     assert status["backup_mirror"]["error"] == "durable_backend_not_configured"
+
+
+def test_builder_keeps_canonical_drive_readable_without_yandex(monkeypatch):
+    import core.archive_hybrid as hybrid
+
+    drive = FakeStore("drive")
+    monkeypatch.setattr(hybrid, "build_google_archive_store_from_env", lambda: drive)
+    monkeypatch.setattr(hybrid, "build_yandex_archive_store_from_env", lambda: None)
+
+    store = hybrid.build_hybrid_archive_store_from_env()
+
+    assert isinstance(store, hybrid.CanonicalDriveReadOnlyArchiveStore)
+    assert store.drive is drive
