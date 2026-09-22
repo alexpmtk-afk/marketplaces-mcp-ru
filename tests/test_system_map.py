@@ -405,7 +405,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "refresh token" in agents
     assert "non-canonical staging filename" in agents
     assert "exact Drive size/SHA256" in agents
-    assert "Yandex Object Storage" in agents
+    assert "core/archive_yandex.py" in agents
+    assert "legacy-capable implementation surfaces" in agents
     assert "Current production runtime is the dedicated Linux REMOTE server, not Yandex Cloud" in agents
     assert "https://mcp892081436.duckdns.org:13267/mcp" in agents
     assert "must not be restored or used as fallback" in agents
