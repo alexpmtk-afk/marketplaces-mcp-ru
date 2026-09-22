@@ -143,6 +143,27 @@ def _extract_identifier(question: str, product_ids: Optional[list[str]]) -> tupl
     }
 
 
+def _identifier_lookup_field(question: str, identifier: str) -> str:
+    """Choose exactly one Ozon identifier namespace for /v3/product/info/list.
+
+    Ozon rejects requests that populate offer_id, product_id and sku together.
+    Explicit technical labels win.  In normal Russian business wording,
+    numeric "артикул" is treated as an Ozon SKU; a non-numeric seller article
+    is treated as offer_id.  Unlabelled values follow the same deterministic
+    numeric/non-numeric rule instead of fuzzy cross-namespace guessing.
+    """
+    text = str(question or "").casefold().replace("ё", "е")
+    if re.search(r"\bproduct[\s_-]*id\b", text):
+        return "product_id"
+    if re.search(r"\boffer[\s_-]*id\b", text):
+        return "offer_id"
+    if re.search(r"\bsku\b", text):
+        return "sku"
+    if re.search(r"артикул(?:у|а|ом)?", text):
+        return "sku" if str(identifier).isdigit() else "offer_id"
+    return "sku" if str(identifier).isdigit() else "offer_id"
+
+
 def requested_snapshot_metrics(question: str) -> list[str]:
     """Recognize only the registered Ozon snapshot metrics, without granting execution."""
     matched = [item["metric_id"] for item in resolve_metric_terms(question)]
@@ -331,9 +352,10 @@ async def execute_ozon_current_snapshot(
     product_spec = ozon.catalog.get("ozon_product_info_list")
     if product_spec is None:
         return {"ok": False, "error": "source_contract_missing", "code": "SOURCE_CONTRACT_MISSING", "stage": "entity", "complete": False}
+    identifier_field = _identifier_lookup_field(question, identifier)
     entity_response = await ozon.client.call_spec(
         product_spec,
-        json_body={"offer_id": [identifier], "product_id": [identifier], "sku": [identifier]},
+        json_body={identifier_field: [identifier]},
         creds_override=creds,
     )
     if not isinstance(entity_response, dict) or entity_response.get("ok") is not True:
@@ -416,6 +438,7 @@ async def execute_ozon_current_snapshot(
         "stock_source": "ozon_stocks_info" if "CURRENT_STOCK" in metrics else None,
         "named_cabinet": True,
         "join_key": "product_id",
+        "entity_lookup_field": identifier_field,
     }
     result["limitations"] = [
         "CURRENT_SELLING_PRICE uses marketing_seller_price and is not a guaranteed personalized buyer checkout price."
