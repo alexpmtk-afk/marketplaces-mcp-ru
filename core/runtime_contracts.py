@@ -14,7 +14,7 @@ from __future__ import annotations
 import hashlib
 import sys
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from .tools import has_proven_quota
 
@@ -87,12 +87,21 @@ def _module_provenance(module: Any) -> dict[str, Any]:
     return result
 
 
-def audit_runtime_contracts(modules: Mapping[str, Any]) -> dict[str, Any]:
-    """Audit the exact in-memory catalogs used by the running combined server."""
+def audit_runtime_contracts(
+    modules: Mapping[str, Any], *, required_services: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Audit the exact in-memory catalogs used by one or more running services.
+
+    ``required_services`` narrows the audit for standalone WB/Ozon entrypoints.
+    When omitted, the combined server still requires every critical contract.
+    """
     errors: list[str] = []
     contracts: list[dict[str, Any]] = []
+    required = set(required_services) if required_services is not None else {"wb", "ozon"}
 
     for expected in CRITICAL_QUOTA_CONTRACTS:
+        if expected["service"] not in required:
+            continue
         service = expected["service"]
         operation_id = expected["operation_id"]
         module = modules.get(service)
@@ -149,10 +158,26 @@ def audit_runtime_contracts(modules: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def assert_runtime_contracts(modules: Mapping[str, Any]) -> None:
+def assert_runtime_contracts(
+    modules: Mapping[str, Any], *, required_services: Iterable[str] | None = None,
+) -> None:
     """Refuse to start when critical loaded contracts are stale/incompatible."""
-    report = audit_runtime_contracts(modules)
+    report = audit_runtime_contracts(modules, required_services=required_services)
     if report["ok"]:
         return
     details = "; ".join(report["errors"])
     raise RuntimeError(f"critical marketplace runtime contract preflight failed: {details}")
+
+
+def assert_service_runtime_contract(service: str, module: Any) -> None:
+    """Fail-fast guard for standalone marketplace service entrypoints.
+
+    Without this guard a stale standalone WB/Ozon process can complete the MCP
+    handshake and only reveal its bad quota catalog on the first provider call.
+    """
+    normalized = str(service).strip().lower()
+    if normalized not in {"wb", "ozon"}:
+        return
+    assert_runtime_contracts(
+        {normalized: module}, required_services={normalized},
+    )
