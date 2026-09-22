@@ -702,4 +702,4 @@ def register_request_source_router_tool(combined: Any) -> None:
             seller=seller,
             date_from=date_from,
             date_to=date_to,
-        ))
+        )))
