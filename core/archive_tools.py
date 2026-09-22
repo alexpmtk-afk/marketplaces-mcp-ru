@@ -37,11 +37,12 @@ def _not_configured() -> str:
         "error": "archive_storage_not_configured",
         "message": (
             "Central archive requires canonical Google Drive storage through the Apps Script bridge "
-            "plus Yandex Object Storage for durable queue/staging. Large annual CSV writes use "
-            "Google Drive resumable sessions brokered by Apps Script. Check "
-            "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
-            "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET, "
-            "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID and MARKETPLACE_MCP_ARCHIVE_BUCKET."
+            "plus an explicitly configured durable backend for queue/staging/candidate/backup state. "
+            "After the REMOTE migration, do not assume Yandex Object Storage is active from legacy names. "
+            "Check MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL, "
+            "MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET and "
+            "MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID, then audit the actual REMOTE durable-backend "
+            "configuration before any mutating archive operation."
         ),
         "retryable": False,
     })
