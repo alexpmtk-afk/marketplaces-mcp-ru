@@ -22,6 +22,8 @@ Shared Google Drive Bridge Protocol v1 is retired for Marketplaces and must not 
 - `promote_verified` is safe to replay after an ambiguous/lost response.
 - Bounded small writes are replay-safe for identical content.
 - Read-only bridge actions do not require the mutation lock.
+- Canonical files larger than the small-read threshold are downloaded through bounded Bridge v3 range reads (maximum 4 MiB per chunk); the REMOTE client verifies exact final size and provider SHA256 before exposing bytes to archive/query code.
+- Large-file reads never expose the Apps Script OAuth token or an authenticated Google download URL to REMOTE.
 - The client retries transient Apps Script redirect/transport failures, including temporary 404/408/425/429/5xx responses.
 
 ## REMOTE runtime boundary
