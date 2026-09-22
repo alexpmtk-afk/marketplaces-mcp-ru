@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-22.v20"
+ARCHITECTURE_VERSION = "2026-09-22.v21"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -148,6 +148,20 @@ SYSTEM_MAP: dict[str, Any] = {
         "semantic_v1_scope": "cabinet-level ads_campaign_daily only; product/nm_id questions fail closed until ads_product_daily receives its own approved semantic contract",
         "write_control_status": "not accepted in M0; dedicated start/pause/stop/bid/budget/product/cluster control tools require a later safety-reviewed phase",
         "safety_override": "provider GET endpoints that mutate campaign state (start/pause/stop/delete) are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb",
+    },
+    "user_response_policy": {
+        "default_language": "ru",
+        "style": "plain_business_russian",
+        "preferred_fields": ["user_message", "user_reason", "user_note"],
+        "technical_fields": ["technical_message", "technical_reason", "source_status", "source_family", "provenance"],
+        "rules": [
+            "ordinary user answers must use plain Russian business wording",
+            "do not expose internal architecture terms such as canonical archive, live source, fail-closed, source family or executor unless the user explicitly asks for technical details",
+            "when historical data cannot be read, say that there is no access to the historical database/data for the requested shop or period",
+            "do not append boilerplate saying that data was not substituted, guessed, bypassed or taken through workarounds unless the user explicitly asks how source safety was enforced",
+            "keep technical diagnostic fields in the MCP payload for developers and audits",
+            "important business limitations may be surfaced as a short plain-Russian user_note",
+        ],
     },
     "semantic_core": {
         "status": "NATURAL_QUESTION_ROUTING_PARTIALLY_WIRED",
@@ -296,6 +310,9 @@ Weekly acquiring uses acquiringFee and explicit Продажа/Возврат bu
 Historical fulfillment may use deliveryMethod/officeName. Historical warehouse tariff context may use dlvPrc, fixTariffDateFrom, fixTariffDateTo and warehouseLogisticsCoeff. Neither historical capability proves the current seller/product configuration or the current live tariff.
 Current live tariff/warehouse coefficient questions must use an explicitly suitable live WB tariff source or fail closed; never infer current tariff truth from weekly-report history.
 WB Advertising current campaign state is Wildberries-only and read-only in M0: use dedicated server-side wb_ads Promotion credentials. Provider GET endpoints that change advertising state are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb.
+USER-FACING LANGUAGE POLICY: ordinary ChatGPT/Codex answers must be short, natural Russian business language. Prefer user_message, user_reason and user_note from high-level MCP tools. Do not quote technical_message, technical_reason, source_status, source_family, forbidden_substitutes, executor names or internal architecture vocabulary unless the user explicitly asks for diagnostics or source details.
+When historical data is unavailable, say plainly that there is no access to the database/historical data for the requested shop or period; do not say "canonical archive", "live source" or "fail-closed" in a normal answer.
+Do not append routine phrases such as "данные не подменял", "обходные способы не использовал" or equivalent safety boilerplate. Source-safety enforcement remains internal and should be explained only on request.
 Unknown, ambiguous, current-state, unsupported or uncovered questions must fail closed or identify the required source instead of being guessed from similar fields.
 If a requested implementation conflicts with the canonical map, fail closed and surface the conflict instead of silently changing architecture.
 """

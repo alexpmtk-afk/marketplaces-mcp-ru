@@ -20,6 +20,7 @@ from .request_source_router import (
     plan_marketplace_request,
 )
 from .semantic_resolver import resolve_semantic_question
+from .user_facing import present_execution_control
 
 CONTROLLER_VERSION = "marketplace_execution_controller.v1"
 LEG_CONTRACT_VERSION = "marketplace_leg_execution.v1"
@@ -380,7 +381,7 @@ def register_request_execution_controller_tool(combined: Any) -> None:
         target_ids: Optional[list[str]] = None,
     ) -> str:
         """Return exact per-leg executor contracts; never read provider data."""
-        return _j(control_marketplace_execution(
+        return _j(present_execution_control(control_marketplace_execution(
             question,
             marketplace=marketplace,
             seller=seller,
@@ -388,4 +389,4 @@ def register_request_execution_controller_tool(combined: Any) -> None:
             date_to=date_to,
             nm_ids=nm_ids,
             target_ids=target_ids,
-        ))
+        )))

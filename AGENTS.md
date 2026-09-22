@@ -55,6 +55,7 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 
 ## Semantic Core boundaries
 - Natural-language business questions are normalized by `core/business_query_parser.py` before source selection; parsing the requested measure/grouping/period/filter must remain separate from provider-field selection.
+- Prefer `user_message`, `user_reason`, and `user_note` from high-level MCP tools when speaking to users. Keep `technical_message`, `technical_reason`, source-family/status codes, executor names, fail-closed details, and forbidden-substitute diagnostics internal unless the user explicitly asks for technical/source diagnostics. Do not append boilerplate such as «данные не подменял» or «обходные способы не использовал» to ordinary answers.
 - A generic current-state marker such as `сегодня`/`сейчас` may be bypassed only by a more specific registered business metric with an explicitly approved operational/live source. It must never make historical archive capabilities look current.
 - `ORDERS` is an operational/preliminary business metric from WB Statistics Orders. It may answer ordinary order questions including today, but it must never be presented as the complete marketplace order flow.
 - `CURRENT_STOCK` is `CURRENT_OPERATIONAL_STOCK` and uses the live WB Seller Analytics stocks source, with the official asynchronous warehouse-remains report as the Base-token fallback. It is current-snapshot only.

@@ -16,6 +16,7 @@ from .business_query_parser import normalize_business_text
 from .metric_registry import resolve_metric_terms
 from .semantic_ozon_snapshot import requested_snapshot_metrics
 from .semantic_resolver import resolve_semantic_question
+from .user_facing import present_query_plan
 
 SOURCE_CANONICAL_ARCHIVE = "CANONICAL_ARCHIVE"
 SOURCE_LIVE_CABINET_API = "LIVE_CABINET_API"
@@ -695,10 +696,10 @@ def register_request_source_router_tool(combined: Any) -> None:
         date_from: str = "", date_to: str = "",
     ) -> str:
         """Plan where a marketplace question may get data and how it may execute."""
-        return _j(plan_marketplace_request(
+        return _j(present_query_plan(plan_marketplace_request(
             question,
             marketplace=marketplace,
             seller=seller,
             date_from=date_from,
             date_to=date_to,
-        ))
+        )))

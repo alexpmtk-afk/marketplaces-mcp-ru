@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-22.v20"
+    assert ARCHITECTURE_VERSION == "2026-09-22.v21"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     runtime = SYSTEM_MAP["runtime"]
     assert runtime["production"] == "dedicated Linux REMOTE server"
