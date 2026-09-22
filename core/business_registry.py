@@ -26,11 +26,11 @@ _CABINETS = (
     BusinessCabinet("ozon", "ozon_novokshenov", "ИП Новокшенов", ("Новокшенов",)),
     BusinessCabinet(
         "wb", "wb_laser_master", "ООО «Лазер - Мастер»",
-        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер"),
+        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер", "LaserMaster", "Laser Master"),
     ),
     BusinessCabinet(
         "ozon", "ozon_laser_master", "ООО «Лазер - Мастер»",
-        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер"),
+        ("Лазер-Мастер", "Лазер - Мастер", "ООО Лазер-Мастер", "LaserMaster", "Laser Master"),
     ),
 )
 
