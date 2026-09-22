@@ -300,7 +300,7 @@ def _build_execution_plan(
                 forbidden_substitutes=list(leg.get("forbidden_substitutes") or forbidden_substitutes),
                 semantic_resolution=leg.get("semantic_resolution") or semantic_resolution,
                 explicit_downstream=leg.get("downstream_handler"),
-            )))
+            ))
     else:
         execution_legs.append(_normalize_execution_leg(
             index=1,
