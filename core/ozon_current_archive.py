@@ -73,6 +73,33 @@ def month_key(value: date) -> str:
     return value.strftime("%Y-%m")
 
 
+def provider_utc_window(start: date, end: date) -> tuple[str, str]:
+    """Convert Moscow calendar-day boundaries to Ozon UTC timestamps."""
+    if end < start:
+        raise ValueError("end date must be on or after start date")
+    start_local = datetime(
+        start.year,
+        start.month,
+        start.day,
+        0,
+        0,
+        0,
+        tzinfo=MOSCOW,
+    )
+    end_local = datetime(
+        end.year,
+        end.month,
+        end.day,
+        23,
+        59,
+        59,
+        tzinfo=MOSCOW,
+    )
+    start_utc = start_local.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    end_utc = end_local.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    return start_utc, end_utc
+
+
 def canonical_location(
     cabinet: str,
     year: int,
@@ -491,10 +518,13 @@ class OzonCurrentArchiveJobQueue:
         cfg = DATASETS[dataset]
         spec = self._spec(str(cfg["operation_id"]))
         creds = self._resolve_creds(str(state["cabinet"]))
+        start = date.fromisoformat(str(state["date_from"]))
+        end = date.fromisoformat(str(state["date_to"]))
+        since, to = provider_utc_window(start, end)
         body = {
             "filter": {
-                "since": str(state["date_from"]) + "T00:00:00Z",
-                "to": str(state["date_to"]) + "T23:59:59Z",
+                "since": since,
+                "to": to,
             },
             "limit": POSTING_LIMIT,
             "with": {
@@ -904,6 +934,7 @@ __all__ = [
     "current_period",
     "month_key",
     "parse_snapshot",
+    "provider_utc_window",
     "serialize_coverage_registry",
     "serialize_snapshot",
     "stable_key_quality",
