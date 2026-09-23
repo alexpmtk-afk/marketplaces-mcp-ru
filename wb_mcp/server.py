@@ -593,24 +593,87 @@ async def wb_get_orders_summary(seller: str, date_from: str, date_to: str) -> st
 
 @mcp.tool(
     name="wb_get_prices",
-    annotations={"title": "WB prices & discounts", "readOnlyHint": True,
+    annotations={"title": "WB current prices with explicit RUB units", "readOnlyHint": True,
                  "openWorldHint": True},
 )
 async def wb_get_prices(limit: int = 1000, offset: int = 0,
                         filter_nm_id: Optional[int] = None) -> str:
-    """Get current prices and discounts for products (Discounts-Prices API).
+    """Get current WB prices with server-owned currency-unit semantics.
 
-    Args:
-        limit: page size (<=1000).
-        offset: pagination offset.
-        filter_nm_id: optional single nmID to filter by.
-    Returns JSON: {"ok": true, "data": {"listGoods": [{nmID, sizes, discount, ...}]}}.
+    Provider fields price, discountedPrice and clubDiscountedPrice are already
+    denominated in currencyIsoCode4217 major units. For RUB, 135517 means
+    135 517 rubles. Clients must never divide these values by 100.
     """
     q = {"limit": min(limit, 1000), "offset": offset}
     if filter_nm_id is not None:
         q["filterNmID"] = filter_nm_id
     spec = catalog.get("wb_prices_list")
-    return _j(await client.call_spec(spec, query=q))
+    response = await client.call_spec(spec, query=q)
+    if not isinstance(response, dict) or response.get("ok") is not True:
+        return _j(response)
+
+    provider = response.get("data")
+    if not isinstance(provider, dict):
+        return _j(make_error(
+            "schema", "WB price response is not an object.",
+            operation_id="wb_prices_list", retryable=False,
+        ))
+    payload = provider.get("data")
+    if not isinstance(payload, dict):
+        payload = provider
+    goods = payload.get("listGoods")
+    if not isinstance(goods, list):
+        return _j(make_error(
+            "schema", "WB price response has no listGoods array.",
+            operation_id="wb_prices_list", retryable=False,
+        ))
+
+    products = []
+    for item in goods:
+        if not isinstance(item, dict):
+            continue
+        currency = str(item.get("currencyIsoCode4217") or "RUB")
+        sizes = []
+        for size in item.get("sizes") or []:
+            if not isinstance(size, dict):
+                continue
+            row = {
+                "size_id": size.get("sizeID"),
+                "tech_size": size.get("techSizeName"),
+                "price_amount": size.get("price"),
+                "discounted_price_amount": size.get("discountedPrice"),
+                "club_discounted_price_amount": size.get("clubDiscountedPrice"),
+                "currency": currency,
+                "money_unit": "major_currency_unit",
+                "divide_by_100": False,
+            }
+            if currency == "RUB":
+                row["price_rub"] = size.get("price")
+                row["discounted_price_rub"] = size.get("discountedPrice")
+                row["club_discounted_price_rub"] = size.get("clubDiscountedPrice")
+            sizes.append(row)
+        products.append({
+            "nm_id": item.get("nmID"),
+            "vendor_code": item.get("vendorCode"),
+            "currency": currency,
+            "discount_percent": item.get("discount"),
+            "club_discount_percent": item.get("clubDiscount"),
+            "sizes": sizes,
+        })
+
+    return _j({
+        "ok": True,
+        "status": response.get("status"),
+        "source": "wb_prices_list",
+        "metric_id": "CURRENT_SELLING_PRICE",
+        "money_contract": {
+            "provider_currency_field": "currencyIsoCode4217",
+            "provider_values_are_major_currency_units": True,
+            "rub_values_are_rubles": True,
+            "divide_by_100": False,
+        },
+        "products": products,
+    })
 
 
 @mcp.tool(
