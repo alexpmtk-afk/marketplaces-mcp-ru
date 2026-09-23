@@ -186,7 +186,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "operational_executor": "core/semantic_current_stock.py for current WB warehouse stock; wb_mcp/server.py owns normalized current WB price and seller-warehouse FBS stock; ORDERS uses the approved legacy operational executor",
         "runtime_entry": "marketplace_business_query",
         "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE"],
-        "current_stock_source": "CURRENT_STOCK uses WB Seller Analytics WB-warehouse stock; CURRENT_FBS_STOCK uses seller warehouses plus POST /api/v3/stocks/{warehouseId}",
+        "current_stock_source": "CURRENT_STOCK uses WB Seller Analytics current WB-warehouse stock; Base-token fallback is the official asynchronous warehouse-remains report. CURRENT_FBS_STOCK uses seller warehouses plus read-only POST /api/v3/stocks/{warehouseId}",
         "current_price_source": "WB /api/v2/list/goods/filter with server-owned major-currency-unit contract; RUB price fields are rubles and must never be divided by 100",
         "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
         "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
