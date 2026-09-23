@@ -130,6 +130,87 @@ def test_wb_fbs_catalog_contracts_are_read_only_and_quota_proven():
     assert create.safety == "write"
 
 
+def test_wb_trash_cards_contract_is_read_only_and_quota_proven():
+    catalog = Catalog.from_yaml(ROOT / "wb_mcp" / "endpoints.yaml")
+    trash = catalog.get("wb_post_content_get_cards_trash")
+
+    assert trash is not None
+    assert trash.method == "POST"
+    assert trash.safety == "read"
+    assert trash.read_only_post_proven is True
+    assert trash.rate_limit == "100 req/min"
+    assert trash.quota_proven is True
+
+
+def test_wb_fbs_card_lookup_falls_back_to_trash(monkeypatch):
+    import wb_mcp.server as wb_server
+
+    active = wb_server.catalog.get("wb_content_cards_list")
+    trash = wb_server.catalog.get("wb_post_content_get_cards_trash")
+    assert active is not None
+    assert trash is not None
+
+    calls = []
+
+    async def fake_call_spec(spec, *, json_body=None, creds_override=None, **kwargs):
+        calls.append((spec.operation_id, json_body))
+        if spec.operation_id == "wb_content_cards_list":
+            return {
+                "ok": True,
+                "status": 200,
+                "data": {
+                    "cards": [],
+                    "cursor": {"total": 0},
+                },
+            }
+        if spec.operation_id == "wb_post_content_get_cards_trash":
+            return {
+                "ok": True,
+                "status": 200,
+                "data": {
+                    "cards": [
+                        {
+                            "nmID": 507763296,
+                            "sizes": [
+                                {
+                                    "chrtID": 1234567890,
+                                    "techSize": "A",
+                                    "wbSize": "A",
+                                    "skus": ["4600000000000"],
+                                }
+                            ],
+                        }
+                    ]
+                },
+            }
+        raise AssertionError("unexpected operation " + spec.operation_id)
+
+    monkeypatch.setattr(wb_server.client, "call_spec", fake_call_spec)
+
+    sizes, card_source, error = asyncio.run(
+        wb_server._wb_card_sizes(
+            507763296,
+            {"token": "test-token"},
+        )
+    )
+
+    assert error is None
+    assert card_source == "wb_post_content_get_cards_trash"
+    assert sizes == [
+        {
+            "chrt_id": 1234567890,
+            "tech_size": "A",
+            "wb_size": "A",
+            "skus": ["4600000000000"],
+        }
+    ]
+    assert [operation_id for operation_id, _ in calls] == [
+        "wb_content_cards_list",
+        "wb_post_content_get_cards_trash",
+    ]
+    assert calls[1][1]["settings"]["filter"]["textSearch"] == "507763296"
+
+
 def test_ozon_primary_snapshot_posts_have_explicit_read_semantics_proof():
     catalog = Catalog.from_yaml(ROOT / "ozon_mcp" / "endpoints.yaml")
     for operation_id in (

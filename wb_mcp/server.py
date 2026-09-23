@@ -693,53 +693,122 @@ async def _wb_read_creds(cabinet: str) -> tuple[dict[str, str] | None, str, dict
     return creds, str(source or "active"), None
 
 
-async def _wb_card_sizes(nm_id: int, creds: dict[str, str]) -> tuple[list[dict], dict | None]:
-    spec = catalog.get("wb_content_cards_list")
-    if spec is None:
-        return [], make_error(
-            "source_contract_missing",
-            "WB product-card lookup contract is missing.",
-            operation_id="wb_content_cards_list",
-            retryable=False,
-        )
+async def _wb_card_lookup(
+    spec: object,
+    *,
+    nm_id: int,
+    creds: dict[str, str],
+    trash: bool,
+) -> tuple[list[dict], dict | None]:
+    """Find one exact nmId while respecting the shared Content API pacing."""
+    filter_payload: dict[str, object] = {"textSearch": str(int(nm_id))}
+    if not trash:
+        filter_payload["withPhoto"] = -1
 
-    response = await client.call_spec(
-        spec,
-        json_body={
-            "settings": {
-                "cursor": {"limit": 100},
-                "filter": {
-                    "withPhoto": -1,
-                    "textSearch": str(int(nm_id)),
-                },
-            }
-        },
-        creds_override=creds,
-    )
-    if not isinstance(response, dict) or response.get("ok") is not True:
-        return [], response if isinstance(response, dict) else make_error(
-            "provider",
-            "WB product-card lookup failed.",
-            retryable=True,
-        )
+    body = {
+        "settings": {
+            "sort": {"ascending": False},
+            "cursor": {"limit": 100},
+            "filter": filter_payload,
+        }
+    }
 
-    provider = response.get("data")
+    response: dict = {}
+    for attempt in range(3):
+        response = await client.call_spec(
+            spec,
+            json_body=body,
+            creds_override=creds,
+        )
+        if isinstance(response, dict) and response.get("ok") is True:
+            break
+
+        retry_after = float(
+            (response or {}).get("retry_after_seconds", 0)
+            if isinstance(response, dict)
+            else 0
+        )
+        short_local_pacing = (
+            isinstance(response, dict)
+            and response.get("error_type") == "rate_limit"
+            and int(response.get("code", 0) or 0) != 429
+            and 0 < retry_after <= 1.0
+        )
+        if not short_local_pacing or attempt >= 2:
+            return [], response if isinstance(response, dict) else make_error(
+                "provider",
+                "WB product-card lookup failed.",
+                retryable=True,
+            )
+        await asyncio.sleep(retry_after + 0.05)
+
+    provider = response.get("data") if isinstance(response, dict) else None
     cards = provider.get("cards") if isinstance(provider, dict) else None
     matches = [
         card
         for card in (cards or [])
         if isinstance(card, dict) and int(card.get("nmID") or 0) == int(nm_id)
     ]
+    return matches, None
+
+
+async def _wb_card_sizes(
+    nm_id: int,
+    creds: dict[str, str],
+) -> tuple[list[dict], str, dict | None]:
+    active_spec = catalog.get("wb_content_cards_list")
+    trash_spec = catalog.get("wb_post_content_get_cards_trash")
+    if active_spec is None or trash_spec is None:
+        return [], "", make_error(
+            "source_contract_missing",
+            "WB active/trash product-card lookup contracts are missing.",
+            operation_id="wb_content_cards_list",
+            retryable=False,
+        )
+
+    active_matches, active_error = await _wb_card_lookup(
+        active_spec,
+        nm_id=int(nm_id),
+        creds=creds,
+        trash=False,
+    )
+    if active_error:
+        return [], "", active_error
+
+    matches = active_matches
+    source_operation = "wb_content_cards_list"
+
+    if not matches:
+        trash_matches, trash_error = await _wb_card_lookup(
+            trash_spec,
+            nm_id=int(nm_id),
+            creds=creds,
+            trash=True,
+        )
+        if trash_error:
+            return [], "", trash_error
+        matches = trash_matches
+        source_operation = "wb_post_content_get_cards_trash"
+
     if len(matches) != 1:
-        return [], make_error(
+        return [], "", make_error(
             "not_found" if not matches else "schema",
             (
-                "WB product card was not found for nmId " + str(nm_id)
+                "WB product card was not found for nmId "
+                + str(nm_id)
+                + " in active cards or trash."
                 if not matches
                 else "WB product-card lookup returned more than one exact nmId match."
             ),
-            operation_id="wb_content_cards_list",
+            operation_id=source_operation,
             retryable=False,
+            details={
+                "nm_id": int(nm_id),
+                "searched_operations": [
+                    "wb_content_cards_list",
+                    "wb_post_content_get_cards_trash",
+                ],
+            },
         )
 
     sizes = []
@@ -753,13 +822,13 @@ async def _wb_card_sizes(nm_id: int, creds: dict[str, str]) -> tuple[list[dict],
             "skus": list(size.get("skus") or []),
         })
     if not sizes:
-        return [], make_error(
+        return [], "", make_error(
             "schema",
             "WB product card has no chrtID sizes.",
-            operation_id="wb_content_cards_list",
+            operation_id=source_operation,
             retryable=False,
         )
-    return sizes, None
+    return sizes, source_operation, None
 
 
 async def _wb_fbs_stock_result(
@@ -772,7 +841,7 @@ async def _wb_fbs_stock_result(
         return error
     assert creds is not None
 
-    sizes, size_error = await _wb_card_sizes(int(nm_id), creds)
+    sizes, card_source, size_error = await _wb_card_sizes(int(nm_id), creds)
     if size_error:
         return size_error
     chrt_ids = [int(item["chrt_id"]) for item in sizes]
@@ -872,6 +941,7 @@ async def _wb_fbs_stock_result(
         "available_units": total,
         "sizes": sizes,
         "warehouses": warehouse_results,
+        "card_source": card_source,
         "source": "wb_post_api_stocks_warehouseid",
         "warehouse_source": "wb_fbs_warehouses",
         "meaning": (
