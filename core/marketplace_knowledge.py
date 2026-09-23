@@ -338,6 +338,21 @@ def _weekly_report_field_coverage() -> dict[str, Any]:
         and not unreviewed
     )
 
+    capability_usage: dict[str, list[str]] = {field_name: [] for field_name in fields}
+    for capability_id, capability in (semantic.get("capabilities") or {}).items():
+        if capability.get("source_id") != dataset_id:
+            continue
+        for field_name in capability.get("fields") or []:
+            if field_name in capability_usage:
+                capability_usage[field_name].append(str(capability_id))
+
+    capability_linked_fields = sorted(
+        field_name for field_name, owners in capability_usage.items() if owners
+    )
+    capability_unlinked_fields = sorted(
+        field_name for field_name, owners in capability_usage.items() if not owners
+    )
+
     references = semantic.get("references") or {}
     return {
         "dataset_id": dataset_id,
@@ -353,11 +368,18 @@ def _weekly_report_field_coverage() -> dict[str, Any]:
         "semantic_status_counts": dict(sorted(status_counts.items())),
         "fields_with_limitations_count": len(fields_with_limitations),
         "fields_with_limitations": sorted(fields_with_limitations),
+        "capability_linked_field_count": len(capability_linked_fields),
+        "capability_unlinked_field_count": len(capability_unlinked_fields),
+        "capability_unlinked_fields": capability_unlinked_fields,
+        "capabilities_by_field": {
+            field_name: sorted(owners)
+            for field_name, owners in sorted(capability_usage.items())
+        },
         "missing_meaning_fields": sorted(missing_meaning),
         "missing_safe_uses_fields": sorted(missing_safe_uses),
         "unreviewed_fields": sorted(unreviewed),
         "physical_schema_matches_catalog": physical_match,
-        "field_coverage_complete": complete,
+        "field_coverage_complete": complete and not capability_unlinked_fields,
         "official_audit": references.get("official_audit"),
         "archive_observation": references.get("archive_observation"),
         "blocked_unapproved_provider_fields": ["agencyVat"]
