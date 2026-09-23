@@ -268,7 +268,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
-        "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics WB-warehouse snapshot for the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
+        "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics stock snapshot for WB warehouses in the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
         "current_fbs_stock": "CURRENT_FBS_STOCK is seller-warehouse inventory from GET /api/v3/warehouses plus read-only POST /api/v3/stocks/{warehouseId}; never substitute WB-warehouse stock",
         "current_price": "CURRENT_SELLING_PRICE for WB uses /api/v2/list/goods/filter and treats price fields as currency major units; RUB values are rubles and must never be divided by 100",
         "current_tariffs": "do not use weekly-report historical coefficients as live tariff truth; current tariff questions require a suitable live source",
