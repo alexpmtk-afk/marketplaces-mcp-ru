@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-22.v21"
+    assert ARCHITECTURE_VERSION == "2026-09-23.v22"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     runtime = SYSTEM_MAP["runtime"]
     assert runtime["production"] == "dedicated Linux REMOTE server"
@@ -35,7 +35,13 @@ def test_canonical_map_fixes_storage_boundaries():
     assert storage["primary_archive_storage"] == "Google Drive"
     assert storage["google_drive_root"] == "Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных"
     assert "Apps Script" in storage["google_drive_auth"]
+    assert "Service Account" in storage["google_drive_auth"]
     assert "no Google OAuth refresh token" in storage["google_drive_auth"]
+    assert "DirectGoogleDriveArchiveStore" in storage["google_drive_read_backend"]
+    assert "read-only" in storage["google_drive_read_auth"]
+    assert "Service Account" in storage["google_drive_read_auth"]
+    assert "SHA256" in storage["google_drive_read_cache"]
+    assert "ARCHIVE_SOURCE_UNAVAILABLE" in storage["google_drive_read_cache"]
     assert "Google Drive API" in storage["google_drive_large_upload"]
     assert "resumable" in storage["google_drive_large_upload"]
     assert "effective-user OAuth" in storage["google_drive_large_upload"]
@@ -270,6 +276,9 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "127.0.0.1:6379" in SYSTEM_INSTRUCTIONS
     assert "Google Drive" in SYSTEM_INSTRUCTIONS
     assert "Apps Script" in SYSTEM_INSTRUCTIONS
+    assert "DirectGoogleDriveArchiveStore" in SYSTEM_INSTRUCTIONS
+    assert "Service Account" in SYSTEM_INSTRUCTIONS
+    assert "ARCHIVE_SOURCE_UNAVAILABLE" in SYSTEM_INSTRUCTIONS
     assert "resumable session" in SYSTEM_INSTRUCTIONS
     assert "No Google OAuth refresh token" in SYSTEM_INSTRUCTIONS
     assert "effective-user OAuth token" in SYSTEM_INSTRUCTIONS
@@ -357,6 +366,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "core/system_map.py" in architecture
     assert "Canonical marketplace archive: **Google Drive**" in architecture
     assert "Google Apps Script" in architecture
+    assert "DirectGoogleDriveArchiveStore" in architecture
+    assert "ARCHIVE_SOURCE_UNAVAILABLE" in architecture
     assert "resumable" in architecture.lower()
     assert "Google Drive API" in architecture
     assert "non-canonical staging filename" in architecture
@@ -401,6 +412,8 @@ def test_human_and_agent_docs_reference_canonical_architecture_version():
     assert "core/system_map.py" in agents
     assert "Primary shared marketplace archive/storage is **Google Drive**" in agents
     assert "Google Apps Script" in agents
+    assert "DirectGoogleDriveArchiveStore" in agents
+    assert "ARCHIVE_SOURCE_UNAVAILABLE" in agents
     assert "resumable" in agents.lower()
     assert "refresh token" in agents
     assert "non-canonical staging filename" in agents
