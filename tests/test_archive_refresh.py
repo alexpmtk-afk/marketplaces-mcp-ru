@@ -47,17 +47,22 @@ class FakeQueue:
 
 def test_catalog_registers_refresh_invariants_and_stable_keys():
     catalog = {item["dataset_family"]: item for item in refresh_catalog()}
-    assert set(catalog) == {"advertising", "finance"}
+    assert set(catalog) == {"advertising", "finance", "current"}
     assert catalog["finance"]["stable_keys"]["wb_weekly_finance_main"] == ["reportId", "rrdId"]
     assert catalog["finance"]["coverage_model"] == "provider_report_registry"
     assert catalog["advertising"]["stable_keys"]["ads_campaign_daily"] == ["date", "campaign_id"]
     assert catalog["advertising"]["coverage_model"] == "bounded_request_coverage_registry"
+    assert catalog["current"]["marketplace"] == "ozon"
+    assert catalog["current"]["stable_keys"]["ozon_current_orders_fbo"] == ["posting_number"]
+    assert catalog["current"]["stable_keys"]["ozon_current_accruals"] == ["accrual_id"]
 
 
 def test_normalize_refresh_family_aliases():
     assert normalize_refresh_family("all") == ("advertising", "finance")
     assert normalize_refresh_family("wb_weekly_finance_main") == ("finance",)
     assert normalize_refresh_family("ads") == ("advertising",)
+    assert normalize_refresh_family("all", marketplace="ozon") == ("ozon_current",)
+    assert normalize_refresh_family("current", marketplace="ozon") == ("ozon_current",)
 
 
 def test_new_job_is_created_and_scheduled_by_native_queue():
