@@ -467,11 +467,26 @@ class GoogleDriveArchiveStore:
         already present with identical bytes, return it instead of replacing it.
         The server-side v3 source also contains the same SHA-aware replay guard.
         """
-        existing, existing_raw = await self.download_named(parent_id, name)
-        if existing is not None and existing_raw == data:
-            return existing
-
         sha256 = hashlib.sha256(data).hexdigest()
+        existing = await self.find_child(parent_id, name)
+        if existing is not None:
+            # Large files must not require Bridge v3 range-read support merely
+            # to make a write retry idempotent. Prefer metadata proof when the
+            # bridge exposes SHA256; for small files a bounded byte comparison
+            # remains cheap. Otherwise rely on the server-side write replay
+            # guard, which receives the expected SHA256 below.
+            existing_sha = str(existing.sha256_checksum or "").strip().lower()
+            if (
+                existing.size == len(data)
+                and _is_sha256(existing_sha)
+                and existing_sha == sha256
+            ):
+                return existing
+            if existing.size is None or existing.size <= _SMALL_READ_MAX_BYTES:
+                _item, existing_raw = await self.download_named(parent_id, name)
+                if _item is not None and existing_raw == data:
+                    return _item
+
         result = await self._post(
             "write",
             path=self._path((parent_id,)),
