@@ -14,6 +14,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
 
 from .errors import make_error
+from .metric_observation import build_metric_observation
 from .order_history import resolve_history_cabinet
 
 FAST_OPERATION = "wb_analytics_stocks_wb_warehouses"
@@ -450,7 +451,7 @@ async def execute_current_stock_question(
             retryable=False,
         )
 
-    return {
+    result = {
         "ok": True,
         "metric": "CURRENT_STOCK",
         "marketplace": "WB",
@@ -469,3 +470,20 @@ async def execute_current_stock_question(
         ),
         **totals,
     }
+    observation = build_metric_observation(
+        metric_id="CURRENT_STOCK",
+        value=result["stock_units"],
+        unit="UNITS",
+        marketplace="wb",
+        source_name="wb_current_stocks",
+        source_field="quantity",
+        observed_at=today.isoformat(),
+    ).to_dict()
+    observation["dimensions"] = {
+        "seller": cabinet,
+        "grouping": grouping,
+        "nm_ids": list(nm_ids or []),
+    }
+    result["metric_observations"] = [observation]
+    result["knowledge_catalog_version"] = "marketplace_knowledge_catalog.v1"
+    return result
