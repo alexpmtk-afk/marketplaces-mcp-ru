@@ -481,6 +481,8 @@ endpoints:
   path: /v2/finance/realization
   scope: seller
   safety: read
+  read_only_post_proven: true
+  service_quota_proven: true
   summary: Monthly realization report (sold/returned). Ready ~5th of next month. v2.
   params:
     body: '{month, year}'
@@ -3394,6 +3396,10 @@ endpoints:
   path: /v1/finance/realization/posting
   scope: seller
   safety: read
+  read_only_post_proven: true
+  service_quota_proven: true
+  params:
+    body: '{month, year}'
   summary: Позаказный отчёт о реализации товаров
   doc: ''
   items_path: rows
