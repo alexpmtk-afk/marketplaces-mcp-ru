@@ -32,6 +32,7 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "ozon_perf_rate_limit_status",
         "marketplace_system_map",
         "marketplace_semantic_core",
+        "marketplace_knowledge_verify",
         "marketplace_data_catalog",
         "marketplace_metric_route",
         "marketplace_query_plan",
