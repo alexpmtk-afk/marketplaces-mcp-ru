@@ -34,7 +34,7 @@ from core.errors import make_error
 from core.rate_limit import RateLimitUnavailable, build_rules
 from core.registry import Catalog
 from core.runtime_contracts import assert_service_runtime_contract
-from core.tools import register_cabinet_tools, register_generic_tools
+from core.tools import register_cabinet_tools, register_generic_tools, resolve_named_cabinet
 from core.workflows import Workflows, register_workflow_tools
 
 CATALOG_PATH = Path(__file__).with_name("endpoints.yaml")
