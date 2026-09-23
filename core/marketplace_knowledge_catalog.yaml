@@ -41,6 +41,22 @@ sources:
     source_version: "release-note-2025-03-13"
     checked_at: "2026-09-23"
 
+  wb_finance_reports_api_20260923:
+    marketplace: wb
+    title: "Wildberries API — Документы и бухгалтерия / Финансовые отчёты"
+    url: "https://dev.wildberries.ru/openapi/financial-reports-and-accounting"
+    official: true
+    source_version: "checked-2026-09-23"
+    checked_at: "2026-09-23"
+
+  wb_finance_reports_release_20260415:
+    marketplace: wb
+    title: "Wildberries API — новые методы отчётов реализации и стандартизация полей"
+    url: "https://dev.wildberries.ru/release-notes?id=295"
+    official: true
+    source_version: "release-note-2026-04-15"
+    checked_at: "2026-09-23"
+
   ozon_seller_api_postman_mirror_20260923:
     marketplace: ozon
     title: "Ozon Seller API — внешний mirror документации, использован только как provisional evidence"
@@ -126,6 +142,165 @@ metrics:
           nm_id: "392023986"
           source_operation: wb_analytics_stocks_wb_warehouses
           result: PASS
+
+  WB_SALES:
+    metric_id: SALES
+    marketplace: wb
+    label_ru: "Продажи"
+    definition_ru: "Продажи из полностью покрытого еженедельного финансового отчёта WB: строки с docTypeName=Продажа; дата операции saleDt; количество quantity и сумма retailAmount. Возвраты считаются отдельным bucket."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, product, sale_date, operation_type]
+    aliases_ru: ["продажи", "реализация", "продано"]
+    aliases_en: ["sales", "sold"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [docTypeName, saleDt, quantity, retailAmount]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+    formula_rule: "Продажа определяется значением docTypeName=Продажа; quantity и retailAmount не смешиваются с возвратами до отдельного расчёта bucket."
+
+  WB_RETURNS:
+    metric_id: RETURNS
+    marketplace: wb
+    label_ru: "Возвраты"
+    definition_ru: "Возвраты из полностью покрытого еженедельного финансового отчёта WB: строки с docTypeName=Возврат; дата операции saleDt; количество quantity и сумма retailAmount. Знак суммы сам по себе не используется для определения возврата."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, product, sale_date, operation_type]
+    aliases_ru: ["возвраты", "возвращено"]
+    aliases_en: ["returns", "returned"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [docTypeName, saleDt, quantity, retailAmount]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+    formula_rule: "Возврат определяется значением docTypeName=Возврат; нельзя классифицировать возврат только по знаку retailAmount."
+
+  WB_LOGISTICS_COST:
+    metric_id: LOGISTICS_COST
+    marketplace: wb
+    label_ru: "Расходы на логистику"
+    definition_ru: "Логистические компоненты финансового отчёта WB. Денежные deliveryService и rebillLogisticCost учитываются отдельно; deliveryAmount и returnAmount являются логистическими счётчиками и не равны количеству продаж или возвратов товара."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, warehouse, operation_type]
+    aliases_ru: ["логистика", "расходы на логистику", "стоимость логистики"]
+    aliases_en: ["logistics cost", "delivery cost"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [deliveryAmount, returnAmount, deliveryService, rebillLogisticCost]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+    formula_rule: "deliveryService и rebillLogisticCost не объединяются молча; счётчики deliveryAmount/returnAmount остаются отдельными."
+
+  WB_PENALTIES:
+    metric_id: PENALTIES
+    marketplace: wb
+    label_ru: "Штрафы"
+    definition_ru: "Сумма штрафов, отражённая в поле penalty финансового отчёта WB; bonusTypeName и sellerOperName используются как контекст причины/операции."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, operation_type, reason]
+    aliases_ru: ["штрафы", "штраф"]
+    aliases_en: ["penalties", "fines"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [penalty, bonusTypeName, sellerOperName]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+    formula_rule: "penalty суммируется в знаке отчёта; знак самостоятельно не переосмысливается."
+
+  WB_STORAGE_COST:
+    metric_id: STORAGE_COST
+    marketplace: wb
+    label_ru: "Платное хранение"
+    definition_ru: "Сумма платного хранения, отражённая в поле paidStorage финансового отчёта WB."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, report_period]
+    aliases_ru: ["платное хранение", "стоимость хранения"]
+    aliases_en: ["paid storage", "storage cost"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [paidStorage]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+
+  WB_ACCEPTANCE_COST:
+    metric_id: ACCEPTANCE_COST
+    marketplace: wb
+    label_ru: "Платная приёмка"
+    definition_ru: "Сумма платной приёмки, отражённая в поле paidAcceptance финансового отчёта WB."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, report_period]
+    aliases_ru: ["платная приёмка", "платная приемка", "стоимость приёмки"]
+    aliases_en: ["paid acceptance", "acceptance cost"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [paidAcceptance]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+
+  WB_DEDUCTIONS_ADJUSTMENTS:
+    metric_id: DEDUCTIONS_ADJUSTMENTS
+    marketplace: wb
+    label_ru: "Удержания и корректировки"
+    definition_ru: "Компоненты deduction и additionalPayment финансового отчёта WB с контекстом bonusTypeName. Компоненты показываются отдельно и не неттируются без утверждённого правила."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, operation_type, reason]
+    aliases_ru: ["удержания", "корректировки", "доплаты"]
+    aliases_en: ["deductions", "adjustments"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [deduction, additionalPayment, bonusTypeName]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+
+  WB_COMMISSION_REWARD_KNOWLEDGE:
+    metric_id: WB_COMMISSION_REWARD
+    marketplace: wb
+    label_ru: "Комиссия и вознаграждение Wildberries"
+    definition_ru: "Набор полей финансового отчёта WB для комиссии/вознаграждения. Денежное вознаграждение определяется утверждённым executor по vw и vwNds; commissionPercent, kvwBase и kvw являются ставочными/процентными полями и не превращаются в деньги по догадке."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, sale_date, operation_type]
+    aliases_ru: ["комиссия wildberries", "вознаграждение wildberries", "комиссия wb"]
+    aliases_en: ["Wildberries commission", "WB reward"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [commissionPercent, kvwBase, kvw, ppvzSalesCommission, vw, vwNds, forPay]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+    formula_rule: "Процентные/ставочные поля не используются как денежная сумма без отдельного утверждённого правила."
+
+  WB_ACQUIRING_PAYMENT_PROCESSING:
+    metric_id: ACQUIRING_PAYMENT_PROCESSING
+    marketplace: wb
+    label_ru: "Эквайринг и обработка платежей"
+    definition_ru: "Издержки на приём платежей в еженедельном финансовом отчёте WB: acquiringFee — сумма, acquiringPercent — процент, paymentProcessing — тип платежа/комиссии, acquiringBank — банк."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, sale_date, bank, payment_type]
+    aliases_ru: ["эквайринг", "обработка платежей", "комиссия за организацию платежа"]
+    aliases_en: ["acquiring", "payment processing"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [acquiringFee, acquiringPercent, paymentProcessing, acquiringBank]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
+    source_checked_at: "2026-09-23"
+    temporal_rule: "Еженедельный acquiringFee не выдаётся за окончательный месячный acquiring expense."
 
   OZON_CURRENT_STOCK:
     metric_id: CURRENT_STOCK

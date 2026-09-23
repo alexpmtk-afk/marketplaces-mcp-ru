@@ -88,10 +88,10 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 6
-    assert result["semantic_metric_count"] == 5
-    assert result["verified_metric_count"] == 4
-    assert result["verified_binding_count"] == 4
+    assert result["knowledge_record_count"] == 15
+    assert result["semantic_metric_count"] == 14
+    assert result["verified_metric_count"] == 13
+    assert result["verified_binding_count"] == 13
     assert result["provisional_binding_count"] == 2
     assert {
         (item["metric_id"], item["marketplace"])
@@ -134,3 +134,44 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
     }
     assert "ORDERS" in ozon["registry_unresolved_metric_ids"]
     assert ozon["metric_coverage_complete"] is False
+
+
+def test_composite_wb_finance_binding_resolves_each_canonical_field():
+    for field in ("docTypeName", "saleDt", "quantity", "retailAmount"):
+        sales = get_knowledge_metric("SALES", marketplace="wb", source_field=field)
+        returns = get_knowledge_metric("RETURNS", marketplace="wb", source_field=field)
+        assert sales is not None
+        assert sales["knowledge_id"] == "WB_SALES"
+        assert sales["semantic_status"] == "verified"
+        assert returns is not None
+        assert returns["knowledge_id"] == "WB_RETURNS"
+        assert returns["semantic_status"] == "verified"
+
+
+def test_composite_binding_detects_one_missing_registry_field():
+    catalog = load_marketplace_knowledge_catalog()
+    registry = deepcopy(load_metric_registry())
+    registry["metrics"]["LOGISTICS_COST"]["provider_mappings"]["wb"]["fields"] = [
+        "deliveryAmount",
+        "returnAmount",
+        "deliveryService",
+    ]
+
+    with pytest.raises(MarketplaceKnowledgeError, match="rebillLogisticCost"):
+        validate_knowledge_against_metric_registry(catalog, registry)
+
+
+def test_wb_finance_metrics_are_verified_knowledge():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
+    verified = set(result["provider_metric_coverage"]["wb"]["verified_metric_ids"])
+    assert {
+        "SALES",
+        "RETURNS",
+        "LOGISTICS_COST",
+        "PENALTIES",
+        "STORAGE_COST",
+        "ACCEPTANCE_COST",
+        "DEDUCTIONS_ADJUSTMENTS",
+        "WB_COMMISSION_REWARD",
+        "ACQUIRING_PAYMENT_PROCESSING",
+    } <= verified
