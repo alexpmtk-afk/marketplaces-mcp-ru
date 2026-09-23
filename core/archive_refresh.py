@@ -87,6 +87,27 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
             "verified canonical Drive bytes and REMOTE durable backup exist before coverage COMMIT",
         ),
     ),
+    "ozon_final": ArchiveRefreshContract(
+        marketplace="ozon",
+        dataset_family="final",
+        datasets=("ozon_final_realization",),
+        coverage_model="closed_month_realization_registry",
+        refresh_strategy="refetch_every_closed_month_then_replace_monthly_source_and_rebuild_annual",
+        freshness_evidence=(
+            "provider /v1/finance/realization/posting report exists for every closed month",
+            "final_coverage_registry.csv COMPLETE row for every closed month",
+            "annual realization CSV is rebuilt only from verified monthly_source files",
+        ),
+        stable_keys={
+            "ozon_final_realization": ("report_year", "report_month", "row_number"),
+        },
+        completion_invariants=(
+            "every closed month through the month before the current Moscow month is fetched successfully",
+            "every monthly source passes complete and unique (report_year, report_month, row_number)",
+            "annual CSV is the exact union of verified monthly sources and has no duplicate/incomplete stable keys",
+            "canonical Drive files and REMOTE durable backups are verified before FINAL coverage is committed",
+        ),
+    ),
     "ozon_current": ArchiveRefreshContract(
         marketplace="ozon",
         dataset_family="current",
@@ -150,7 +171,10 @@ def normalize_refresh_family(
         }
     elif market == "ozon":
         aliases = {
-            "all": ("ozon_current",),
+            "all": ("ozon_final", "ozon_current"),
+            "final": ("ozon_final",),
+            "ozon_final": ("ozon_final",),
+            "realization": ("ozon_final",),
             "current": ("ozon_current",),
             "ozon_current": ("ozon_current",),
             "orders": ("ozon_current",),

@@ -47,7 +47,7 @@ class FakeQueue:
 
 def test_catalog_registers_refresh_invariants_and_stable_keys():
     catalog = {item["dataset_family"]: item for item in refresh_catalog()}
-    assert set(catalog) == {"advertising", "finance", "current"}
+    assert set(catalog) == {"advertising", "finance", "current", "final"}
     assert catalog["finance"]["stable_keys"]["wb_weekly_finance_main"] == ["reportId", "rrdId"]
     assert catalog["finance"]["coverage_model"] == "provider_report_registry"
     assert catalog["advertising"]["stable_keys"]["ads_campaign_daily"] == ["date", "campaign_id"]
@@ -55,13 +55,25 @@ def test_catalog_registers_refresh_invariants_and_stable_keys():
     assert catalog["current"]["marketplace"] == "ozon"
     assert catalog["current"]["stable_keys"]["ozon_current_orders_fbo"] == ["posting_number"]
     assert catalog["current"]["stable_keys"]["ozon_current_accruals"] == ["accrual_id"]
+    assert catalog["final"]["marketplace"] == "ozon"
+    assert catalog["final"]["stable_keys"]["ozon_final_realization"] == [
+        "report_year",
+        "report_month",
+        "row_number",
+    ]
+    assert catalog["final"]["coverage_model"] == "closed_month_realization_registry"
 
 
 def test_normalize_refresh_family_aliases():
     assert normalize_refresh_family("all") == ("advertising", "finance")
     assert normalize_refresh_family("wb_weekly_finance_main") == ("finance",)
     assert normalize_refresh_family("ads") == ("advertising",)
-    assert normalize_refresh_family("all", marketplace="ozon") == ("ozon_current",)
+    assert normalize_refresh_family("all", marketplace="ozon") == (
+        "ozon_final",
+        "ozon_current",
+    )
+    assert normalize_refresh_family("final", marketplace="ozon") == ("ozon_final",)
+    assert normalize_refresh_family("realization", marketplace="ozon") == ("ozon_final",)
     assert normalize_refresh_family("current", marketplace="ozon") == ("ozon_current",)
 
 

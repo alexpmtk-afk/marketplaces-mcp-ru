@@ -19,6 +19,7 @@ from .ozon_current_archive import (
     OZON_ARCHIVE_CABINETS,
     OzonCurrentArchiveJobQueue,
 )
+from .ozon_final_archive import OzonFinalArchiveJobQueue
 from .wb_advertising_archive import ARCHIVE_CABINETS as ADS_ARCHIVE_CABINETS
 from .wb_advertising_archive_queue import WBAdvertisingArchiveJobQueue
 from .wb_advertising_archive_verified_worker import VerifiedWBAdvertisingArchiveWorker
@@ -169,6 +170,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         finance_cabinets: tuple[str, ...] = ()
         advertising_cabinets: tuple[str, ...] = ()
         ozon_current_cabinets: tuple[str, ...] = ()
+        ozon_final_cabinets: tuple[str, ...] = ()
 
         if marketplace == "wb":
             if "finance" in families:
@@ -186,12 +188,16 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
                     else (advertising_queue.normalize_cabinet(seller),)
                 )
         elif marketplace == "ozon":
-            queue = OzonCurrentArchiveJobQueue(ozon, store)
-            ozon_current_cabinets = (
+            normalizer = OzonCurrentArchiveJobQueue(ozon, store)
+            selected_cabinets = (
                 OZON_ARCHIVE_CABINETS
                 if seller.strip().lower() == "all"
-                else (queue.normalize_cabinet(seller),)
+                else (normalizer.normalize_cabinet(seller),)
             )
+            if "ozon_current" in families:
+                ozon_current_cabinets = selected_cabinets
+            if "ozon_final" in families:
+                ozon_final_cabinets = selected_cabinets
 
         return _j(await verify_registered_archive(
             store,
@@ -200,6 +206,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             finance_cabinets=finance_cabinets,
             advertising_cabinets=advertising_cabinets,
             ozon_current_cabinets=ozon_current_cabinets,
+            ozon_final_cabinets=ozon_final_cabinets,
             families=families,
         ))
 
@@ -269,16 +276,23 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
                     worker_tools.add("marketplace_advertising_archive_worker_step")
 
         elif marketplace == "ozon":
-            queue = OzonCurrentArchiveJobQueue(ozon, store)
             sellers = (
                 OZON_ARCHIVE_CABINETS
                 if seller.strip().lower() == "all"
                 else (seller,)
             )
             for family in families:
-                if family == "ozon_current":
+                if family == "ozon_final":
+                    final_queue = OzonFinalArchiveJobQueue(ozon, store)
                     jobs.extend([
-                        await queue.enqueue(year=int(year), seller=item)
+                        await final_queue.enqueue(year=int(year), seller=item)
+                        for item in sellers
+                    ])
+                    worker_tools.add("marketplace_ozon_final_archive_worker_step")
+                elif family == "ozon_current":
+                    current_queue = OzonCurrentArchiveJobQueue(ozon, store)
+                    jobs.extend([
+                        await current_queue.enqueue(year=int(year), seller=item)
                         for item in sellers
                     ])
                     worker_tools.add("marketplace_ozon_current_archive_worker_step")
@@ -301,6 +315,26 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
                 "marketplace_database_verify."
             ),
         })
+
+    @mcp.tool(
+        name="marketplace_ozon_final_archive_worker_step",
+        annotations={"title": "Process one Ozon FINAL archive step", "readOnlyHint": False, "openWorldHint": True},
+    )
+    async def marketplace_ozon_final_archive_worker_step(job_id: str = "") -> str:
+        if store is None:
+            return _not_configured()
+        queue = OzonFinalArchiveJobQueue(ozon, store)
+        return _j(await queue.worker_step(job_id))
+
+    @mcp.tool(
+        name="marketplace_ozon_final_archive_job_status",
+        annotations={"title": "Ozon FINAL archive job status", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_ozon_final_archive_job_status(job_id: str) -> str:
+        if store is None:
+            return _not_configured()
+        queue = OzonFinalArchiveJobQueue(ozon, store)
+        return _j(await queue.status(job_id))
 
     @mcp.tool(
         name="marketplace_ozon_current_archive_worker_step",
