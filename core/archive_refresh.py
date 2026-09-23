@@ -7,7 +7,7 @@ cycle so the dataset-specific discovery logic can compare provider truth with
 canonical coverage and ingest only what is missing/corrected.
 
 Dataset workers remain authoritative for source discovery, stable-key merge,
-coverage proof, exact Drive/Yandex verification and final commit. This module
+coverage proof, exact Drive/REMOTE-durable verification and final commit. This module
 only provides the common lifecycle and the contract catalog future archive
 datasets must register against.
 """
@@ -50,7 +50,7 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
         completion_invariants=(
             "every discovered reportId is either already COMPLETE in registry or committed in this cycle",
             "annual CSV merge is idempotent on (reportId, rrdId)",
-            "verified canonical Drive bytes and Yandex backup exist before registry/progress COMMIT",
+            "verified canonical Drive bytes and REMOTE durable backup exist before registry/progress COMMIT",
         ),
     ),
     "advertising": ArchiveRefreshContract(
@@ -84,7 +84,7 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
         completion_invariants=(
             "provider request plan is committed to dataset_coverage_registry.csv only after canonical publication",
             "annual dataset merge is an upsert on the dataset-specific stable key",
-            "verified canonical Drive bytes and Yandex backup exist before coverage COMMIT",
+            "verified canonical Drive bytes and REMOTE durable backup exist before coverage COMMIT",
         ),
     ),
     "ozon_current": ArchiveRefreshContract(
