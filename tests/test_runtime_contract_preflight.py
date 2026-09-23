@@ -24,6 +24,9 @@ def test_current_loaded_critical_quota_contracts_pass():
         "wb_analytics_stocks_wb_warehouses",
         "ozon_prices_get",
         "ozon_stocks_info",
+        "ozon_fbo_list",
+        "ozon_fbs_list",
+        "ozon_finance_accrual_by_day",
     }
     assert all(row["executable"] is True for row in report["contracts"])
 
@@ -97,6 +100,21 @@ def test_standalone_wb_rejects_stale_price_contract():
         assert "RATE_LIMIT_RULE_UNPROVEN" in message
     else:
         raise AssertionError("stale standalone WB runtime was allowed to start")
+
+
+def test_standalone_ozon_rejects_missing_current_read_semantics_proof():
+    ozon_catalog = Catalog.from_yaml(ROOT / "ozon_mcp" / "endpoints.yaml")
+    ozon_catalog.get("ozon_fbo_list").read_only_post_proven = False
+    stale = SimpleNamespace(catalog=ozon_catalog)
+
+    try:
+        assert_service_runtime_contract("ozon", stale)
+    except RuntimeError as exc:
+        message = str(exc)
+        assert "ozon:ozon_fbo_list" in message
+        assert "READ_SEMANTICS_UNPROVEN" in message
+    else:
+        raise AssertionError("stale standalone Ozon current-read contract was allowed to start")
 
 
 def test_standalone_ozon_rejects_missing_service_quota_proof():
