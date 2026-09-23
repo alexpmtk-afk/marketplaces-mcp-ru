@@ -598,6 +598,39 @@ def plan_marketplace_request(
                 forbidden_substitutes=["historical archive", "public product-card availability"],
                 semantic_resolution=resolution,
             )
+        if metric_id in {"CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE"}:
+            if mode in {"HISTORICAL", "MIXED"}:
+                return make_plan(
+                    question=question, marketplace=market or "wb", time_mode=mode,
+                    source_family=SOURCE_UNAVAILABLE, source_status="HISTORICAL_SOURCE_ABSENT",
+                    downstream=None,
+                    reason=(
+                        "This metric is an approved current snapshot only. "
+                        "A historical seller-warehouse stock or historical price source "
+                        "must be registered separately before it can be queried."
+                    ),
+                    forbidden_substitutes=[
+                        "current snapshot used as historical truth",
+                        "weekly finance archive used as current stock/price",
+                    ],
+                    semantic_resolution=resolution,
+                )
+            return make_plan(
+                question=question, marketplace=market or "wb", time_mode=mode,
+                source_family=SOURCE_LIVE_CABINET_API, source_status="AVAILABLE",
+                downstream="marketplace_business_query",
+                reason=(
+                    "The requested current price/seller-warehouse stock is private "
+                    "operational data and must come from the named WB cabinet."
+                ),
+                required_context=[] if seller else ["seller/cabinet"],
+                forbidden_substitutes=[
+                    "historical archive",
+                    "public product-card availability",
+                    "WB-warehouse stock substituted for seller FBS stock",
+                ],
+                semantic_resolution=resolution,
+            )
         if metric_id == "ORDERS":
             start = _day(date_from)
             end = _day(date_to)
