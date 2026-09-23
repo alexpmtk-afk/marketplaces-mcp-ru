@@ -712,8 +712,11 @@ endpoints:
   path: /content/v2/get/cards/trash
   scope: content
   safety: read
+  read_only_post_proven: true
+  rate_limit: 100 req/min
+  quota_proven: true
   summary: Список карточек товаров в корзине
-  doc: ''
+  doc: https://dev.wildberries.ru/en/openapi/work-with-products
   items_path: cards
   pagination: cursor
 - operation_id: wb_get_content_cards_limits
