@@ -17,7 +17,7 @@ metrics:
     aliases_en: [orders, order count, order amount]
     semantic_target: {type: BUSINESS_METRIC, id: ORDERS}
     provider_mappings:
-      wb: {status: EXECUTOR_OWNED, source_id: wb_stats_orders, fields: []}
+      wb: {status: EXECUTOR_OWNED, source_id: wb_stats_orders, fields: [date, isCancel, finishedPrice]}
       ozon: {status: NOT_MAPPED, fields: []}
     guardrail: Оперативные заказы WB не являются полным потоком всех оформленных заказов.
 
@@ -41,7 +41,7 @@ metrics:
     aliases_en: [current FBS stock, seller warehouse stock]
     semantic_target: {type: BUSINESS_METRIC, id: CURRENT_FBS_STOCK}
     provider_mappings:
-      wb: {status: EXECUTOR_OWNED, source_id: wb_fbs_stock, fields: []}
+      wb: {status: EXECUTOR_OWNED, source_id: wb_fbs_stock, fields: [chrtId, amount]}
       ozon: {status: NOT_MAPPED, fields: []}
     guardrail: Не смешивать со stock snapshot на складах Wildberries; это отдельный seller-warehouse источник.
 
