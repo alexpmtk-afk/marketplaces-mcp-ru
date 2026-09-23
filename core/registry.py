@@ -46,6 +46,9 @@ class EndpointSpec:
     rate_limit: str = ""
     # Explicitly marks a provider-documented, parseable method request quota.
     quota_proven: bool = False
+    # POST may be either read-with-body or mutation. Generic execution must
+    # never trust safety: read for POST unless provider semantics were reviewed.
+    read_only_post_proven: bool = False
     # Some Ozon Seller read methods are covered by the provider-documented
     # aggregate Client-Id quota and have no separately documented method quota.
     # Generic execution is allowed only when this flag is explicitly set.
@@ -80,6 +83,7 @@ class EndpointSpec:
             "method": self.method,
             "path": self.path,
             "safety": self.safety,
+            "read_only_post_proven": self.read_only_post_proven,
             "summary": self.summary,
             "entity": self.entity,
         }
