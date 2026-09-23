@@ -15,6 +15,10 @@ from .archive_refresh import enqueue_refresh_cycle, normalize_refresh_family, re
 from .archive_refresh_verify import verify_registered_archive
 from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
 from .archive_resumable_worker import WBFinanceResumableWorker
+from .ozon_current_archive import (
+    OZON_ARCHIVE_CABINETS,
+    OzonCurrentArchiveJobQueue,
+)
 from .wb_advertising_archive import ARCHIVE_CABINETS as ADS_ARCHIVE_CABINETS
 from .wb_advertising_archive_queue import WBAdvertisingArchiveJobQueue
 from .wb_advertising_archive_verified_worker import VerifiedWBAdvertisingArchiveWorker
@@ -111,6 +115,7 @@ async def _query_year(store: Any, year: int, sql: str) -> dict[str, Any]:
 
 def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | None) -> None:
     wb = modules["wb"]
+    ozon = modules["ozon"]
 
     @mcp.tool(
         name="marketplace_database_refresh_catalog",
@@ -143,40 +148,58 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         seller: str = "all",
         dataset_family: str = "all",
     ) -> str:
-        """Verify canonical files after a refresh cycle.
-
-        Checks dataset-specific stable-key uniqueness, incomplete keys, registry
-        evidence, canonical file presence and date high-watermarks. Provider
-        freshness itself is established by the refresh DISCOVER/reconciliation
-        cycle; this tool verifies that the resulting canonical storage is
-        internally consistent with committed coverage.
-        """
+        """Verify canonical files after a refresh cycle."""
         if store is None:
             return _not_configured()
         marketplace = str(marketplace).strip().lower()
-        families = normalize_refresh_family(dataset_family)
+        try:
+            families = normalize_refresh_family(
+                dataset_family,
+                marketplace=marketplace,
+            )
+        except ValueError as exc:
+            return _j({
+                "ok": False,
+                "error": "archive_refresh_not_registered",
+                "marketplace": marketplace,
+                "message": str(exc),
+                "registered": refresh_catalog(),
+            })
+
         finance_cabinets: tuple[str, ...] = ()
         advertising_cabinets: tuple[str, ...] = ()
-        if "finance" in families:
-            finance_queue = WBFinanceArchiveJobQueue(wb, store)
-            finance_cabinets = (
-                ARCHIVE_CABINETS
+        ozon_current_cabinets: tuple[str, ...] = ()
+
+        if marketplace == "wb":
+            if "finance" in families:
+                finance_queue = WBFinanceArchiveJobQueue(wb, store)
+                finance_cabinets = (
+                    ARCHIVE_CABINETS
+                    if seller.strip().lower() == "all"
+                    else (finance_queue.normalize_cabinet(seller),)
+                )
+            if "advertising" in families:
+                advertising_queue = WBAdvertisingArchiveJobQueue(wb, store)
+                advertising_cabinets = (
+                    ADS_ARCHIVE_CABINETS
+                    if seller.strip().lower() == "all"
+                    else (advertising_queue.normalize_cabinet(seller),)
+                )
+        elif marketplace == "ozon":
+            queue = OzonCurrentArchiveJobQueue(ozon, store)
+            ozon_current_cabinets = (
+                OZON_ARCHIVE_CABINETS
                 if seller.strip().lower() == "all"
-                else (finance_queue.normalize_cabinet(seller),)
+                else (queue.normalize_cabinet(seller),)
             )
-        if "advertising" in families:
-            advertising_queue = WBAdvertisingArchiveJobQueue(wb, store)
-            advertising_cabinets = (
-                ADS_ARCHIVE_CABINETS
-                if seller.strip().lower() == "all"
-                else (advertising_queue.normalize_cabinet(seller),)
-            )
+
         return _j(await verify_registered_archive(
             store,
             marketplace=marketplace,
             year=int(year),
             finance_cabinets=finance_cabinets,
             advertising_cabinets=advertising_cabinets,
+            ozon_current_cabinets=ozon_current_cabinets,
             families=families,
         ))
 
@@ -192,44 +215,73 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
     ) -> str:
         """Preferred top-level tool for requests such as "update our database".
 
-        It never treats an old COMPLETE job as permanently finished. Every
-        requested dataset family starts/resumes a fresh reconciliation cycle;
-        the family worker then compares provider truth with canonical coverage,
-        merges by its stable key and reaches COMPLETE only after its own verified
-        commit rules succeed.
+        WB performs provider reconciliation against its annual coverage.
+        Ozon CURRENT refetches the complete open month so later status,
+        cancellation and financial corrections replace stale observations.
         """
         if store is None:
             return _not_configured()
         marketplace = str(marketplace).strip().lower()
-        if marketplace != "wb":
+        try:
+            families = normalize_refresh_family(
+                dataset_family,
+                marketplace=marketplace,
+            )
+        except ValueError as exc:
             return _j({
                 "ok": False,
                 "error": "archive_refresh_not_registered",
                 "marketplace": marketplace,
-                "message": "No generic archive refresh adapter is registered for this marketplace yet.",
+                "message": str(exc),
                 "registered": refresh_catalog(),
             })
 
-        families = normalize_refresh_family(dataset_family)
         jobs: list[dict[str, Any]] = []
         worker_tools: set[str] = set()
-        for family in families:
-            if family == "finance":
-                queue = WBFinanceArchiveJobQueue(wb, store)
-                sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
-                jobs.extend([
-                    await enqueue_refresh_cycle(queue, family="finance", year=int(year), seller=item)
-                    for item in sellers
-                ])
-                worker_tools.add("marketplace_archive_worker_step")
-            elif family == "advertising":
-                queue = WBAdvertisingArchiveJobQueue(wb, store)
-                sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
-                jobs.extend([
-                    await enqueue_refresh_cycle(queue, family="advertising", year=int(year), seller=item)
-                    for item in sellers
-                ])
-                worker_tools.add("marketplace_advertising_archive_worker_step")
+
+        if marketplace == "wb":
+            for family in families:
+                if family == "finance":
+                    queue = WBFinanceArchiveJobQueue(wb, store)
+                    sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+                    jobs.extend([
+                        await enqueue_refresh_cycle(
+                            queue,
+                            family="finance",
+                            year=int(year),
+                            seller=item,
+                        )
+                        for item in sellers
+                    ])
+                    worker_tools.add("marketplace_archive_worker_step")
+                elif family == "advertising":
+                    queue = WBAdvertisingArchiveJobQueue(wb, store)
+                    sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+                    jobs.extend([
+                        await enqueue_refresh_cycle(
+                            queue,
+                            family="advertising",
+                            year=int(year),
+                            seller=item,
+                        )
+                        for item in sellers
+                    ])
+                    worker_tools.add("marketplace_advertising_archive_worker_step")
+
+        elif marketplace == "ozon":
+            queue = OzonCurrentArchiveJobQueue(ozon, store)
+            sellers = (
+                OZON_ARCHIVE_CABINETS
+                if seller.strip().lower() == "all"
+                else (seller,)
+            )
+            for family in families:
+                if family == "ozon_current":
+                    jobs.extend([
+                        await queue.enqueue(year=int(year), seller=item)
+                        for item in sellers
+                    ])
+                    worker_tools.add("marketplace_ozon_current_archive_worker_step")
 
         scheduled = [job for job in jobs if job.get("scheduled")]
         return _j({
@@ -244,10 +296,31 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             "verification_tool": "marketplace_database_verify",
             "completion_policy": (
                 "Do not report the database as updated merely because jobs were queued. "
-                "Each job must reach COMPLETE after dataset-specific discovery, stable-key merge, "
-                "canonical publication and coverage/registry commit; then call marketplace_database_verify."
+                "Every requested job must reach COMPLETE after stable-key validation, "
+                "verified canonical publication and coverage commit; then call "
+                "marketplace_database_verify."
             ),
         })
+
+    @mcp.tool(
+        name="marketplace_ozon_current_archive_worker_step",
+        annotations={"title": "Process one Ozon CURRENT archive step", "readOnlyHint": False, "openWorldHint": True},
+    )
+    async def marketplace_ozon_current_archive_worker_step(job_id: str = "") -> str:
+        if store is None:
+            return _not_configured()
+        queue = OzonCurrentArchiveJobQueue(ozon, store)
+        return _j(await queue.worker_step(job_id))
+
+    @mcp.tool(
+        name="marketplace_ozon_current_archive_job_status",
+        annotations={"title": "Ozon CURRENT archive job status", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_ozon_current_archive_job_status(job_id: str) -> str:
+        if store is None:
+            return _not_configured()
+        queue = OzonCurrentArchiveJobQueue(ozon, store)
+        return _j(await queue.status(job_id))
 
     @mcp.tool(
         name="marketplace_archive_update",
