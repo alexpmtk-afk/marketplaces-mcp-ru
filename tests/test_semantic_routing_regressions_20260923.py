@@ -708,3 +708,100 @@ def test_application_json_string_that_looks_non_structured_remains_string():
     )
 
     assert _parse_body(response) == "12345"
+
+
+
+def test_wb_generic_current_price_returns_three_verified_observations():
+    class FakeWb:
+        async def wb_get_prices(self, *, limit, offset, filter_nm_id, cabinet=""):
+            return json.dumps({
+                "ok": True,
+                "status": 200,
+                "source": "wb_prices_list",
+                "metric_id": "CURRENT_SELLING_PRICE",
+                "products": [{
+                    "nm_id": 507763296,
+                    "vendor_code": "SKU-1",
+                    "currency": "RUB",
+                    "sizes": [{
+                        "size_id": 1,
+                        "tech_size": "A",
+                        "price_amount": 1500,
+                        "discounted_price_amount": 1200,
+                        "club_discounted_price_amount": 1140,
+                    }],
+                }],
+            })
+
+    result = asyncio.run(
+        semantic_business_router.execute_business_query(
+            {"wb": FakeWb()},
+            marketplace="wb",
+            seller="wb_laser_master",
+            question="какая цена товара 507763296",
+            nm_ids=[507763296],
+        )
+    )
+
+    assert result["ok"] is True
+    assert [item["metric_id"] for item in result["metric_observations"]] == [
+        "WB_SELLER_PRICE_BEFORE_DISCOUNT",
+        "WB_SELLER_PRICE_AFTER_DISCOUNT",
+        "WB_CLUB_PRICE_AFTER_DISCOUNT",
+    ]
+    assert [item["label"] for item in result["metric_observations"]] == [
+        "Цена продавца до скидки",
+        "Цена со скидкой продавца",
+        "Цена со скидкой для WB Клуба",
+    ]
+    assert all(item["semantic_status"] == "verified" for item in result["metric_observations"])
+
+
+def test_wb_specific_price_semantics_returns_only_requested_metric():
+    class FakeWb:
+        async def wb_get_prices(self, *, limit, offset, filter_nm_id, cabinet=""):
+            return json.dumps({
+                "ok": True,
+                "status": 200,
+                "source": "wb_prices_list",
+                "products": [{
+                    "nm_id": 507763296,
+                    "currency": "RUB",
+                    "sizes": [{
+                        "size_id": 1,
+                        "tech_size": "A",
+                        "price_amount": 1500,
+                        "discounted_price_amount": 1200,
+                        "club_discounted_price_amount": 1140,
+                    }],
+                }],
+            })
+
+    result = asyncio.run(
+        semantic_business_router.execute_business_query(
+            {"wb": FakeWb()},
+            marketplace="wb",
+            seller="wb_laser_master",
+            question="какая цена продавца до скидки по товару 507763296",
+            nm_ids=[507763296],
+        )
+    )
+
+    assert result["ok"] is True
+    assert result["semantic_resolution"]["metric_id"] == "WB_SELLER_PRICE_BEFORE_DISCOUNT"
+    assert [item["metric_id"] for item in result["metric_observations"]] == [
+        "WB_SELLER_PRICE_BEFORE_DISCOUNT"
+    ]
+
+
+def test_specific_wb_price_metric_plans_live_business_executor():
+    plan = plan_marketplace_request(
+        "какая цена продавца до скидки по товару 507763296",
+        marketplace="wb",
+        seller="wb_laser_master",
+        today=date(2026, 9, 23),
+    )
+
+    assert plan["source_family"] == SOURCE_LIVE_CABINET_API
+    assert plan["downstream_handler"] == "marketplace_business_query"
+    assert plan["semantic_resolution"]["metric_id"] == "WB_SELLER_PRICE_BEFORE_DISCOUNT"
