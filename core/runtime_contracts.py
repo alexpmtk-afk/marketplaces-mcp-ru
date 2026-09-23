@@ -83,6 +83,24 @@ CRITICAL_QUOTA_CONTRACTS: tuple[dict[str, str], ...] = (
         "proof": "service",
         "rate_limit": "",
     },
+    {
+        "service": "ozon",
+        "operation_id": "ozon_finance_realization",
+        "method": "POST",
+        "host": "api-seller.ozon.ru",
+        "path": "/v2/finance/realization",
+        "proof": "service",
+        "rate_limit": "",
+    },
+    {
+        "service": "ozon",
+        "operation_id": "ozon_post_v1_finance_realization_posting",
+        "method": "POST",
+        "host": "api-seller.ozon.ru",
+        "path": "/v1/finance/realization/posting",
+        "proof": "service",
+        "rate_limit": "",
+    },
 )
 
 
