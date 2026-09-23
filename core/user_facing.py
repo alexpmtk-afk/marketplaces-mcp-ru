@@ -132,7 +132,52 @@ def _format_currency_rows(
     return f"{label}: " + "; ".join(parts) + "."
 
 
+def _metric_observation_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
+    observations = result.get("metric_observations")
+    if not isinstance(observations, list) or not observations:
+        return None, None
+
+    size_keys = {
+        (
+            (item.get("dimensions") or {}).get("nm_id"),
+            (item.get("dimensions") or {}).get("size_id"),
+        )
+        for item in observations
+        if isinstance(item, dict)
+    }
+    show_size = len(size_keys) > 1
+    parts: list[str] = []
+    has_unverified = False
+    for item in observations:
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or item.get("metric_id") or "Показатель")
+        value = _format_number(item.get("value"))
+        unit = _currency_label(item.get("unit")) if item.get("unit") else ""
+        context = ""
+        if show_size:
+            dimensions = item.get("dimensions") or {}
+            size = dimensions.get("tech_size") or dimensions.get("size_id")
+            if size not in (None, ""):
+                context = f" (размер {size})"
+        parts.append(f"{label}{context}: {value} {unit}".rstrip())
+        if item.get("semantic_status") != "verified":
+            has_unverified = True
+
+    if not parts:
+        return None, None
+    note = (
+        "Для части полей официальное бизнес-определение ещё не подтверждено."
+        if has_unverified else None
+    )
+    return "; ".join(parts) + ".", note
+
+
 def _success_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
+    observation_message, observation_note = _metric_observation_message(result)
+    if observation_message:
+        return observation_message, observation_note
+
     price = result.get("current_selling_price")
     stock = result.get("current_stock")
     if isinstance(price, dict) or isinstance(stock, dict):
