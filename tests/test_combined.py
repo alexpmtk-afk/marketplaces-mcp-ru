@@ -33,6 +33,7 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "marketplace_system_map",
         "marketplace_semantic_core",
         "marketplace_knowledge_verify",
+        "marketplace_report_field_explain",
         "marketplace_data_catalog",
         "marketplace_metric_route",
         "marketplace_query_plan",
