@@ -367,14 +367,34 @@ async def execute_current_stock_question(
     grouping: str = "TOTAL",
     nm_ids: Optional[list[int]] = None,
 ) -> dict[str, Any]:
-    """Execute CURRENT_STOCK only for today's current snapshot."""
-    try:
-        start = date.fromisoformat(str(date_from)[:10])
-        end = date.fromisoformat(str(date_to)[:10])
-    except (TypeError, ValueError) as exc:
-        raise SemanticCurrentStockExecutionError("date_from/date_to must be YYYY-MM-DD") from exc
+    """Execute CURRENT_STOCK only for today's current snapshot.
 
+    An explicit current-snapshot request does not need date_from/date_to. When
+    both are omitted, today's live snapshot is used. If a caller supplies dates,
+    both must be present and both must equal today; any historical date remains
+    fail-closed.
+    """
+    raw_from = str(date_from or "").strip()
+    raw_to = str(date_to or "").strip()
     today = date.today()
+
+    if not raw_from and not raw_to:
+        start = today
+        end = today
+    elif not raw_from or not raw_to:
+        raise SemanticCurrentStockExecutionError(
+            "date_from and date_to must either both be omitted for the current snapshot "
+            "or both be YYYY-MM-DD"
+        )
+    else:
+        try:
+            start = date.fromisoformat(raw_from[:10])
+            end = date.fromisoformat(raw_to[:10])
+        except (TypeError, ValueError) as exc:
+            raise SemanticCurrentStockExecutionError(
+                "date_from/date_to must be YYYY-MM-DD"
+            ) from exc
+
     if start != today or end != today:
         return make_error(
             "source_not_suitable",

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import date
+import asyncio
+from datetime import date, timedelta
 from pathlib import Path
 
 from core.registry import Catalog, EndpointSpec
+import core.semantic_current_stock as semantic_current_stock
 from core.request_source_router import (
     SOURCE_CANONICAL_ARCHIVE,
     SOURCE_LIVE_CABINET_API,
@@ -145,3 +147,92 @@ def test_wb_price_tool_publishes_major_currency_unit_contract():
     assert '"divide_by_100": False' in source
     assert '"price_rub"' in source
     assert "Clients must never divide these values by 100" in source
+
+
+def test_current_stock_blank_dates_mean_current_snapshot(monkeypatch):
+    async def fake_fetch_current_rows(wb, *, seller, nm_ids):
+        assert seller == "wb_laser_master"
+        assert nm_ids == [507763296]
+        return seller, {
+            "ok": True,
+            "source": "test_current_stock",
+            "items": [
+                {
+                    "nmId": 507763296,
+                    "warehouseName": "Склад WB",
+                    "quantity": 2,
+                }
+            ],
+        }
+
+    monkeypatch.setattr(
+        semantic_current_stock,
+        "_fetch_current_rows",
+        fake_fetch_current_rows,
+    )
+
+    result = asyncio.run(
+        semantic_current_stock.execute_current_stock_question(
+            object(),
+            seller="wb_laser_master",
+            date_from="",
+            date_to="",
+            grouping="TOTAL",
+            nm_ids=[507763296],
+        )
+    )
+
+    assert result["ok"] is True
+    assert result["metric"] == "CURRENT_STOCK"
+    assert result["as_of_date"] == date.today().isoformat()
+    assert result["stock_units"] == 2
+    assert result["complete"] is True
+
+
+def test_current_stock_rejects_half_specified_date_range():
+    try:
+        asyncio.run(
+            semantic_current_stock.execute_current_stock_question(
+                object(),
+                seller="wb_laser_master",
+                date_from=date.today().isoformat(),
+                date_to="",
+                grouping="TOTAL",
+                nm_ids=[507763296],
+            )
+        )
+    except semantic_current_stock.SemanticCurrentStockExecutionError as exc:
+        assert "both be omitted" in str(exc)
+    else:
+        raise AssertionError("half-specified current-stock date range must fail")
+
+
+def test_current_stock_historical_date_fails_before_provider(monkeypatch):
+    called = False
+
+    async def should_not_fetch(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("provider must not be called for historical CURRENT_STOCK")
+
+    monkeypatch.setattr(
+        semantic_current_stock,
+        "_fetch_current_rows",
+        should_not_fetch,
+    )
+
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    result = asyncio.run(
+        semantic_current_stock.execute_current_stock_question(
+            object(),
+            seller="wb_laser_master",
+            date_from=yesterday,
+            date_to=yesterday,
+            grouping="TOTAL",
+            nm_ids=[507763296],
+        )
+    )
+
+    assert result["ok"] is False
+    assert result["error"] == "source_not_suitable"
+    assert called is False
