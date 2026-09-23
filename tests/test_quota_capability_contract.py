@@ -85,3 +85,25 @@ def test_describe_exposes_quota_block_before_execution():
     assert payload["generic_read_status"] == "BLOCKED_QUOTA_UNPROVEN"
     assert payload["generic_read_reason"] == "quota_contract_missing"
     assert payload["generic_read_executable"] is False
+
+
+def test_every_read_only_catalog_operation_has_explicit_quota_capability_status():
+    for service, server in (("wb", wb), ("ozon", ozon)):
+        for spec in server.catalog.all():
+            info = generic_read_execution_info(service, server.catalog, spec)
+            if info["generic_read_status"] == "NOT_READ":
+                continue
+            assert info["generic_read_status"] in {
+                "EXECUTABLE", "BLOCKED_QUOTA_UNPROVEN",
+            }, (service, spec.operation_id, info)
+            assert isinstance(info.get("generic_read_reason"), str)
+            assert info["generic_read_reason"], (service, spec.operation_id, info)
+            if info["generic_read_status"] == "EXECUTABLE":
+                assert info["generic_read_executable"] is True
+                assert info.get("quota_proof") in {
+                    "operation_quota", "service_quota",
+                    "equivalent_proven_contract",
+                }
+            else:
+                assert info["generic_read_executable"] is False
+                assert info.get("quota_proof") == "none"
