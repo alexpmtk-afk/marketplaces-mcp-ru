@@ -39,3 +39,26 @@ def test_read_only_post_override_does_not_require_write_confirmation():
     spec = Catalog.from_yaml(path).get("wb_analytics_stocks_wb_warehouses")
     assert spec is not None
     assert infer_safety(spec.method, spec.safety) == "read"
+
+
+def test_wb_runtime_hides_unproven_duplicates_of_canonical_price_and_stock_reads():
+    path = Path(__file__).parents[1] / "wb_mcp" / "endpoints.yaml"
+    catalog = Catalog.from_yaml(path)
+
+    assert catalog.get("wb_post_api_list_goods_filter") is None
+    assert catalog.get("wb_post_api_analytics_stocks_report_wb_warehouses") is None
+    assert catalog.get("wb_prices_list") is not None
+    assert catalog.get("wb_analytics_stocks_wb_warehouses") is not None
+
+
+def test_wb_price_and_stock_search_prioritizes_reviewed_runtime_contracts():
+    path = Path(__file__).parents[1] / "wb_mcp" / "endpoints.yaml"
+    catalog = Catalog.from_yaml(path)
+
+    price_ids = [s.operation_id for s in catalog.search("price цена товар", limit=10)]
+    stock_ids = [s.operation_id for s in catalog.search("stock остаток склад товар", limit=15)]
+
+    assert "wb_post_api_list_goods_filter" not in price_ids
+    assert "wb_post_api_analytics_stocks_report_wb_warehouses" not in stock_ids
+    assert "wb_prices_list" in price_ids[:5]
+    assert "wb_analytics_stocks_wb_warehouses" in stock_ids[:8]
