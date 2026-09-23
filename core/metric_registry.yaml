@@ -57,6 +57,42 @@ metrics:
       ozon: {status: EXECUTOR_OWNED, source_id: ozon_current_prices, fields: [marketing_seller_price]}
     guardrail: Единицы определяет provider contract. WB RUB уже в рублях и не делится на 100; Ozon использует marketing_seller_price.
 
+  WB_SELLER_PRICE_BEFORE_DISCOUNT:
+    canonical_name_ru: Цена продавца до скидки
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [цена продавца до скидки, цена до скидки, базовая цена продавца]
+    aliases_en: [seller price before discount]
+    semantic_target: {type: BUSINESS_METRIC, id: WB_SELLER_PRICE_BEFORE_DISCOUNT}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_current_prices, fields: [price]}
+      ozon: {status: NOT_APPLICABLE, fields: []}
+    guardrail: Не выдавать за персональную итоговую цену конкретного покупателя.
+
+  WB_SELLER_PRICE_AFTER_DISCOUNT:
+    canonical_name_ru: Цена со скидкой продавца
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [цена со скидкой продавца, цена после скидки продавца]
+    aliases_en: [seller discounted price]
+    semantic_target: {type: BUSINESS_METRIC, id: WB_SELLER_PRICE_AFTER_DISCOUNT}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_current_prices, fields: [discountedPrice]}
+      ozon: {status: NOT_APPLICABLE, fields: []}
+    guardrail: Не выдавать за персональную итоговую цену конкретного покупателя с платформенными или персональными скидками.
+
+  WB_CLUB_PRICE_AFTER_DISCOUNT:
+    canonical_name_ru: Цена со скидкой для WB Клуба
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [цена со скидкой для wb клуба, цена для wb клуба, клубная цена wb]
+    aliases_en: [wb club discounted price, club discounted price]
+    semantic_target: {type: BUSINESS_METRIC, id: WB_CLUB_PRICE_AFTER_DISCOUNT}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_current_prices, fields: [clubDiscountedPrice]}
+      ozon: {status: NOT_APPLICABLE, fields: []}
+    guardrail: Относится к установленной скидке WB Клуба; не обещает финальную персональную цену покупателя.
+
   SALES:
     canonical_name_ru: Продажи
     kind: BUSINESS
