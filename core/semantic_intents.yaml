@@ -4,6 +4,7 @@ policy:
   prefer_exact_field_reference: true
   current_state_must_not_be_inferred_from_weekly_archive: true
   canonical_metric_terminology_owner: core/metric_registry.yaml
+  human_semantics_owner: core/marketplace_knowledge_catalog.yaml
 
 business_metrics:
   ORDERS:
@@ -56,6 +57,45 @@ business_metrics:
     current_period_supported: true
     current_only: true
     guardrail: Для WB значения price/discountedPrice уже выражены в currencyIsoCode4217; RUB нельзя делить на 100. Для Ozon отдельный executor использует marketing_seller_price. Историческую цену нельзя подменять текущим снимком.
+
+  WB_SELLER_PRICE_BEFORE_DISCOUNT:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: wb
+    source_id: wb_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Цена продавца до скидки; не подменять персональной итоговой ценой покупателя.
+
+  WB_SELLER_PRICE_AFTER_DISCOUNT:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: wb
+    source_id: wb_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Цена после скидки продавца; не подменять платформенной или персональной скидкой покупателя.
+
+  WB_CLUB_PRICE_AFTER_DISCOUNT:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: wb
+    source_id: wb_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Цена после установленной скидки WB Клуба; не обещает финальную персональную цену покупателя.
 
 routes:
   - id: ozon_any
