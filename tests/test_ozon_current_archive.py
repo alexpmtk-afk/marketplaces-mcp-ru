@@ -173,3 +173,57 @@ def test_enqueue_rejects_non_open_year(monkeypatch):
     monkeypatch.setattr(current, "current_period", lambda today=None: (date(2026, 9, 1), date(2026, 9, 23)))
     with pytest.raises(ValueError, match="open month only"):
         asyncio.run(queue.enqueue(year=2025, seller="ozon_laser_master"))
+
+
+class _VerifyStore:
+    def __init__(self):
+        self.files = {}
+        self.reader = _VerifyReader(self)
+
+    async def ensure_folder_path(self, parts):
+        return "writer:" + "/".join(parts)
+
+    async def upload_bytes(self, parent, name, data, *, mime_type="text/csv"):
+        del mime_type
+        key = f"{parent}/{name}"
+        self.files[key] = bytes(data)
+        direct_key = key.replace("writer:", "direct:", 1)
+        self.files[direct_key] = bytes(data)
+        return SimpleNamespace(id="drive-id", name=name, size=len(data))
+
+
+class _VerifyReader:
+    def __init__(self, owner):
+        self.owner = owner
+        self.reads = []
+
+    async def ensure_folder_path(self, parts):
+        return "direct:" + "/".join(parts)
+
+    async def download_named(self, parent, name):
+        key = f"{parent}/{name}"
+        self.reads.append(key)
+        data = self.owner.files.get(key)
+        if data is None:
+            return None, None
+        return SimpleNamespace(id="direct-id", name=name, size=len(data)), data
+
+
+def test_canonical_publish_verification_prefers_direct_drive_reader():
+    store = _VerifyStore()
+    queue = OzonCurrentArchiveJobQueue(SimpleNamespace(), store)
+    payload = b"canonical-current"
+
+    item, sha = asyncio.run(
+        queue._write_canonical_verified(
+            ["База данных", "Ozon", "ozon_laser_master", "2026", "CURRENT", "2026-09"],
+            "sample.csv",
+            payload,
+        )
+    )
+
+    assert item.id == "drive-id"
+    assert sha == __import__("hashlib").sha256(payload).hexdigest()
+    assert store.reader.reads == [
+        "direct:База данных/Ozon/ozon_laser_master/2026/CURRENT/2026-09/sample.csv"
+    ]
