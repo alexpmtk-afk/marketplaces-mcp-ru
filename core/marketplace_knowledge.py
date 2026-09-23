@@ -294,6 +294,108 @@ def _provider_metric_coverage(
     return out
 
 
+def _weekly_report_field_coverage() -> dict[str, Any]:
+    """Expose the audited physical WB weekly-report field layer without duplicating it."""
+    from .semantic_registry import load_semantic_registry
+
+    semantic = load_semantic_registry()
+    dataset_id = "wb_weekly_finance_main"
+    dataset = (semantic.get("datasets") or {}).get(dataset_id) or {}
+    fields = list(dataset.get("fields") or [])
+    catalog = dataset.get("field_catalog") or {}
+
+    role_counts: dict[str, int] = {}
+    status_counts: dict[str, int] = {}
+    missing_meaning: list[str] = []
+    missing_safe_uses: list[str] = []
+    unreviewed: list[str] = []
+    fields_with_limitations: list[str] = []
+
+    for field_name in fields:
+        item = catalog.get(field_name) or {}
+        role = str(item.get("role") or "UNKNOWN")
+        status = str(item.get("semantic_status") or "UNKNOWN")
+        role_counts[role] = role_counts.get(role, 0) + 1
+        status_counts[status] = status_counts.get(status, 0) + 1
+        if not str(item.get("meaning_ru") or "").strip():
+            missing_meaning.append(field_name)
+        if not list(item.get("safe_uses") or []):
+            missing_safe_uses.append(field_name)
+        if status != "REVIEWED":
+            unreviewed.append(field_name)
+        if list(item.get("limitations") or []):
+            fields_with_limitations.append(field_name)
+
+    physical_match = (
+        int(dataset.get("field_count") or 0) == len(fields)
+        and len(catalog) == len(fields)
+        and set(catalog) == set(fields)
+    )
+    complete = (
+        physical_match
+        and not missing_meaning
+        and not missing_safe_uses
+        and not unreviewed
+    )
+
+    references = semantic.get("references") or {}
+    return {
+        "dataset_id": dataset_id,
+        "report_name_ru": dataset.get("report_name_ru"),
+        "schema_status": dataset.get("schema_status"),
+        "physical_field_count": int(dataset.get("field_count") or 0),
+        "catalogued_field_count": len(catalog),
+        "reviewed_field_count": sum(
+            1 for field_name in fields
+            if str((catalog.get(field_name) or {}).get("semantic_status") or "") == "REVIEWED"
+        ),
+        "role_counts": dict(sorted(role_counts.items())),
+        "semantic_status_counts": dict(sorted(status_counts.items())),
+        "fields_with_limitations_count": len(fields_with_limitations),
+        "fields_with_limitations": sorted(fields_with_limitations),
+        "missing_meaning_fields": sorted(missing_meaning),
+        "missing_safe_uses_fields": sorted(missing_safe_uses),
+        "unreviewed_fields": sorted(unreviewed),
+        "physical_schema_matches_catalog": physical_match,
+        "field_coverage_complete": complete,
+        "official_audit": references.get("official_audit"),
+        "archive_observation": references.get("archive_observation"),
+        "blocked_unapproved_provider_fields": ["agencyVat"]
+        if "agencyVat" not in fields else [],
+        "rule": (
+            "Each physical weekly-report column must have reviewed human meaning and safe uses. "
+            "Provider fields absent from the approved archive schema stay non-executable until review."
+        ),
+    }
+
+
+def get_report_field_knowledge(
+    field_name: str,
+    *,
+    dataset_id: str = "wb_weekly_finance_main",
+) -> dict[str, Any]:
+    """Return reviewed human meaning for one physical report column."""
+    from .semantic_registry import get_dataset
+
+    dataset = get_dataset(dataset_id)
+    field = (dataset.get("field_catalog") or {}).get(field_name)
+    if not isinstance(field, dict):
+        raise MarketplaceKnowledgeError(
+            f"unknown report field {field_name!r} in dataset {dataset_id!r}"
+        )
+    return {
+        "dataset_id": dataset_id,
+        "report_name_ru": dataset.get("report_name_ru"),
+        "field_name": field_name,
+        "meaning_ru": field.get("meaning_ru"),
+        "role": field.get("role"),
+        "semantic_status": field.get("semantic_status"),
+        "safe_uses": list(field.get("safe_uses") or []),
+        "limitations": list(field.get("limitations") or []),
+        "schema_status": dataset.get("schema_status"),
+    }
+
+
 def verify_marketplace_knowledge(
     *,
     metric_registry: dict[str, Any] | None = None,
@@ -376,6 +478,7 @@ def verify_marketplace_knowledge(
         "provisional_binding_count": len(provisional_bindings),
         "provisional_bindings": provisional_bindings,
         "provider_metric_coverage": _provider_metric_coverage(catalog, registry),
+        "weekly_report_field_coverage": _weekly_report_field_coverage(),
         "source_count": len(catalog.get("sources") or {}),
         "stale_sources": stale_sources,
         "errors": errors,
@@ -385,6 +488,36 @@ def verify_marketplace_knowledge(
 
 
 def register_marketplace_knowledge_tools(mcp: FastMCP) -> None:
+    @mcp.tool(
+        name="marketplace_report_field_explain",
+        annotations={
+            "title": "Explain one marketplace report field",
+            "readOnlyHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def marketplace_report_field_explain(
+        field_name: str,
+        dataset_id: str = "wb_weekly_finance_main",
+    ) -> str:
+        import json
+
+        try:
+            result = get_report_field_knowledge(
+                field_name,
+                dataset_id=dataset_id,
+            )
+        except Exception as exc:
+            result = {
+                "ok": False,
+                "dataset_id": dataset_id,
+                "field_name": field_name,
+                "error": str(exc),
+            }
+        else:
+            result = {"ok": True, **result}
+        return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+
     @mcp.tool(
         name="marketplace_knowledge_verify",
         annotations={
