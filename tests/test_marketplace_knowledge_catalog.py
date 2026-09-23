@@ -88,10 +88,10 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 15
-    assert result["semantic_metric_count"] == 14
-    assert result["verified_metric_count"] == 13
-    assert result["verified_binding_count"] == 13
+    assert result["knowledge_record_count"] == 31
+    assert result["semantic_metric_count"] == 30
+    assert result["verified_metric_count"] == 29
+    assert result["verified_binding_count"] == 29
     assert result["provisional_binding_count"] == 2
     assert {
         (item["metric_id"], item["marketplace"])
@@ -120,6 +120,7 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
     assert wb["registry_mapping_status_counts"]["NOT_MAPPED"] == 1
     assert wb["registry_unresolved_metric_ids"] == ["CURRENT_SELLING_PRICE"]
     assert "CURRENT_STOCK" in wb["verified_metric_ids"]
+    assert set(wb["missing_knowledge_metric_ids"]) == set()
     assert wb["metric_coverage_complete"] is False
 
     ozon = coverage["ozon"]
@@ -175,3 +176,71 @@ def test_wb_finance_metrics_are_verified_knowledge():
         "WB_COMMISSION_REWARD",
         "ACQUIRING_PAYMENT_PROCESSING",
     } <= verified
+
+
+def test_wb_operational_orders_and_fbs_stock_are_verified():
+    orders = get_knowledge_metric("ORDERS", marketplace="wb", source_field="finishedPrice")
+    fbs = get_knowledge_metric("CURRENT_FBS_STOCK", marketplace="wb", source_field="amount")
+
+    assert orders is not None
+    assert orders["knowledge_id"] == "WB_ORDERS"
+    assert orders["semantic_status"] == "verified"
+    assert fbs is not None
+    assert fbs["knowledge_id"] == "WB_CURRENT_FBS_STOCK"
+    assert fbs["semantic_status"] == "verified"
+
+
+def test_wb_advertising_metric_family_is_fully_verified():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
+    verified = set(result["provider_metric_coverage"]["wb"]["verified_metric_ids"])
+    assert {
+        "AD_VIEWS",
+        "AD_CLICKS",
+        "AD_CART_ADDS",
+        "AD_ORDERS",
+        "AD_ADVERTISED_ITEMS",
+        "AD_CANCELED",
+        "AD_SPEND",
+        "AD_ATTRIBUTED_ORDER_AMOUNT",
+        "AD_CTR",
+        "AD_CPC",
+        "AD_CLICK_TO_ORDER_CR",
+        "AD_CPO",
+        "AD_DRR",
+        "AD_ROAS",
+    } <= verified
+
+
+def test_wb_advertising_raw_and_derived_bindings_do_not_cross_metrics():
+    assert get_knowledge_metric(
+        "AD_CART_ADDS", marketplace="wb", source_field="cart_adds"
+    )["knowledge_id"] == "WB_AD_CART_ADDS"
+    assert get_knowledge_metric(
+        "AD_CTR", marketplace="wb", source_field="views"
+    )["knowledge_id"] == "WB_AD_CTR"
+    assert get_knowledge_metric(
+        "AD_CTR", marketplace="wb", source_field="spend"
+    ) is None
+
+
+def test_wb_orders_binding_detects_field_drift():
+    catalog = load_marketplace_knowledge_catalog()
+    registry = deepcopy(load_metric_registry())
+    registry["metrics"]["ORDERS"]["provider_mappings"]["wb"]["fields"] = [
+        "date",
+        "isCancel",
+    ]
+
+    with pytest.raises(MarketplaceKnowledgeError, match="finishedPrice"):
+        validate_knowledge_against_metric_registry(catalog, registry)
+
+
+def test_wb_fbs_stock_binding_detects_amount_field_drift():
+    catalog = load_marketplace_knowledge_catalog()
+    registry = deepcopy(load_metric_registry())
+    registry["metrics"]["CURRENT_FBS_STOCK"]["provider_mappings"]["wb"]["fields"] = [
+        "chrtId",
+    ]
+
+    with pytest.raises(MarketplaceKnowledgeError, match="amount"):
+        validate_knowledge_against_metric_registry(catalog, registry)
