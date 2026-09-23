@@ -36,7 +36,10 @@ def test_unified_semantic_core_composes_every_business_logic_layer() -> None:
     assert brain["execution"]["archive_execution_registry"]["policy"]["require_full_coverage"] is True
     assert brain["planning"]["source_family_before_provider_field"] is True
     assert brain["knowledge_catalog"]["version"] == "marketplace_knowledge_catalog.v1"
-    assert brain["summary"]["counts"]["knowledge_catalog_entries"] == 3
+    assert brain["summary"]["counts"]["knowledge_catalog_entries"] == len(
+        brain["knowledge_catalog"]["metrics"]
+    )
+    assert brain["summary"]["counts"]["knowledge_catalog_entries"] >= 6
     assert brain["summary"]["safety"]["verified_human_semantics_require_official_sources"] is True
     assert brain["planning"]["silent_substitution_forbidden"] is True
     assert brain["execution"]["dispatch"]["required_legs_all_or_nothing"] is True
