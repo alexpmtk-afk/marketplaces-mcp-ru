@@ -4,6 +4,11 @@ remove:
   - wb_stats_stocks
   - wb_report_realization
   - wb_adv_fullstats
+  # Generated duplicates of reviewed live read contracts. Keep their old
+  # operation IDs as execution aliases in core.tools, but do not surface them
+  # in search/map/list results where an agent can choose the unproven record.
+  - wb_post_api_list_goods_filter
+  - wb_post_api_analytics_stocks_report_wb_warehouses
 
 endpoints:
   - operation_id: wb_analytics_stocks_wb_warehouses
