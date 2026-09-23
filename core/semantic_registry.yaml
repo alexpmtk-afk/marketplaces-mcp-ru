@@ -777,6 +777,24 @@ capabilities:
     status: AVAILABLE_WITH_LIMITATION
     fields: [isB2b, b2bCustomerTin, salePriceWholesaleDiscountPrc]
     scope: b2b_attributes_present_in_rows
+  payout_term_change_fee:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [paymentSchedule, sellerOperName, rrDate]
+    scope: weekly_payout_term_change_fee
+    guardrail: paymentSchedule is the monetary commission for the one-time payout-term change service «Вывести сейчас». It is not a schedule, date or ordinary payout parameter.
+  social_certificate_payment:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [paidWithSocialCertificate, docTypeName, retailAmount, nmId, vendorCode]
+    scope: social_certificate_flag_on_reported_operations
+    guardrail: Use only as the payment-method flag attached to operations present in the weekly report; do not infer a complete external social-certificate ledger from this archive.
+  legacy_finance_diagnostics:
+    source_id: wb_weekly_finance_main
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [salePercent, productDiscountForReport, sellerPromo, supRatingUp, isKgvpV2]
+    scope: historical_legacy_fields_only
+    guardrail: These are historical/legacy fields for diagnostics of old rows. They must not be used as current seller discount, current promotion state, current rating adjustment or current commission truth.
   traceability_and_marking:
     source_id: wb_weekly_finance_main
     status: AVAILABLE_WITH_LIMITATION
