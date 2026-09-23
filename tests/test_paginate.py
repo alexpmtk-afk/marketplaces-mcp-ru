@@ -127,3 +127,82 @@ def test_last_id_no_limit_never_injects_limit():
     assert len(calls) == 2
     assert all("limit" not in call for call in calls)
     assert calls[1]["last_id"] == "next"
+
+
+class _SequencedClient:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = 0
+
+    async def call_spec(self, spec, *, path_values=None, query=None, json_body=None):
+        self.calls += 1
+        if not self.responses:
+            raise AssertionError("unexpected extra pagination call")
+        return self.responses.pop(0)
+
+
+def test_fetch_all_absorbs_short_local_pacing_between_pages():
+    spec = EndpointSpec(
+        operation_id="paced", method="GET", host="h", path="/x",
+        pagination="offset", items_path="items",
+    )
+    client = _SequencedClient([
+        {"ok": True, "status": 200, "data": {"items": [1]}},
+        {
+            "ok": False,
+            "error": "rate_limit",
+            "retryable": True,
+            "retry_after_seconds": 0.001,
+            "operation_id": "paced",
+        },
+        {"ok": True, "status": 200, "data": {"items": []}},
+    ])
+
+    out = asyncio.run(fetch_all(client, spec, limit=1))
+    assert out["ok"] is True
+    assert out["items"] == [1]
+    assert out["pages_fetched"] == 2
+    assert client.calls == 3
+
+
+def test_fetch_all_does_not_absorb_provider_429():
+    spec = EndpointSpec(
+        operation_id="paced", method="GET", host="h", path="/x",
+        pagination="offset", items_path="items",
+    )
+    client = _SequencedClient([
+        {
+            "ok": False,
+            "error": "rate_limit",
+            "code": 429,
+            "retryable": True,
+            "retry_after_seconds": 0.001,
+            "operation_id": "paced",
+        },
+    ])
+
+    out = asyncio.run(fetch_all(client, spec, limit=1))
+    assert out["ok"] is False
+    assert out["code"] == 429
+    assert client.calls == 1
+
+
+def test_fetch_all_does_not_sleep_through_long_local_quota_window():
+    spec = EndpointSpec(
+        operation_id="slow", method="GET", host="h", path="/x",
+        pagination="offset", items_path="items",
+    )
+    client = _SequencedClient([
+        {
+            "ok": False,
+            "error": "rate_limit",
+            "retryable": True,
+            "retry_after_seconds": 60,
+            "operation_id": "slow",
+        },
+    ])
+
+    out = asyncio.run(fetch_all(client, spec, limit=1))
+    assert out["ok"] is False
+    assert out["retry_after_seconds"] == 60
+    assert client.calls == 1
