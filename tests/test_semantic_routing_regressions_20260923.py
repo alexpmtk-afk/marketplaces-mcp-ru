@@ -242,6 +242,57 @@ def test_current_stock_historical_date_fails_before_provider(monkeypatch):
 
 
 
+def test_wb_current_stock_204_no_content_is_empty_row_set():
+    items = semantic_current_stock._extract_fast_items({
+        "ok": True,
+        "status": 204,
+        "data": "",
+    })
+
+    assert items == []
+
+
+def test_wb_current_stock_204_no_content_aggregates_to_zero(monkeypatch):
+    class FakeClient:
+        async def request(self, *args, **kwargs):
+            return {
+                "ok": True,
+                "status": 204,
+                "data": "",
+            }
+
+    class FakeWb:
+        client = FakeClient()
+
+    monkeypatch.setattr(
+        semantic_current_stock,
+        "resolve_history_cabinet",
+        lambda wb, seller: (
+            seller,
+            {"token": "not-a-jwt-personal-token"},
+            None,
+        ),
+    )
+
+    result = asyncio.run(
+        semantic_current_stock.execute_current_stock_question(
+            FakeWb(),
+            seller="wb_laser_master",
+            date_from="",
+            date_to="",
+            grouping="TOTAL",
+            nm_ids=[507763296],
+        )
+    )
+
+    assert result["ok"] is True
+    assert result["metric"] == "CURRENT_STOCK"
+    assert result["stock_units"] == 0
+    assert result["provider_rows_received"] == 0
+    assert result["complete"] is True
+    assert result["source_operation"] == "wb_analytics_stocks_wb_warehouses"
+
+
 def test_provider_json_with_text_plain_content_type_is_recovered_for_current_stock():
     response = httpx.Response(
         200,
