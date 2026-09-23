@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 
-from core.tools import generic_read_execution_info
+from core.tools import generic_read_execution_info, resolve_legacy_operation_id
 from ozon_mcp import server as ozon
 from wb_mcp import server as wb
 
@@ -21,12 +21,18 @@ def test_proven_wb_read_is_executable():
     assert info["quota_proof"] == "operation_quota"
 
 
-def test_generated_wb_duplicate_resolves_to_proven_canonical_contract():
-    spec = wb.catalog.get("wb_post_api_list_goods_filter")
+def test_legacy_wb_price_id_resolves_to_proven_canonical_contract():
+    resolved_id, aliased = resolve_legacy_operation_id(
+        "wb", "wb_post_api_list_goods_filter",
+    )
+    assert aliased is True
+    assert resolved_id == "wb_prices_list"
+
+    spec = wb.catalog.get(resolved_id)
     info = generic_read_execution_info("wb", wb.catalog, spec)
     assert info["generic_read_status"] == "EXECUTABLE"
     assert info["resolved_operation_id"] == "wb_prices_list"
-    assert info["quota_proof"] == "equivalent_proven_contract"
+    assert info["quota_proof"] == "operation_quota"
 
 
 def test_parseable_but_unproven_rule_is_explicitly_blocked():
