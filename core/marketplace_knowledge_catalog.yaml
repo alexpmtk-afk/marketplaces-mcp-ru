@@ -57,6 +57,30 @@ sources:
     source_version: "release-note-2026-04-15"
     checked_at: "2026-09-23"
 
+  wb_reports_api_20260923:
+    marketplace: wb
+    title: "Wildberries API — Отчёты / Заказы"
+    url: "https://dev.wildberries.ru/en/openapi/reports"
+    official: true
+    source_version: "checked-2026-09-23"
+    checked_at: "2026-09-23"
+
+  wb_seller_stocks_api_20260923:
+    marketplace: wb
+    title: "Wildberries API — Остатки на складах продавца"
+    url: "https://dev.wildberries.ru/en/openapi/work-with-products"
+    official: true
+    source_version: "checked-2026-09-23"
+    checked_at: "2026-09-23"
+
+  wb_promotion_api_20260923:
+    marketplace: wb
+    title: "Wildberries API — Продвижение / Статистика кампаний"
+    url: "https://dev.wildberries.ru/en/openapi/promotion"
+    official: true
+    source_version: "checked-2026-09-23"
+    checked_at: "2026-09-23"
+
   ozon_seller_api_postman_mirror_20260923:
     marketplace: ozon
     title: "Ozon Seller API — внешний mirror документации, использован только как provisional evidence"
@@ -301,6 +325,308 @@ metrics:
     source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
     source_checked_at: "2026-09-23"
     temporal_rule: "Еженедельный acquiringFee не выдаётся за окончательный месячный acquiring expense."
+
+  WB_ORDERS:
+    metric_id: ORDERS
+    marketplace: wb
+    label_ru: "Оперативные заказы Wildberries"
+    definition_ru: "Оперативные строки заказов WB за выбранный календарный день. В текущем executor строки isCancel=true исключаются; количество — число оставшихся строк, сумма — сумма finishedPrice. Это не финансовая выручка и не доказанный полный поток абсолютно всех оформленных заказов."
+    semantic_status: verified
+    unit: UNITS_OR_RUB
+    dimensions: [order_row, order_date, cabinet]
+    aliases_ru: ["заказы", "оперативные заказы", "количество заказов", "сумма заказов"]
+    aliases_en: ["orders", "operational orders", "order count", "order amount"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_stats_orders
+      field_paths: [date, isCancel, finishedPrice]
+    provider_raw_fields: [date, isCancel, finishedPrice]
+    source_refs: [wb_reports_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "UNITS=count(rows where isCancel=false for requested day); AMOUNT_RUB=sum(finishedPrice for the same rows)."
+    guardrail: "Не выдавать за продажи, выручку, выплаты или полный поток всех оформленных заказов."
+
+  WB_CURRENT_FBS_STOCK:
+    metric_id: CURRENT_FBS_STOCK
+    marketplace: wb
+    label_ru: "Текущие остатки FBS на складе продавца"
+    definition_ru: "Текущий остаток товара на складах продавца WB по схеме FBS. Executor разрешает nmId в chrtId размеров, получает stocks для выбранных seller warehouses и суммирует amount. Это не остаток на складах Wildberries."
+    semantic_status: verified
+    unit: UNITS
+    dimensions: [product, size, seller_warehouse, current_snapshot]
+    aliases_ru: ["остаток fbs", "остатки fbs", "остаток на складе продавца"]
+    aliases_en: ["current FBS stock", "seller warehouse stock"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_fbs_stock
+      field_paths: [chrtId, amount]
+    provider_raw_fields: [chrtId, amount]
+    provider_operation: wb_post_api_stocks_warehouseid
+    source_refs: [wb_seller_stocks_api_20260923]
+    source_checked_at: "2026-09-23"
+    temporal_rule: "Только текущий seller-warehouse snapshot; не использовать как исторический остаток или остаток на складах WB."
+
+  WB_AD_VIEWS:
+    metric_id: AD_VIEWS
+    marketplace: wb
+    label_ru: "Показы рекламы"
+    definition_ru: "Количество показов в статистике рекламных кампаний WB."
+    semantic_status: verified
+    unit: COUNT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["показы рекламы", "рекламные показы"]
+    aliases_en: ["ad views", "impressions"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [views]
+    provider_raw_fields: [views]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_AD_CLICKS:
+    metric_id: AD_CLICKS
+    marketplace: wb
+    label_ru: "Клики по рекламе"
+    definition_ru: "Количество кликов в статистике рекламных кампаний WB."
+    semantic_status: verified
+    unit: COUNT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["клики по рекламе", "рекламные клики"]
+    aliases_en: ["ad clicks", "clicks"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [clicks]
+    provider_raw_fields: [clicks]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_AD_CART_ADDS:
+    metric_id: AD_CART_ADDS
+    marketplace: wb
+    label_ru: "Добавления в корзину из рекламы"
+    definition_ru: "Добавления в корзину, атрибутированные рекламе WB; provider-поле atbs нормализуется в cart_adds."
+    semantic_status: verified
+    unit: COUNT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["добавления в корзину из рекламы", "рекламные добавления в корзину"]
+    aliases_en: ["ad cart adds", "cart adds"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [cart_adds]
+    provider_raw_fields: [atbs]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_AD_ORDERS:
+    metric_id: AD_ORDERS
+    marketplace: wb
+    label_ru: "Рекламные заказы"
+    definition_ru: "Количество заказов, атрибутированных рекламной статистикой WB; provider-поле orders нормализуется в ad_orders. Это не полный поток заказов магазина."
+    semantic_status: verified
+    unit: COUNT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["рекламные заказы", "заказы из рекламы"]
+    aliases_en: ["ad orders", "attributed orders"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [ad_orders]
+    provider_raw_fields: [orders]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    guardrail: "Не подменять общей метрикой ORDERS."
+
+  WB_AD_ADVERTISED_ITEMS:
+    metric_id: AD_ADVERTISED_ITEMS
+    marketplace: wb
+    label_ru: "Рекламируемые единицы"
+    definition_ru: "Количество рекламируемых единиц в статистике WB; provider-поле shks нормализуется в advertised_items."
+    semantic_status: verified
+    unit: COUNT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["рекламируемые единицы", "рекламируемые товары"]
+    aliases_en: ["advertised items"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [advertised_items]
+    provider_raw_fields: [shks]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_AD_CANCELED:
+    metric_id: AD_CANCELED
+    marketplace: wb
+    label_ru: "Отмены в рекламной атрибуции"
+    definition_ru: "Количество отмен, отражённых в рекламной атрибуции WB."
+    semantic_status: verified
+    unit: COUNT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["отмены рекламы", "отмены в рекламной атрибуции"]
+    aliases_en: ["ad cancellations", "canceled"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [canceled]
+    provider_raw_fields: [canceled]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_AD_SPEND:
+    metric_id: AD_SPEND
+    marketplace: wb
+    label_ru: "Рекламные расходы"
+    definition_ru: "Расходы рекламной кампании WB; provider-поле sum нормализуется в spend."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["рекламные расходы", "расходы на рекламу"]
+    aliases_en: ["ad spend", "advertising spend"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [spend]
+    provider_raw_fields: [sum]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_AD_ATTRIBUTED_ORDER_AMOUNT:
+    metric_id: AD_ATTRIBUTED_ORDER_AMOUNT
+    marketplace: wb
+    label_ru: "Сумма заказов, атрибутированная рекламе"
+    definition_ru: "Сумма заказов в рекламной атрибуции WB; provider-поле sum_price нормализуется в attributed_order_amount. Это не общая выручка продавца."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["сумма заказов из рекламы", "атрибутированная сумма заказов"]
+    aliases_en: ["attributed order amount", "attributed revenue"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [attributed_order_amount]
+    provider_raw_fields: [sum_price]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    guardrail: "Не считать общей выручкой продавца."
+
+  WB_AD_CTR:
+    metric_id: AD_CTR
+    marketplace: wb
+    label_ru: "Кликабельность рекламы"
+    definition_ru: "Канонический CTR WB в проекте вычисляется как clicks / views × 100. Provider-значение ctr сохраняется как контрольный контекст, но канонический расчёт выполняется из исходных счётчиков."
+    semantic_status: verified
+    unit: PERCENT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["ctr", "кликабельность рекламы", "процент кликов"]
+    aliases_en: ["CTR", "click-through rate"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [clicks, views]
+    provider_raw_fields: [clicks, views, ctr]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "100 * clicks / views; если views<=0, значение не вычисляется."
+
+  WB_AD_CPC:
+    metric_id: AD_CPC
+    marketplace: wb
+    label_ru: "Стоимость клика"
+    definition_ru: "Канонический CPC WB в проекте вычисляется как spend / clicks. Provider-значение cpc сохраняется как контрольный контекст."
+    semantic_status: verified
+    unit: RUB_PER_CLICK
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["cpc", "стоимость клика", "цена клика"]
+    aliases_en: ["CPC", "cost per click"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [spend, clicks]
+    provider_raw_fields: [sum, clicks, cpc]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "spend / clicks; если clicks<=0, значение не вычисляется."
+
+  WB_AD_CLICK_TO_ORDER_CR:
+    metric_id: AD_CLICK_TO_ORDER_CR
+    marketplace: wb
+    label_ru: "Конверсия из клика в рекламный заказ"
+    definition_ru: "Канонический CR из клика в рекламный заказ вычисляется как ad_orders / clicks × 100; provider-поле cr сохраняется как контрольный контекст."
+    semantic_status: verified
+    unit: PERCENT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["cr", "конверсия из клика в заказ"]
+    aliases_en: ["click-to-order CR", "click to order conversion"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [ad_orders, clicks]
+    provider_raw_fields: [orders, clicks, cr]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "100 * ad_orders / clicks; если clicks<=0, значение не вычисляется."
+
+  WB_AD_CPO:
+    metric_id: AD_CPO
+    marketplace: wb
+    label_ru: "Стоимость рекламного заказа"
+    definition_ru: "Стоимость одного рекламно-атрибутированного заказа: рекламные расходы / рекламные заказы."
+    semantic_status: verified
+    unit: RUB_PER_ORDER
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["cpo", "стоимость рекламного заказа"]
+    aliases_en: ["CPO", "cost per order"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [spend, ad_orders]
+    provider_raw_fields: [sum, orders]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "spend / ad_orders; если ad_orders<=0, значение не вычисляется."
+
+  WB_AD_DRR:
+    metric_id: AD_DRR
+    marketplace: wb
+    label_ru: "Доля рекламных расходов"
+    definition_ru: "ДРР рекламной атрибуции WB: рекламные расходы / сумма заказов, атрибутированная рекламе × 100. Это не общий ДРР бизнеса."
+    semantic_status: verified
+    unit: PERCENT
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["дрр", "доля рекламных расходов"]
+    aliases_en: ["DRR", "drr"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [spend, attributed_order_amount]
+    provider_raw_fields: [sum, sum_price]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "100 * spend / attributed_order_amount; если attributed_order_amount<=0, значение не вычисляется."
+    guardrail: "Не подменять общим ДРР бизнеса."
+
+  WB_AD_ROAS:
+    metric_id: AD_ROAS
+    marketplace: wb
+    label_ru: "Окупаемость рекламных расходов"
+    definition_ru: "ROAS рекламной атрибуции WB: сумма заказов, атрибутированная рекламе / рекламные расходы. Это не общая прибыльность бизнеса."
+    semantic_status: verified
+    unit: RATIO
+    dimensions: [campaign, date, advertising_attribution]
+    aliases_ru: ["roas", "окупаемость рекламы", "окупаемость рекламных расходов"]
+    aliases_en: ["ROAS", "return on ad spend"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_ads_data
+      field_paths: [attributed_order_amount, spend]
+    provider_raw_fields: [sum_price, sum]
+    source_refs: [wb_promotion_api_20260923]
+    source_checked_at: "2026-09-23"
+    formula_rule: "attributed_order_amount / spend; если spend<=0, значение не вычисляется."
+    guardrail: "Не выдавать за общую прибыльность бизнеса."
 
   OZON_CURRENT_STOCK:
     metric_id: CURRENT_STOCK
