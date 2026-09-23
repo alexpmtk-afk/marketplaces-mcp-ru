@@ -596,8 +596,12 @@ async def wb_get_orders_summary(seller: str, date_from: str, date_to: str) -> st
     annotations={"title": "WB current prices with explicit RUB units", "readOnlyHint": True,
                  "openWorldHint": True},
 )
-async def wb_get_prices(limit: int = 1000, offset: int = 0,
-                        filter_nm_id: Optional[int] = None) -> str:
+async def wb_get_prices(
+    limit: int = 1000,
+    offset: int = 0,
+    filter_nm_id: Optional[int] = None,
+    cabinet: str = "",
+) -> str:
     """Get current WB prices with server-owned currency-unit semantics.
 
     Provider fields price, discountedPrice and clubDiscountedPrice are already
@@ -608,7 +612,14 @@ async def wb_get_prices(limit: int = 1000, offset: int = 0,
     if filter_nm_id is not None:
         q["filterNmID"] = filter_nm_id
     spec = catalog.get("wb_prices_list")
-    response = await client.call_spec(spec, query=q)
+    creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
+    if cabinet_error:
+        return _j(cabinet_error)
+    response = await client.call_spec(
+        spec,
+        query=q,
+        creds_override=creds_override,
+    )
     if not isinstance(response, dict) or response.get("ok") is not True:
         return _j(response)
 
@@ -665,6 +676,7 @@ async def wb_get_prices(limit: int = 1000, offset: int = 0,
         "ok": True,
         "status": response.get("status"),
         "source": "wb_prices_list",
+        "cabinet": cabinet or None,
         "metric_id": "CURRENT_SELLING_PRICE",
         "money_contract": {
             "provider_currency_field": "currencyIsoCode4217",
