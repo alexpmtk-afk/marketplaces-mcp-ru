@@ -79,6 +79,50 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Advertising Semantic Core V1 is **cabinet-total only**. Product/`nm_id` questions require a separately approved `ads_product_daily` contract; campaign-filtered or campaign-breakdown questions require their own selector/grouping contract. Never substitute cabinet totals for a narrower question.
 - Current-day/current-state advertising remains live from the WB Promotion API and must not be inferred from the closed historical archive.
 
+
+## Production Evidence Gate — mandatory before user-facing deploy PowerShell
+
+A green CI run proves repository behavior against controlled inputs; it does **not**
+prove provider behavior for a real cabinet, token type, product, quota window, or
+production response shape. Never promote a production-specific hypothesis directly
+from code review/model reasoning into a fix/deploy command.
+
+For any defect whose cause depends on live WB/Ozon/Drive/runtime behavior, use this
+sequence and do not skip forward:
+
+1. **Contract evidence.** Inspect current repository code/catalog plus current
+   provider documentation or previously captured production evidence. Separate
+   facts from hypotheses explicitly.
+2. **Production probe.** Confirm the hypothesis with the smallest possible
+   read-only probe against the actual production runtime. The probe must:
+   - make no writes or configuration changes;
+   - respect the provider's proven quota/pacing rule;
+   - avoid duplicate provider calls unless the quota window has elapsed;
+   - print only sanitized status/type/shape metadata needed to distinguish the
+     hypotheses; never print bearer tokens, marketplace credentials, or secret
+     payloads;
+   - test one layer at a time so an error envelope from a second call cannot be
+     mistaken for the first provider response.
+3. **Regression reproduction.** Convert the observed production case into an
+   offline regression fixture/test. The test should fail on the pre-fix behavior
+   and pass only for the intended narrow correction.
+4. **Patch + full validation.** Apply the narrow fix, then run targeted regression
+   tests and the repository's complete CI/security/dependency/supply-chain checks.
+5. **Deploy acceptance.** Only after 1–4 pass may an agent provide or execute a
+   production deploy/smoke command. The command must pin the expected canonical
+   SHA, reject a dirty worktree, wait for health, and verify the exact business
+   invariant without assuming an unproven business value.
+
+If the current assistant/session has no direct REMOTE terminal channel, the first
+PowerShell block sent to the user for a production-dependent theory must be clearly
+treated as **DIAGNOSTIC ONLY**. Do not patch or deploy merely because that diagnostic
+*seems likely* to confirm the theory. Wait for its actual output.
+
+A failed smoke may prove only the stage where it failed. Do not infer the next
+provider shape, token capability, archive state, product state, or business value
+without separate evidence. Prefer one additional discriminating probe over another
+speculative patch.
+
 ## Before every commit / push
 - `pre-commit run --all-files` (or at minimum the two local hooks below).
 - `python scripts/security/forbid_sensitive_files.py --all`
