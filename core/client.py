@@ -593,13 +593,40 @@ class MarketplaceClient:
         )
 
 
+def _structured_json_from_string(value: str) -> Any:
+    """Recover one nested JSON object/array from a provider string.
+
+    Some marketplace endpoints have been observed returning JSON as a JSON
+    string (double-encoded). Only unwrap when the decoded inner value is a
+    structured object/array. Plain string values remain strings.
+    """
+    candidate = value.lstrip("\ufeff \t\r\n")
+    if not candidate.startswith(("{", "[")):
+        return value
+    try:
+        decoded = json.loads(candidate)
+    except (json.JSONDecodeError, TypeError):
+        return value
+    return decoded if isinstance(decoded, (dict, list)) else value
+
+
 def _parse_body(resp: httpx.Response) -> Any:
     ctype = resp.headers.get("Content-Type", "")
     if "application/json" in ctype:
         try:
-            return resp.json()
+            parsed = resp.json()
         except Exception:  # noqa: BLE001
-            return resp.text
+            # Keep the same structured fallback for malformed/odd JSON media
+            # responses (for example a leading BOM handled as text).
+            return _structured_json_from_string(resp.text)
+
+        # A valid application/json response may itself decode to a JSON string
+        # whose contents are another JSON object/array. Unwrap exactly one such
+        # provider-encoding layer; never reinterpret ordinary JSON strings.
+        if isinstance(parsed, str):
+            return _structured_json_from_string(parsed)
+        return parsed
+
     if ctype.startswith(("image/", "application/pdf")):
         return {"_binary": True, "content_type": ctype, "bytes": len(resp.content)}
 
@@ -607,14 +634,7 @@ def _parse_body(resp: httpx.Response) -> Any:
     # incorrect or overly generic Content-Type (for example text/plain).
     # Preserve real plain text, but recover structured provider truth when the
     # body itself is unambiguously a JSON object/array.
-    text = resp.text
-    stripped = text.lstrip()
-    if stripped.startswith(("{", "[")):
-        try:
-            return json.loads(text)
-        except (json.JSONDecodeError, TypeError):
-            pass
-    return text
+    return _structured_json_from_string(resp.text)
 
 
 def _short_body(resp: httpx.Response, limit: int = 300) -> str:
