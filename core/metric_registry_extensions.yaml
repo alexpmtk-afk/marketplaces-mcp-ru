@@ -2,6 +2,15 @@ version: marketplace_metric_registry.ozon_snapshot.v1
 metrics:
   CURRENT_STOCK:
     provider_mappings:
+      wb:
+        status: EXECUTOR_OWNED
+        source_id: wb_current_stocks
+        fields:
+          - quantity
+          - nmId
+          - warehouseName
+        provider_aliases:
+          - quantity
       ozon:
         status: MAPPED
         source_id: ozon_current_stocks

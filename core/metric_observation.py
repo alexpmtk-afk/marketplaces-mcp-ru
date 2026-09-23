@@ -38,7 +38,11 @@ def build_metric_observation(
     Unknown/unregistered meanings remain visible as source_field instead of
     being silently dropped or guessed.
     """
-    knowledge = get_knowledge_metric(metric_id)
+    knowledge = get_knowledge_metric(
+        metric_id,
+        marketplace=marketplace,
+        source_field=source_field,
+    )
     if knowledge is None:
         return MetricObservation(
             metric_id=metric_id,

@@ -25,6 +25,30 @@ sources:
     source_version: "checked-2026-09-23"
     checked_at: "2026-09-23"
 
+  wb_current_stock_api_20260923:
+    marketplace: wb
+    title: "Wildberries API — Аналитика и данные / Остатки на складах WB"
+    url: "https://dev.wildberries.ru/openapi/analytics"
+    official: true
+    source_version: "current-warehouse-inventory-checked-2026-09-23"
+    checked_at: "2026-09-23"
+
+  wb_warehouse_remains_release_20250313:
+    marketplace: wb
+    title: "Wildberries API — изменение отчёта об остатках на складах WB"
+    url: "https://dev.wildberries.ru/en/release-notes?id=214"
+    official: true
+    source_version: "release-note-2025-03-13"
+    checked_at: "2026-09-23"
+
+  ozon_seller_api_postman_mirror_20260923:
+    marketplace: ozon
+    title: "Ozon Seller API — внешний mirror документации, использован только как provisional evidence"
+    url: "https://www.postman.com/googlesheets/ozon-seller-api/documentation/m2uvw9f/ozon-seller-api"
+    official: false
+    source_version: "checked-2026-09-23"
+    checked_at: "2026-09-23"
+
 metrics:
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     marketplace: wb
@@ -73,3 +97,81 @@ metrics:
       field_path: clubDiscountedPrice
     source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
     source_checked_at: "2026-09-23"
+
+  WB_CURRENT_STOCK:
+    metric_id: CURRENT_STOCK
+    marketplace: wb
+    label_ru: "Текущие остатки на складах WB"
+    definition_ru: "Количество единиц товара в текущем снимке остатков на складах Wildberries. Для выбранной области итог считается как сумма поля quantity по возвращённым строкам размера и склада."
+    semantic_status: verified
+    unit: UNITS
+    dimensions: [product, size, warehouse, current_snapshot]
+    aliases_ru: ["текущие остатки wb", "остатки на складах wb", "остатки wildberries"]
+    aliases_en: ["current WB warehouse inventory", "current Wildberries stock"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_current_stocks
+      field_path: quantity
+    source_refs: [wb_current_stock_api_20260923, wb_warehouse_remains_release_20250313]
+    source_checked_at: "2026-09-23"
+    temporal_rule: "Только текущий день; исторический остаток должен использовать отдельный исторический источник."
+    live_evidence:
+      checked_at: "2026-09-23"
+      cabinets:
+        - cabinet: wb_novokshenov
+          nm_id: "507763296"
+          source_operation: wb_analytics_stocks_wb_warehouses
+          result: PASS
+        - cabinet: wb_laser_master
+          nm_id: "392023986"
+          source_operation: wb_analytics_stocks_wb_warehouses
+          result: PASS
+
+  OZON_CURRENT_STOCK:
+    metric_id: CURRENT_STOCK
+    marketplace: ozon
+    label_ru: "Текущие остатки Ozon"
+    definition_ru: "Операционный текущий остаток кабинета Ozon, вычисляемый как сумма provider-поля present по возвращённым FBO/FBS stock buckets. Reserved хранится отдельно и не прибавляется к доступному остатку."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [product, fulfillment_type, current_snapshot]
+    aliases_ru: ["текущие остатки ozon", "остаток ozon"]
+    aliases_en: ["current Ozon stock", "Ozon stock on hand"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_stocks
+      field_path: stocks.present
+    source_refs: [ozon_seller_api_postman_mirror_20260923]
+    source_checked_at: "2026-09-23"
+    verification_note: "Live API binding подтверждён, но точное официальное Ozon-определение и название в кабинете/отчёте ещё не подтверждены официальным источником, поэтому статус provisional."
+    live_evidence:
+      checked_at: "2026-09-23"
+      cabinet: ozon_laser_master
+      sku: "3276433388"
+      product_id: "3276772809"
+      result: PASS
+
+  OZON_CURRENT_SELLING_PRICE:
+    metric_id: CURRENT_SELLING_PRICE
+    marketplace: ozon
+    label_ru: "Текущая цена продажи Ozon"
+    definition_ru: "Текущее seller-side значение цены из поля marketing_seller_price после скидок продавца. Оно не считается гарантированной персональной итоговой ценой покупателя."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [product, current_snapshot]
+    aliases_ru: ["текущая цена ozon", "цена продажи ozon"]
+    aliases_en: ["current Ozon selling price"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_prices
+      field_path: price.marketing_seller_price
+    source_refs: [ozon_seller_api_postman_mirror_20260923]
+    source_checked_at: "2026-09-23"
+    verification_note: "Live API binding подтверждён, но exact cabinet/report wording ещё не подтверждён официальным Ozon-источником, поэтому статус provisional."
+    live_evidence:
+      checked_at: "2026-09-23"
+      cabinet: ozon_laser_master
+      sku: "3276433388"
+      product_id: "3276772809"
+      observed_value_rub: "981"
+      result: PASS

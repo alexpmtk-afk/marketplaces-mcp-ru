@@ -32,3 +32,41 @@ def test_unknown_metric_is_visible_as_source_field_without_guessing():
     assert observation.label == "Поле источника: someNewPrice"
     assert observation.semantic_status == "source_field"
     assert "не подтверждено" in observation.definition
+
+
+def test_current_stock_observation_uses_marketplace_specific_knowledge():
+    wb = build_metric_observation(
+        metric_id="CURRENT_STOCK",
+        value=12,
+        unit="UNITS",
+        marketplace="wb",
+        source_name="wb_current_stocks",
+        source_field="quantity",
+    )
+    ozon = build_metric_observation(
+        metric_id="CURRENT_STOCK",
+        value=7,
+        unit="UNITS",
+        marketplace="ozon",
+        source_name="ozon_current_stocks",
+        source_field="stocks.present",
+    )
+
+    assert wb.label == "Текущие остатки на складах WB"
+    assert wb.semantic_status == "verified"
+    assert ozon.label == "Текущие остатки Ozon"
+    assert ozon.semantic_status == "provisional"
+
+
+def test_known_metric_unknown_provider_field_stays_unverified():
+    observation = build_metric_observation(
+        metric_id="CURRENT_STOCK",
+        value=2,
+        unit="UNITS",
+        marketplace="ozon",
+        source_name="ozon_current_stocks",
+        source_field="stocks.reserved",
+    )
+
+    assert observation.label == "Поле источника: stocks.reserved"
+    assert observation.semantic_status == "source_field"

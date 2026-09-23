@@ -33,12 +33,21 @@ def _require_string_list(value: Any, name: str, *, allow_empty: bool = False) ->
     return value
 
 
+def _semantic_metric_id(knowledge_id: str, metric: dict[str, Any]) -> str:
+    value = metric.get("metric_id", knowledge_id)
+    if not isinstance(value, str) or not value.strip():
+        raise MarketplaceKnowledgeError(
+            f"knowledge metric {knowledge_id} metric_id must be a non-empty string"
+        )
+    return value.strip()
+
+
 def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
     policy = _require_mapping(data.get("policy"), "knowledge policy")
     if policy.get("verified_requires_official_sources") is not True:
         raise MarketplaceKnowledgeError("verified knowledge must require official sources")
     if policy.get("provider_field_name_is_not_business_definition") is not True:
-        raise MarketplaceKnowledgeError("provider field names must not define business meaning")
+        raise MarketplaceKnowledgeError("provider fields must not define business meaning")
     if policy.get("production_auto_update") is not False:
         raise MarketplaceKnowledgeError("knowledge updates must not silently auto-change production")
 
@@ -53,41 +62,54 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
             if not isinstance(source.get(field), str) or not source[field].strip():
                 raise MarketplaceKnowledgeError(f"source {source_id} must define {field}")
 
-    for metric_id, raw_metric in metrics.items():
-        metric = _require_mapping(raw_metric, f"knowledge metric {metric_id}")
+    binding_owners: dict[tuple[str, str, str], str] = {}
+    for knowledge_id, raw_metric in metrics.items():
+        metric = _require_mapping(raw_metric, f"knowledge metric {knowledge_id}")
+        semantic_metric_id = _semantic_metric_id(knowledge_id, metric)
         for field in ("marketplace", "label_ru", "definition_ru", "unit", "source_checked_at"):
             if not isinstance(metric.get(field), str) or not metric[field].strip():
-                raise MarketplaceKnowledgeError(f"knowledge metric {metric_id} must define {field}")
+                raise MarketplaceKnowledgeError(f"knowledge metric {knowledge_id} must define {field}")
 
         status = metric.get("semantic_status")
         if status not in _ALLOWED_STATUSES:
             raise MarketplaceKnowledgeError(
-                f"knowledge metric {metric_id} has unsupported semantic_status {status!r}"
+                f"knowledge metric {knowledge_id} has unsupported semantic_status {status!r}"
             )
 
-        _require_string_list(metric.get("dimensions"), f"knowledge metric {metric_id} dimensions")
-        _require_string_list(metric.get("aliases_ru"), f"knowledge metric {metric_id} aliases_ru", allow_empty=True)
-        _require_string_list(metric.get("aliases_en"), f"knowledge metric {metric_id} aliases_en", allow_empty=True)
+        _require_string_list(metric.get("dimensions"), f"knowledge metric {knowledge_id} dimensions")
+        _require_string_list(metric.get("aliases_ru"), f"knowledge metric {knowledge_id} aliases_ru", allow_empty=True)
+        _require_string_list(metric.get("aliases_en"), f"knowledge metric {knowledge_id} aliases_en", allow_empty=True)
         _require_string_list(
             metric.get("historical_names"),
-            f"knowledge metric {metric_id} historical_names",
+            f"knowledge metric {knowledge_id} historical_names",
             allow_empty=True,
         )
 
-        binding = _require_mapping(metric.get("provider_binding"), f"knowledge metric {metric_id} provider_binding")
+        binding = _require_mapping(
+            metric.get("provider_binding"), f"knowledge metric {knowledge_id} provider_binding"
+        )
         for field in ("source_id", "field_path"):
             if not isinstance(binding.get(field), str) or not binding[field].strip():
                 raise MarketplaceKnowledgeError(
-                    f"knowledge metric {metric_id} provider_binding must define {field}"
+                    f"knowledge metric {knowledge_id} provider_binding must define {field}"
                 )
 
+        marketplace = str(metric["marketplace"]).strip().lower()
+        binding_key = (semantic_metric_id, marketplace, str(binding["field_path"]))
+        previous = binding_owners.get(binding_key)
+        if previous is not None:
+            raise MarketplaceKnowledgeError(
+                f"duplicate knowledge binding {binding_key!r}: {previous} and {knowledge_id}"
+            )
+        binding_owners[binding_key] = knowledge_id
+
         source_refs = _require_string_list(
-            metric.get("source_refs"), f"knowledge metric {metric_id} source_refs"
+            metric.get("source_refs"), f"knowledge metric {knowledge_id} source_refs"
         )
         missing = [source_id for source_id in source_refs if source_id not in sources]
         if missing:
             raise MarketplaceKnowledgeError(
-                f"knowledge metric {metric_id} references unknown sources: {missing}"
+                f"knowledge metric {knowledge_id} references unknown sources: {missing}"
             )
         if status == "verified":
             non_official = [
@@ -96,7 +118,7 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
             ]
             if non_official:
                 raise MarketplaceKnowledgeError(
-                    f"verified knowledge metric {metric_id} has non-official sources: {non_official}"
+                    f"verified knowledge metric {knowledge_id} has non-official sources: {non_official}"
                 )
 
 
@@ -114,45 +136,78 @@ def load_marketplace_knowledge_catalog(
 def get_knowledge_metric(
     metric_id: str,
     catalog: dict[str, Any] | None = None,
+    *,
+    marketplace: str = "",
+    source_field: str = "",
 ) -> dict[str, Any] | None:
+    """Resolve one provider-specific knowledge binding without cross-marketplace guessing.
+
+    Catalog keys are knowledge-record IDs. Legacy records may use metric_id as
+    their key; provider-specific records can instead declare metric_id explicitly.
+    When several bindings exist for the same semantic metric, marketplace and,
+    when needed, source_field must disambiguate them.
+    """
     data = catalog if catalog is not None else load_marketplace_knowledge_catalog()
-    metric = (data.get("metrics") or {}).get(str(metric_id or ""))
-    return deepcopy(metric) if isinstance(metric, dict) else None
+    wanted_metric = str(metric_id or "").strip()
+    wanted_marketplace = str(marketplace or "").strip().lower()
+    wanted_field = str(source_field or "").strip()
+    if not wanted_metric:
+        return None
+
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    for knowledge_id, raw_metric in (data.get("metrics") or {}).items():
+        if not isinstance(raw_metric, dict):
+            continue
+        semantic_metric_id = str(raw_metric.get("metric_id") or knowledge_id)
+        if semantic_metric_id != wanted_metric:
+            continue
+        if wanted_marketplace and str(raw_metric.get("marketplace") or "").lower() != wanted_marketplace:
+            continue
+        binding = raw_metric.get("provider_binding") or {}
+        if wanted_field and str(binding.get("field_path") or "") != wanted_field:
+            continue
+        candidates.append((knowledge_id, raw_metric))
+
+    if len(candidates) != 1:
+        return None
+
+    knowledge_id, metric = candidates[0]
+    resolved = deepcopy(metric)
+    resolved["knowledge_id"] = knowledge_id
+    resolved["metric_id"] = str(metric.get("metric_id") or knowledge_id)
+    return resolved
 
 
 def validate_knowledge_against_metric_registry(
     catalog: dict[str, Any],
     metric_registry: dict[str, Any],
 ) -> None:
-    """Cross-check verified human semantics against provider mappings.
-
-    The knowledge layer owns names/definitions. The metric registry owns
-    executable provider bindings. A verified entry is invalid if those layers
-    disagree.
-    """
+    """Cross-check human semantics against executable provider mappings."""
     registry_metrics = _require_mapping(metric_registry.get("metrics"), "metric registry metrics")
-    for metric_id, metric in (catalog.get("metrics") or {}).items():
-        if metric_id not in registry_metrics:
+    for knowledge_id, metric in (catalog.get("metrics") or {}).items():
+        semantic_metric_id = _semantic_metric_id(knowledge_id, metric)
+        if semantic_metric_id not in registry_metrics:
             raise MarketplaceKnowledgeError(
-                f"knowledge metric {metric_id} is absent from metric registry"
+                f"knowledge metric {knowledge_id} references absent registry metric {semantic_metric_id}"
             )
         marketplace = str(metric["marketplace"])
         binding = metric["provider_binding"]
-        provider = (registry_metrics[metric_id].get("provider_mappings") or {}).get(marketplace)
+        provider = (
+            registry_metrics[semantic_metric_id].get("provider_mappings") or {}
+        ).get(marketplace)
         if not isinstance(provider, dict):
             raise MarketplaceKnowledgeError(
-                f"metric registry {metric_id} has no provider mapping for {marketplace}"
+                f"metric registry {semantic_metric_id} has no provider mapping for {marketplace}"
             )
         if provider.get("source_id") != binding.get("source_id"):
             raise MarketplaceKnowledgeError(
-                f"knowledge/registry source mismatch for {metric_id}"
+                f"knowledge/registry source mismatch for {knowledge_id}"
             )
         fields = list(provider.get("fields") or [])
         if binding.get("field_path") not in fields:
             raise MarketplaceKnowledgeError(
-                f"knowledge/registry field mismatch for {metric_id}: {binding.get('field_path')}"
+                f"knowledge/registry field mismatch for {knowledge_id}: {binding.get('field_path')}"
             )
-
 
 
 def verify_marketplace_knowledge(
@@ -189,6 +244,26 @@ def verify_marketplace_knowledge(
                 "url": source.get("url"),
             })
 
+    metric_records = [
+        metric for metric in (catalog.get("metrics") or {}).values()
+        if isinstance(metric, dict)
+    ]
+    verified_metric_ids = {
+        str(metric.get("metric_id") or knowledge_id)
+        for knowledge_id, metric in (catalog.get("metrics") or {}).items()
+        if isinstance(metric, dict) and metric.get("semantic_status") == "verified"
+    }
+    provisional_bindings = [
+        {
+            "knowledge_id": knowledge_id,
+            "metric_id": str(metric.get("metric_id") or knowledge_id),
+            "marketplace": metric.get("marketplace"),
+            "field_path": (metric.get("provider_binding") or {}).get("field_path"),
+        }
+        for knowledge_id, metric in (catalog.get("metrics") or {}).items()
+        if isinstance(metric, dict) and metric.get("semantic_status") == "provisional"
+    ]
+
     if errors:
         status = "FAIL"
     elif stale_sources:
@@ -202,10 +277,18 @@ def verify_marketplace_knowledge(
         "catalog_version": catalog.get("version"),
         "checked_on": checked_on.isoformat(),
         "max_source_age_days": int(max_source_age_days),
-        "verified_metric_count": sum(
-            1 for metric in (catalog.get("metrics") or {}).values()
-            if metric.get("semantic_status") == "verified"
+        "knowledge_record_count": len(metric_records),
+        "semantic_metric_count": len({
+            str(metric.get("metric_id") or knowledge_id)
+            for knowledge_id, metric in (catalog.get("metrics") or {}).items()
+            if isinstance(metric, dict)
+        }),
+        "verified_metric_count": len(verified_metric_ids),
+        "verified_binding_count": sum(
+            1 for metric in metric_records if metric.get("semantic_status") == "verified"
         ),
+        "provisional_binding_count": len(provisional_bindings),
+        "provisional_bindings": provisional_bindings,
         "source_count": len(catalog.get("sources") or {}),
         "stale_sources": stale_sources,
         "errors": errors,

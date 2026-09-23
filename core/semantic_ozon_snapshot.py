@@ -10,6 +10,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from typing import Any, Iterable, Optional
 
+from .metric_observation import build_metric_observation
 from .metric_registry import resolve_metric_terms
 from .tools import resolve_named_cabinet
 
@@ -397,6 +398,20 @@ async def execute_ozon_current_snapshot(
         if parsed_price is None:
             return {"ok": False, "error": "price_semantics_missing", "code": "PRICE_SEMANTICS_MISSING", "stage": "price", "complete": False, "entity": entity, "cabinet": cabinet}
         result["current_selling_price"] = parsed_price
+        price_observation = build_metric_observation(
+            metric_id="CURRENT_SELLING_PRICE",
+            value=parsed_price["amount"],
+            unit=parsed_price["currency"],
+            marketplace="ozon",
+            source_name="ozon_current_prices",
+            source_field="price.marketing_seller_price",
+        ).to_dict()
+        price_observation["dimensions"] = {
+            "product_id": entity.get("product_id"),
+            "offer_id": entity.get("offer_id"),
+            "sku": entity.get("sku"),
+        }
+        result.setdefault("metric_observations", []).append(price_observation)
         leg_states["price"] = "PASS"
 
     if "CURRENT_STOCK" in metrics:
@@ -428,6 +443,20 @@ async def execute_ozon_current_snapshot(
                 "details": {"entity_skus": sorted(expected_skus), "stock_skus": sorted(observed_skus)},
             }
         result["current_stock"] = parsed_stock
+        stock_observation = build_metric_observation(
+            metric_id="CURRENT_STOCK",
+            value=parsed_stock["available_units"],
+            unit="UNITS",
+            marketplace="ozon",
+            source_name="ozon_current_stocks",
+            source_field="stocks.present",
+        ).to_dict()
+        stock_observation["dimensions"] = {
+            "product_id": entity.get("product_id"),
+            "offer_id": entity.get("offer_id"),
+            "sku": entity.get("sku"),
+        }
+        result.setdefault("metric_observations", []).append(stock_observation)
         leg_states["stock"] = "PASS"
 
     result["leg_states"] = leg_states
@@ -443,4 +472,5 @@ async def execute_ozon_current_snapshot(
     result["limitations"] = [
         "CURRENT_SELLING_PRICE uses marketing_seller_price and is not a guaranteed personalized buyer checkout price."
     ] if "CURRENT_SELLING_PRICE" in metrics else []
+    result["knowledge_catalog_version"] = "marketplace_knowledge_catalog.v1"
     return result
