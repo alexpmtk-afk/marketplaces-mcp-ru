@@ -34,7 +34,7 @@ from core.errors import make_error
 from core.rate_limit import RateLimitUnavailable, build_rules
 from core.registry import Catalog
 from core.runtime_contracts import assert_service_runtime_contract
-from core.tools import register_cabinet_tools, register_generic_tools
+from core.tools import register_cabinet_tools, register_generic_tools, resolve_named_cabinet
 from core.workflows import Workflows, register_workflow_tools
 
 CATALOG_PATH = Path(__file__).with_name("endpoints.yaml")
@@ -593,24 +593,332 @@ async def wb_get_orders_summary(seller: str, date_from: str, date_to: str) -> st
 
 @mcp.tool(
     name="wb_get_prices",
-    annotations={"title": "WB prices & discounts", "readOnlyHint": True,
+    annotations={"title": "WB current prices with explicit RUB units", "readOnlyHint": True,
                  "openWorldHint": True},
 )
 async def wb_get_prices(limit: int = 1000, offset: int = 0,
                         filter_nm_id: Optional[int] = None) -> str:
-    """Get current prices and discounts for products (Discounts-Prices API).
+    """Get current WB prices with server-owned currency-unit semantics.
 
-    Args:
-        limit: page size (<=1000).
-        offset: pagination offset.
-        filter_nm_id: optional single nmID to filter by.
-    Returns JSON: {"ok": true, "data": {"listGoods": [{nmID, sizes, discount, ...}]}}.
+    Provider fields price, discountedPrice and clubDiscountedPrice are already
+    denominated in currencyIsoCode4217 major units. For RUB, 135517 means
+    135 517 rubles. Clients must never divide these values by 100.
     """
     q = {"limit": min(limit, 1000), "offset": offset}
     if filter_nm_id is not None:
         q["filterNmID"] = filter_nm_id
     spec = catalog.get("wb_prices_list")
-    return _j(await client.call_spec(spec, query=q))
+    response = await client.call_spec(spec, query=q)
+    if not isinstance(response, dict) or response.get("ok") is not True:
+        return _j(response)
+
+    provider = response.get("data")
+    if not isinstance(provider, dict):
+        return _j(make_error(
+            "schema", "WB price response is not an object.",
+            operation_id="wb_prices_list", retryable=False,
+        ))
+    payload = provider.get("data")
+    if not isinstance(payload, dict):
+        payload = provider
+    goods = payload.get("listGoods")
+    if not isinstance(goods, list):
+        return _j(make_error(
+            "schema", "WB price response has no listGoods array.",
+            operation_id="wb_prices_list", retryable=False,
+        ))
+
+    products = []
+    for item in goods:
+        if not isinstance(item, dict):
+            continue
+        currency = str(item.get("currencyIsoCode4217") or "RUB")
+        sizes = []
+        for size in item.get("sizes") or []:
+            if not isinstance(size, dict):
+                continue
+            row = {
+                "size_id": size.get("sizeID"),
+                "tech_size": size.get("techSizeName"),
+                "price_amount": size.get("price"),
+                "discounted_price_amount": size.get("discountedPrice"),
+                "club_discounted_price_amount": size.get("clubDiscountedPrice"),
+                "currency": currency,
+                "money_unit": "major_currency_unit",
+                "divide_by_100": False,
+            }
+            if currency == "RUB":
+                row["price_rub"] = size.get("price")
+                row["discounted_price_rub"] = size.get("discountedPrice")
+                row["club_discounted_price_rub"] = size.get("clubDiscountedPrice")
+            sizes.append(row)
+        products.append({
+            "nm_id": item.get("nmID"),
+            "vendor_code": item.get("vendorCode"),
+            "currency": currency,
+            "discount_percent": item.get("discount"),
+            "club_discount_percent": item.get("clubDiscount"),
+            "sizes": sizes,
+        })
+
+    return _j({
+        "ok": True,
+        "status": response.get("status"),
+        "source": "wb_prices_list",
+        "metric_id": "CURRENT_SELLING_PRICE",
+        "money_contract": {
+            "provider_currency_field": "currencyIsoCode4217",
+            "provider_values_are_major_currency_units": True,
+            "rub_values_are_rubles": True,
+            "divide_by_100": False,
+        },
+        "products": products,
+    })
+
+
+async def _wb_read_creds(cabinet: str) -> tuple[dict[str, str] | None, str, dict | None]:
+    requested = str(cabinet or "").strip()
+    if requested:
+        creds, error = resolve_named_cabinet(client, requested)
+        return creds, requested, error
+
+    creds, source = client.config.resolve_creds()
+    missing = [field for field in client.config.fields if not creds.get(field)]
+    if missing:
+        return None, str(source or ""), make_error(
+            "auth",
+            "Missing WB credentials: " + ", ".join(missing) + ".",
+            retryable=False,
+        )
+    return creds, str(source or "active"), None
+
+
+async def _wb_card_sizes(nm_id: int, creds: dict[str, str]) -> tuple[list[dict], dict | None]:
+    spec = catalog.get("wb_content_cards_list")
+    if spec is None:
+        return [], make_error(
+            "source_contract_missing",
+            "WB product-card lookup contract is missing.",
+            operation_id="wb_content_cards_list",
+            retryable=False,
+        )
+
+    response = await client.call_spec(
+        spec,
+        json_body={
+            "settings": {
+                "cursor": {"limit": 100},
+                "filter": {
+                    "withPhoto": -1,
+                    "textSearch": str(int(nm_id)),
+                },
+            }
+        },
+        creds_override=creds,
+    )
+    if not isinstance(response, dict) or response.get("ok") is not True:
+        return [], response if isinstance(response, dict) else make_error(
+            "provider",
+            "WB product-card lookup failed.",
+            retryable=True,
+        )
+
+    provider = response.get("data")
+    cards = provider.get("cards") if isinstance(provider, dict) else None
+    matches = [
+        card
+        for card in (cards or [])
+        if isinstance(card, dict) and int(card.get("nmID") or 0) == int(nm_id)
+    ]
+    if len(matches) != 1:
+        return [], make_error(
+            "not_found" if not matches else "schema",
+            (
+                "WB product card was not found for nmId " + str(nm_id)
+                if not matches
+                else "WB product-card lookup returned more than one exact nmId match."
+            ),
+            operation_id="wb_content_cards_list",
+            retryable=False,
+        )
+
+    sizes = []
+    for size in matches[0].get("sizes") or []:
+        if not isinstance(size, dict) or size.get("chrtID") in (None, ""):
+            continue
+        sizes.append({
+            "chrt_id": int(size["chrtID"]),
+            "tech_size": size.get("techSize"),
+            "wb_size": size.get("wbSize"),
+            "skus": list(size.get("skus") or []),
+        })
+    if not sizes:
+        return [], make_error(
+            "schema",
+            "WB product card has no chrtID sizes.",
+            operation_id="wb_content_cards_list",
+            retryable=False,
+        )
+    return sizes, None
+
+
+async def _wb_fbs_stock_result(
+    nm_id: int,
+    cabinet: str = "",
+    warehouse_ids: Optional[list[int]] = None,
+) -> dict:
+    creds, resolved_cabinet, error = await _wb_read_creds(cabinet)
+    if error:
+        return error
+    assert creds is not None
+
+    sizes, size_error = await _wb_card_sizes(int(nm_id), creds)
+    if size_error:
+        return size_error
+    chrt_ids = [int(item["chrt_id"]) for item in sizes]
+
+    warehouses_spec = catalog.get("wb_fbs_warehouses")
+    stock_spec = catalog.get("wb_post_api_stocks_warehouseid")
+    if warehouses_spec is None or stock_spec is None:
+        return make_error(
+            "source_contract_missing",
+            "WB seller-warehouse stock contracts are missing.",
+            retryable=False,
+        )
+
+    warehouse_response = await client.call_spec(
+        warehouses_spec,
+        creds_override=creds,
+    )
+    if not isinstance(warehouse_response, dict) or warehouse_response.get("ok") is not True:
+        return warehouse_response
+
+    raw = warehouse_response.get("data")
+    if isinstance(raw, dict):
+        raw = raw.get("warehouses") or raw.get("data") or raw.get("result")
+    warehouses = [
+        item for item in (raw or [])
+        if isinstance(item, dict) and item.get("id") not in (None, "")
+    ]
+
+    wanted = {int(value) for value in (warehouse_ids or [])}
+    if wanted:
+        warehouses = [item for item in warehouses if int(item["id"]) in wanted]
+    if not warehouses:
+        return make_error(
+            "not_found",
+            "No matching WB seller warehouses were returned.",
+            operation_id="wb_fbs_warehouses",
+            retryable=False,
+        )
+
+    warehouse_results = []
+    total = 0
+    for warehouse in warehouses:
+        warehouse_id = int(warehouse["id"])
+        stock_response = await client.call_spec(
+            stock_spec,
+            path_values={"warehouseId": warehouse_id},
+            json_body={"chrtIds": chrt_ids},
+            creds_override=creds,
+        )
+        if not isinstance(stock_response, dict) or stock_response.get("ok") is not True:
+            return {
+                "ok": False,
+                "error": "provider_leg_failed",
+                "code": "PROVIDER_LEG_FAILED",
+                "stage": "seller_warehouse_stock",
+                "complete": False,
+                "cabinet": resolved_cabinet,
+                "warehouse_id": warehouse_id,
+                "provider_error": stock_response,
+            }
+
+        provider = stock_response.get("data")
+        rows = provider.get("stocks") if isinstance(provider, dict) else None
+        if not isinstance(rows, list):
+            rows = []
+        breakdown = []
+        warehouse_total = 0
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            amount = int(row.get("amount") or 0)
+            warehouse_total += amount
+            breakdown.append({
+                "chrt_id": row.get("chrtId"),
+                "amount": amount,
+            })
+
+        total += warehouse_total
+        warehouse_results.append({
+            "warehouse_id": warehouse_id,
+            "warehouse_name": warehouse.get("name"),
+            "office_id": warehouse.get("officeId"),
+            "delivery_type": warehouse.get("deliveryType"),
+            "cargo_type": warehouse.get("cargoType"),
+            "available_units": warehouse_total,
+            "breakdown": breakdown,
+        })
+
+    return {
+        "ok": True,
+        "complete": True,
+        "marketplace": "wb",
+        "cabinet": resolved_cabinet,
+        "metric_id": "CURRENT_FBS_STOCK",
+        "data_class": "CURRENT_SELLER_WAREHOUSE_STOCK",
+        "nm_id": int(nm_id),
+        "available_units": total,
+        "sizes": sizes,
+        "warehouses": warehouse_results,
+        "source": "wb_post_api_stocks_warehouseid",
+        "warehouse_source": "wb_fbs_warehouses",
+        "meaning": (
+            "Current stock on seller-owned WB warehouses. "
+            "This is distinct from stock physically stored on Wildberries warehouses."
+        ),
+    }
+
+
+@mcp.tool(
+    name="wb_get_fbs_warehouses",
+    annotations={"title": "WB seller warehouses for FBS inventory", "readOnlyHint": True,
+                 "openWorldHint": True},
+)
+async def wb_get_fbs_warehouses(cabinet: str = "") -> str:
+    """List seller-owned WB warehouses used for seller inventory."""
+    creds, resolved_cabinet, error = await _wb_read_creds(cabinet)
+    if error:
+        return _j(error)
+    spec = catalog.get("wb_fbs_warehouses")
+    response = await client.call_spec(spec, creds_override=creds)
+    if isinstance(response, dict) and response.get("ok") is True:
+        response["cabinet"] = resolved_cabinet
+        response["source"] = "wb_fbs_warehouses"
+    return _j(response)
+
+
+@mcp.tool(
+    name="wb_get_fbs_stock",
+    annotations={"title": "WB current seller-warehouse FBS stock", "readOnlyHint": True,
+                 "openWorldHint": True},
+)
+async def wb_get_fbs_stock(
+    nm_id: int,
+    cabinet: str = "",
+    warehouse_ids: Optional[list[int]] = None,
+) -> str:
+    """Return current seller-warehouse stock for one WB nmId.
+
+    The server resolves nmId to chrtId values, reads every selected seller
+    warehouse, and returns an aggregate plus warehouse breakdown.
+    """
+    return _j(await _wb_fbs_stock_result(
+        nm_id=int(nm_id),
+        cabinet=cabinet,
+        warehouse_ids=warehouse_ids,
+    ))
 
 
 @mcp.tool(

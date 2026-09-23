@@ -183,10 +183,11 @@ SYSTEM_MAP: dict[str, Any] = {
         "resolver": "core/semantic_resolver.py",
         "execution_registry": "core/semantic_execution.yaml for weekly finance",
         "archive_executor": "core/semantic_archive.py for weekly finance; core/semantic_advertising.py for advertising",
-        "operational_executor": "core/semantic_current_stock.py for seller-aware current WB stock; ORDERS uses the approved legacy operational executor",
+        "operational_executor": "core/semantic_current_stock.py for current WB warehouse stock; wb_mcp/server.py owns normalized current WB price and seller-warehouse FBS stock; ORDERS uses the approved legacy operational executor",
         "runtime_entry": "marketplace_business_query",
-        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK"],
-        "current_stock_source": "WB Seller Analytics current stocks endpoint; Base-token fallback is the official asynchronous warehouse-remains report",
+        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE"],
+        "current_stock_source": "CURRENT_STOCK uses WB Seller Analytics current WB-warehouse stock; Base-token fallback is the official asynchronous warehouse-remains report. CURRENT_FBS_STOCK uses seller warehouses plus read-only POST /api/v3/stocks/{warehouseId}",
+        "current_price_source": "WB /api/v2/list/goods/filter with server-owned major-currency-unit contract; RUB price fields are rubles and must never be divided by 100",
         "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
         "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
         "resolution_outcomes": [
@@ -225,8 +226,10 @@ SYSTEM_MAP: dict[str, Any] = {
             "questions about complete marketplace orders must not be answered from orderDt/orderUid in weekly finance",
             "WB Statistics Orders is operational/preliminary and may omit some orders; it is not complete marketplace-order truth",
             "ordinary ORDERS questions including today use the approved operational Statistics Orders source; explicit complete-order-flow wording remains separate and fail-closed without the full order-feed source",
-            "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK from the live WB Seller Analytics stock source; Base tokens may use the official asynchronous warehouse-remains report fallback",
-            "CURRENT_STOCK is a present snapshot only; any past-date stock request must fail closed until a separate historical stock source/contract is approved",
+            "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK from the live WB Seller Analytics WB-warehouse stock source; Base tokens may use the official asynchronous warehouse-remains report fallback",
+            "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric and must use seller warehouses plus the read-only inventory endpoint; never substitute CURRENT_STOCK on WB warehouses",
+            "CURRENT_SELLING_PRICE for WB uses the provider price fields as major currency units; currencyIsoCode4217=RUB means rubles and divide_by_100 is forbidden",
+            "CURRENT_STOCK, CURRENT_FBS_STOCK and CURRENT_SELLING_PRICE are present snapshots only; historical requests must fail closed unless a separate historical source/contract is approved",
             "a generic current-state marker is only a fallback; it must not block a more specific approved operational business metric, and it must not make historical archive capabilities look current",
             "historical fulfillment may use deliveryMethod but must not be presented as current configuration",
             "historical warehouse tariff context may use dlvPrc, fixTariffDateFrom, fixTariffDateTo and warehouseLogisticsCoeff only as values observed in reported operations; it must never be presented as the current live warehouse tariff",
@@ -252,7 +255,7 @@ SYSTEM_MAP: dict[str, Any] = {
         ],
         "runtime_integration": (
             "marketplace_business_query preserves the original question and first normalizes source-independent business dimensions with business_query_parser. "
-            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to the seller-aware live WB stock executor and never substitutes its current snapshot for a historical date. "
+            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. None of these current snapshots may substitute for a historical date. "
             "Approved penalties/storage/acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context route to the coverage-gated weekly-finance archive executor. "
             "Approved closed-period cabinet-level WB advertising questions route to the dedicated coverage-gated advertising archive executor. "
             "Product-level advertising, current-day advertising without its live executor, commission-rate, final acquiring-expense and current tariff/configuration questions fail closed instead of being substituted. "
@@ -265,7 +268,9 @@ SYSTEM_MAP: dict[str, Any] = {
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
-        "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics stock snapshot for the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
+        "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics stock snapshot for WB warehouses in the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
+        "current_fbs_stock": "CURRENT_FBS_STOCK is seller-warehouse inventory from GET /api/v3/warehouses plus read-only POST /api/v3/stocks/{warehouseId}; never substitute WB-warehouse stock",
+        "current_price": "CURRENT_SELLING_PRICE for WB uses /api/v2/list/goods/filter and treats price fields as currency major units; RUB values are rubles and must never be divided by 100",
         "current_tariffs": "do not use weekly-report historical coefficients as live tariff truth; current tariff questions require a suitable live source",
         "advertising_live_vs_archive": "campaign state/current control remains live; closed cabinet-level advertising analytics are archive-first after roster/fullstats FULL_COVERAGE proof; product-level advertising remains fail-closed until ads_product_daily is semantically approved",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
@@ -308,6 +313,9 @@ For an ordinary request to update/refresh the marketplace database, prefer marke
 Do not claim that a database update succeeded merely because jobs were queued. Wait until all requested jobs reach COMPLETE, then call marketplace_database_verify and require canonical-file presence, stable-key integrity, registry/coverage consistency and date/high-watermark evidence. Date is freshness evidence where meaningful but never replaces a stronger provider-native identity such as reportId, event key or canonical request coverage.
 A future archive dataset must be registered with provider discovery, coverage/cursor model, stable row key, freshness evidence, merge semantics and completion invariants before the generic database update workflow may claim to refresh it.
 For business questions, preserve the user's original wording and pass it through Semantic Core. Normalize source-independent measure/grouping/period/filter dimensions with core/business_query_parser.py before selecting a source; the parser must not choose provider fields. The original question outranks a conflicting legacy metric hint.
+For historical WB sales/buyouts/returns/finance questions with archive coverage, use the canonical Google Drive archive through Semantic Core. Do not substitute live Statistics API merely because it is callable or because its limiter is available.
+For current WB price, price/discountedPrice/clubDiscountedPrice are already expressed in currencyIsoCode4217 major units. When currency is RUB, values are rubles; never divide by 100 or reinterpret them as kopecks.
+For stock questions distinguish CURRENT_STOCK on WB warehouses from CURRENT_FBS_STOCK on seller-owned warehouses. Explicit FBS/seller-warehouse wording must use the seller warehouse inventory route and must never be answered by WB-warehouse stock.
 A generic current-state marker such as today/current is a fail-closed fallback. A more specific registered operational business metric may outrank it only when that metric has an explicitly approved live/operational source.
 Ordinary WB ORDERS questions, including today, use the operational/preliminary WB Statistics Orders source. They must never be presented as the complete marketplace order flow; explicit full-order-flow wording remains a separate source requirement.
 CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK and uses the seller-aware live WB Seller Analytics stocks source. Base-token cabinets may use the official asynchronous warehouse-remains report fallback. CURRENT_STOCK is today's/current snapshot only: any past-date stock question must fail closed until a separately approved historical stock source exists, and today's snapshot must never be substituted.

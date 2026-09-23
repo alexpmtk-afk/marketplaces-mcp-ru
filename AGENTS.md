@@ -58,11 +58,15 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 
 ## Semantic Core boundaries
 - Natural-language business questions are normalized by `core/business_query_parser.py` before source selection; parsing the requested measure/grouping/period/filter must remain separate from provider-field selection.
+- POST does not imply either read or write semantics. Any generic POST declared `safety: read` must also carry an explicit reviewed `read_only_post_proven: true`; otherwise generic execution fails closed. Equivalent generic read contracts must match HTTP method + host + path, except explicit reviewed legacy aliases.
 - Prefer `user_message`, `user_reason`, and `user_note` from high-level MCP tools when speaking to users. Keep `technical_message`, `technical_reason`, source-family/status codes, executor names, fail-closed details, and forbidden-substitute diagnostics internal unless the user explicitly asks for technical/source diagnostics. Do not append boilerplate such as «данные не подменял» or «обходные способы не использовал» to ordinary answers.
 - A generic current-state marker such as `сегодня`/`сейчас` may be bypassed only by a more specific registered business metric with an explicitly approved operational/live source. It must never make historical archive capabilities look current.
 - `ORDERS` is an operational/preliminary business metric from WB Statistics Orders. It may answer ordinary order questions including today, but it must never be presented as the complete marketplace order flow.
-- `CURRENT_STOCK` is `CURRENT_OPERATIONAL_STOCK` and uses the live WB Seller Analytics stocks source, with the official asynchronous warehouse-remains report as the Base-token fallback. It is current-snapshot only.
-- Historical stock questions must fail closed until a separately approved historical stock source/contract exists. Never answer a past-date stock question with today's `CURRENT_STOCK` snapshot.
+- `CURRENT_STOCK` is `CURRENT_OPERATIONAL_STOCK` for stock on Wildberries warehouses and uses the live WB Seller Analytics source, with the official asynchronous warehouse-remains report as the Base-token fallback.
+- `CURRENT_FBS_STOCK` is `CURRENT_SELLER_WAREHOUSE_STOCK` for seller-owned WB warehouses. Explicit FBS/seller-warehouse wording must use `GET /api/v3/warehouses` plus the reviewed read-only `POST /api/v3/stocks/{warehouseId}`; never substitute `CURRENT_STOCK`.
+- `CURRENT_SELLING_PRICE` is current-only. WB `price`, `discountedPrice` and `clubDiscountedPrice` are provider major-currency-unit fields; when the currency is RUB they are rubles and must never be divided by 100.
+- Historical stock/price questions must fail closed until separately approved historical source contracts exist. Never answer a past-date request with today's snapshot.
+- Historical WB sales/buyouts/returns/finance questions with approved coverage are archive-first: route through Semantic Core to the canonical Google Drive archive and never replace it with a live Statistics API call merely because the endpoint is callable.
 - The canonical WB weekly realization dataset has 92 physical columns; all 92 must remain semantically catalogued in `core/semantic_registry.yaml`.
 - Weekly realization semantics are complete when every physical field has documented meaning, role, safe uses and explicit limitations where needed. Do not invent a calculation merely because a field exists.
 - Approved weekly-finance formulas remain separate from field semantics in `core/semantic_execution.yaml`.

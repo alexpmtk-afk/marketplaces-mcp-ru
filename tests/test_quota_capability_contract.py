@@ -35,12 +35,12 @@ def test_legacy_wb_price_id_resolves_to_proven_canonical_contract():
     assert info["quota_proof"] == "operation_quota"
 
 
-def test_parseable_but_unproven_rule_is_explicitly_blocked():
+def test_unreviewed_post_read_is_blocked_before_quota_execution():
     spec = wb.catalog.get("wb_analytics_funnel")
     info = generic_read_execution_info("wb", wb.catalog, spec)
-    assert info["generic_read_status"] == "BLOCKED_QUOTA_UNPROVEN"
+    assert info["generic_read_status"] == "BLOCKED_READ_SEMANTICS_UNPROVEN"
     assert info["generic_read_executable"] is False
-    assert info["generic_read_reason"] == "rate_limit_present_but_unproven"
+    assert info["generic_read_reason"] == "post_read_semantics_unproven"
 
 
 def test_missing_quota_contract_is_explicitly_blocked():
@@ -80,8 +80,8 @@ def test_search_inventory_mode_exposes_status_instead_of_hiding_it():
         row for row in payload["results"]
         if row["operation_id"] == "wb_analytics_funnel"
     )
-    assert row["generic_read_status"] == "BLOCKED_QUOTA_UNPROVEN"
-    assert row["generic_read_reason"] == "rate_limit_present_but_unproven"
+    assert row["generic_read_status"] == "BLOCKED_READ_SEMANTICS_UNPROVEN"
+    assert row["generic_read_reason"] == "post_read_semantics_unproven"
 
 
 def test_describe_exposes_quota_block_before_execution():
@@ -100,7 +100,9 @@ def test_every_read_only_catalog_operation_has_explicit_quota_capability_status(
             if info["generic_read_status"] == "NOT_READ":
                 continue
             assert info["generic_read_status"] in {
-                "EXECUTABLE", "BLOCKED_QUOTA_UNPROVEN",
+                "EXECUTABLE",
+                "BLOCKED_QUOTA_UNPROVEN",
+                "BLOCKED_READ_SEMANTICS_UNPROVEN",
             }, (service, spec.operation_id, info)
             assert isinstance(info.get("generic_read_reason"), str)
             assert info["generic_read_reason"], (service, spec.operation_id, info)

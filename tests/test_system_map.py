@@ -128,9 +128,18 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
     assert "semantic_advertising.py" in semantic["archive_executor"]
     assert "semantic_current_stock.py" in semantic["operational_executor"]
     assert semantic["runtime_entry"] == "marketplace_business_query"
-    assert set(semantic["approved_operational_business_metrics"]) == {"ORDERS", "CURRENT_STOCK"}
+    assert set(semantic["approved_operational_business_metrics"]) == {
+        "ORDERS",
+        "CURRENT_STOCK",
+        "CURRENT_FBS_STOCK",
+        "CURRENT_SELLING_PRICE",
+    }
     assert "Seller Analytics" in semantic["current_stock_source"]
     assert "warehouse-remains" in semantic["current_stock_source"]
+    assert "CURRENT_FBS_STOCK" in semantic["current_stock_source"]
+    assert "read-only POST /api/v3/stocks/{warehouseId}" in semantic["current_stock_source"]
+    assert "RUB" in semantic["current_price_source"]
+    assert "never be divided by 100" in semantic["current_price_source"]
     assert set(semantic["current_archive_datasets"]) == {
         "wb_weekly_finance_main",
         "ads_campaign_daily",
@@ -163,8 +172,11 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     rules = "\n".join(semantic["rules"])
     assert "ordinary ORDERS questions including today" in rules
     assert "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK" in rules
+    assert "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric" in rules
+    assert "CURRENT_SELLING_PRICE for WB" in rules
+    assert "divide_by_100 is forbidden" in rules
     assert "asynchronous warehouse-remains report fallback" in rules
-    assert "past-date stock request must fail closed" in rules
+    assert "historical requests must fail closed" in rules
     assert "generic current-state marker" in rules
     routing = SYSTEM_MAP["routing_policy"]["current_stock"]
     assert "current WB Seller Analytics stock snapshot" in routing

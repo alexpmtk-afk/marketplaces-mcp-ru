@@ -216,14 +216,16 @@ Canonical components:
 
 ### Operational business metrics
 
-Two operational business metrics are currently registered:
+Four operational business metrics are currently registered:
 
 - `ORDERS` — WB Statistics Orders, data class `PRELIMINARY_OPERATIONAL`. Ordinary order questions, including **today**, use this source. It is not the complete marketplace order flow and must not answer explicit “all orders / complete order flow” questions.
-- `CURRENT_STOCK` — WB current warehouse stock snapshot, data class `CURRENT_OPERATIONAL_STOCK`. The primary source is the current Seller Analytics stocks endpoint; Base-token cabinets may use the official asynchronous warehouse-remains report fallback.
+- `CURRENT_STOCK` — stock physically stored on Wildberries warehouses, data class `CURRENT_OPERATIONAL_STOCK`. The primary source is the current Seller Analytics stocks endpoint; Base-token cabinets may use the official asynchronous warehouse-remains report fallback.
+- `CURRENT_FBS_STOCK` — current stock on seller-owned WB warehouses, data class `CURRENT_SELLER_WAREHOUSE_STOCK`. It resolves seller warehouses through `GET /api/v3/warehouses` and inventory through the reviewed read-only `POST /api/v3/stocks/{warehouseId}`. It must never be substituted with `CURRENT_STOCK`.
+- `CURRENT_SELLING_PRICE` — current seller-side price. For WB the `price`, `discountedPrice` and `clubDiscountedPrice` fields from `/api/v2/list/goods/filter` are already expressed in the provider currency's major units. When `currencyIsoCode4217=RUB`, the values are rubles and must never be divided by 100.
 
 The generic current-state rule remains a fail-closed fallback. A concrete operational metric may outrank it only when that metric has an explicitly approved source. Therefore “Сколько заказов сегодня?” can resolve to `ORDERS`, while “Какая комиссия сегодня?” remains fail-closed without an approved live commission contract.
 
-`CURRENT_STOCK` is present-state only. A past-date stock request must fail **before** provider execution and require a separate historical stock source/contract. The server must never substitute today's snapshot for historical inventory.
+All current price/stock metrics are present-state only. A past-date request must fail **before** provider execution and require a separately approved historical source/contract. The server must never substitute today's snapshot for historical truth.
 
 ### 92-column weekly-report completion status
 
@@ -272,8 +274,9 @@ WB Statistics Orders remains operational/preliminary (`PRELIMINARY_NOT_ALL_ORDER
 - Natural business questions preserve the user's original wording, normalize source-independent business dimensions, and resolve through Semantic Core before source selection.
 - A specific approved operational business metric outranks the generic current-state guard only for its registered source; the generic rule otherwise remains fail-closed.
 - Ordinary `ORDERS` questions including today use WB Statistics Orders; explicit complete-order-flow questions remain separate.
-- `CURRENT_STOCK` uses the current seller-aware WB stock snapshot. Any past-date stock request requires a different approved historical source and never receives today's snapshot.
-- Historical questions read the canonical Google Drive archive only when semantic approval and exact coverage exist.
+- `CURRENT_STOCK` uses the current WB-warehouse snapshot. Explicit FBS/seller-warehouse wording uses `CURRENT_FBS_STOCK` instead; the two stock classes are never interchangeable.
+- `CURRENT_SELLING_PRICE` uses the normalized provider price contract; WB RUB fields are rubles and are never divided by 100.
+- Historical sales/buyouts/returns/finance questions read the canonical Google Drive archive when semantic approval and exact coverage exist; a callable live API must not replace an available archive source.
 - Current/uncovered periods use a suitable provider API or an explicit backfill/gap workflow; no partial archive is silently substituted.
 - Complete-order questions do not substitute WB Statistics Orders for the full marketplace order flow.
 - Current tariff questions do not use historical weekly-report coefficients as live tariff truth.

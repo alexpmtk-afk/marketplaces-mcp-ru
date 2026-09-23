@@ -30,10 +30,24 @@ business_metrics:
     current_period_supported: true
     current_only: true
     guardrail: Текущие остатки — только live snapshot утверждённого кабинета маркетплейса. Историческую дату нельзя подменять сегодняшним снимком; для прошлого периода требуется отдельный утверждённый исторический источник.
+  CURRENT_FBS_STOCK:
+    status: AVAILABLE
+    marketplace: wb
+    source_id: wb_fbs_stock
+    data_class: CURRENT_SELLER_WAREHOUSE_STOCK
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL, PRODUCT, WAREHOUSE]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Это остаток на собственных складах продавца для FBS-потока. Не смешивать с остатком, физически находящимся на складах Wildberries.
+
   CURRENT_SELLING_PRICE:
     status: AVAILABLE_WITH_LIMITATION
-    marketplace: ozon
-    source_id: ozon_current_prices
+    marketplace: wb
+    marketplaces: [wb, ozon]
+    source_id: wb_current_prices
     data_class: CURRENT_OPERATIONAL_PRICE
     default_measure: AMOUNT_RUB
     allowed_measures: [AMOUNT_RUB]
@@ -41,7 +55,7 @@ business_metrics:
     product_filter_supported: true
     current_period_supported: true
     current_only: true
-    guardrail: Для Ozon используется seller-side current selling price из marketing_seller_price. Не выдавать её за гарантированную персонализированную цену покупателя; историческую цену нельзя подменять текущим снимком.
+    guardrail: Для WB значения price/discountedPrice уже выражены в currencyIsoCode4217; RUB нельзя делить на 100. Для Ozon отдельный executor использует marketing_seller_price. Историческую цену нельзя подменять текущим снимком.
 
 routes:
   - id: ozon_any
@@ -49,6 +63,12 @@ routes:
     target_type: not_covered
     target_id: ozon_data
     match_any: [ozon, озон]
+
+  - id: current_fbs_stock
+    priority: 1970
+    target_type: business_metric
+    target_id: CURRENT_FBS_STOCK
+    match_any: [остаток fbs, остатки fbs, fbs остаток, fbs остатки, остаток на складе fbs, остатки на складе fbs, остаток на складе продавца, остатки на складе продавца, остаток на нашем складе, остатки на нашем складе]
 
   - id: current_stock
     priority: 1950
@@ -97,6 +117,12 @@ routes:
     target_type: not_covered
     target_id: detailed_acceptance_operations
     match_any: [как рассчитана приемка, как рассчитана приёмка, детализация приемки, детализация приёмки, почему начислили приемку, почему начислили приёмку]
+
+  - id: current_selling_price
+    priority: 1810
+    target_type: business_metric
+    target_id: CURRENT_SELLING_PRICE
+    match_any: [цена товара, цену товара, цена артикула, цену артикула, сколько стоит товар, текущая цена товара, текущую цену товара, цена по товару, цену на товар, цену на любой товар]
 
   - id: current_state_generic
     priority: 1800

@@ -33,6 +33,30 @@ metrics:
       ozon: {status: NOT_MAPPED, fields: []}
     guardrail: Это live snapshot; историческую дату нельзя подменять текущим снимком.
 
+  CURRENT_FBS_STOCK:
+    canonical_name_ru: Текущие остатки FBS на складе продавца
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru: [остаток FBS, остатки FBS, остаток на складе продавца, остатки на складе продавца]
+    aliases_en: [current FBS stock, seller warehouse stock]
+    semantic_target: {type: BUSINESS_METRIC, id: CURRENT_FBS_STOCK}
+    provider_mappings:
+      wb: {status: EXECUTOR_OWNED, source_id: wb_fbs_stock, fields: []}
+      ozon: {status: NOT_MAPPED, fields: []}
+    guardrail: Не смешивать со stock snapshot на складах Wildberries; это отдельный seller-warehouse источник.
+
+  CURRENT_SELLING_PRICE:
+    canonical_name_ru: Текущая цена товара
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [цена товара, текущая цена товара, цена артикула, сколько стоит товар]
+    aliases_en: [current selling price, current product price]
+    semantic_target: {type: BUSINESS_METRIC, id: CURRENT_SELLING_PRICE}
+    provider_mappings:
+      wb: {status: EXECUTOR_OWNED, source_id: wb_current_prices, fields: [price, discountedPrice, clubDiscountedPrice]}
+      ozon: {status: EXECUTOR_OWNED, source_id: ozon_current_prices, fields: [marketing_seller_price]}
+    guardrail: Единицы определяет provider contract. WB RUB уже в рублях и не делится на 100; Ozon использует marketing_seller_price.
+
   SALES:
     canonical_name_ru: Продажи
     kind: BUSINESS

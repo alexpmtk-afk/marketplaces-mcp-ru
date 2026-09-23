@@ -17,6 +17,7 @@ endpoints:
   path: /content/v2/get/cards/list
   scope: content
   safety: read
+  read_only_post_proven: true
   pagination: cursor
   rate_limit: 100 req/min
   quota_proven: true
@@ -384,8 +385,15 @@ endpoints:
   path: /api/v3/warehouses
   scope: marketplace
   safety: read
-  summary: List the seller's FBS warehouses.
-  doc: https://dev.wildberries.ru/en/openapi/orders-fbs
+  rate_limit: 300 req/min
+  quota_proven: true
+  summary: List the seller's FBS warehouses for seller-owned inventory.
+  doc: https://dev.wildberries.ru/en/openapi/work-with-products
+  keywords:
+  - fbs
+  - склад продавца
+  - склады продавца
+  - остатки продавца
   pagination: none
 - operation_id: wb_adv_count
   section: promotion
@@ -866,9 +874,19 @@ endpoints:
   host: marketplace-api.wildberries.ru
   path: /api/v3/stocks/{warehouseId}
   scope: marketplace
-  safety: write
-  summary: Получить остатки товаров
-  doc: ''
+  safety: read
+  read_only_post_proven: true
+  rate_limit: 300 req/min
+  quota_proven: true
+  summary: Получить текущие FBS-остатки товаров на складе продавца
+  params:
+    body: '{chrtIds:[size_id,...]}'
+  doc: https://dev.wildberries.ru/en/openapi/work-with-products
+  keywords:
+  - fbs
+  - остатки продавца
+  - склад продавца
+  - chrtid
   items_path: stocks
   pagination: none
 - operation_id: wb_get_api_offices
@@ -887,7 +905,7 @@ endpoints:
   host: marketplace-api.wildberries.ru
   path: /api/v3/warehouses
   scope: marketplace
-  safety: read
+  safety: write
   summary: Создать склад продавца
   doc: ''
   pagination: none

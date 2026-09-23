@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from copy import deepcopy
 from typing import Any, Optional
 
@@ -242,6 +243,78 @@ async def execute_business_query(
                         result, question=natural_question, resolution=resolution,
                     )
                 return result
+            if metric_id == "CURRENT_FBS_STOCK":
+                wb = modules.get("wb")
+                if wb is None:
+                    return make_error(
+                        "source_not_suitable",
+                        "Wildberries runtime module is required for seller-warehouse stock.",
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                    )
+                ids = list(nm_ids or [])
+                if not ids:
+                    ids = [int(value) for value in re.findall(r"(?<!\d)\d{6,}(?!\d)", natural_question)]
+                ids = list(dict.fromkeys(ids))
+                if len(ids) != 1:
+                    return make_error(
+                        "invalid_params",
+                        "CURRENT_FBS_STOCK requires exactly one WB nmId.",
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                        details={"nm_ids": ids},
+                    )
+                result = await wb._wb_fbs_stock_result(
+                    nm_id=int(ids[0]),
+                    cabinet=seller,
+                )
+                if isinstance(result, dict):
+                    return _attach_semantic_context(
+                        result, question=natural_question, resolution=resolution,
+                    )
+                return result
+
+            if metric_id == "CURRENT_SELLING_PRICE":
+                wb = modules.get("wb")
+                if wb is None:
+                    return make_error(
+                        "source_not_suitable",
+                        "Wildberries runtime module is required for the approved current-price metric.",
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                    )
+                ids = list(nm_ids or [])
+                if not ids:
+                    ids = [int(value) for value in re.findall(r"(?<!\d)\d{6,}(?!\d)", natural_question)]
+                ids = list(dict.fromkeys(ids))
+                if len(ids) > 1:
+                    return make_error(
+                        "invalid_params",
+                        "CURRENT_SELLING_PRICE accepts at most one WB nmId per request.",
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                        details={"nm_ids": ids},
+                    )
+                payload = await wb.wb_get_prices(
+                    limit=1 if not ids else 1000,
+                    offset=0,
+                    filter_nm_id=(int(ids[0]) if ids else None),
+                )
+                try:
+                    result = json.loads(payload)
+                except (TypeError, json.JSONDecodeError):
+                    return make_error(
+                        "server_error",
+                        "WB price executor returned a non-JSON result.",
+                        operation_id="marketplace_business_query",
+                        retryable=False,
+                    )
+                if isinstance(result, dict):
+                    return _attach_semantic_context(
+                        result, question=natural_question, resolution=resolution,
+                    )
+                return result
+
 
             return make_error(
                 "source_not_suitable",

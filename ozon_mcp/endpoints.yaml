@@ -24,6 +24,7 @@ endpoints:
   path: /v3/product/info/list
   scope: seller
   safety: read
+  read_only_post_proven: true
   service_quota_proven: true
   summary: Product details for a set of identifiers (offer_id/product_id/sku).
   params:
@@ -155,6 +156,7 @@ endpoints:
   path: /v5/product/info/prices
   scope: seller
   safety: read
+  read_only_post_proven: true
   service_quota_proven: true
   pagination: cursor
   summary: Prices + commissions + price indexes (<=1000/req). v5 is current.
@@ -204,6 +206,7 @@ endpoints:
   path: /v4/product/info/stocks
   scope: seller
   safety: read
+  read_only_post_proven: true
   service_quota_proven: true
   pagination: cursor
   summary: Available + reserved quantity per product. v4 is current.
@@ -365,6 +368,7 @@ endpoints:
   path: /v1/analytics/data
   scope: seller
   safety: read
+  read_only_post_proven: true
   rate_limit: 1 req/min
   quota_proven: true
   summary: Custom report by dimensions+metrics (revenue, ordered_units, conversions).
@@ -398,6 +402,7 @@ endpoints:
   path: /v1/analytics/turnover/stocks
   scope: seller
   safety: read
+  read_only_post_proven: true
   rate_limit: 1 req/min
   quota_proven: true
   summary: Turnover rate + days-of-stock (idc) per SKU. Hard-limited 1 req/min.

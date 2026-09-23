@@ -42,6 +42,21 @@ def has_proven_quota(spec: Any) -> bool:
     ) is not None
 
 
+def has_proven_read_semantics(spec: Any) -> bool:
+    """Return True only when a catalog record is proven safe for generic reads.
+
+    GET/HEAD reads are structurally read-only. POST is ambiguous by design:
+    marketplaces use POST both for searches and mutations, so a POST declared
+    safety=read is executable generically only after an explicit provider
+    semantics review recorded as read_only_post_proven=true.
+    """
+    if infer_safety(spec.method, spec.safety) != "read":
+        return False
+    if str(getattr(spec, "method", "")).upper() == "POST":
+        return bool(getattr(spec, "read_only_post_proven", False))
+    return True
+
+
 LEGACY_READ_OPERATION_ALIASES: dict[tuple[str, str], str] = {
     ("wb", "wb_post_api_list_goods_filter"): "wb_prices_list",
     ("wb", "wb_post_api_analytics_stocks_report_wb_warehouses"): "wb_analytics_stocks_wb_warehouses",
@@ -63,10 +78,11 @@ def resolve_equivalent_proven_read_spec(
     Generated catalogs can contain stale/duplicate operation IDs for the same
     provider endpoint while a reviewed canonical record carries the proven
     quota contract. For read-only requests, reuse that contract only when there
-    is exactly one proven read candidate with the same host + path. Method is
-    intentionally not part of the identity because some stale generated WB
-    records carried the wrong verb; the canonical record supplies the reviewed
-    verb. Unknown or ambiguous duplicates remain fail-closed.
+    is exactly one proven read candidate with the same HTTP method + host + path.
+    Wrong-verb migrations are allowed only through the explicit
+    LEGACY_READ_OPERATION_ALIASES table. This prevents a mutating POST from
+    inheriting trust from a GET that happens to share the same URL.
+    Unknown or ambiguous duplicates remain fail-closed.
     """
     if has_proven_quota(spec):
         return spec, False
@@ -78,6 +94,8 @@ def resolve_equivalent_proven_read_spec(
     matches: list[Any] = []
     for candidate in catalog.all():
         if candidate.operation_id == spec.operation_id:
+            continue
+        if str(candidate.method or "").strip().upper() != str(spec.method or "").strip().upper():
             continue
         if str(candidate.host or "").strip().lower() != host:
             continue
@@ -114,7 +132,26 @@ def generic_read_execution_info(
             "resolved_operation_id": spec.operation_id,
         }
 
+    if not has_proven_read_semantics(spec):
+        return {
+            "generic_read_status": "BLOCKED_READ_SEMANTICS_UNPROVEN",
+            "generic_read_executable": False,
+            "generic_read_reason": "post_read_semantics_unproven",
+            "quota_proof": "none",
+            "resolved_operation_id": spec.operation_id,
+            "equivalent_proven_contract_resolution": False,
+        }
+
     resolved, equivalent = resolve_equivalent_proven_read_spec(catalog, spec)
+    if not has_proven_read_semantics(resolved):
+        return {
+            "generic_read_status": "BLOCKED_READ_SEMANTICS_UNPROVEN",
+            "generic_read_executable": False,
+            "generic_read_reason": "resolved_post_read_semantics_unproven",
+            "quota_proof": "none",
+            "resolved_operation_id": resolved.operation_id,
+            "equivalent_proven_contract_resolution": equivalent,
+        }
     if has_proven_quota(resolved):
         if equivalent:
             proof = "equivalent_proven_contract"
@@ -242,6 +279,8 @@ def resolve_catalog_raw_spec(
     spec = matches[0]
     if infer_safety(spec.method, spec.safety) != "read":
         return None, "unsafe"
+    if not has_proven_read_semantics(spec):
+        return None, "read_semantics_unproven"
     if not has_proven_quota(spec):
         return None, "quota_unproven"
     return spec, "approved"
@@ -383,10 +422,10 @@ def register_generic_tools(
         executable = [r for r in rows if r["generic_read_executable"]]
         blocked = [
             r for r in rows
-            if r["generic_read_status"] == "BLOCKED_QUOTA_UNPROVEN"
+            if str(r["generic_read_status"]).startswith("BLOCKED_")
         ]
         selected = (
-            [r for r in rows if r["generic_read_status"] != "BLOCKED_QUOTA_UNPROVEN"]
+            [r for r in rows if not str(r["generic_read_status"]).startswith("BLOCKED_")]
             if executable_only else rows
         )
         selected = selected[:limit]
@@ -484,6 +523,7 @@ def register_generic_tools(
             "rate_limit": spec.rate_limit,
             "quota_proven": bool(getattr(spec, "quota_proven", False)),
             "service_quota_proven": bool(getattr(spec, "service_quota_proven", False)),
+            "read_only_post_proven": bool(getattr(spec, "read_only_post_proven", False)),
             "summary": spec.summary,
             "params": spec.params, "doc": spec.doc,
             **generic_read_execution_info(svc, catalog, spec),
@@ -545,6 +585,20 @@ def register_generic_tools(
         )
         if gate:
             return _j(gate)
+        if infer_safety(spec.method, spec.safety) == "read" and not has_proven_read_semantics(spec):
+            return _j({
+                "ok": False,
+                "error": "read_semantics_unproven",
+                "code": "READ_SEMANTICS_UNPROVEN",
+                "operation_id": spec.operation_id,
+                "endpoint": spec.path,
+                "provider_call_sent": False,
+                "retryable": False,
+                "message": (
+                    "Generic execution refuses POST-as-read until provider semantics "
+                    "are explicitly reviewed and read_only_post_proven=true."
+                ),
+            })
         if not has_proven_quota(spec):
             return _j(quota_error(spec.operation_id, spec.path))
         creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
@@ -670,6 +724,16 @@ def register_generic_tools(
             return _j({"error": "invalid_params",
                        "message": "fetch_all only runs read endpoints; "
                                   f"{operation_id} is a {spec.method} write."})
+        if not has_proven_read_semantics(spec):
+            return _j({
+                "ok": False,
+                "error": "read_semantics_unproven",
+                "code": "READ_SEMANTICS_UNPROVEN",
+                "operation_id": spec.operation_id,
+                "endpoint": spec.path,
+                "provider_call_sent": False,
+                "retryable": False,
+            })
         if not has_proven_quota(spec):
             return _j(quota_error(spec.operation_id, spec.path))
         creds_override, cabinet_error = resolve_named_cabinet(client, cabinet)
