@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import httpx
 from datetime import date, timedelta
 from pathlib import Path
@@ -284,3 +285,53 @@ def test_provider_malformed_json_text_remains_text():
     )
 
     assert _parse_body(response) == '{"data": broken'
+
+
+
+def test_application_json_double_encoded_object_is_unwrapped_once():
+    inner = {
+        "data": {
+            "items": [
+                {
+                    "nmId": 507763296,
+                    "warehouseName": "Test WB warehouse",
+                    "quantity": 4,
+                }
+            ]
+        }
+    }
+    response = httpx.Response(
+        200,
+        headers={"Content-Type": "application/json"},
+        content=json.dumps(json.dumps(inner)).encode("utf-8"),
+    )
+
+    provider = _parse_body(response)
+
+    assert provider == inner
+    items = semantic_current_stock._extract_fast_items({
+        "ok": True,
+        "status": 200,
+        "data": provider,
+    })
+    assert items == inner["data"]["items"]
+
+
+def test_application_json_plain_string_remains_string():
+    response = httpx.Response(
+        200,
+        headers={"Content-Type": "application/json"},
+        content=json.dumps("provider is alive").encode("utf-8"),
+    )
+
+    assert _parse_body(response) == "provider is alive"
+
+
+def test_application_json_string_that_looks_non_structured_remains_string():
+    response = httpx.Response(
+        200,
+        headers={"Content-Type": "application/json"},
+        content=json.dumps("12345").encode("utf-8"),
+    )
+
+    assert _parse_body(response) == "12345"
