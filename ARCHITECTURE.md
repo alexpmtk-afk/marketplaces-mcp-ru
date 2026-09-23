@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
-**Status:** CANONICAL  
-**Version:** `2026-09-22.v21`
+**Status:** CANONICAL
+**Version:** `2026-09-23.v22`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -27,14 +27,15 @@ Production secrets are server-side on REMOTE under `/opt/mcp/secrets/marketplace
 Supporting services:
 - Canonical marketplace archive: **Google Drive** folder `Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных`.
 - Shared limiter/locks/queue coordination: local REMOTE Redis.
-- Google Drive control plane: owner-operated **Google Apps Script** web-app bridge.
+- Google Drive production read path: **DirectGoogleDriveArchiveStore** using Google Drive API v3, a restricted read-only Service Account, and verified local cache.
+- Google Drive write/control plane: owner-operated **Google Apps Script** web-app bridge.
 - Large annual CSV bytes: direct **Google Drive API resumable upload** by the REMOTE worker to the opaque session URI created by Apps Script.
 - Archive durable job/staging/candidate/backup backend: **must be established from the actual REMOTE service environment/config before mutating work**. Legacy Yandex-named files/classes/paths do not prove Yandex Cloud is active.
 
 ### Hard boundaries
 
 - Google Drive annual CSV files and dataset-specific coverage registries are the archive source of truth.
-- Apps Script remains the narrow trusted Google control-plane bridge for small Drive operations, reads, metadata/status, folder resolution, resumable-session creation and final verified promotion.
+- Production historical reads use the direct read-only Google Drive API Service Account path. Apps Script remains the narrow trusted write/mutation control-plane bridge and explicit rollback read transport for resumable-session creation and final verified promotion.
 - **Large annual CSV file bytes must not be transported through Apps Script as one base64 JSON POST.**
 - **Large annual resumable uploads must not write directly into the existing canonical file.** They upload to a non-canonical staging filename first.
 - The Apps Script shared secret is injected server-side on REMOTE. The resumable session URI is a bearer-like capability and must never be logged or returned to users.
@@ -108,16 +109,32 @@ Current registered refresh families are WB finance and WB advertising. A future 
 
 ## Google Drive access contract
 
-Drive access uses one Google authorization surface: the owner-operated Apps Script bridge.
+Production archive access intentionally separates read-only and mutating authorization surfaces.
 
-### Apps Script bridge — control plane
+- Historical read-only archive queries use `DirectGoogleDriveArchiveStore` with a restricted Google Service Account and Google Drive API v3.
+- Archive writes, resumable-session creation and verified canonical promotion remain controlled by the owner-operated Apps Script bridge.
+- Apps Script remains available as an explicit rollback transport for archive reads, but it is not the normal production historical read path.
+
+### Direct Drive API — production read-only archive path
+
+Runtime configuration:
+- `MARKETPLACE_MCP_ARCHIVE_DIRECT_GOOGLE=1` — enables the production direct read backend;
+- `MARKETPLACE_MCP_ARCHIVE_GOOGLE_CREDENTIAL` — server-side path to the Service Account JSON credential;
+- `MARKETPLACE_MCP_ARCHIVE_CACHE_ROOT` — verified local cache root;
+- `MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID` — fixed allowed archive root ID.
+
+The Service Account is read-only and is shared only to the archive root required by Marketplaces. The JSON credential stays under the restricted REMOTE secrets boundary and must never be committed or returned to clients.
+
+Downloads use a verified local cache with final files, resumable `.part` files and metadata. A cached object may satisfy an archive read only after its expected size/SHA256 has been verified. If Google Drive is unavailable and no verified cached copy exists, the archive fails closed with `ARCHIVE_SOURCE_UNAVAILABLE`; historical queries must never silently fall back to live WB/Ozon data.
+
+### Apps Script bridge — write/control plane
 
 Runtime configuration:
 - `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_URL` — non-secret `/exec` URL of the deployed web app;
 - `MARKETPLACE_MCP_GOOGLE_DRIVE_BRIDGE_SECRET` — shared secret injected server-side on REMOTE;
 - `MARKETPLACE_MCP_ARCHIVE_DRIVE_ROOT_ID` — expected fixed archive root ID.
 
-The bridge supports health/status, folder resolution, named-file stat/read, small writes, metadata lookup, resumable-session creation, diagnostic cleanup, and verified staging-to-canonical promotion under the fixed archive root. For `resumable_start`, Apps Script uses `ScriptApp.getOAuthToken()` only inside Google to start the official Drive upload session and returns the opaque session URI; the Google access token itself never leaves Apps Script.
+The bridge remains the write/control plane for small writes, resumable-session creation, diagnostic cleanup, and verified staging-to-canonical promotion under the fixed archive root. Its read/status operations remain available only as an explicit rollback transport; production historical reads use the Direct Drive API. For `resumable_start`, Apps Script uses `ScriptApp.getOAuthToken()` only inside Google to start the official Drive upload session and returns the opaque session URI; the Google access token itself never leaves Apps Script.
 
 `promote_verified` is deliberately narrow: it accepts an explicit staged file ID, explicit previous canonical file ID, target folder, canonical filename, expected byte count and expected SHA256. It verifies the staged file before renaming it and only then trashes the old canonical file. This prevents a partially uploaded or wrong file from replacing the working archive.
 

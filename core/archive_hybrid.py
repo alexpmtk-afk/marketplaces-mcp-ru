@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 from typing import Any
 
 from .archive_google import (
@@ -24,6 +25,7 @@ from .archive_google import (
     GoogleDriveArchiveStore,
     build_google_archive_store_from_env,
 )
+from .archive_google_direct import build_direct_google_archive_store_from_env
 from .archive_yandex import YandexObjectStorageArchiveStore, build_yandex_archive_store_from_env
 
 _LOCATOR_PREFIX = "hybrid-v1:"
@@ -346,15 +348,38 @@ class CanonicalDriveReadOnlyArchiveStore:
 
 
 def build_hybrid_archive_store_from_env() -> HybridArchiveStore | CanonicalDriveReadOnlyArchiveStore | None:
-    """Build REMOTE archive storage without hiding canonical Drive history.
+    """Build archive storage with an explicit Direct Drive gate."""
 
-    Canonical Drive is sufficient for read-only historical queries.  A durable
-    backend is still mandatory for queue/staging/candidate/backup mutations.
-    """
+    direct_enabled = os.environ.get(
+        "MARKETPLACE_MCP_ARCHIVE_DIRECT_GOOGLE",
+        "0",
+    ).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    if direct_enabled:
+        drive = build_direct_google_archive_store_from_env()
+
+        if drive is None:
+            raise ArchiveStorageError(
+                "Direct Google Drive was requested but is not configured",
+                code="ARCHIVE_STORAGE_NOT_CONFIGURED",
+            )
+
+        return CanonicalDriveReadOnlyArchiveStore(drive)
+
+    # Existing Apps Script / legacy production route.
     drive = build_google_archive_store_from_env()
+
     if drive is None:
         return None
+
     yandex = build_yandex_archive_store_from_env()
+
     if yandex is None:
         return CanonicalDriveReadOnlyArchiveStore(drive)
+
     return HybridArchiveStore(drive, yandex)

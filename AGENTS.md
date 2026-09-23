@@ -19,8 +19,11 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 - Server-side Marketplaces secrets belong on REMOTE under `/opt/mcp/secrets/marketplaces/` (runtime file `runtime.env`, restricted ownership/permissions). Do not treat Yandex Lockbox as the current production secret store.
 - Shared rate-limit / queue coordination uses the local REMOTE Redis service at `127.0.0.1:6379`; do not publish Redis externally.
 - Primary shared marketplace archive/storage is **Google Drive** under `Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных`; annual CSV files and the applicable coverage registries are the source of truth.
-- Google Drive access uses the owner's deployed **Google Apps Script** web-app bridge as the Google authorization/control plane:
-  - small archive operations, reads, metadata/status and folder resolution go through the bridge;
+- Production historical **read-only** Google Drive access uses `DirectGoogleDriveArchiveStore` with a restricted Service Account and verified local cache:
+  - reads, metadata/status and folder/file resolution for historical archive queries use Google Drive API v3 directly from REMOTE;
+  - the Service Account JSON stays only under `/opt/mcp/secrets/marketplaces/` and must never be committed, stored on Drive, logged, or returned to clients;
+  - only previously size/SHA256-verified cache may be used when Drive is unavailable; without verified cache, reads fail closed with `ARCHIVE_SOURCE_UNAVAILABLE`;
+- Google Apps Script remains the owner's **write/mutation control plane** and explicit rollback read transport:
   - large annual CSV writes use the official **Google Drive API resumable upload** path, while Apps Script creates the resumable session using the owner's effective-user OAuth context;
   - Apps Script performs final verified staging-to-canonical promotion after exact Drive size/SHA256 verification and the configured durable-backup verification.
 - The Apps Script shared secret is injected server-side on REMOTE. **Do not introduce a Google OAuth refresh token into the Marketplaces runtime for this archive path.** The Google access token stays inside Apps Script; only the opaque resumable session URI is returned to the worker.

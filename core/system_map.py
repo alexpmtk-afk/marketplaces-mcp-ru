@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-22.v21"
+ARCHITECTURE_VERSION = "2026-09-23.v22"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -32,13 +32,24 @@ SYSTEM_MAP: dict[str, Any] = {
         "canonical_archive_data": "annual marketplace CSV files plus reports registry",
         "google_drive_root": "Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных",
         "google_drive_auth": (
-            "owner-operated Google Apps Script bridge authenticates Drive control-plane operations, including "
-            "resumable-session creation and verified staged-file promotion; no Google OAuth refresh token is stored in the REMOTE runtime"
+            "read-only historical archive access uses a restricted Service Account through the direct Google Drive API; "
+            "Apps Script remains the owner-operated write/control plane for resumable-session creation and verified staged-file promotion; "
+            "no Google OAuth refresh token is stored in the REMOTE runtime"
+        ),
+        "google_drive_read_backend": (
+            "DirectGoogleDriveArchiveStore on the REMOTE service reads the canonical archive directly through Google Drive API v3"
+        ),
+        "google_drive_read_auth": (
+            "restricted Google Service Account with read-only Drive scope; credential JSON stays server-side under "
+            "/opt/mcp/secrets/marketplaces/ and is never stored on Drive or committed to Git"
+        ),
+        "google_drive_read_cache": (
+            "verified local cache under /opt/mcp/data/marketplaces/archive-cache; cached content is usable only after "
+            "size/SHA256 verification, and absence of both Drive and verified cache fails closed with ARCHIVE_SOURCE_UNAVAILABLE"
         ),
         "google_drive_bridge": (
-            "Apps Script executes as the Drive owner and exposes narrow archive read/write/status operations "
-            "under the fixed archive root; for large files it brokers resumable session start, checksum metadata, "
-            "and final verified promotion, never the large file bytes"
+            "Apps Script executes as the Drive owner and remains the write/mutation control plane for resumable-session creation, "
+            "checksum metadata and final verified promotion; its legacy read/status surface is rollback-only in production"
         ),
         "google_drive_large_upload": (
             "Apps Script starts the official Google Drive API resumable session using its effective-user OAuth token; "
@@ -59,8 +70,9 @@ SYSTEM_MAP: dict[str, Any] = {
         ),
         "read_through_migration": "legacy restored/Yandex-compatible backup paths may be used for explicit migration/recovery only after their actual backend is identified; Google Drive remains canonical",
         "google_cloud": (
-            "not part of the runtime architecture; no separate Google Cloud runtime or server OAuth refresh-token "
-            "store is required for the archive upload path"
+            "not part of the runtime architecture; no separate Google Cloud runtime is deployed. A Google Cloud project is used only "
+            "to issue the restricted read-only Service Account credential for Direct Drive API reads; no server OAuth refresh-token "
+            "store is required for the archive write/upload path"
         ),
         "client_local_files": "never authoritative for shared server state",
     },
@@ -283,7 +295,8 @@ The retired marketplaces-yandex / Yandex API Gateway / Yandex Serverless Contain
 Production Marketplaces secrets are server-side on REMOTE under /opt/mcp/secrets/marketplaces/ with restricted permissions. Do not treat Yandex Lockbox as the current production secret store.
 Shared rate-limit, lock and queue coordination uses the local REMOTE Redis at 127.0.0.1:6379; Redis is not exposed publicly.
 Canonical marketplace archive data is stored on Google Drive under Мой диск/Marketplaces/MCP отчеты МП/MCP архив базы данных: annual CSV files and dataset-specific coverage registries are the source of truth.
-The owner's Google Apps Script web-app bridge authenticates Google Drive control-plane operations. Its shared secret is injected server-side on REMOTE.
+Production historical read-only archive access uses DirectGoogleDriveArchiveStore through Google Drive API v3 with a restricted Service Account and verified local cache. The Service Account credential stays server-side under /opt/mcp/secrets/marketplaces/ and must never be committed, logged, or returned to clients. If Drive is unavailable, only previously size/SHA256-verified cache may be used; without verified cache the archive read must fail closed with ARCHIVE_SOURCE_UNAVAILABLE.
+The owner's Google Apps Script web-app bridge remains the archive write/mutation control plane and legacy rollback read transport. Its shared secret is injected server-side on REMOTE.
 Large annual CSV file bytes must NOT be transported through Apps Script/base64. Apps Script uses its effective-user OAuth token to create an official Google Drive resumable session for a non-canonical staging file, then the REMOTE worker uploads bounded chunks directly to that session URI.
 No Google OAuth refresh token is stored in the REMOTE runtime for the archive upload path. Resumable session URIs are bearer-like capabilities and must never be logged or returned to users.
 The existing canonical large file must remain untouched while chunks are uploaded. The worker must persist the Drive-confirmed offset, resume or restart from the immutable candidate after interruption, verify exact staged-file size and Drive SHA256, verify the configured durable byte-for-byte backup, then use Apps Script to promote the verified staged file to the canonical name and trash the previous canonical file.
