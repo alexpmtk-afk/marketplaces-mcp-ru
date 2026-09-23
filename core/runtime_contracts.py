@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from .tools import has_proven_quota
+from .tools import has_proven_quota, has_proven_read_semantics
 
 
 CRITICAL_QUOTA_CONTRACTS: tuple[dict[str, str], ...] = (
@@ -123,7 +123,9 @@ def audit_runtime_contracts(
             "rate_limit": spec.rate_limit,
             "quota_proven": bool(getattr(spec, "quota_proven", False)),
             "service_quota_proven": bool(getattr(spec, "service_quota_proven", False)),
-            "executable": has_proven_quota(spec),
+            "read_only_post_proven": bool(getattr(spec, "read_only_post_proven", False)),
+            "quota_executable": has_proven_quota(spec),
+            "read_semantics_executable": has_proven_read_semantics(spec),
         }
         contracts.append(row)
 
@@ -138,10 +140,15 @@ def audit_runtime_contracts(
             errors.append(f"{service}:{operation_id}: quota_proven is not true")
         if expected["proof"] == "service" and not row["service_quota_proven"]:
             errors.append(f"{service}:{operation_id}: service_quota_proven is not true")
-        if not row["executable"]:
+        if not row["quota_executable"]:
             errors.append(
                 f"{service}:{operation_id}: loaded contract would return "
                 "RATE_LIMIT_RULE_UNPROVEN"
+            )
+        if not row["read_semantics_executable"]:
+            errors.append(
+                f"{service}:{operation_id}: loaded contract would return "
+                "READ_SEMANTICS_UNPROVEN"
             )
 
     provenance = {
