@@ -136,6 +136,12 @@ def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dat
     assert all(call["creds_override"]["client_id"] == "id-ozon_laser_master" for call in ozon.client.calls)
     assert ozon.client.calls[0]["json_body"] == {"sku": ["3276433388"]}
     assert result["provenance"]["entity_lookup_field"] == "sku"
+    observations = {item["metric_id"]: item for item in result["metric_observations"]}
+    assert observations["CURRENT_SELLING_PRICE"]["source_field"] == "price.marketing_seller_price"
+    assert observations["CURRENT_SELLING_PRICE"]["semantic_status"] == "provisional"
+    assert observations["CURRENT_STOCK"]["source_field"] == "stocks.present"
+    assert observations["CURRENT_STOCK"]["semantic_status"] == "provisional"
+    assert result["knowledge_catalog_version"] == "marketplace_knowledge_catalog.v1"
 
 
 def test_explicit_product_id_uses_only_product_id_namespace():
