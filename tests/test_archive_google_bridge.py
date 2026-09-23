@@ -58,13 +58,12 @@ def test_folder_locator_is_relative_to_fixed_root():
 def test_upload_sends_base64_and_checksum_to_bridge_and_prechecks_replay():
     store = _store()
     captured = {}
-
-    async def no_existing(parent_id, name):
-        assert parent_id == "База данных/WB/test"
-        assert name == "annual.csv"
-        return None, None
+    actions = []
 
     async def fake_post(action, **payload):
+        actions.append(action)
+        if action == "stat":
+            return {"ok": True, "found": False}
         captured["action"] = action
         captured.update(payload)
         return {
@@ -78,11 +77,11 @@ def test_upload_sends_base64_and_checksum_to_bridge_and_prechecks_replay():
             },
         }
 
-    store.download_named = no_existing  # type: ignore[method-assign]
     store._post = fake_post  # type: ignore[method-assign]
     item = asyncio.run(store.upload_bytes("База данных/WB/test", "annual.csv", b"archive"))
 
     assert item.id == "drive-file-id"
+    assert actions == ["stat", "write"]
     assert captured["action"] == "write"
     assert captured["path"] == "База данных/WB/test"
     assert captured["content_base64"] == base64.b64encode(b"archive").decode("ascii")
@@ -98,6 +97,10 @@ def test_identical_small_write_replay_reuses_existing_file_without_write():
         size=7,
     )
 
+    async def existing_find(parent_id, name, **kwargs):
+        del parent_id, name, kwargs
+        return existing
+
     async def existing_read(parent_id, name):
         del parent_id, name
         return existing, b"archive"
@@ -105,10 +108,49 @@ def test_identical_small_write_replay_reuses_existing_file_without_write():
     async def should_not_write(action, **payload):
         raise AssertionError((action, payload))
 
+    store.find_child = existing_find  # type: ignore[method-assign]
     store.download_named = existing_read  # type: ignore[method-assign]
     store._post = should_not_write  # type: ignore[method-assign]
     item = asyncio.run(store.upload_bytes("app/registry", "reports_registry.csv", b"archive"))
     assert item.id == "same-id"
+
+
+def test_large_write_retry_does_not_require_bridge_range_read():
+    store = _store()
+    payload = b"L" * (archive_google._SMALL_READ_MAX_BYTES + 1)
+    actions = []
+
+    async def fake_post(action, **body):
+        actions.append(action)
+        if action == "stat":
+            return {
+                "ok": True,
+                "found": True,
+                "file": {
+                    "id": "existing-large",
+                    "name": "annual.csv",
+                    "mime_type": "text/csv",
+                    "size": len(payload),
+                },
+            }
+        if action == "write":
+            return {
+                "ok": True,
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "file": {
+                    "id": "existing-large",
+                    "name": "annual.csv",
+                    "mime_type": "text/csv",
+                    "size": len(payload),
+                },
+            }
+        raise AssertionError(action)
+
+    store._post = fake_post  # type: ignore[method-assign]
+    item = asyncio.run(store.upload_bytes("app/current", "annual.csv", payload))
+
+    assert item.id == "existing-large"
+    assert actions == ["stat", "write"]
 
 
 def test_download_named_decodes_bridge_payload():
