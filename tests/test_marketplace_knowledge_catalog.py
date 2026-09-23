@@ -6,6 +6,7 @@ import pytest
 from core.marketplace_knowledge import (
     MarketplaceKnowledgeError,
     get_knowledge_metric,
+    get_report_field_knowledge,
     load_marketplace_knowledge_catalog,
     validate_knowledge_against_metric_registry,
     verify_marketplace_knowledge,
@@ -244,3 +245,38 @@ def test_wb_fbs_stock_binding_detects_amount_field_drift():
 
     with pytest.raises(MarketplaceKnowledgeError, match="amount"):
         validate_knowledge_against_metric_registry(catalog, registry)
+
+
+def test_weekly_report_field_coverage_is_complete_92_of_92():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
+    weekly = result["weekly_report_field_coverage"]
+
+    assert weekly["dataset_id"] == "wb_weekly_finance_main"
+    assert weekly["physical_field_count"] == 92
+    assert weekly["catalogued_field_count"] == 92
+    assert weekly["reviewed_field_count"] == 92
+    assert weekly["physical_schema_matches_catalog"] is True
+    assert weekly["field_coverage_complete"] is True
+    assert weekly["missing_meaning_fields"] == []
+    assert weekly["missing_safe_uses_fields"] == []
+    assert weekly["unreviewed_fields"] == []
+    assert "agencyVat" in weekly["blocked_unapproved_provider_fields"]
+
+
+def test_report_field_knowledge_exposes_human_meaning_and_guardrails():
+    payout = get_report_field_knowledge("paymentSchedule")
+    assert payout["semantic_status"] == "REVIEWED"
+    assert payout["role"] == "measure"
+    assert "Вывести сейчас" in payout["meaning_ru"]
+    assert any("график выплат" in item.lower() for item in payout["limitations"])
+
+    order_date = get_report_field_knowledge("orderDt")
+    assert "оформления заказа" in order_date["meaning_ru"]
+    assert any("полного потока заказов" in item for item in order_date["limitations"])
+
+
+def test_weekly_report_role_breakdown_covers_all_fields():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
+    weekly = result["weekly_report_field_coverage"]
+    assert sum(weekly["role_counts"].values()) == 92
+    assert weekly["semantic_status_counts"] == {"REVIEWED": 92}
