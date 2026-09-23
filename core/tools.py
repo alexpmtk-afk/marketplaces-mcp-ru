@@ -95,6 +95,65 @@ def resolve_equivalent_proven_read_spec(
     return next(iter(unique.values())), True
 
 
+def generic_read_execution_info(
+    service: str, catalog: Catalog, spec: Any,
+) -> dict[str, Any]:
+    """Describe whether a catalog record is executable through generic read tools.
+
+    This is deliberately a capability contract, not a guess. A read is marked
+    executable only when the exact record, a service-level proof, or one unique
+    equivalent canonical record carries a proven quota contract. Everything
+    else is explicitly classified as blocked before a model attempts execution.
+    """
+    safety = infer_safety(spec.method, spec.safety)
+    if safety != "read":
+        return {
+            "generic_read_status": "NOT_READ",
+            "generic_read_executable": False,
+            "generic_read_reason": "operation_is_not_read_only",
+            "resolved_operation_id": spec.operation_id,
+        }
+
+    resolved, equivalent = resolve_equivalent_proven_read_spec(catalog, spec)
+    if has_proven_quota(resolved):
+        if equivalent:
+            proof = "equivalent_proven_contract"
+        elif bool(getattr(resolved, "service_quota_proven", False)):
+            proof = "service_quota"
+        else:
+            proof = "operation_quota"
+        return {
+            "generic_read_status": "EXECUTABLE",
+            "generic_read_executable": True,
+            "generic_read_reason": "quota_contract_proven",
+            "quota_proof": proof,
+            "resolved_operation_id": resolved.operation_id,
+            "equivalent_proven_contract_resolution": equivalent,
+        }
+
+    rate_limit = str(getattr(spec, "rate_limit", "") or "").strip()
+    if not rate_limit:
+        reason = "quota_contract_missing"
+    elif parse_rate_limit(rate_limit) is None:
+        reason = "rate_limit_not_parseable"
+    else:
+        reason = "rate_limit_present_but_unproven"
+    return {
+        "generic_read_status": "BLOCKED_QUOTA_UNPROVEN",
+        "generic_read_executable": False,
+        "generic_read_reason": reason,
+        "quota_proof": "none",
+        "resolved_operation_id": spec.operation_id,
+        "equivalent_proven_contract_resolution": False,
+    }
+
+
+def summary_with_execution(service: str, catalog: Catalog, spec: Any) -> dict[str, Any]:
+    row = spec.to_summary_dict()
+    row.update(generic_read_execution_info(service, catalog, spec))
+    return row
+
+
 def normalize_legacy_read_inputs(
     service: str,
     requested_operation_id: str,
@@ -229,6 +288,12 @@ def register_generic_tools(
             "code": "RATE_LIMIT_RULE_UNPROVEN", "operation_id": operation_id,
             "endpoint": path, "retryable": False,
             "message": "Execution is refused until a provider-documented, parseable quota rule is registered.",
+            "generic_read_status": "BLOCKED_QUOTA_UNPROVEN",
+            "provider_call_sent": False,
+            "remediation": (
+                f"Use {svc}_search_methods with executable_only=true to choose "
+                "an executable catalog operation, or prove this operation's quota contract."
+            ),
         }
 
     """Register the 8 generic tools under the `{svc}_` prefix.
@@ -286,25 +351,60 @@ def register_generic_tools(
         if not specs:
             return _j({"error": "not_found", "message": f"No section '{section}'.",
                        "available": list(catalog.sections().keys())})
-        return _j({"section": section, "endpoints": [s.to_summary_dict() for s in specs]})
+        return _j({
+            "section": section,
+            "endpoints": [summary_with_execution(svc, catalog, s) for s in specs],
+        })
 
     @mcp.tool(
         name=f"{svc}_search_methods",
         annotations={"title": f"{svc.upper()} search methods",
                      "readOnlyHint": True, "openWorldHint": False},
     )
-    async def search_methods(query: str, limit: int = 15) -> str:
+    async def search_methods(
+        query: str, limit: int = 15, executable_only: bool = True,
+    ) -> str:
         """Search the endpoint catalog by keyword (works in Russian and English).
+
+        By default only operations that are actually executable through generic
+        read tools are returned. This prevents an agent from selecting a known
+        fail-closed operation and discovering RATE_LIMIT_RULE_UNPROVEN only at
+        execution time. Pass executable_only=false for inventory/audit work.
 
         Args:
             query: free text, e.g. "остатки", "stocks", "update price".
             limit: max results (1-50).
-        Returns JSON list of matching endpoints (best first).
+            executable_only: hide quota-unproven read operations by default.
+        Returns JSON with execution-aware matching endpoints.
         """
         limit = max(1, min(50, limit))
-        specs = catalog.search(query, limit=limit)
-        return _j({"query": query, "count": len(specs),
-                   "results": [s.to_summary_dict() for s in specs]})
+        candidates = catalog.search(query, limit=50)
+        rows = [summary_with_execution(svc, catalog, s) for s in candidates]
+        executable = [r for r in rows if r["generic_read_executable"]]
+        blocked = [
+            r for r in rows
+            if r["generic_read_status"] == "BLOCKED_QUOTA_UNPROVEN"
+        ]
+        selected = (
+            [r for r in rows if r["generic_read_status"] != "BLOCKED_QUOTA_UNPROVEN"]
+            if executable_only else rows
+        )
+        selected = selected[:limit]
+        return _j({
+            "query": query,
+            "executable_only": executable_only,
+            "count": len(selected),
+            "results": selected,
+            "blocked_match_count": len(blocked),
+            "blocked_matches": blocked[:5] if executable_only else [],
+            "selection_policy": (
+                "Quota-blocked read matches are hidden from normal selection. "
+                "Write/destructive records may still appear and remain subject to "
+                "their existing confirmation gates; blocked matches are audit-only."
+                if executable_only else
+                "Inventory mode: inspect generic_read_status before execution."
+            ),
+        })
 
     @mcp.tool(
         name=f"{svc}_map",
@@ -324,8 +424,11 @@ def register_generic_tools(
                 by_key.setdefault(k, []).append(s)
         if entity:
             specs = by_key.get(entity, [])
-            return _j({"entity": entity, "count": len(specs),
-                       "methods": [s.to_summary_dict() for s in specs]})
+            return _j({
+                "entity": entity,
+                "count": len(specs),
+                "methods": [summary_with_execution(svc, catalog, s) for s in specs],
+            })
         out = []
         for e in ents:
             specs = by_key.get(e["key"], [])
@@ -334,13 +437,19 @@ def register_generic_tools(
             headline = [s for s in specs if s.operation_id in e.get("headline", [])]
             # Fallback: surface read methods first so the map answers "how do I
             # see X" before "how do I change/delete X".
-            ordered = sorted(specs, key=lambda s: 0 if s.safety == "read" else 1)
+            ordered = sorted(
+                specs,
+                key=lambda s: (
+                    0 if generic_read_execution_info(svc, catalog, s)["generic_read_executable"] else
+                    1 if infer_safety(s.method, s.safety) == "read" else 2
+                ),
+            )
             shown = headline or ordered[:5]
             out.append({
                 "key": e["key"], "title_ru": e["title_ru"],
                 "title_en": e["title_en"], "synonyms": e["synonyms"],
                 "method_count": len(specs),
-                "headline": [s.to_summary_dict() for s in shown],
+                "headline": [summary_with_execution(svc, catalog, s) for s in shown],
             })
         if by_key.get("other"):
             out.append({"key": "other", "title_ru": "Прочее", "title_en": "Other",
@@ -372,8 +481,12 @@ def register_generic_tools(
             "method": spec.method, "host": spec.host, "path": spec.path,
             "path_params": spec.path_params, "scope": spec.scope,
             "safety": spec.safety, "pagination": spec.pagination,
-            "rate_limit": spec.rate_limit, "summary": spec.summary,
+            "rate_limit": spec.rate_limit,
+            "quota_proven": bool(getattr(spec, "quota_proven", False)),
+            "service_quota_proven": bool(getattr(spec, "service_quota_proven", False)),
+            "summary": spec.summary,
             "params": spec.params, "doc": spec.doc,
+            **generic_read_execution_info(svc, catalog, spec),
         })
 
     @mcp.tool(
@@ -525,12 +638,16 @@ def register_generic_tools(
         styles. The array path is taken from the catalog automatically.
 
         Args:
-            operation_id: a read endpoint from the catalog.
+            operation_id: an EXECUTABLE read operation returned by
+                {svc}_search_methods with executable_only=true. Do not use an
+                inventory-only BLOCKED_QUOTA_UNPROVEN operation.
             query / body / path_values: base parameters (cursor fields are managed).
             items_path: override the array path (default: the endpoint's own).
             limit: page size to request.
             max_items: hard cap to protect context (default 10000).
         Returns JSON: {"ok", "items", "total_fetched", "pages_fetched", "truncated"}.
+        A BLOCKED_QUOTA_UNPROVEN catalog entry is intentionally refused before
+        provider I/O; inspect it with {svc}_describe_method instead.
         """
         requested_operation_id = operation_id
         operation_id, aliased = resolve_legacy_operation_id(svc, operation_id)
