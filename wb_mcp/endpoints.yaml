@@ -19,6 +19,7 @@ endpoints:
   safety: read
   pagination: cursor
   rate_limit: 100 req/min
+  quota_proven: true
   summary: List created product cards (nomenclatures). Cursor by updatedAt+nmID.
   params:
     body: '{settings:{cursor:{limit:100}, filter:{withPhoto:-1}}}'
