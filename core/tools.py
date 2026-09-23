@@ -385,7 +385,10 @@ def register_generic_tools(
             r for r in rows
             if r["generic_read_status"] == "BLOCKED_QUOTA_UNPROVEN"
         ]
-        selected = executable if executable_only else rows
+        selected = (
+            [r for r in rows if r["generic_read_status"] != "BLOCKED_QUOTA_UNPROVEN"]
+            if executable_only else rows
+        )
         selected = selected[:limit]
         return _j({
             "query": query,
@@ -395,8 +398,9 @@ def register_generic_tools(
             "blocked_match_count": len(blocked),
             "blocked_matches": blocked[:5] if executable_only else [],
             "selection_policy": (
-                "Results are executable through generic read tools. "
-                "Blocked matches are audit-only and must not be executed."
+                "Quota-blocked read matches are hidden from normal selection. "
+                "Write/destructive records may still appear and remain subject to "
+                "their existing confirmation gates; blocked matches are audit-only."
                 if executable_only else
                 "Inventory mode: inspect generic_read_status before execution."
             ),
