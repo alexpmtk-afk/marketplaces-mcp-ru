@@ -638,12 +638,16 @@ def register_generic_tools(
         styles. The array path is taken from the catalog automatically.
 
         Args:
-            operation_id: a read endpoint from the catalog.
+            operation_id: an EXECUTABLE read operation returned by
+                {svc}_search_methods with executable_only=true. Do not use an
+                inventory-only BLOCKED_QUOTA_UNPROVEN operation.
             query / body / path_values: base parameters (cursor fields are managed).
             items_path: override the array path (default: the endpoint's own).
             limit: page size to request.
             max_items: hard cap to protect context (default 10000).
         Returns JSON: {"ok", "items", "total_fetched", "pages_fetched", "truncated"}.
+        A BLOCKED_QUOTA_UNPROVEN catalog entry is intentionally refused before
+        provider I/O; inspect it with {svc}_describe_method instead.
         """
         requested_operation_id = operation_id
         operation_id, aliased = resolve_legacy_operation_id(svc, operation_id)
