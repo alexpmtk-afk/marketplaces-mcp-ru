@@ -14,6 +14,7 @@ from core.ozon_current_archive import (
     canonical_location,
     current_period,
     parse_snapshot,
+    provider_utc_window,
     serialize_snapshot,
     stable_key_quality,
 )
@@ -23,6 +24,12 @@ def test_current_period_is_full_open_month_through_today():
     start, end = current_period(date(2026, 9, 23))
     assert start == date(2026, 9, 1)
     assert end == date(2026, 9, 23)
+
+
+def test_provider_utc_window_preserves_moscow_calendar_days():
+    since, to = provider_utc_window(date(2026, 9, 1), date(2026, 9, 23))
+    assert since == "2026-08-31T21:00:00Z"
+    assert to == "2026-09-23T20:59:59Z"
 
 
 def test_current_canonical_names_are_separate_by_dataset():
@@ -124,6 +131,40 @@ def test_enqueue_reopens_same_month_as_fresh_full_snapshot(monkeypatch):
     assert saved[-1]["date_to"] == "2026-09-23"
     assert saved[-1]["phase"] == "FETCH_FBO"
     assert saved[-1]["datasets"] == {}
+    assert scheduled == [("ozon-current-ozon_laser_master-2026-09", 0)]
+
+
+def test_enqueue_resumes_incomplete_without_resetting_progress(monkeypatch):
+    queue = OzonCurrentArchiveJobQueue(SimpleNamespace(), SimpleNamespace())
+    existing = {
+        "job_id": "ozon-current-ozon_laser_master-2026-09",
+        "status": "QUEUED",
+        "phase": "FETCH_ACCRUALS",
+        "year": 2026,
+        "period": "2026-09",
+        "refresh_generation": 3,
+    }
+    scheduled = []
+
+    async def load(_job_id):
+        return dict(existing)
+
+    async def schedule(job_id, delay_seconds=0):
+        scheduled.append((job_id, delay_seconds))
+
+    async def forbidden_save(_state):
+        raise AssertionError("incomplete refresh must not be reset")
+
+    monkeypatch.setattr(current, "current_period", lambda today=None: (date(2026, 9, 1), date(2026, 9, 23)))
+    monkeypatch.setattr(queue, "_load", load)
+    monkeypatch.setattr(queue, "_schedule", schedule)
+    monkeypatch.setattr(queue, "_save", forbidden_save)
+
+    result = asyncio.run(queue.enqueue(year=2026, seller="ozon_laser_master"))
+
+    assert result["refresh_action"] == "resumed_existing"
+    assert result["phase"] == "FETCH_ACCRUALS"
+    assert result["refresh_generation"] == 3
     assert scheduled == [("ozon-current-ozon_laser_master-2026-09", 0)]
 
 
