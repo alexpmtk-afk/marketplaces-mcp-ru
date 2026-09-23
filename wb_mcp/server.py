@@ -897,12 +897,41 @@ async def _wb_fbs_stock_result(
     total = 0
     for warehouse in warehouses:
         warehouse_id = int(warehouse["id"])
-        stock_response = await client.call_spec(
-            stock_spec,
-            path_values={"warehouseId": warehouse_id},
-            json_body={"chrtIds": chrt_ids},
-            creds_override=creds,
-        )
+        stock_response: dict = {}
+        for stock_attempt in range(3):
+            stock_response = await client.call_spec(
+                stock_spec,
+                path_values={"warehouseId": warehouse_id},
+                json_body={"chrtIds": chrt_ids},
+                creds_override=creds,
+            )
+            if isinstance(stock_response, dict) and stock_response.get("ok") is True:
+                break
+
+            try:
+                retry_after = float(
+                    (stock_response or {}).get("retry_after_seconds", 0)
+                    if isinstance(stock_response, dict)
+                    else 0
+                )
+            except (TypeError, ValueError):
+                retry_after = 0.0
+
+            short_local_pacing = (
+                isinstance(stock_response, dict)
+                and stock_response.get("error_type") == "rate_limit"
+                and int(stock_response.get("code", 0) or 0) != 429
+                and 0 < retry_after <= 1.0
+            )
+            if not short_local_pacing or stock_attempt >= 2:
+                break
+
+            # FBS is a single read-only business operation composed of multiple
+            # provider legs sharing one marketplace quota bucket. A tiny local
+            # pacing miss means no HTTP request was sent, so it is safe to wait
+            # for the reported slot and continue this same read aggregation.
+            await asyncio.sleep(retry_after + 0.05)
+
         if not isinstance(stock_response, dict) or stock_response.get("ok") is not True:
             return {
                 "ok": False,

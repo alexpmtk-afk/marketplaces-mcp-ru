@@ -315,6 +315,143 @@ def test_wb_fbs_card_lookup_falls_back_to_trash(monkeypatch):
     assert calls[1][1]["settings"]["filter"]["textSearch"] == "507763296"
 
 
+def test_wb_fbs_retries_short_local_rate_limit_between_warehouse_legs(monkeypatch):
+    import wb_mcp.server as wb_server
+
+    async def fake_read_creds(cabinet):
+        assert cabinet == "wb_laser_master"
+        return {"token": "test-token"}, cabinet, None
+
+    async def fake_card_sizes(nm_id, creds):
+        assert nm_id == 391855133
+        return (
+            [{
+                "chrt_id": 568157826,
+                "tech_size": "A",
+                "wb_size": "A",
+                "skus": [],
+            }],
+            "wb_content_cards_list",
+            None,
+        )
+
+    calls = []
+    sleeps = []
+
+    async def fake_call_spec(spec, **kwargs):
+        calls.append(spec.operation_id)
+        if spec.operation_id == "wb_fbs_warehouses":
+            return {
+                "ok": True,
+                "status": 200,
+                "data": [{
+                    "id": 178754,
+                    "name": "Test FBS",
+                    "officeId": 1,
+                }],
+            }
+        if spec.operation_id == "wb_post_api_stocks_warehouseid":
+            stock_attempt = calls.count("wb_post_api_stocks_warehouseid")
+            if stock_attempt == 1:
+                return {
+                    "ok": False,
+                    "error": "rate_limit",
+                    "error_type": "rate_limit",
+                    "retryable": True,
+                    "operation_id": spec.operation_id,
+                    "endpoint": "/api/v3/stocks/178754",
+                    "retry_after_seconds": 0.045,
+                }
+            return {
+                "ok": True,
+                "status": 200,
+                "data": {
+                    "stocks": [{
+                        "chrtId": 568157826,
+                        "amount": 7,
+                    }],
+                },
+            }
+        raise AssertionError("unexpected operation " + spec.operation_id)
+
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(wb_server, "_wb_read_creds", fake_read_creds)
+    monkeypatch.setattr(wb_server, "_wb_card_sizes", fake_card_sizes)
+    monkeypatch.setattr(wb_server.client, "call_spec", fake_call_spec)
+    monkeypatch.setattr(wb_server.asyncio, "sleep", fake_sleep)
+
+    result = asyncio.run(
+        wb_server._wb_fbs_stock_result(
+            391855133,
+            cabinet="wb_laser_master",
+        )
+    )
+
+    assert result["ok"] is True
+    assert result["available_units"] == 7
+    assert result["complete"] is True
+    assert result["cabinet"] == "wb_laser_master"
+    assert calls == [
+        "wb_fbs_warehouses",
+        "wb_post_api_stocks_warehouseid",
+        "wb_post_api_stocks_warehouseid",
+    ]
+    assert len(sleeps) == 1
+    assert sleeps[0] >= 0.045
+
+
+def test_wb_fbs_does_not_retry_provider_429(monkeypatch):
+    import wb_mcp.server as wb_server
+
+    async def fake_read_creds(cabinet):
+        return {"token": "test-token"}, cabinet, None
+
+    async def fake_card_sizes(nm_id, creds):
+        return (
+            [{"chrt_id": 568157826, "tech_size": "A", "wb_size": "A", "skus": []}],
+            "wb_content_cards_list",
+            None,
+        )
+
+    async def fake_call_spec(spec, **kwargs):
+        if spec.operation_id == "wb_fbs_warehouses":
+            return {
+                "ok": True,
+                "status": 200,
+                "data": [{"id": 178754, "name": "Test FBS"}],
+            }
+        return {
+            "ok": False,
+            "error": "rate_limit",
+            "error_type": "rate_limit",
+            "code": 429,
+            "retryable": True,
+            "retry_after_seconds": 2.0,
+        }
+
+    async def should_not_sleep(seconds):
+        raise AssertionError("provider 429 must remain fail-fast")
+
+    monkeypatch.setattr(wb_server, "_wb_read_creds", fake_read_creds)
+    monkeypatch.setattr(wb_server, "_wb_card_sizes", fake_card_sizes)
+    monkeypatch.setattr(wb_server.client, "call_spec", fake_call_spec)
+    monkeypatch.setattr(wb_server.asyncio, "sleep", should_not_sleep)
+
+    result = asyncio.run(
+        wb_server._wb_fbs_stock_result(
+            391855133,
+            cabinet="wb_laser_master",
+        )
+    )
+
+    assert result["ok"] is False
+    assert result["error"] == "provider_leg_failed"
+    assert result["stage"] == "seller_warehouse_stock"
+    assert result["provider_error"]["code"] == 429
+
+
 def test_ozon_primary_snapshot_posts_have_explicit_read_semantics_proof():
     catalog = Catalog.from_yaml(ROOT / "ozon_mcp" / "endpoints.yaml")
     for operation_id in (
