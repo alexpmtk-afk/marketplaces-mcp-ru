@@ -110,3 +110,27 @@ def test_knowledge_verify_marks_old_sources_for_review_without_auto_update():
     assert result["status"] == "STALE_REVIEW_REQUIRED"
     assert result["stale_sources"]
     assert result["production_auto_update"] is False
+
+
+def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
+    coverage = result["provider_metric_coverage"]
+
+    wb = coverage["wb"]
+    assert wb["registry_mapping_status_counts"]["NOT_MAPPED"] == 1
+    assert wb["registry_unresolved_metric_ids"] == ["CURRENT_SELLING_PRICE"]
+    assert "CURRENT_STOCK" in wb["verified_metric_ids"]
+    assert wb["metric_coverage_complete"] is False
+
+    ozon = coverage["ozon"]
+    assert ozon["registry_mapping_status_counts"]["NOT_MAPPED"] == 24
+    assert set(ozon["knowledge_bound_metric_ids"]) >= {
+        "CURRENT_STOCK",
+        "CURRENT_SELLING_PRICE",
+    }
+    assert set(ozon["provisional_metric_ids"]) == {
+        "CURRENT_STOCK",
+        "CURRENT_SELLING_PRICE",
+    }
+    assert "ORDERS" in ozon["registry_unresolved_metric_ids"]
+    assert ozon["metric_coverage_complete"] is False

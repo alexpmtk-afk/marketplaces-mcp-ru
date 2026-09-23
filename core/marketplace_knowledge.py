@@ -210,6 +210,67 @@ def validate_knowledge_against_metric_registry(
             )
 
 
+def _provider_metric_coverage(
+    catalog: dict[str, Any],
+    registry: dict[str, Any],
+) -> dict[str, Any]:
+    """Measure semantic progress against the canonical composed metric registry."""
+    registry_metrics = _require_mapping(registry.get("metrics"), "metric registry metrics")
+    knowledge_rows = [
+        (knowledge_id, metric)
+        for knowledge_id, metric in (catalog.get("metrics") or {}).items()
+        if isinstance(metric, dict)
+    ]
+    out: dict[str, Any] = {}
+    for marketplace in ("wb", "ozon"):
+        status_counts: dict[str, int] = {}
+        unresolved: list[str] = []
+        applicable: list[str] = []
+        for metric_id, metric in registry_metrics.items():
+            provider = ((metric or {}).get("provider_mappings") or {}).get(marketplace)
+            status = str(provider.get("status") or "ABSENT") if isinstance(provider, dict) else "ABSENT"
+            status_counts[status] = status_counts.get(status, 0) + 1
+            if status in {"NOT_MAPPED", "ABSENT"}:
+                unresolved.append(str(metric_id))
+            elif status != "NOT_APPLICABLE":
+                applicable.append(str(metric_id))
+
+        knowledge_status_counts: dict[str, int] = {}
+        bound_metric_ids: set[str] = set()
+        verified_metric_ids: set[str] = set()
+        provisional_metric_ids: set[str] = set()
+        for knowledge_id, metric in knowledge_rows:
+            if str(metric.get("marketplace") or "").lower() != marketplace:
+                continue
+            semantic_metric_id = str(metric.get("metric_id") or knowledge_id)
+            semantic_status = str(metric.get("semantic_status") or "source_field")
+            knowledge_status_counts[semantic_status] = knowledge_status_counts.get(semantic_status, 0) + 1
+            if semantic_status not in {"deprecated", "broken"}:
+                bound_metric_ids.add(semantic_metric_id)
+            if semantic_status == "verified":
+                verified_metric_ids.add(semantic_metric_id)
+            elif semantic_status == "provisional":
+                provisional_metric_ids.add(semantic_metric_id)
+
+        missing_knowledge = sorted(set(applicable) - bound_metric_ids)
+        out[marketplace] = {
+            "registry_mapping_status_counts": dict(sorted(status_counts.items())),
+            "applicable_metric_count": len(set(applicable)),
+            "registry_unresolved_metric_ids": sorted(unresolved),
+            "knowledge_status_counts": dict(sorted(knowledge_status_counts.items())),
+            "knowledge_bound_metric_ids": sorted(bound_metric_ids),
+            "verified_metric_ids": sorted(verified_metric_ids),
+            "provisional_metric_ids": sorted(provisional_metric_ids),
+            "missing_knowledge_metric_ids": missing_knowledge,
+            "metric_coverage_complete": (
+                not unresolved
+                and not missing_knowledge
+                and not provisional_metric_ids
+            ),
+        }
+    return out
+
+
 def verify_marketplace_knowledge(
     *,
     metric_registry: dict[str, Any] | None = None,
@@ -289,6 +350,7 @@ def verify_marketplace_knowledge(
         ),
         "provisional_binding_count": len(provisional_bindings),
         "provisional_bindings": provisional_bindings,
+        "provider_metric_coverage": _provider_metric_coverage(catalog, registry),
         "source_count": len(catalog.get("sources") or {}),
         "stale_sources": stale_sources,
         "errors": errors,
