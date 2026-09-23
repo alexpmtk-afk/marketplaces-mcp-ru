@@ -23,6 +23,7 @@ detecting a repeated cursor and by honouring max_items / max_pages.
 """
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Callable, Optional
 
 from .client import MarketplaceClient
@@ -31,6 +32,11 @@ from .registry import EndpointSpec
 
 DEFAULT_MAX_ITEMS = 10_000
 DEFAULT_MAX_PAGES = 200
+# fetch_all is explicitly a multi-request operation. It may absorb only a
+# bounded, provider-proven local pacing delay between pages. Long quota windows
+# remain fail-fast so an MCP call cannot sleep for minutes/hours.
+MAX_LOCAL_PACING_WAIT_SECONDS = 30.0
+MAX_LOCAL_PACING_RETRIES_PER_PAGE = 3
 
 
 def _dig(obj: Any, dotted: str) -> Any:
@@ -116,9 +122,28 @@ async def fetch_all(
         }
         if creds_override is not None:
             call_kwargs["creds_override"] = creds_override
-        resp = await client.call_spec(spec, **call_kwargs)
-        if not resp.get("ok"):
-            return resp  # propagate error envelope
+        local_pacing_retries = 0
+        while True:
+            resp = await client.call_spec(spec, **call_kwargs)
+            if resp.get("ok"):
+                break
+
+            retry_after = float(resp.get("retry_after_seconds", 0) or 0)
+            is_bounded_local_pacing = (
+                resp.get("error") == "rate_limit"
+                and int(resp.get("code", 0) or 0) != 429
+                and bool(resp.get("retryable"))
+                and 0 < retry_after <= MAX_LOCAL_PACING_WAIT_SECONDS
+                and local_pacing_retries < MAX_LOCAL_PACING_RETRIES_PER_PAGE
+            )
+            if not is_bounded_local_pacing:
+                return resp  # provider 429 / long quota / other errors stay fail-fast
+
+            # The previous page (or a concurrent request for the same proven
+            # quota bucket) legitimately consumed the current slot. fetch_all
+            # owns pagination, so it also owns this short inter-page pacing.
+            await asyncio.sleep(retry_after + 0.05)
+            local_pacing_retries += 1
 
         data = resp["data"]
         page_items = _dig(data, ipath)
