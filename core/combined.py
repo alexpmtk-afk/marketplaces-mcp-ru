@@ -13,6 +13,7 @@ from .archive_tools import register_archive_tools
 from .business_registry import resolve_business_cabinet
 from .card_monitor import register_tools as register_card_monitor_tools
 from .data_catalog import register_data_catalog_tools
+from .marketplace_knowledge import register_marketplace_knowledge_tools
 from .order_history_tools import register_order_history_tools
 from .runtime_contracts import assert_runtime_contracts
 from .semantic_business_router import register_business_query_tool
@@ -245,6 +246,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
 
     register_system_map_tool(combined)
     register_semantic_core_tool(combined)
+    register_marketplace_knowledge_tools(combined)
     register_data_catalog_tools(combined)
     _register_finance_tools(combined, modules)
     register_wb_advertising_tools(combined, modules)
