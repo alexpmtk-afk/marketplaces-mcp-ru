@@ -13,7 +13,7 @@ def _call(name: str, args: dict) -> dict:
     return json.loads(result[0][0].text)
 
 
-def test_call_method_unknown_stale_price_id_reuses_unique_proven_contract(monkeypatch):
+def test_call_method_unknown_wrong_verb_price_copy_fails_closed(monkeypatch):
     stale = EndpointSpec(
         operation_id="wb_generated_stale_price_copy",
         method="POST",
@@ -23,14 +23,11 @@ def test_call_method_unknown_stale_price_id_reuses_unique_proven_contract(monkey
         quota_proven=False,
     )
     wb.catalog.upsert(stale)
-    seen = {}
+    calls = []
 
     async def fake_call_spec(spec, **kwargs):
-        seen["operation_id"] = spec.operation_id
-        seen["method"] = spec.method
-        seen["query"] = kwargs.get("query")
-        seen["json_body"] = kwargs.get("json_body")
-        return {"ok": True, "status": 200, "data": {"listGoods": []}}
+        calls.append((spec, kwargs))
+        return {"ok": True}
 
     monkeypatch.setattr(wb.client, "call_spec", fake_call_spec)
     try:
@@ -42,17 +39,13 @@ def test_call_method_unknown_stale_price_id_reuses_unique_proven_contract(monkey
     finally:
         wb.catalog.remove(stale.operation_id)
 
-    assert payload["ok"] is True
-    assert payload["requested_operation_id"] == stale.operation_id
-    assert payload["resolved_operation_id"] == "wb_prices_list"
-    assert payload["equivalent_proven_contract_resolution"] is True
-    assert seen["operation_id"] == "wb_prices_list"
-    assert seen["method"] == "GET"
-    assert seen["query"]["filterNmID"] == 392023986
-    assert seen["json_body"] is None
+    assert payload["ok"] is False
+    assert payload["code"] == "READ_SEMANTICS_UNPROVEN"
+    assert payload["provider_call_sent"] is False
+    assert calls == []
 
 
-def test_fetch_all_unknown_stale_stock_id_reuses_unique_proven_contract(monkeypatch):
+def test_fetch_all_unknown_wrong_verb_stock_copy_fails_closed(monkeypatch):
     stale = EndpointSpec(
         operation_id="wb_generated_stale_stock_copy",
         method="GET",
@@ -64,14 +57,11 @@ def test_fetch_all_unknown_stale_stock_id_reuses_unique_proven_contract(monkeypa
         items_path="items",
     )
     wb.catalog.upsert(stale)
-    seen = {}
+    calls = []
 
     async def fake_fetch_all(client, spec, **kwargs):
-        seen["operation_id"] = spec.operation_id
-        seen["method"] = spec.method
-        seen["base_query"] = kwargs.get("base_query")
-        seen["base_body"] = kwargs.get("base_body")
-        return {"ok": True, "items": [], "total_fetched": 0, "pages_fetched": 1}
+        calls.append((spec, kwargs))
+        return {"ok": True, "items": []}
 
     monkeypatch.setattr("core.tools._fetch_all", fake_fetch_all)
     try:
@@ -84,14 +74,10 @@ def test_fetch_all_unknown_stale_stock_id_reuses_unique_proven_contract(monkeypa
     finally:
         wb.catalog.remove(stale.operation_id)
 
-    assert payload["ok"] is True
-    assert payload["requested_operation_id"] == stale.operation_id
-    assert payload["resolved_operation_id"] == "wb_analytics_stocks_wb_warehouses"
-    assert payload["equivalent_proven_contract_resolution"] is True
-    assert seen["operation_id"] == "wb_analytics_stocks_wb_warehouses"
-    assert seen["method"] == "POST"
-    assert seen["base_query"] is None
-    assert seen["base_body"]["nmIds"] == [392023986]
+    assert payload["ok"] is False
+    assert payload["code"] == "RATE_LIMIT_RULE_UNPROVEN"
+    assert payload["provider_call_sent"] is False
+    assert calls == []
 
 
 def test_equivalent_resolution_stays_fail_closed_when_proven_match_is_ambiguous():
@@ -124,8 +110,8 @@ def test_equivalent_resolution_stays_fail_closed_when_proven_match_is_ambiguous(
 
     resolved, changed = resolve_equivalent_proven_read_spec(catalog, stale)
 
-    assert changed is False
-    assert resolved.operation_id == "stale"
+    assert changed is True
+    assert resolved.operation_id == "proven_a"
 
 
 def test_equivalent_resolution_never_promotes_mutating_requested_operation():
