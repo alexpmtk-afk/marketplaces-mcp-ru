@@ -35,6 +35,9 @@ def test_unified_semantic_core_composes_every_business_logic_layer() -> None:
     assert brain["execution"]["archive_execution_registry"]["policy"]["fail_closed"] is True
     assert brain["execution"]["archive_execution_registry"]["policy"]["require_full_coverage"] is True
     assert brain["planning"]["source_family_before_provider_field"] is True
+    assert brain["knowledge_catalog"]["version"] == "marketplace_knowledge_catalog.v1"
+    assert brain["summary"]["counts"]["knowledge_catalog_entries"] == 3
+    assert brain["summary"]["safety"]["verified_human_semantics_require_official_sources"] is True
     assert brain["planning"]["silent_substitution_forbidden"] is True
     assert brain["execution"]["dispatch"]["required_legs_all_or_nothing"] is True
     assert brain["join_control"]["arithmetic_permission_is_separate"] is True
@@ -86,11 +89,13 @@ def test_semantic_core_views_are_composed_not_parallel_registries() -> None:
     summary = semantic_core_view("summary")
     planning = semantic_core_view("planning")
     registry = semantic_core_view("registry")
+    knowledge = semantic_core_view("knowledge")
     all_layers = semantic_core_view("all")
 
     assert summary["status"] == "CANONICAL_BRAIN"
     assert planning == all_layers["planning"]
     assert registry == all_layers["data_semantics"]
+    assert knowledge == all_layers["knowledge_catalog"]
     assert summary["component_versions"] == all_layers["component_versions"]
     assert summary["component_versions"]["semantic_core"] == SEMANTIC_CORE_VERSION
     assert summary["counts"]["calculation_contracts"] == 0

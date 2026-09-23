@@ -206,3 +206,44 @@ def test_wb_orders_real_result_shape_does_not_require_metric_field():
     assert shown["user_note"] == (
         "Это оперативные данные Wildberries; часть заказов может появляться с задержкой."
     )
+
+
+
+def test_wb_price_observations_use_verified_business_labels():
+    shown = present_business_result({
+        "ok": True,
+        "metric_observations": [
+            {
+                "metric_id": "WB_SELLER_PRICE_BEFORE_DISCOUNT",
+                "label": "Цена продавца до скидки",
+                "definition": "verified",
+                "value": 1500,
+                "unit": "RUB",
+                "marketplace": "wb",
+                "source_name": "wb_prices_list",
+                "source_field": "price",
+                "observed_at": None,
+                "semantic_status": "verified",
+                "dimensions": {"nm_id": 1, "size_id": 10, "tech_size": "A"},
+            },
+            {
+                "metric_id": "WB_SELLER_PRICE_AFTER_DISCOUNT",
+                "label": "Цена со скидкой продавца",
+                "definition": "verified",
+                "value": 1200,
+                "unit": "RUB",
+                "marketplace": "wb",
+                "source_name": "wb_prices_list",
+                "source_field": "discountedPrice",
+                "observed_at": None,
+                "semantic_status": "verified",
+                "dimensions": {"nm_id": 1, "size_id": 10, "tech_size": "A"},
+            },
+        ],
+    })
+
+    assert shown["user_message"] == (
+        "Цена продавца до скидки: 1 500 ₽; "
+        "Цена со скидкой продавца: 1 200 ₽."
+    )
+    assert "user_note" not in shown

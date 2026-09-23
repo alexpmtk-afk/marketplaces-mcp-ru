@@ -16,6 +16,10 @@ from mcp.server.fastmcp import FastMCP
 from . import request_join_controller as _join_controller
 from . import system_map as _system_map
 from .calculation_contract_registry import calculation_registry_summary
+from .marketplace_knowledge import (
+    load_marketplace_knowledge_catalog,
+    validate_knowledge_against_metric_registry,
+)
 from .metric_registry import load_metric_registry
 from .request_execution_controller import CONTROLLER_VERSION, LEG_CONTRACT_VERSION
 from .request_source_router import (
@@ -47,6 +51,8 @@ PROCESS_OWNERSHIP: dict[str, dict[str, Any]] = {
     "RESOLVE": {
         "owners": [
             "core/metric_registry.py",
+            "core/marketplace_knowledge.py",
+            "core/marketplace_knowledge_catalog.yaml",
             "core/semantic_registry.yaml",
             "core/semantic_registry_extensions.yaml",
             "core/semantic_resolver.py",
@@ -190,6 +196,7 @@ def validate_semantic_core(snapshot: dict[str, Any]) -> None:
     registry = snapshot["data_semantics"]
     intents = snapshot["understanding"]["intents"]
     metric_dictionary = snapshot["metric_dictionary"]
+    knowledge_catalog = snapshot["knowledge_catalog"]
     execution = snapshot["execution"]["archive_execution_registry"]
     calculation = snapshot["calculation_control"]
     join = snapshot["join_control"]
@@ -202,6 +209,12 @@ def validate_semantic_core(snapshot: dict[str, Any]) -> None:
         raise SemanticCoreError("metric dictionary must never grant execution permission")
     if (metric_dictionary.get("policy") or {}).get("unknown_provider_mapping_must_not_be_inferred") is not True:
         raise SemanticCoreError("metric dictionary provider mappings must fail closed")
+    if (knowledge_catalog.get("policy") or {}).get("verified_requires_official_sources") is not True:
+        raise SemanticCoreError("verified human semantics must require official sources")
+    try:
+        validate_knowledge_against_metric_registry(knowledge_catalog, metric_dictionary)
+    except Exception as exc:
+        raise SemanticCoreError(f"knowledge catalog cross-validation failed: {exc}") from exc
     if (execution.get("policy") or {}).get("fail_closed") is not True:
         raise SemanticCoreError("archive execution must fail closed")
     if (execution.get("policy") or {}).get("require_full_coverage") is not True:
@@ -254,6 +267,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
     registry = snapshot["data_semantics"]
     intents = snapshot["understanding"]["intents"]
     metric_dictionary = snapshot["metric_dictionary"]
+    knowledge_catalog = snapshot["knowledge_catalog"]
     execution = snapshot["execution"]["archive_execution_registry"]
     calculation = snapshot["calculation_control"]
     return {
@@ -269,6 +283,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
             "capabilities": len(registry.get("capabilities", {})),
             "business_metrics": len(intents.get("business_metrics", {})),
             "metric_dictionary_entries": len(metric_dictionary.get("metrics", {})),
+            "knowledge_catalog_entries": len(knowledge_catalog.get("metrics", {})),
             "intent_routes": len(intents.get("routes", [])),
             "archive_executors": len(execution.get("executors", {})),
             "join_contracts": len(snapshot["join_control"].get("contracts", [])),
@@ -278,6 +293,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
         "safety": {
             "fail_closed": True,
             "metric_dictionary_is_semantic_only": True,
+            "verified_human_semantics_require_official_sources": True,
             "silent_source_substitution_forbidden": True,
             "full_coverage_required_for_archive_execution": True,
             "cross_currency_arithmetic_requires_explicit_contract": True,
@@ -285,7 +301,7 @@ def _summary(snapshot: dict[str, Any]) -> dict[str, Any]:
             "provenance_required_for_calculations": True,
         },
         "available_sections": [
-            "understanding", "metric_dictionary", "data_semantics", "planning", "execution",
+            "understanding", "metric_dictionary", "knowledge_catalog", "data_semantics", "planning", "execution",
             "join_control", "calculation_control", "gaps", "process_ownership",
             "component_versions", "all",
         ],
@@ -296,6 +312,7 @@ def build_semantic_core_snapshot() -> dict[str, Any]:
     registry = load_semantic_registry()
     intents = load_semantic_intents()
     metric_dictionary = load_metric_registry()
+    knowledge_catalog = load_marketplace_knowledge_catalog()
     archive_execution = load_semantic_execution()
     calculation = calculation_registry_summary()
     join = _join_registry_summary()
@@ -311,9 +328,11 @@ def build_semantic_core_snapshot() -> dict[str, Any]:
             "parser_owner": "core/business_query_parser.py",
             "resolver_owner": "core/semantic_resolver.py",
             "metric_dictionary_owner": "core/metric_registry.yaml",
+            "human_semantics_owner": "core/marketplace_knowledge_catalog.yaml",
             "intents": intents,
         },
         "metric_dictionary": metric_dictionary,
+        "knowledge_catalog": knowledge_catalog,
         "data_semantics": registry,
         "planning": _planning_summary(),
         "execution": {
@@ -336,6 +355,7 @@ def build_semantic_core_snapshot() -> dict[str, Any]:
         "component_versions": {
             "semantic_core": SEMANTIC_CORE_VERSION,
             "metric_registry": metric_dictionary.get("version"),
+            "knowledge_catalog": knowledge_catalog.get("version"),
             "semantic_registry": registry.get("version"),
             "semantic_registry_extensions": list(registry.get("extension_versions") or []),
             "semantic_intents": intents.get("version"),
@@ -366,6 +386,8 @@ def semantic_core_view(section: str = "summary") -> dict[str, Any]:
         "registry": "data_semantics",
         "metrics": "metric_dictionary",
         "metric_registry": "metric_dictionary",
+        "knowledge": "knowledge_catalog",
+        "knowledge_catalog": "knowledge_catalog",
         "intents": "understanding",
         "join": "join_control",
         "calculation": "calculation_control",
@@ -388,7 +410,8 @@ def _install_system_map_extension() -> None:
         "brain_runtime_entry": "marketplace_semantic_core",
         "brain_composer": "core/semantic_core.py",
         "metric_dictionary": "core/metric_registry.yaml",
-        "brain_policy": "compose canonical owner registries; never maintain a second business-rule catalog",
+        "knowledge_catalog": "core/marketplace_knowledge_catalog.yaml",
+        "brain_policy": "compose canonical owner registries; human business meaning comes from verified marketplace knowledge, never from provider field names alone",
         "canonical_flow": [
             "UNDERSTAND", "RESOLVE", "PLAN_SOURCE", "CLARIFY", "DISPATCH",
             "EXECUTE", "JOIN", "CALCULATE_IF_REGISTERED", "ANSWER_WITH_PROVENANCE",

@@ -9,6 +9,7 @@ from typing import Any, Optional
 from . import request_source_system_map as _request_source_system_map  # noqa: F401
 from .business_router import execute_business_query as execute_legacy_business_query
 from .errors import make_error
+from .metric_observation import build_metric_observation
 from .metric_registry import resolve_metric_terms
 from .request_execution_controller import register_request_execution_controller_tool
 from .request_join_controller import register_request_join_controller_tool
@@ -51,6 +52,65 @@ def _attach_semantic_context(
     result["semantic_resolution"] = resolution
     result["normalized_query"] = deepcopy(resolution.get("normalized_query"))
     return result
+
+
+_WB_PRICE_METRIC_FIELDS = {
+    "WB_SELLER_PRICE_BEFORE_DISCOUNT": ("price_amount", "price"),
+    "WB_SELLER_PRICE_AFTER_DISCOUNT": ("discounted_price_amount", "discountedPrice"),
+    "WB_CLUB_PRICE_AFTER_DISCOUNT": ("club_discounted_price_amount", "clubDiscountedPrice"),
+}
+_WB_PRICE_METRIC_IDS = {"CURRENT_SELLING_PRICE", *_WB_PRICE_METRIC_FIELDS}
+
+
+def _normalize_wb_price_result(
+    result: dict[str, Any],
+    *,
+    requested_metric_id: str,
+) -> dict[str, Any]:
+    """Attach knowledge-backed price observations without changing raw WB tools."""
+    out = deepcopy(result)
+    if out.get("ok") is not True:
+        return out
+
+    observations: list[dict[str, Any]] = []
+    source_name = str(out.get("source") or "wb_prices_list")
+    for product in out.get("products") or []:
+        if not isinstance(product, dict):
+            continue
+        currency = str(product.get("currency") or "RUB")
+        for size in product.get("sizes") or []:
+            if not isinstance(size, dict):
+                continue
+            for metric_id, (value_key, provider_field) in _WB_PRICE_METRIC_FIELDS.items():
+                if requested_metric_id != "CURRENT_SELLING_PRICE" and metric_id != requested_metric_id:
+                    continue
+                value = size.get(value_key)
+                if value is None:
+                    continue
+                observation = build_metric_observation(
+                    metric_id=metric_id,
+                    value=value,
+                    unit=currency,
+                    marketplace="wb",
+                    source_name=source_name,
+                    source_field=provider_field,
+                    observed_at=None,
+                ).to_dict()
+                observation["dimensions"] = {
+                    "nm_id": product.get("nm_id"),
+                    "vendor_code": product.get("vendor_code"),
+                    "size_id": size.get("size_id"),
+                    "tech_size": size.get("tech_size"),
+                }
+                observations.append(observation)
+
+    out["metric_observations"] = observations
+    out["metric_ids"] = list(dict.fromkeys(
+        str(item["metric_id"]) for item in observations
+    ))
+    out["knowledge_catalog_version"] = "marketplace_knowledge_catalog.v1"
+    out["semantic_price_set"] = requested_metric_id == "CURRENT_SELLING_PRICE"
+    return out
 
 
 def _marketplace_from_request(marketplace: str, question: str) -> str:
@@ -274,7 +334,7 @@ async def execute_business_query(
                     )
                 return result
 
-            if metric_id == "CURRENT_SELLING_PRICE":
+            if metric_id in _WB_PRICE_METRIC_IDS:
                 wb = modules.get("wb")
                 if wb is None:
                     return make_error(
@@ -285,12 +345,12 @@ async def execute_business_query(
                     )
                 ids = list(nm_ids or [])
                 if not ids:
-                    ids = [int(value) for value in re.findall(r"(?<!\d)\d{6,}(?!\d)", natural_question)]
+                    ids = [int(value) for value in re.findall(r"(?<!\\d)\\d{6,}(?!\\d)", natural_question)]
                 ids = list(dict.fromkeys(ids))
                 if len(ids) > 1:
                     return make_error(
                         "invalid_params",
-                        "CURRENT_SELLING_PRICE accepts at most one WB nmId per request.",
+                        "WB current price metrics accept at most one nmId per request.",
                         operation_id="marketplace_business_query",
                         retryable=False,
                         details={"nm_ids": ids},
@@ -311,6 +371,10 @@ async def execute_business_query(
                         retryable=False,
                     )
                 if isinstance(result, dict):
+                    result = _normalize_wb_price_result(
+                        result,
+                        requested_metric_id=metric_id,
+                    )
                     return _attach_semantic_context(
                         result, question=natural_question, resolution=resolution,
                     )

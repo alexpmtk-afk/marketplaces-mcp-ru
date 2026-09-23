@@ -1,0 +1,75 @@
+version: marketplace_knowledge_catalog.v1
+
+policy:
+  canonical_human_language: ru
+  verified_requires_official_sources: true
+  provider_field_name_is_not_business_definition: true
+  unknown_provider_field_status: source_field
+  production_auto_update: false
+  semantic_change_requires_review: true
+
+sources:
+  wb_seller_price_help_20260518:
+    marketplace: wb
+    title: "Wildberries Seller Help — Как проверить обновление цен и скидок"
+    url: "https://seller.wildberries.ru/instructions/en/ru/material/A-60"
+    official: true
+    source_version: "updated-2026-05-18"
+    checked_at: "2026-09-23"
+
+  wb_prices_api_20260923:
+    marketplace: wb
+    title: "Wildberries API — Цены и скидки / Получить товары с ценами"
+    url: "https://dev.wildberries.ru/openapi/work-with-products"
+    official: true
+    source_version: "checked-2026-09-23"
+    checked_at: "2026-09-23"
+
+metrics:
+  WB_SELLER_PRICE_BEFORE_DISCOUNT:
+    marketplace: wb
+    label_ru: "Цена продавца до скидки"
+    definition_ru: "Цена, установленная продавцом до применения скидки продавца."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [product, size, current_snapshot]
+    aliases_ru: ["цена до скидки", "цена продавца до скидки", "базовая цена продавца"]
+    aliases_en: ["seller price before discount"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_current_prices
+      field_path: price
+    source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_SELLER_PRICE_AFTER_DISCOUNT:
+    marketplace: wb
+    label_ru: "Цена со скидкой продавца"
+    definition_ru: "Цена товара после применения скидки продавца, без утверждения о персональной итоговой цене конкретного покупателя."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [product, size, current_snapshot]
+    aliases_ru: ["цена со скидкой", "цена после скидки продавца", "цена со скидкой продавца"]
+    aliases_en: ["seller discounted price"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_current_prices
+      field_path: discountedPrice
+    source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
+    source_checked_at: "2026-09-23"
+
+  WB_CLUB_PRICE_AFTER_DISCOUNT:
+    marketplace: wb
+    label_ru: "Цена со скидкой для WB Клуба"
+    definition_ru: "Цена, получившаяся после применения установленной продавцом скидки WB Клуба к цене товара."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [product, size, current_snapshot]
+    aliases_ru: ["цена для wb клуба", "цена wb клуб", "клубная цена", "цена со скидкой для wb клуба"]
+    aliases_en: ["wb club discounted price", "club discounted price"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_current_prices
+      field_path: clubDiscountedPrice
+    source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
+    source_checked_at: "2026-09-23"

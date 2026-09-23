@@ -598,7 +598,13 @@ def plan_marketplace_request(
                 forbidden_substitutes=["historical archive", "public product-card availability"],
                 semantic_resolution=resolution,
             )
-        if metric_id in {"CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE"}:
+        if metric_id in {
+            "CURRENT_FBS_STOCK",
+            "CURRENT_SELLING_PRICE",
+            "WB_SELLER_PRICE_BEFORE_DISCOUNT",
+            "WB_SELLER_PRICE_AFTER_DISCOUNT",
+            "WB_CLUB_PRICE_AFTER_DISCOUNT",
+        }:
             if mode in {"HISTORICAL", "MIXED"}:
                 return make_plan(
                     question=question, marketplace=market or "wb", time_mode=mode,
