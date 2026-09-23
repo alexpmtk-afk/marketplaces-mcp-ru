@@ -602,7 +602,19 @@ def _parse_body(resp: httpx.Response) -> Any:
             return resp.text
     if ctype.startswith(("image/", "application/pdf")):
         return {"_binary": True, "content_type": ctype, "bytes": len(resp.content)}
-    return resp.text
+
+    # Some marketplace endpoints return syntactically valid JSON with an
+    # incorrect or overly generic Content-Type (for example text/plain).
+    # Preserve real plain text, but recover structured provider truth when the
+    # body itself is unambiguously a JSON object/array.
+    text = resp.text
+    stripped = text.lstrip()
+    if stripped.startswith(("{", "[")):
+        try:
+            return json.loads(text)
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return text
 
 
 def _short_body(resp: httpx.Response, limit: int = 300) -> str:
