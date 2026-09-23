@@ -52,6 +52,8 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "marketplace_database_refresh_catalog",
         "marketplace_database_update",
         "marketplace_database_verify",
+        "marketplace_ozon_current_archive_worker_step",
+        "marketplace_ozon_current_archive_job_status",
         "marketplace_archive_update",
         "marketplace_archive_worker_step",
         "marketplace_archive_resumable_diagnostic_step",
