@@ -183,6 +183,13 @@ class Catalog:
                     score += 0.5
             if entity_keys and set(s.entity) & entity_keys:
                 score += 2.0  # entity match dominates incidental token hits
+            # Prefer reviewed executable contracts over generated inventory rows
+            # when both describe the same business action. Execution still
+            # independently fails closed in core.tools; this only improves discovery.
+            if bool(getattr(s, "quota_proven", False)) or bool(
+                getattr(s, "service_quota_proven", False)
+            ):
+                score += 2.0
             if score > 0:
                 scored.append((score, s))
         scored.sort(key=lambda x: x[0], reverse=True)
