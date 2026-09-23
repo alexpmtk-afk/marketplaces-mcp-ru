@@ -145,3 +145,34 @@ def test_validator_rejects_missing_field_semantics():
     del unsafe["datasets"]["wb_weekly_finance_main"]["field_catalog"]["penalty"]
     with pytest.raises(SemanticRegistryError):
         validate_semantic_registry(unsafe)
+
+
+def test_all_92_weekly_fields_belong_to_at_least_one_semantic_capability():
+    registry = load_semantic_registry()
+    dataset = registry["datasets"]["wb_weekly_finance_main"]
+    used = set()
+    for capability in registry["capabilities"].values():
+        if capability.get("source_id") == "wb_weekly_finance_main":
+            used.update(capability.get("fields") or [])
+    assert used == set(dataset["fields"])
+
+
+def test_final_seven_weekly_fields_have_explicit_safe_semantics():
+    legacy = require_available_capability("legacy_finance_diagnostics")
+    assert set(legacy["fields"]) == {
+        "salePercent",
+        "productDiscountForReport",
+        "sellerPromo",
+        "supRatingUp",
+        "isKgvpV2",
+    }
+    assert "historical" in legacy["guardrail"].lower()
+    assert "current" in legacy["guardrail"].lower()
+
+    payout = require_available_capability("payout_term_change_fee")
+    assert "paymentSchedule" in payout["fields"]
+    assert "Вывести сейчас" in payout["guardrail"]
+
+    social = require_available_capability("social_certificate_payment")
+    assert "paidWithSocialCertificate" in social["fields"]
+    assert "flag" in social["guardrail"].lower()

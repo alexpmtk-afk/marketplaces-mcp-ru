@@ -260,6 +260,9 @@ def test_weekly_report_field_coverage_is_complete_92_of_92():
     assert weekly["missing_meaning_fields"] == []
     assert weekly["missing_safe_uses_fields"] == []
     assert weekly["unreviewed_fields"] == []
+    assert weekly["capability_linked_field_count"] == 92
+    assert weekly["capability_unlinked_field_count"] == 0
+    assert weekly["capability_unlinked_fields"] == []
     assert "agencyVat" in weekly["blocked_unapproved_provider_fields"]
 
 
@@ -280,3 +283,19 @@ def test_weekly_report_role_breakdown_covers_all_fields():
     weekly = result["weekly_report_field_coverage"]
     assert sum(weekly["role_counts"].values()) == 92
     assert weekly["semantic_status_counts"] == {"REVIEWED": 92}
+
+
+def test_weekly_field_coverage_exposes_final_seven_field_routes():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
+    by_field = result["weekly_report_field_coverage"]["capabilities_by_field"]
+
+    for field in (
+        "salePercent",
+        "productDiscountForReport",
+        "sellerPromo",
+        "supRatingUp",
+        "isKgvpV2",
+    ):
+        assert "legacy_finance_diagnostics" in by_field[field]
+    assert "payout_term_change_fee" in by_field["paymentSchedule"]
+    assert "social_certificate_payment" in by_field["paidWithSocialCertificate"]
