@@ -9,6 +9,7 @@ from pathlib import Path
 from core.registry import Catalog, EndpointSpec
 from core.client import _parse_body
 import core.semantic_current_stock as semantic_current_stock
+import core.semantic_business_router as semantic_business_router
 from core.request_source_router import (
     SOURCE_CANONICAL_ARCHIVE,
     SOURCE_LIVE_CABINET_API,
@@ -47,6 +48,109 @@ def test_wb_current_price_has_dedicated_live_business_route():
     assert plan["source_family"] == SOURCE_LIVE_CABINET_API
     assert plan["downstream_handler"] == "marketplace_business_query"
     assert plan["semantic_resolution"]["metric_id"] == "CURRENT_SELLING_PRICE"
+
+
+def test_wb_current_price_preserves_named_seller_scope():
+    calls = []
+
+    class FakeWb:
+        async def wb_get_prices(
+            self,
+            *,
+            limit,
+            offset,
+            filter_nm_id,
+            cabinet="",
+        ):
+            calls.append({
+                "limit": limit,
+                "offset": offset,
+                "filter_nm_id": filter_nm_id,
+                "cabinet": cabinet,
+            })
+            return json.dumps({
+                "ok": True,
+                "status": 200,
+                "metric_id": "CURRENT_SELLING_PRICE",
+                "products": [],
+            })
+
+    result = asyncio.run(
+        semantic_business_router.execute_business_query(
+            {"wb": FakeWb()},
+            marketplace="wb",
+            seller="wb_laser_master",
+            question="какая цена товара 507763296",
+            nm_ids=[507763296],
+        )
+    )
+
+    assert result["ok"] is True
+    assert calls == [{
+        "limit": 1000,
+        "offset": 0,
+        "filter_nm_id": 507763296,
+        "cabinet": "wb_laser_master",
+    }]
+
+
+def test_wb_price_tool_uses_named_cabinet_credentials(monkeypatch):
+    import wb_mcp.server as wb_server
+
+    expected_creds = {"token": "laser-specific-test-token"}
+    seen = {}
+
+    def fake_resolve_named_cabinet(client, cabinet):
+        seen["cabinet"] = cabinet
+        return expected_creds, None
+
+    async def fake_call_spec(
+        spec,
+        *,
+        query=None,
+        creds_override=None,
+        **kwargs,
+    ):
+        seen["operation_id"] = spec.operation_id
+        seen["query"] = query
+        seen["creds_override"] = creds_override
+        return {
+            "ok": True,
+            "status": 200,
+            "data": {
+                "data": {
+                    "listGoods": [],
+                }
+            },
+        }
+
+    monkeypatch.setattr(
+        wb_server,
+        "resolve_named_cabinet",
+        fake_resolve_named_cabinet,
+    )
+    monkeypatch.setattr(
+        wb_server.client,
+        "call_spec",
+        fake_call_spec,
+    )
+
+    payload = json.loads(
+        asyncio.run(
+            wb_server.wb_get_prices(
+                limit=1000,
+                offset=0,
+                filter_nm_id=507763296,
+                cabinet="wb_laser_master",
+            )
+        )
+    )
+
+    assert payload["ok"] is True
+    assert seen["cabinet"] == "wb_laser_master"
+    assert seen["operation_id"] == "wb_prices_list"
+    assert seen["query"]["filterNmID"] == 507763296
+    assert seen["creds_override"] is expected_creds
 
 
 def test_wb_fbs_stock_is_not_generic_wb_warehouse_stock():
