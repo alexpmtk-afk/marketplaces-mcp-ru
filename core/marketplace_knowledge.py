@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import date
 from pathlib import Path
 from typing import Any
+
+from mcp.server.fastmcp import FastMCP
 
 import yaml
 
@@ -149,3 +152,83 @@ def validate_knowledge_against_metric_registry(
             raise MarketplaceKnowledgeError(
                 f"knowledge/registry field mismatch for {metric_id}: {binding.get('field_path')}"
             )
+
+
+
+def verify_marketplace_knowledge(
+    *,
+    metric_registry: dict[str, Any] | None = None,
+    today: date | None = None,
+    max_source_age_days: int = 30,
+) -> dict[str, Any]:
+    """Read-only integrity/freshness check for the human-semantic knowledge layer."""
+    from .metric_registry import load_metric_registry
+
+    checked_on = today or date.today()
+    catalog = load_marketplace_knowledge_catalog()
+    registry = metric_registry if metric_registry is not None else load_metric_registry()
+    errors: list[str] = []
+    try:
+        validate_knowledge_against_metric_registry(catalog, registry)
+    except Exception as exc:
+        errors.append(str(exc))
+
+    stale_sources: list[dict[str, Any]] = []
+    for source_id, source in (catalog.get("sources") or {}).items():
+        raw_checked = str(source.get("checked_at") or "")
+        try:
+            checked = date.fromisoformat(raw_checked)
+            age_days = (checked_on - checked).days
+        except ValueError:
+            age_days = None
+        if age_days is None or age_days > max_source_age_days:
+            stale_sources.append({
+                "source_id": source_id,
+                "checked_at": raw_checked or None,
+                "age_days": age_days,
+                "url": source.get("url"),
+            })
+
+    if errors:
+        status = "FAIL"
+    elif stale_sources:
+        status = "STALE_REVIEW_REQUIRED"
+    else:
+        status = "PASS"
+
+    return {
+        "ok": not errors,
+        "status": status,
+        "catalog_version": catalog.get("version"),
+        "checked_on": checked_on.isoformat(),
+        "max_source_age_days": int(max_source_age_days),
+        "verified_metric_count": sum(
+            1 for metric in (catalog.get("metrics") or {}).values()
+            if metric.get("semantic_status") == "verified"
+        ),
+        "source_count": len(catalog.get("sources") or {}),
+        "stale_sources": stale_sources,
+        "errors": errors,
+        "production_auto_update": False,
+        "rule": "Detected semantic/source changes require review before production meaning is changed.",
+    }
+
+
+def register_marketplace_knowledge_tools(mcp: FastMCP) -> None:
+    @mcp.tool(
+        name="marketplace_knowledge_verify",
+        annotations={
+            "title": "Verify marketplace business-meaning knowledge",
+            "readOnlyHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def marketplace_knowledge_verify(max_source_age_days: int = 30) -> str:
+        import json
+
+        return json.dumps(
+            verify_marketplace_knowledge(max_source_age_days=max_source_age_days),
+            ensure_ascii=False,
+            indent=2,
+            default=str,
+        )
