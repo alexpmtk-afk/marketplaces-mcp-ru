@@ -27,6 +27,8 @@ def test_current_loaded_critical_quota_contracts_pass():
         "ozon_fbo_list",
         "ozon_fbs_list",
         "ozon_finance_accrual_by_day",
+        "ozon_finance_realization",
+        "ozon_post_v1_finance_realization_posting",
     }
     assert all(row["executable"] is True for row in report["contracts"])
 
