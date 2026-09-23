@@ -41,6 +41,73 @@ def has_proven_quota(spec: Any) -> bool:
         str(getattr(spec, "rate_limit", ""))
     ) is not None
 
+
+LEGACY_READ_OPERATION_ALIASES: dict[tuple[str, str], str] = {
+    ("wb", "wb_post_api_list_goods_filter"): "wb_prices_list",
+    ("wb", "wb_post_api_analytics_stocks_report_wb_warehouses"): "wb_analytics_stocks_wb_warehouses",
+}
+
+
+def resolve_legacy_operation_id(service: str, operation_id: str) -> tuple[str, bool]:
+    canonical = LEGACY_READ_OPERATION_ALIASES.get(
+        (str(service).strip().lower(), str(operation_id).strip())
+    )
+    return (canonical or operation_id, canonical is not None)
+
+
+def normalize_legacy_read_inputs(
+    service: str,
+    requested_operation_id: str,
+    *,
+    query: Optional[dict] = None,
+    body: Optional[dict] = None,
+) -> tuple[Optional[dict], Optional[dict]]:
+    """Translate stale generated read-call shapes to reviewed canonical ones."""
+    key = (str(service).strip().lower(), str(requested_operation_id).strip())
+    q = dict(query or {})
+    b = dict(body or {})
+
+    if key == ("wb", "wb_post_api_list_goods_filter"):
+        merged: dict[str, Any] = {}
+        nested = b.get("filter")
+        if isinstance(nested, dict):
+            merged.update(nested)
+        merged.update(b)
+        merged.update(q)
+
+        result: dict[str, Any] = {}
+        for field in ("limit", "offset", "filterNmID"):
+            if field in merged and merged[field] is not None:
+                result[field] = merged[field]
+
+        if "filterNmID" not in result:
+            for field in ("nmID", "nmId", "nm_id"):
+                if merged.get(field) is not None:
+                    result["filterNmID"] = merged[field]
+                    break
+
+        if "filterNmID" not in result:
+            for field in ("nmIDs", "nmIds", "nm_ids"):
+                values = merged.get(field)
+                if isinstance(values, (list, tuple)):
+                    if len(values) != 1:
+                        raise ValueError(
+                            "Legacy WB price operation accepts only one nmID when "
+                            "resolved to wb_prices_list."
+                        )
+                    result["filterNmID"] = values[0]
+                    break
+
+        return (result or None), None
+
+    if key == ("wb", "wb_post_api_analytics_stocks_report_wb_warehouses"):
+        merged = dict(q)
+        merged.update(b)
+        return None, (merged or None)
+
+    return (dict(query) if query is not None else None,
+            dict(body) if body is not None else None)
+
 def resolve_catalog_raw_spec(
     catalog: Catalog, *, method: str, path: str, host: Optional[str] = None,
 ) -> tuple[Optional[Any], str]:
@@ -243,13 +310,18 @@ def register_generic_tools(
     async def describe_method(operation_id: str) -> str:
         """Return the full catalog record for one endpoint: method, host, path,
         scope, safety level, pagination style, rate limit, params and doc URL."""
+        requested_operation_id = operation_id
+        operation_id, aliased = resolve_legacy_operation_id(svc, operation_id)
         spec = catalog.get(operation_id)
         if not spec:
-            hits = catalog.search(operation_id, limit=5)
-            return _j({"error": "not_found", "operation_id": operation_id,
+            hits = catalog.search(requested_operation_id, limit=5)
+            return _j({"error": "not_found", "operation_id": requested_operation_id,
                        "did_you_mean": [s.operation_id for s in hits]})
         return _j({
-            "operation_id": spec.operation_id, "section": spec.section,
+            "operation_id": spec.operation_id,
+            "requested_operation_id": requested_operation_id if aliased else spec.operation_id,
+            "resolved_from_legacy_alias": aliased,
+            "section": spec.section,
             "entity": spec.entity,
             "method": spec.method, "host": spec.host, "path": spec.path,
             "path_params": spec.path_params, "scope": spec.scope,
@@ -288,10 +360,19 @@ def register_generic_tools(
             i_understand_this_modifies_data: required for destructive operations.
         Returns JSON: {"ok": true, "status", "data"} or the error envelope.
         """
+        requested_operation_id = operation_id
+        operation_id, aliased = resolve_legacy_operation_id(svc, operation_id)
+        try:
+            query, body = normalize_legacy_read_inputs(
+                svc, requested_operation_id, query=query, body=body,
+            )
+        except ValueError as exc:
+            return _j({"ok": False, "error": "invalid_params",
+                       "message": str(exc), "operation_id": requested_operation_id})
         spec = catalog.get(operation_id)
         if not spec:
-            hits = catalog.search(operation_id, limit=5)
-            return _j({"error": "not_found", "operation_id": operation_id,
+            hits = catalog.search(requested_operation_id, limit=5)
+            return _j({"error": "not_found", "operation_id": requested_operation_id,
                        "did_you_mean": [s.operation_id for s in hits]})
         # Defense in depth: never let a catalog `read` weaken the gate below the
         # HTTP verb's floor (a mislabelled PUT/PATCH/DELETE must still be gated).
@@ -311,6 +392,10 @@ def register_generic_tools(
             spec, path_values=path_values, query=query, json_body=body,
             creds_override=creds_override,
         )
+        if aliased and isinstance(resp, dict):
+            resp.setdefault("requested_operation_id", requested_operation_id)
+            resp.setdefault("resolved_operation_id", spec.operation_id)
+            resp.setdefault("legacy_alias_resolution", True)
         return _j(resp)
 
     @mcp.tool(
@@ -395,9 +480,18 @@ def register_generic_tools(
             max_items: hard cap to protect context (default 10000).
         Returns JSON: {"ok", "items", "total_fetched", "pages_fetched", "truncated"}.
         """
+        requested_operation_id = operation_id
+        operation_id, aliased = resolve_legacy_operation_id(svc, operation_id)
+        try:
+            query, body = normalize_legacy_read_inputs(
+                svc, requested_operation_id, query=query, body=body,
+            )
+        except ValueError as exc:
+            return _j({"ok": False, "error": "invalid_params",
+                       "message": str(exc), "operation_id": requested_operation_id})
         spec = catalog.get(operation_id)
         if not spec:
-            return _j({"error": "not_found", "operation_id": operation_id})
+            return _j({"error": "not_found", "operation_id": requested_operation_id})
         # Verb-floor defense in depth (same as call_method): a mutating verb
         # mislabelled `read` in the catalog must not be looped over unconfirmed.
         if infer_safety(spec.method, spec.safety) != "read":
@@ -414,6 +508,10 @@ def register_generic_tools(
             items_path=items_path, limit=limit, max_items=max_items,
             creds_override=creds_override,
         )
+        if aliased and isinstance(resp, dict):
+            resp.setdefault("requested_operation_id", requested_operation_id)
+            resp.setdefault("resolved_operation_id", spec.operation_id)
+            resp.setdefault("legacy_alias_resolution", True)
         return _j(resp)
 
 
