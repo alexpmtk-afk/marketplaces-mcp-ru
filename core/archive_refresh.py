@@ -87,6 +87,33 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
             "verified canonical Drive bytes and Yandex backup exist before coverage COMMIT",
         ),
     ),
+    "ozon_current": ArchiveRefreshContract(
+        marketplace="ozon",
+        dataset_family="current",
+        datasets=(
+            "ozon_current_orders_fbo",
+            "ozon_current_orders_fbs",
+            "ozon_current_accruals",
+        ),
+        coverage_model="open_month_snapshot_registry",
+        refresh_strategy="full_refetch_open_month_then_atomically_replace_current_snapshot",
+        freshness_evidence=(
+            "provider snapshot covers first day of open month through current Moscow calendar day",
+            "current_coverage_registry.csv COMPLETE row for every CURRENT dataset",
+            "canonical CURRENT CSV SHA256/row count matches committed coverage",
+        ),
+        stable_keys={
+            "ozon_current_orders_fbo": ("posting_number",),
+            "ozon_current_orders_fbs": ("posting_number",),
+            "ozon_current_accruals": ("accrual_id",),
+        },
+        completion_invariants=(
+            "all three open-month provider snapshots pass stable-key completeness and uniqueness",
+            "canonical Drive files are verified before current_coverage_registry.csv is published",
+            "CURRENT refresh always refetches the complete open month so retrospective status/finance corrections replace stale rows",
+            "coverage is committed only after canonical Drive and REMOTE durable backup writes succeed",
+        ),
+    ),
 }
 
 
@@ -104,20 +131,38 @@ def refresh_catalog() -> list[dict[str, Any]]:
     return result
 
 
-def normalize_refresh_family(value: str) -> tuple[str, ...]:
+def normalize_refresh_family(
+    value: str,
+    *,
+    marketplace: str = "wb",
+) -> tuple[str, ...]:
     normalized = str(value or "all").strip().lower().replace("-", "_")
-    aliases = {
-        "all": tuple(sorted(REFRESH_CONTRACTS)),
-        "finance": ("finance",),
-        "wb_weekly_finance_main": ("finance",),
-        "weekly_finance": ("finance",),
-        "advertising": ("advertising",),
-        "ads": ("advertising",),
-    }
+    market = str(marketplace or "wb").strip().lower()
+
+    if market == "wb":
+        aliases = {
+            "all": ("advertising", "finance"),
+            "finance": ("finance",),
+            "wb_weekly_finance_main": ("finance",),
+            "weekly_finance": ("finance",),
+            "advertising": ("advertising",),
+            "ads": ("advertising",),
+        }
+    elif market == "ozon":
+        aliases = {
+            "all": ("ozon_current",),
+            "current": ("ozon_current",),
+            "ozon_current": ("ozon_current",),
+            "orders": ("ozon_current",),
+            "accruals": ("ozon_current",),
+        }
+    else:
+        raise ValueError(f"Unsupported archive marketplace: {marketplace!r}")
+
     if normalized not in aliases:
+        supported = ", ".join(sorted(aliases))
         raise ValueError(
-            f"Unknown archive dataset family {value!r}; supported: all, "
-            + ", ".join(sorted(REFRESH_CONTRACTS))
+            f"Unknown {market} archive dataset family {value!r}; supported: {supported}"
         )
     return aliases[normalized]
 
