@@ -299,6 +299,7 @@ async def execute_business_query(
                     limit=1 if not ids else 1000,
                     offset=0,
                     filter_nm_id=(int(ids[0]) if ids else None),
+                    cabinet=seller,
                 )
                 try:
                     result = json.loads(payload)
