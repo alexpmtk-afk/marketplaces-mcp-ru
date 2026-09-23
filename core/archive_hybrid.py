@@ -26,10 +26,13 @@ from .archive_google import (
     build_google_archive_store_from_env,
 )
 from .archive_google_direct import build_direct_google_archive_store_from_env
+from .archive_local import build_local_archive_store_from_env
 from .archive_yandex import YandexObjectStorageArchiveStore, build_yandex_archive_store_from_env
 
 _LOCATOR_PREFIX = "hybrid-v1:"
 _YANDEX_ONLY_PREFIX = "yandex-v1:"
+_REMOTE_LOCATOR_PREFIX = "remote-durable-v1:"
+_REMOTE_LOCAL_ONLY_PREFIX = "remote-local-v1:"
 
 
 def _b64_encode(value: str) -> str:
@@ -274,6 +277,202 @@ class HybridArchiveStore:
         }
 
 
+class RemoteDurableArchiveStore:
+    """Write-capable REMOTE archive store without a Yandex dependency.
+
+    Google Drive remains canonical. Direct Google Drive is the preferred read
+    path, Apps Script Bridge v3 is the canonical write/control path, and the
+    REMOTE filesystem stores durable queue/staging state plus exact backup
+    mirrors.
+
+    Compatibility aliases drive and yandex point to the Apps Script writer and
+    local durable backend so existing reviewed resumable workers keep their
+    safety sequence without a large rewrite.
+    """
+
+    read_only = False
+
+    def __init__(self, reader: Any, writer: GoogleDriveArchiveStore, durable: Any) -> None:
+        self.reader = reader
+        self.writer = writer
+        self.durable = durable
+        self.drive = writer
+        self.yandex = durable
+
+    @staticmethod
+    def _is_job_path(parts: list[str] | tuple[str, ...]) -> bool:
+        normalized = [str(item).strip() for item in parts if str(item).strip()]
+        return len(normalized) >= 2 and normalized[0] == "app" and normalized[1] == "jobs"
+
+    @staticmethod
+    def _remote_locator(read_parent: str, write_parent: str, local_parent: str) -> str:
+        payload = json.dumps(
+            {
+                "read": str(read_parent),
+                "write": str(write_parent),
+                "local": str(local_parent),
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        return _REMOTE_LOCATOR_PREFIX + _b64_encode(payload)
+
+    @staticmethod
+    def _local_locator(local_parent: str) -> str:
+        return _REMOTE_LOCAL_ONLY_PREFIX + _b64_encode(str(local_parent))
+
+    @staticmethod
+    def _decode_parent(parent_id: str) -> tuple[str, str | None, str | None, str]:
+        value = str(parent_id or "")
+        if value.startswith(_REMOTE_LOCAL_ONLY_PREFIX):
+            return (
+                "local",
+                None,
+                None,
+                _b64_decode(value[len(_REMOTE_LOCAL_ONLY_PREFIX):]),
+            )
+        if value.startswith(_REMOTE_LOCATOR_PREFIX):
+            payload = json.loads(_b64_decode(value[len(_REMOTE_LOCATOR_PREFIX):]))
+            return (
+                "canonical",
+                str(payload["read"]),
+                str(payload["write"]),
+                str(payload["local"]),
+            )
+        raise ValueError("Unknown REMOTE durable archive parent locator")
+
+    async def ensure_folder_path(self, parts: list[str] | tuple[str, ...]) -> str:
+        local_parent = await self.durable.ensure_folder_path(parts)
+        if self._is_job_path(parts):
+            return self._local_locator(local_parent)
+        read_parent = await self.reader.ensure_folder_path(parts)
+        write_parent = await self.writer.ensure_folder_path(parts)
+        return self._remote_locator(read_parent, write_parent, local_parent)
+
+    async def find_child(
+        self,
+        parent_id: str,
+        name: str,
+        *,
+        mime_type: str | None = None,
+    ):
+        mode, read_parent, _write_parent, local_parent = self._decode_parent(parent_id)
+        if mode == "local":
+            return await self.durable.find_child(local_parent, name, mime_type=mime_type)
+        assert read_parent is not None
+        return await self.reader.find_child(read_parent, name, mime_type=mime_type)
+
+    async def file_metadata(self, file_id: str) -> dict[str, Any]:
+        try:
+            return await self.reader.file_metadata(file_id)
+        except Exception:
+            return await self.writer.file_metadata(file_id)
+
+    async def download_bytes(self, file_id: str) -> bytes:
+        value = str(file_id or "")
+        if value.startswith("local-file-v1:"):
+            return await self.durable.download_bytes(value)
+        return await self.reader.download_bytes(value)
+
+    async def download_named(self, parent_id: str, name: str):
+        mode, read_parent, write_parent, local_parent = self._decode_parent(parent_id)
+        if mode == "local":
+            return await self.durable.download_named(local_parent, name)
+
+        assert read_parent is not None and write_parent is not None
+
+        item, data = await self.reader.download_named(read_parent, name)
+        if item is not None and data is not None:
+            return item, data
+
+        backup, backup_data = await self.durable.download_named(local_parent, name)
+        if backup is None or backup_data is None:
+            return None, None
+        restored = await self.writer.upload_bytes(
+            write_parent,
+            name,
+            backup_data,
+            mime_type=getattr(backup, "mime_type", None) or "text/csv",
+        )
+        return restored, backup_data
+
+    async def upload_bytes(
+        self,
+        parent_id: str,
+        name: str,
+        data: bytes,
+        *,
+        mime_type: str = "text/csv",
+    ):
+        mode, _read_parent, write_parent, local_parent = self._decode_parent(parent_id)
+        if mode == "local":
+            return await self.durable.upload_bytes(
+                local_parent,
+                name,
+                data,
+                mime_type=mime_type,
+            )
+
+        assert write_parent is not None
+
+        canonical = await self.writer.upload_bytes(
+            write_parent,
+            name,
+            data,
+            mime_type=mime_type,
+        )
+        try:
+            backup = await self.durable.upload_bytes(
+                local_parent,
+                name,
+                data,
+                mime_type=mime_type,
+            )
+        except Exception as exc:
+            raise ArchiveStorageError(
+                "Canonical Drive write succeeded but REMOTE durable backup failed",
+                retryable=True,
+                code="LOCAL_DURABLE_BACKUP_FAILED",
+            ) from exc
+
+        if getattr(backup, "size", None) is not None and int(backup.size) != len(data):
+            raise ArchiveStorageError(
+                "REMOTE durable backup failed size verification",
+                retryable=True,
+                code="LOCAL_DURABLE_BACKUP_FAILED",
+            )
+        expected_sha = hashlib.sha256(data).hexdigest()
+        actual_sha = str(getattr(backup, "sha256_checksum", "") or "").lower()
+        if actual_sha and actual_sha != expected_sha:
+            raise ArchiveStorageError(
+                "REMOTE durable backup failed SHA256 verification",
+                retryable=True,
+                code="LOCAL_DURABLE_BACKUP_FAILED",
+            )
+        return canonical
+
+    async def status(self) -> dict[str, Any]:
+        read_status = await self.reader.status()
+        write_status = await self.writer.status()
+        local_status = await self.durable.status()
+        return {
+            "configured": True,
+            "reachable": bool(
+                read_status.get("reachable")
+                and write_status.get("reachable")
+                and local_status.get("reachable")
+            ),
+            "backend": "google_drive_primary_remote_local_durable",
+            "root_folder_id": read_status.get("root_folder_id") or write_status.get("root_folder_id"),
+            "root_name": read_status.get("root_name") or write_status.get("root_name"),
+            "canonical_read": read_status,
+            "canonical_write": write_status,
+            "queue_and_staging": local_status,
+            "backup_mirror": local_status,
+            "read_only": False,
+        }
+
+
 class CanonicalDriveReadOnlyArchiveStore:
     """Read-only canonical archive mode for REMOTE after the Yandex migration.
 
@@ -361,15 +560,20 @@ def build_hybrid_archive_store_from_env() -> HybridArchiveStore | CanonicalDrive
     }
 
     if direct_enabled:
-        drive = build_direct_google_archive_store_from_env()
+        reader = build_direct_google_archive_store_from_env()
 
-        if drive is None:
+        if reader is None:
             raise ArchiveStorageError(
                 "Direct Google Drive was requested but is not configured",
                 code="ARCHIVE_STORAGE_NOT_CONFIGURED",
             )
 
-        return CanonicalDriveReadOnlyArchiveStore(drive)
+        writer = build_google_archive_store_from_env()
+        durable = build_local_archive_store_from_env()
+        if writer is not None and durable is not None:
+            return RemoteDurableArchiveStore(reader, writer, durable)
+
+        return CanonicalDriveReadOnlyArchiveStore(reader)
 
     # Existing Apps Script / legacy production route.
     drive = build_google_archive_store_from_env()
