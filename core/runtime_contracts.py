@@ -126,6 +126,7 @@ def audit_runtime_contracts(
             "read_only_post_proven": bool(getattr(spec, "read_only_post_proven", False)),
             "quota_executable": has_proven_quota(spec),
             "read_semantics_executable": has_proven_read_semantics(spec),
+            "executable": has_proven_quota(spec) and has_proven_read_semantics(spec),
         }
         contracts.append(row)
 
