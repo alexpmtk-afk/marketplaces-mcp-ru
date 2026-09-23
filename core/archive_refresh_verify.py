@@ -1,12 +1,23 @@
 """Read-only post-refresh verification for canonical marketplace archives."""
 from __future__ import annotations
 
+import csv
+import hashlib
+import io
+from datetime import datetime
 from typing import Any, Iterable, Mapping
+from zoneinfo import ZoneInfo
 
 from .archive_coverage import parse_registry as parse_coverage_registry
 from .archive_refresh import REFRESH_CONTRACTS
 from .wb_advertising_archive import canonical_location, coverage_registry_location, parse_csv
 from .wb_finance_archive import DATASET as FINANCE_DATASET, parse_csv_bytes
+from .ozon_current_archive import (
+    DATASETS as OZON_CURRENT_DATASETS,
+    canonical_location as ozon_current_location,
+    coverage_location as ozon_coverage_location,
+    parse_snapshot as parse_ozon_snapshot,
+)
 
 
 _DATE_FIELDS: dict[str, tuple[str, ...]] = {
@@ -197,6 +208,114 @@ async def verify_advertising_cabinet(store: Any, *, cabinet: str, year: int) -> 
     }
 
 
+def _parse_semicolon_registry(raw: bytes | None) -> list[dict[str, str]]:
+    if not raw:
+        return []
+    reader = csv.DictReader(
+        io.StringIO(raw.decode("utf-8-sig")),
+        delimiter=";",
+    )
+    return [dict(row) for row in reader]
+
+
+async def verify_ozon_current_cabinet(
+    store: Any,
+    *,
+    cabinet: str,
+    year: int,
+) -> dict[str, Any]:
+    today = datetime.now(ZoneInfo("Europe/Moscow")).date()
+    period = today.strftime("%Y-%m")
+    if int(year) != today.year:
+        return {
+            "ok": False,
+            "initialized": False,
+            "marketplace": "ozon",
+            "dataset_family": "ozon_current",
+            "cabinet": cabinet,
+            "year": int(year),
+            "period": period,
+            "error": "ozon_current_year_must_be_open_year",
+        }
+
+    coverage_parts, coverage_name = ozon_coverage_location(
+        cabinet,
+        today.year,
+        today.month,
+    )
+    coverage_parent = await store.ensure_folder_path(coverage_parts)
+    coverage_item, coverage_raw = await store.download_named(
+        coverage_parent,
+        coverage_name,
+    )
+    coverage_rows = _parse_semicolon_registry(coverage_raw)
+
+    contract = REFRESH_CONTRACTS["ozon_current"]
+    datasets: dict[str, Any] = {}
+    all_ok = coverage_item is not None
+    for dataset in contract.datasets:
+        parts, filename = ozon_current_location(
+            cabinet,
+            today.year,
+            today.month,
+            dataset,
+        )
+        parent = await store.ensure_folder_path(parts)
+        item, raw = await store.download_named(parent, filename)
+        _fields, rows = parse_ozon_snapshot(raw)
+        stable = contract.stable_keys[dataset]
+        quality = _stable_key_quality(rows, stable)
+        records = [
+            row for row in coverage_rows
+            if row.get("marketplace") == "ozon"
+            and row.get("cabinet") == cabinet
+            and row.get("dataset") == dataset
+            and row.get("period") == period
+            and row.get("status") == "COMPLETE"
+        ]
+        coverage = records[-1] if records else None
+        actual_sha = hashlib.sha256(raw or b"").hexdigest() if raw is not None else None
+        coverage_rows_count = _int((coverage or {}).get("rows"))
+        file_ok = bool(
+            item is not None
+            and coverage is not None
+            and coverage.get("date_to") == today.isoformat()
+            and coverage_rows_count == len(rows)
+            and str(coverage.get("sha256") or "").lower() == str(actual_sha or "").lower()
+            and quality["duplicate_stable_key_rows"] == 0
+            and quality["incomplete_stable_key_rows"] == 0
+        )
+        all_ok = all_ok and file_ok
+        datasets[dataset] = {
+            "ok": file_ok,
+            "canonical_file": filename,
+            "canonical_file_present": item is not None,
+            "coverage_present": coverage is not None,
+            "coverage_date_to": (coverage or {}).get("date_to"),
+            "coverage_rows": coverage_rows_count,
+            "bytes": len(raw or b""),
+            "sha256": actual_sha,
+            **quality,
+        }
+
+    initialized = bool(
+        coverage_item is not None
+        and all(datasets.get(name, {}).get("canonical_file_present") for name in contract.datasets)
+    )
+    return {
+        "ok": bool(all_ok and initialized),
+        "initialized": initialized,
+        "marketplace": "ozon",
+        "dataset_family": "ozon_current",
+        "cabinet": cabinet,
+        "year": today.year,
+        "period": period,
+        "coverage_registry": coverage_name,
+        "coverage_registry_present": coverage_item is not None,
+        "datasets": datasets,
+    }
+
+
 async def verify_registered_archive(
     store: Any,
     *,
@@ -204,24 +323,48 @@ async def verify_registered_archive(
     year: int,
     finance_cabinets: Iterable[str] = (),
     advertising_cabinets: Iterable[str] = (),
+    ozon_current_cabinets: Iterable[str] = (),
     families: Iterable[str] = ("finance", "advertising"),
 ) -> dict[str, Any]:
     marketplace = str(marketplace).lower()
-    if marketplace != "wb":
+    selected = tuple(families)
+    checks: list[dict[str, Any]] = []
+
+    if marketplace == "wb":
+        if "finance" in selected:
+            for cabinet in finance_cabinets:
+                checks.append(
+                    await verify_finance_cabinet(
+                        store,
+                        cabinet=cabinet,
+                        year=int(year),
+                    )
+                )
+        if "advertising" in selected:
+            for cabinet in advertising_cabinets:
+                checks.append(
+                    await verify_advertising_cabinet(
+                        store,
+                        cabinet=cabinet,
+                        year=int(year),
+                    )
+                )
+    elif marketplace == "ozon":
+        if "ozon_current" in selected:
+            for cabinet in ozon_current_cabinets:
+                checks.append(
+                    await verify_ozon_current_cabinet(
+                        store,
+                        cabinet=cabinet,
+                        year=int(year),
+                    )
+                )
+    else:
         return {
             "ok": False,
             "error": "archive_refresh_not_registered",
             "marketplace": marketplace,
         }
-
-    selected = tuple(families)
-    checks: list[dict[str, Any]] = []
-    if "finance" in selected:
-        for cabinet in finance_cabinets:
-            checks.append(await verify_finance_cabinet(store, cabinet=cabinet, year=int(year)))
-    if "advertising" in selected:
-        for cabinet in advertising_cabinets:
-            checks.append(await verify_advertising_cabinet(store, cabinet=cabinet, year=int(year)))
 
     return {
         "ok": bool(checks) and all(bool(item.get("ok")) for item in checks),
@@ -230,7 +373,8 @@ async def verify_registered_archive(
         "dataset_families": list(selected),
         "checks": checks,
         "interpretation": (
-            "This verifies canonical-file structure, stable-key uniqueness and committed registry/coverage evidence. "
-            "Provider freshness is proven by a completed refresh DISCOVER/reconciliation cycle; dates here are an additional high-watermark signal."
+            "Canonical files, stable-key uniqueness and committed coverage are verified. "
+            "For Ozon CURRENT, coverage must reach the current Moscow calendar day; "
+            "for WB, provider freshness remains established by the completed refresh cycle."
         ),
     }
