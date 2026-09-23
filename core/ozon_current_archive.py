@@ -710,14 +710,24 @@ class OzonCurrentArchiveJobQueue:
             mime_type="text/csv",
         )
 
-        # Verify against the canonical Drive writer, not merely the local mirror.
-        drive = getattr(self.store, "drive", None)
-        if drive is not None:
-            drive_parent = await drive.ensure_folder_path(parts)
-            drive_item, drive_raw = await drive.download_named(drive_parent, name)
-            if drive_item is None or drive_raw is None:
+        # Verify canonical bytes through the direct Google Drive reader when
+        # available. The Apps Script writer is the control/write plane, but its
+        # deployed v3 instance does not expose the optional large range-read
+        # action. Direct Drive already provides verified cached reads for large
+        # canonical files.
+        verifier = (
+            getattr(self.store, "reader", None)
+            or getattr(self.store, "drive", None)
+        )
+        if verifier is not None:
+            verify_parent = await verifier.ensure_folder_path(parts)
+            verify_item, verify_raw = await verifier.download_named(
+                verify_parent,
+                name,
+            )
+            if verify_item is None or verify_raw is None:
                 raise RuntimeError(f"canonical Drive verification missing for {name}")
-            if hashlib.sha256(drive_raw).hexdigest() != hashlib.sha256(data).hexdigest():
+            if hashlib.sha256(verify_raw).hexdigest() != hashlib.sha256(data).hexdigest():
                 raise RuntimeError(f"canonical Drive SHA256 verification failed for {name}")
 
         return item, hashlib.sha256(data).hexdigest()
