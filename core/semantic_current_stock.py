@@ -233,6 +233,15 @@ async def _fetch_report_fallback(
 
 def _extract_fast_items(result: dict[str, Any]) -> list[dict[str, Any]] | None:
     body = result.get("data")
+
+    # Production WB can return HTTP 204 No Content when the requested current
+    # stock selection has no rows. MarketplaceClient correctly treats every 2xx
+    # response as successful, so preserve that semantic here: an actually empty
+    # 204 body is an empty stock row set, not a provider schema conflict.
+    status = int(result.get("status", 0) or 0)
+    if status == 204 and (body is None or (isinstance(body, str) and not body.strip())):
+        return []
+
     if not isinstance(body, dict):
         return None
     nested = body.get("data")
