@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import httpx
 from datetime import date, timedelta
 from pathlib import Path
 
 from core.registry import Catalog, EndpointSpec
+from core.client import _parse_body
 import core.semantic_current_stock as semantic_current_stock
 from core.request_source_router import (
     SOURCE_CANONICAL_ARCHIVE,
@@ -236,3 +238,49 @@ def test_current_stock_historical_date_fails_before_provider(monkeypatch):
     assert result["ok"] is False
     assert result["error"] == "source_not_suitable"
     assert called is False
+
+
+
+def test_provider_json_with_text_plain_content_type_is_recovered_for_current_stock():
+    response = httpx.Response(
+        200,
+        headers={"Content-Type": "text/plain; charset=utf-8"},
+        content=(
+            b'{"data":{"items":[{"nmId":507763296,'
+            b'"warehouseName":"Test WB warehouse","quantity":3}]}}'
+        ),
+    )
+
+    provider = _parse_body(response)
+
+    assert isinstance(provider, dict)
+    items = semantic_current_stock._extract_fast_items({
+        "ok": True,
+        "status": 200,
+        "data": provider,
+    })
+    assert items == [{
+        "nmId": 507763296,
+        "warehouseName": "Test WB warehouse",
+        "quantity": 3,
+    }]
+
+
+def test_provider_plain_text_remains_plain_text():
+    response = httpx.Response(
+        200,
+        headers={"Content-Type": "text/plain"},
+        content=b"provider is alive",
+    )
+
+    assert _parse_body(response) == "provider is alive"
+
+
+def test_provider_malformed_json_text_remains_text():
+    response = httpx.Response(
+        200,
+        headers={"Content-Type": "text/plain"},
+        content=b'{"data": broken',
+    )
+
+    assert _parse_body(response) == '{"data": broken'
