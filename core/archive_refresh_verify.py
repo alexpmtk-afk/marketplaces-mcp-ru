@@ -18,6 +18,15 @@ from .ozon_current_archive import (
     coverage_location as ozon_coverage_location,
     parse_snapshot as parse_ozon_snapshot,
 )
+from .ozon_final_archive import (
+    DATASET as OZON_FINAL_DATASET,
+    annual_location as ozon_final_annual_location,
+    closed_months as ozon_final_closed_months,
+    coverage_location as ozon_final_coverage_location,
+    month_period as ozon_final_month_period,
+    monthly_location as ozon_final_monthly_location,
+    parse_final_coverage as parse_ozon_final_coverage,
+)
 
 
 _DATE_FIELDS: dict[str, tuple[str, ...]] = {
@@ -316,6 +325,120 @@ async def verify_ozon_current_cabinet(
     }
 
 
+async def verify_ozon_final_cabinet(
+    store: Any,
+    *,
+    cabinet: str,
+    year: int,
+) -> dict[str, Any]:
+    expected_months = ozon_final_closed_months(int(year))
+    expected_periods = [
+        ozon_final_month_period(int(year), month)
+        for month in expected_months
+    ]
+
+    coverage_parts, coverage_name = ozon_final_coverage_location(cabinet, int(year))
+    coverage_parent = await store.ensure_folder_path(coverage_parts)
+    coverage_item, coverage_raw = await store.download_named(
+        coverage_parent,
+        coverage_name,
+    )
+    coverage_rows = parse_ozon_final_coverage(coverage_raw)
+    records = [
+        row for row in coverage_rows
+        if row.get("marketplace") == "ozon"
+        and row.get("cabinet") == cabinet
+        and row.get("dataset") == OZON_FINAL_DATASET
+        and row.get("status") == "COMPLETE"
+    ]
+    by_period = {str(row.get("period") or ""): row for row in records}
+
+    contract = REFRESH_CONTRACTS["ozon_final"]
+    stable = contract.stable_keys[OZON_FINAL_DATASET]
+    months: dict[str, Any] = {}
+    total_month_rows = 0
+    all_ok = coverage_item is not None
+
+    for month in expected_months:
+        period = ozon_final_month_period(int(year), month)
+        parts, filename = ozon_final_monthly_location(cabinet, int(year), month)
+        parent = await store.ensure_folder_path(parts)
+        item, raw = await store.download_named(parent, filename)
+        _fields, rows = parse_ozon_snapshot(raw)
+        quality = _stable_key_quality(rows, stable)
+        coverage = by_period.get(period)
+        actual_sha = hashlib.sha256(raw or b"").hexdigest() if raw is not None else None
+        coverage_rows_count = _int((coverage or {}).get("rows"))
+        month_ok = bool(
+            item is not None
+            and coverage is not None
+            and coverage_rows_count == len(rows)
+            and str((coverage or {}).get("sha256") or "").lower()
+            == str(actual_sha or "").lower()
+            and quality["duplicate_stable_key_rows"] == 0
+            and quality["incomplete_stable_key_rows"] == 0
+        )
+        all_ok = all_ok and month_ok
+        total_month_rows += len(rows)
+        months[period] = {
+            "ok": month_ok,
+            "canonical_file": filename,
+            "canonical_file_present": item is not None,
+            "coverage_present": coverage is not None,
+            "coverage_rows": coverage_rows_count,
+            "bytes": len(raw or b""),
+            "sha256": actual_sha,
+            **quality,
+        }
+
+    annual_parts, annual_name = ozon_final_annual_location(cabinet, int(year))
+    annual_parent = await store.ensure_folder_path(annual_parts)
+    annual_item, annual_raw = await store.download_named(annual_parent, annual_name)
+    _annual_fields, annual_rows = parse_ozon_snapshot(annual_raw)
+    annual_quality = _stable_key_quality(annual_rows, stable)
+    annual_periods = sorted({
+        str(row.get("report_month") or "")
+        for row in annual_rows
+        if str(row.get("report_month") or "")
+    })
+    annual_ok = bool(
+        annual_item is not None
+        and len(annual_rows) == total_month_rows
+        and annual_periods == expected_periods
+        and annual_quality["duplicate_stable_key_rows"] == 0
+        and annual_quality["incomplete_stable_key_rows"] == 0
+    )
+    all_ok = all_ok and annual_ok
+    initialized = bool(
+        coverage_item is not None
+        and annual_item is not None
+        and expected_periods
+        and all(period in by_period for period in expected_periods)
+    )
+    return {
+        "ok": bool(all_ok and initialized),
+        "initialized": initialized,
+        "marketplace": "ozon",
+        "dataset_family": "ozon_final",
+        "cabinet": cabinet,
+        "year": int(year),
+        "expected_closed_months": expected_periods,
+        "coverage_registry": coverage_name,
+        "coverage_registry_present": coverage_item is not None,
+        "coverage_records": len(records),
+        "months": months,
+        "annual": {
+            "ok": annual_ok,
+            "canonical_file": annual_name,
+            "canonical_file_present": annual_item is not None,
+            "bytes": len(annual_raw or b""),
+            "expected_rows_from_months": total_month_rows,
+            "periods": annual_periods,
+            **annual_quality,
+        },
+    }
+
+
 async def verify_registered_archive(
     store: Any,
     *,
@@ -324,6 +447,7 @@ async def verify_registered_archive(
     finance_cabinets: Iterable[str] = (),
     advertising_cabinets: Iterable[str] = (),
     ozon_current_cabinets: Iterable[str] = (),
+    ozon_final_cabinets: Iterable[str] = (),
     families: Iterable[str] = ("finance", "advertising"),
 ) -> dict[str, Any]:
     marketplace = str(marketplace).lower()
@@ -350,6 +474,15 @@ async def verify_registered_archive(
                     )
                 )
     elif marketplace == "ozon":
+        if "ozon_final" in selected:
+            for cabinet in ozon_final_cabinets:
+                checks.append(
+                    await verify_ozon_final_cabinet(
+                        store,
+                        cabinet=cabinet,
+                        year=int(year),
+                    )
+                )
         if "ozon_current" in selected:
             for cabinet in ozon_current_cabinets:
                 checks.append(
@@ -374,7 +507,8 @@ async def verify_registered_archive(
         "checks": checks,
         "interpretation": (
             "Canonical files, stable-key uniqueness and committed coverage are verified. "
-            "For Ozon CURRENT, coverage must reach the current Moscow calendar day; "
+            "For Ozon FINAL, every closed month must be present in monthly_source and the annual union; "
+            "for Ozon CURRENT, coverage must reach the current Moscow calendar day; "
             "for WB, provider freshness remains established by the completed refresh cycle."
         ),
     }
