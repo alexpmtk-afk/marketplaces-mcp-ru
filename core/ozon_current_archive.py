@@ -393,9 +393,25 @@ class OzonCurrentArchiveJobQueue:
 
         generation = 1
         action = "created"
+        if existing is not None and existing.get("status") != "COMPLETE":
+            await self._schedule(job_id, 0)
+            return {
+                "ok": True,
+                "job_id": job_id,
+                "created": False,
+                "reopened": False,
+                "refresh_action": "resumed_existing",
+                "scheduled": True,
+                "status": existing.get("status"),
+                "phase": existing.get("phase"),
+                "cabinet": cabinet,
+                "year": existing.get("year"),
+                "period": existing.get("period"),
+                "refresh_generation": int(existing.get("refresh_generation", 1) or 1),
+            }
         if existing is not None:
             generation = int(existing.get("refresh_generation", 1) or 1) + 1
-            action = "reopened_complete" if existing.get("status") == "COMPLETE" else "restarted_incomplete"
+            action = "reopened_complete"
 
         state = {
             "schema_version": 1,
