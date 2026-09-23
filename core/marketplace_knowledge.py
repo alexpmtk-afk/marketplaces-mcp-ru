@@ -42,6 +42,25 @@ def _semantic_metric_id(knowledge_id: str, metric: dict[str, Any]) -> str:
     return value.strip()
 
 
+def _binding_field_paths(binding: dict[str, Any], knowledge_id: str) -> list[str]:
+    single = binding.get("field_path")
+    multiple = binding.get("field_paths")
+    if single is not None and multiple is not None:
+        raise MarketplaceKnowledgeError(
+            f"knowledge metric {knowledge_id} provider_binding must use field_path or field_paths, not both"
+        )
+    if isinstance(single, str) and single.strip():
+        return [single.strip()]
+    if multiple is not None:
+        return _require_string_list(
+            multiple,
+            f"knowledge metric {knowledge_id} provider_binding field_paths",
+        )
+    raise MarketplaceKnowledgeError(
+        f"knowledge metric {knowledge_id} provider_binding must define field_path or field_paths"
+    )
+
+
 def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
     policy = _require_mapping(data.get("policy"), "knowledge policy")
     if policy.get("verified_requires_official_sources") is not True:
@@ -88,20 +107,21 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
         binding = _require_mapping(
             metric.get("provider_binding"), f"knowledge metric {knowledge_id} provider_binding"
         )
-        for field in ("source_id", "field_path"):
-            if not isinstance(binding.get(field), str) or not binding[field].strip():
-                raise MarketplaceKnowledgeError(
-                    f"knowledge metric {knowledge_id} provider_binding must define {field}"
-                )
+        if not isinstance(binding.get("source_id"), str) or not binding["source_id"].strip():
+            raise MarketplaceKnowledgeError(
+                f"knowledge metric {knowledge_id} provider_binding must define source_id"
+            )
+        binding_fields = _binding_field_paths(binding, knowledge_id)
 
         marketplace = str(metric["marketplace"]).strip().lower()
-        binding_key = (semantic_metric_id, marketplace, str(binding["field_path"]))
-        previous = binding_owners.get(binding_key)
-        if previous is not None:
-            raise MarketplaceKnowledgeError(
-                f"duplicate knowledge binding {binding_key!r}: {previous} and {knowledge_id}"
-            )
-        binding_owners[binding_key] = knowledge_id
+        for field_path in binding_fields:
+            binding_key = (semantic_metric_id, marketplace, field_path)
+            previous = binding_owners.get(binding_key)
+            if previous is not None:
+                raise MarketplaceKnowledgeError(
+                    f"duplicate knowledge binding {binding_key!r}: {previous} and {knowledge_id}"
+                )
+            binding_owners[binding_key] = knowledge_id
 
         source_refs = _require_string_list(
             metric.get("source_refs"), f"knowledge metric {knowledge_id} source_refs"
@@ -164,7 +184,8 @@ def get_knowledge_metric(
         if wanted_marketplace and str(raw_metric.get("marketplace") or "").lower() != wanted_marketplace:
             continue
         binding = raw_metric.get("provider_binding") or {}
-        if wanted_field and str(binding.get("field_path") or "") != wanted_field:
+        binding_fields = _binding_field_paths(binding, knowledge_id)
+        if wanted_field and wanted_field not in binding_fields:
             continue
         candidates.append((knowledge_id, raw_metric))
 
@@ -204,9 +225,11 @@ def validate_knowledge_against_metric_registry(
                 f"knowledge/registry source mismatch for {knowledge_id}"
             )
         fields = list(provider.get("fields") or [])
-        if binding.get("field_path") not in fields:
+        binding_fields = _binding_field_paths(binding, knowledge_id)
+        missing_fields = [field for field in binding_fields if field not in fields]
+        if missing_fields:
             raise MarketplaceKnowledgeError(
-                f"knowledge/registry field mismatch for {knowledge_id}: {binding.get('field_path')}"
+                f"knowledge/registry field mismatch for {knowledge_id}: {missing_fields}"
             )
 
 
@@ -319,7 +342,9 @@ def verify_marketplace_knowledge(
             "knowledge_id": knowledge_id,
             "metric_id": str(metric.get("metric_id") or knowledge_id),
             "marketplace": metric.get("marketplace"),
-            "field_path": (metric.get("provider_binding") or {}).get("field_path"),
+            "field_paths": _binding_field_paths(
+                metric.get("provider_binding") or {}, knowledge_id
+            ),
         }
         for knowledge_id, metric in (catalog.get("metrics") or {}).items()
         if isinstance(metric, dict) and metric.get("semantic_status") == "provisional"
