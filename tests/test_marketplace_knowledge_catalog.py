@@ -241,6 +241,31 @@ def test_wb_finance_metrics_are_verified_knowledge():
     } <= verified
 
 
+def test_wb_logistics_service_cabinet_bindings_use_weekly_report_labels():
+    logistics = get_knowledge_metric(
+        "LOGISTICS_COST", marketplace="wb", source_field="deliveryService"
+    )
+    storage = get_knowledge_metric(
+        "STORAGE_COST", marketplace="wb", source_field="paidStorage"
+    )
+    acceptance = get_knowledge_metric(
+        "ACCEPTANCE_COST", marketplace="wb", source_field="paidAcceptance"
+    )
+    penalties = get_knowledge_metric(
+        "PENALTIES", marketplace="wb", source_field="penalty"
+    )
+
+    assert logistics["cabinet_binding"]["label_ru"] == "Стоимость логистики"
+    assert storage["cabinet_binding"]["label_ru"] == "Стоимость хранения"
+    assert acceptance["cabinet_binding"]["label_ru"] == "Стоимость операций при приёмке"
+    assert penalties["cabinet_binding"]["label_ru"] == "Общая сумма штрафов"
+
+    for metric in (logistics, storage, acceptance, penalties):
+        assert metric["cabinet_binding"]["surface_ru"] == "Финансовые отчёты → Еженедельные"
+        assert metric["cabinet_binding"]["equivalence_status"] == "partial"
+        assert "Не " in metric["guardrail"]
+
+
 def test_wb_finance_cabinet_bindings_are_partial_and_period_safe():
     deductions = get_knowledge_metric(
         "DEDUCTIONS_ADJUSTMENTS", marketplace="wb", source_field="deduction"
