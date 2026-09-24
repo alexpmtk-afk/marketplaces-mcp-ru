@@ -85,6 +85,27 @@ def _chunks(values: list[Any], size: int) -> list[list[Any]]:
     return [values[index:index + size] for index in range(0, len(values), size)]
 
 
+def _cluster_candidate(row: dict[str, Any]) -> bool:
+    """Return True only when search-cluster history is meaningful for this product row."""
+    conversion = str(row.get("conversion_type_current") or "").strip().lower()
+    try:
+        views = float(row.get("views") or 0)
+    except (TypeError, ValueError):
+        views = 0.0
+    try:
+        clicks = float(row.get("clicks") or 0)
+    except (TypeError, ValueError):
+        clicks = 0.0
+    try:
+        spend = float(row.get("spend") or 0)
+    except (TypeError, ValueError):
+        spend = 0.0
+    has_traffic = views > 0 or clicks > 0 or spend > 0
+    if conversion in {"associated", "multicard"} and not has_traffic:
+        return False
+    return has_traffic or conversion == "direct"
+
+
 def _request_lock_key(cabinet: str, request: dict[str, Any]) -> str:
     operation_id = str(request.get("operation_id") or "unknown")
     dataset = "+".join(request.get("datasets") or [request.get("dataset") or "unknown"])
@@ -738,12 +759,7 @@ class WBAdvertisingArchiveJobQueue:
             for row in product_rows
             if int(row.get("campaign_id") or 0) > 0
             and int(row.get("nm_id") or 0) > 0
-            and (
-                int(float(row.get("views") or 0)) > 0
-                or int(float(row.get("clicks") or 0)) > 0
-                or float(row.get("spend") or 0) > 0
-                or str(row.get("conversion_type_current") or "") == "direct"
-            )
+            and _cluster_candidate(row)
         })
         start_date, end_date = closed_history_period(int(state["year"]))
         periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
