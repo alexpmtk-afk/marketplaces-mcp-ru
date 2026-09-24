@@ -28,7 +28,6 @@ from .wb_advertising_archive import (
     parse_csv,
 )
 from .wb_advertising_normalize import (
-    campaign_product_ids,
     enrich_product_attribution,
     normalize_fullstats,
     normalize_product_identity_snapshot,
