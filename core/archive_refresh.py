@@ -67,9 +67,10 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
             "ads_payments",
         ),
         coverage_model="bounded_request_coverage_registry",
-        refresh_strategy="reconcile_closed_provider_history_and_upsert_by_dataset_stable_key",
+        refresh_strategy="reconcile_closed_provider_history_skip_complete_old_requests_refetch_recent_7_closed_days_and_upsert_by_dataset_stable_key",
         freshness_evidence=(
             "closed provider period ending yesterday Europe/Moscow",
+            "recent 7 closed days are deliberately re-fetched for late provider corrections",
             "dataset_coverage_registry.csv COMPLETE request coverage",
             "canonical annual dataset stable-key content",
         ),
