@@ -262,10 +262,15 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         scope = _database_update_scope(marketplace, seller, dataset_family)
         if not scope.get("ok"):
             return _j(scope)
+        public_family_names = {
+            str(item).removeprefix("ozon_")
+            for item in scope["dataset_families"]
+        }
         contracts = {
             item["dataset_family"]: item
             for item in refresh_catalog()
-            if item["dataset_family"] in set(scope["dataset_families"])
+            if item["marketplace"] == scope["marketplace"]
+            and item["dataset_family"] in public_family_names
         }
         scope["year"] = int(year)
         scope["contracts"] = contracts
