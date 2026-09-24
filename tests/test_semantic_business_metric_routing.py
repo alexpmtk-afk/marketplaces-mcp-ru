@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import date, timedelta
 
 import core.semantic_business_router as router
 from core.user_facing import present_business_result
@@ -42,6 +43,68 @@ def test_canonical_router_executes_ordinary_orders_as_approved_metric(monkeypatc
         "date_from": "2026-08-01",
         "date_to": "2026-08-31",
     }
+
+
+def test_canonical_router_materializes_today_for_orders_when_dates_are_omitted(monkeypatch):
+    captured = {}
+
+    async def fake_legacy(modules, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "metric": "ORDERS",
+            "source": "wb_stats_orders",
+            "orders_count": 1,
+            "orders_amount": 100.0,
+            "business_completeness": "PRELIMINARY_NOT_ALL_ORDERS",
+        }
+
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        question="Сколько заказов сегодня?",
+    ))
+
+    today = date.today().isoformat()
+    assert result["ok"] is True
+    assert captured["date_from"] == today
+    assert captured["date_to"] == today
+    assert result["normalized_query"]["period"] == {
+        "date_from": today,
+        "date_to": today,
+    }
+
+
+def test_canonical_router_materializes_yesterday_for_orders_when_dates_are_omitted(monkeypatch):
+    captured = {}
+
+    async def fake_legacy(modules, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "metric": "ORDERS",
+            "source": "wb_stats_orders",
+            "orders_count": 1,
+            "orders_amount": 100.0,
+            "business_completeness": "PRELIMINARY_NOT_ALL_ORDERS",
+        }
+
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        question="Сколько заказов вчера?",
+    ))
+
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    assert result["ok"] is True
+    assert captured["date_from"] == yesterday
+    assert captured["date_to"] == yesterday
 
 
 def test_complete_order_flow_is_not_silently_converted_to_operational_orders(monkeypatch):
