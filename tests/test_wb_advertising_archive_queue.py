@@ -64,6 +64,8 @@ def _state(**extra):
         "provider_calls": 0,
         "fetch_plan": [],
         "fetch_index": 0,
+        "identity_plan": [],
+        "identity_index": 0,
         "cluster_plan": [],
         "cluster_index": 0,
         "completed_requests": [],
@@ -198,12 +200,118 @@ def test_fullstats_provider_step_stages_campaign_and_product_data():
     assert state["provider_calls"] == 1
 
 
+
+def test_identity_plan_is_built_from_unique_fullstats_nm_ids():
+    store = _MemoryStore()
+    queue = _Queue(store)
+    state = _state(phase="PLAN_IDENTITIES")
+    rows = [
+        {"date": "2026-01-01", "campaign_id": 10, "app_type": 32, "nm_id": 404071811},
+        {"date": "2026-01-02", "campaign_id": 10, "app_type": 64, "nm_id": 404071811},
+        {"date": "2026-01-02", "campaign_id": 10, "app_type": 32, "nm_id": 615105045},
+    ]
+    raw, _ = merge_annual_dataset("ads_product_daily", None, rows)
+    folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_product_daily"))
+    asyncio.run(store.upload_bytes(folder, name, raw))
+
+    result = asyncio.run(queue._plan_identities_step(state))
+    assert result["action"] == "identity_plan_ready"
+    assert result["nm_ids"] == 2
+    assert state["phase"] == "FETCH_IDENTITIES"
+    assert [item["scope"]["nm_id"] for item in state["identity_plan"]] == [404071811, 615105045]
+    assert all(item["operation_id"] == "wb_content_cards_list" for item in state["identity_plan"])
+    assert state["identity_plan"][0]["json_body"]["settings"]["filter"]["textSearch"] == "404071811"
+
+
+def test_product_attribution_enrichment_matches_xls_evidence_classes():
+    store = _MemoryStore()
+    queue = _Queue(store)
+    state = _state(phase="ENRICH_PRODUCTS")
+
+    product_rows = [
+        {"date": "2026-09-20", "campaign_id": 33650945, "app_type": 32, "nm_id": 404071811, "views": 343, "clicks": 31, "spend": "53.63"},
+        {"date": "2026-09-20", "campaign_id": 33650945, "app_type": 32, "nm_id": 615105045, "views": 0, "clicks": 0, "spend": "0"},
+        {"date": "2026-09-20", "campaign_id": 33650945, "app_type": 32, "nm_id": 713641223, "views": 0, "clicks": 0, "spend": "0"},
+        {"date": "2026-09-20", "campaign_id": 33650945, "app_type": 32, "nm_id": 1465123096, "views": 0, "clicks": 0, "spend": "0"},
+    ]
+    raw, _ = merge_annual_dataset("ads_product_daily", None, product_rows)
+    folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_product_daily"))
+    asyncio.run(store.upload_bytes(folder, name, raw))
+
+    campaign_rows = [{
+        "observed_at": "2026-09-24T10:28:38+00:00",
+        "campaign_id": 33650945,
+        "campaign_nm_ids": [404071811],
+    }]
+    raw, _ = merge_annual_dataset("ads_campaign_snapshots", None, campaign_rows)
+    folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_campaign_snapshots"))
+    asyncio.run(store.upload_bytes(folder, name, raw))
+
+    identity_rows = [
+        {"observed_at": "2026-09-24T10:28:38+00:00", "nm_id": 404071811, "imt_id": 631725304},
+        {"observed_at": "2026-09-24T10:28:38+00:00", "nm_id": 615105045, "imt_id": 631725304},
+        {"observed_at": "2026-09-24T10:28:38+00:00", "nm_id": 713641223, "imt_id": 631725304},
+        {"observed_at": "2026-09-24T10:28:38+00:00", "nm_id": 1465123096, "imt_id": 3956687619},
+    ]
+    raw, _ = merge_annual_dataset("ads_product_identity_snapshots", None, identity_rows)
+    folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_product_identity_snapshots"))
+    asyncio.run(store.upload_bytes(folder, name, raw))
+
+    result = asyncio.run(queue._enrich_products_step(state))
+    assert result["action"] == "product_attribution_enriched"
+    assert state["phase"] == "PLAN_CLUSTERS"
+
+    staged = asyncio.run(queue._read_stage_rows(state["job_id"], "ads_product_daily"))
+    by_nm = {int(row["nm_id"]): row for row in staged}
+    assert by_nm[404071811]["conversion_type_current"] == "direct"
+    assert by_nm[615105045]["conversion_type_current"] == "multicard"
+    assert by_nm[713641223]["conversion_type_current"] == "multicard"
+    assert by_nm[1465123096]["conversion_type_current"] == "associated"
+    assert "current_snapshot_not_event_time" in by_nm[1465123096]["conversion_type_quality_flags"]
+
+
+def test_cluster_plan_excludes_zero_traffic_associated_rows_but_keeps_direct_rows():
+    store = _MemoryStore()
+    queue = _Queue(store)
+    state = _state(phase="PLAN_CLUSTERS")
+    rows = [
+        {
+            "date": "2026-09-20", "campaign_id": 33650945, "app_type": 32,
+            "nm_id": 404071811, "views": 0, "clicks": 0, "spend": "0",
+            "conversion_type_current": "direct",
+        },
+        {
+            "date": "2026-09-20", "campaign_id": 33650945, "app_type": 32,
+            "nm_id": 1465123096, "views": 0, "clicks": 0, "spend": "0",
+            "conversion_type_current": "associated",
+        },
+        {
+            "date": "2026-01-10", "campaign_id": 33650945, "app_type": 32,
+            "nm_id": 999999999, "views": 10, "clicks": 1, "spend": "1.73",
+            "conversion_type_current": "associated",
+        },
+    ]
+    raw, _ = merge_annual_dataset("ads_product_daily", None, rows)
+    folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_product_daily"))
+    asyncio.run(store.upload_bytes(folder, name, raw))
+
+    result = asyncio.run(queue._plan_clusters_step(state))
+    pairs = {
+        (item["advertId"], item["nmId"])
+        for request in state["cluster_plan"]
+        for item in request["json_body"]["items"]
+    }
+    assert (33650945, 404071811) in pairs
+    assert (33650945, 999999999) in pairs
+    assert (33650945, 1465123096) not in pairs
+
+
 def test_cluster_plan_uses_staged_product_pairs_and_conservative_period_chunks():
     store = _MemoryStore()
     queue = _Queue(store)
     state = _state(phase="PLAN_CLUSTERS")
     rows = [
-        {"date": "2026-01-01", "campaign_id": 10, "app_type": 32, "nm_id": value}
+        {"date": "2026-01-01", "campaign_id": 10, "app_type": 32, "nm_id": value, "clicks": 1}
         for value in range(1, 102)
     ]
     raw, _ = merge_annual_dataset("ads_product_daily", None, rows)
