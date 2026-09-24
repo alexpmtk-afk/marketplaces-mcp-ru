@@ -96,7 +96,7 @@ def test_verified_cabinet_binding_requires_official_source():
 
     from core.marketplace_knowledge import validate_marketplace_knowledge_catalog
 
-    with pytest.raises(MarketplaceKnowledgeError, match="verified cabinet binding"):
+    with pytest.raises(MarketplaceKnowledgeError, match="non-official sources"):
         validate_marketplace_knowledge_catalog(catalog)
 
 
