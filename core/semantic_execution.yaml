@@ -37,6 +37,15 @@ executors:
     mode: sum_by_currency
     product_filter_field: nmId
     semantics: Sum paidAcceptance exactly as reported for the covered calculation period. Detailed acceptance operations are not available here.
+  payout_term_change_fee:
+    source_id: wb_weekly_finance_main
+    dataset_id: wb_weekly_finance_main
+    status: APPROVED_WITH_FULL_COVERAGE
+    date_field: rrDate
+    amount_field: paymentSchedule
+    currency_field: currency
+    mode: sum_by_currency
+    semantics: Sum paymentSchedule exactly as reported for the covered calculation period. This field is the monetary commission for the one-time payout-term change service «Вывести сейчас» and must never be interpreted as a payout date, schedule or current payout setting.
   sale_and_return_operations:
     source_id: wb_weekly_finance_main
     dataset_id: wb_weekly_finance_main
