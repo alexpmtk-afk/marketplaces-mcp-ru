@@ -241,6 +241,53 @@ def test_wb_finance_metrics_are_verified_knowledge():
     } <= verified
 
 
+def test_wb_commission_cabinet_binding_preserves_amount_rate_vat_and_payout_labels():
+    metric = get_knowledge_metric(
+        "WB_COMMISSION_REWARD", marketplace="wb", source_field="vw"
+    )
+
+    assert metric is not None
+    cabinet = metric["cabinet_binding"]
+    assert cabinet["surface_ru"] == "Финансы → Финансовые отчёты → Отчёты реализации → Детализация"
+    assert cabinet["equivalence_status"] == "verified"
+    assert cabinet["field_labels_ru"]["commissionPercent"] == "Размер КВВ, %"
+    assert cabinet["field_labels_ru"]["vw"] == "Вознаграждение Вайлдберриз (ВВ), без НДС"
+    assert cabinet["field_labels_ru"]["vwNds"] == "НДС с вознаграждения Вайлдберриз"
+    assert cabinet["field_labels_ru"]["forPay"] == "К перечислению продавцу за реализованный товар"
+    assert "не взаимозаменяемы" in metric["guardrail"]
+
+
+def test_wb_acquiring_cabinet_binding_maps_each_detail_column_exactly():
+    metric = get_knowledge_metric(
+        "ACQUIRING_PAYMENT_PROCESSING", marketplace="wb", source_field="acquiringFee"
+    )
+
+    assert metric is not None
+    cabinet = metric["cabinet_binding"]
+    assert cabinet["equivalence_status"] == "verified"
+    assert cabinet["field_labels_ru"] == {
+        "acquiringFee": "Эквайринг/Комиссии за организацию платежей",
+        "acquiringPercent": "Размер комиссии за эквайринг/Комиссии за организацию платежей, %",
+        "paymentProcessing": "Тип платежа за Эквайринг/Комиссии за организацию платежей",
+        "acquiringBank": "Наименование банка-эквайера",
+    }
+    assert "acquiringFee" in metric["guardrail"]
+    assert "acquiringPercent" in metric["guardrail"]
+
+
+def test_cabinet_field_labels_must_reference_provider_binding_fields():
+    catalog = load_marketplace_knowledge_catalog()
+    catalog = deepcopy(catalog)
+    catalog["metrics"]["WB_ACQUIRING_PAYMENT_PROCESSING"]["cabinet_binding"][
+        "field_labels_ru"
+    ]["inventedField"] = "Выдуманная колонка"
+
+    from core.marketplace_knowledge import validate_marketplace_knowledge_catalog
+
+    with pytest.raises(MarketplaceKnowledgeError, match="not present in provider_binding"):
+        validate_marketplace_knowledge_catalog(catalog)
+
+
 def test_wb_operational_orders_and_fbs_stock_are_verified():
     orders = get_knowledge_metric("ORDERS", marketplace="wb", source_field="finishedPrice")
     fbs = get_knowledge_metric("CURRENT_FBS_STOCK", marketplace="wb", source_field="amount")
