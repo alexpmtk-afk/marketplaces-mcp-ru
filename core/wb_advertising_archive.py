@@ -224,15 +224,26 @@ def normalize_campaign_info_snapshot(payload: Any, *, observed_at: str) -> list[
         campaign_id = _campaign_id(raw)
         if campaign_id <= 0:
             continue
+        settings = raw.get("settings") if isinstance(raw.get("settings"), dict) else {}
+        timestamps = raw.get("timestamps") if isinstance(raw.get("timestamps"), dict) else {}
         output.append({
             "observed_at": observed_at,
             "campaign_id": campaign_id,
             "status": _int(raw.get("status")),
-            "payment_type": _string(raw.get("payment_type") or raw.get("paymentType")) or None,
+            "payment_type": _string(
+                raw.get("payment_type") or raw.get("paymentType")
+                or settings.get("payment_type") or settings.get("paymentType")
+            ) or None,
             "bid_type": _string(raw.get("bid_type") or raw.get("bidType")) or None,
             "currency": _string(raw.get("currency")) or None,
             "campaign_nm_ids": sorted(current_products.get(campaign_id, set())),
-            "name": _string(raw.get("name")) or None,
+            "name": _string(raw.get("name") or settings.get("name")) or None,
+            "placements": settings.get("placements") if isinstance(settings.get("placements"), dict) else None,
+            "created_at": _string(timestamps.get("created")) or None,
+            "started_at": _string(timestamps.get("started")) or None,
+            "updated_at": _string(timestamps.get("updated")) or None,
+            "deleted_at": _string(timestamps.get("deleted")) or None,
+            "nm_settings_json": raw.get("nm_settings") if isinstance(raw.get("nm_settings"), list) else [],
             "type": _int(raw.get("type")),
             "raw_json": json.dumps(raw, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
         })
