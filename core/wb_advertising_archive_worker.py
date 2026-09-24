@@ -60,7 +60,8 @@ DATASET_FIELDS: dict[str, tuple[str, ...]] = {
     ),
     "ads_campaign_snapshots": (
         "observed_at", "campaign_id", "status", "payment_type", "bid_type", "currency",
-        "campaign_nm_ids", "name", "type", "raw_json",
+        "campaign_nm_ids", "name", "placements", "created_at", "started_at",
+        "updated_at", "deleted_at", "nm_settings_json", "type", "raw_json",
     ),
     "ads_product_identity_snapshots": (
         "observed_at", "nm_id", "imt_id", "title", "vendor_code", "subject_id", "raw_json",
