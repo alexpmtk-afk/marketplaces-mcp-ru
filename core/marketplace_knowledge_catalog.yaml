@@ -73,6 +73,38 @@ sources:
     source_version: "release-note-2026-04-15"
     checked_at: "2026-09-23"
 
+  wb_balance_help_20260827:
+    marketplace: wb
+    title: "Wildberries Seller Help — Как работать с балансом"
+    url: "https://seller.wildberries.ru/instructions/ru/tj/material/how-to-manage-balance"
+    official: true
+    source_version: "updated-2026-08-27"
+    checked_at: "2026-09-24"
+
+  wb_withdrawal_help_20260729:
+    marketplace: wb
+    title: "Wildberries Seller Help — Как вывести деньги на свой счёт"
+    url: "https://seller.wildberries.ru/instructions/en/by/material/how-to-transfer-money-to-your-bank-account"
+    official: true
+    source_version: "updated-2026-07-29"
+    checked_at: "2026-09-24"
+
+  wb_remuneration_offer_20260901:
+    marketplace: wb
+    title: "Wildberries Seller Help — Вознаграждение и иные выплаты Продавца"
+    url: "https://seller.wildberries.ru/instructions/ru/ru/material/remuneration-and-ohter-payments"
+    official: true
+    source_version: "updated-2026-09-01"
+    checked_at: "2026-09-24"
+
+  wb_payment_cost_rules_20260618:
+    marketplace: wb
+    title: "Wildberries Seller Help — Правила расчёта вознаграждения и издержек на приём платежей"
+    url: "https://seller.wildberries.ru/instructions/en/ru/material/A-190"
+    official: true
+    source_version: "updated-2026-06-18"
+    checked_at: "2026-09-24"
+
   wb_reports_api_20260923:
     marketplace: wb
     title: "Wildberries API — Отчёты / Заказы"
@@ -331,8 +363,15 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [deduction, additionalPayment, bonusTypeName]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Главная → Баланс → Приход и расход"
+      label_ru: "Удержания / доплаты"
+      scope_ru: "Ближайший кабинетный аналог: в «Приходе и расходе» показываются начисления, удержания и доплаты, но кабинетный баланс обновляется как отдельный оперативный слой и не равен построчно еженедельному отчёту реализации."
+      equivalence_status: partial
+      source_refs: [wb_balance_help_20260827]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_balance_help_20260827]
+    source_checked_at: "2026-09-24"
+    guardrail: "Не приравнивать сумму deduction/additionalPayment за отчётный период к оперативной сумме «Удержания / доплаты» в виджете баланса без сверки периода и состава."
 
   WB_COMMISSION_REWARD_KNOWLEDGE:
     metric_id: WB_COMMISSION_REWARD
@@ -348,9 +387,16 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [commissionPercent, kvwBase, kvw, ppvzSalesCommission, vw, vwNds, forPay]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Главная → Баланс → Приход и расход"
+      label_ru: "Комиссия Wildberries"
+      scope_ru: "Кабинет показывает комиссию Wildberries как одну из статей, уменьшающих баланс. Финансовый отчёт содержит несколько связанных ставок и денежных компонентов вознаграждения; они не сворачиваются в одно значение без утверждённого расчёта."
+      equivalence_status: partial
+      source_refs: [wb_balance_help_20260827, wb_remuneration_offer_20260901]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_balance_help_20260827, wb_remuneration_offer_20260901]
+    source_checked_at: "2026-09-24"
     formula_rule: "Процентные/ставочные поля не используются как денежная сумма без отдельного утверждённого правила."
+    guardrail: "Не выдавать отдельное поле ставки или вознаграждения отчёта за итоговую строку «Комиссия Wildberries» в кабинете без утверждённого правила агрегации."
 
   WB_ACQUIRING_PAYMENT_PROCESSING:
     metric_id: ACQUIRING_PAYMENT_PROCESSING
@@ -366,9 +412,16 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [acquiringFee, acquiringPercent, paymentProcessing, acquiringBank]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансовые отчёты → Отчёт об издержках на приём платежей"
+      label_ru: "Издержки на приём платежей"
+      scope_ru: "Кабинетный финансовый отчёт фиксирует окончательные издержки на приём платежей за месячный период. acquiringFee в еженедельном отчёте — предварительное удержание/компонент и не считается автоматически равным окончательной месячной сумме."
+      equivalence_status: partial
+      source_refs: [wb_payment_cost_rules_20260618]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_payment_cost_rules_20260618]
+    source_checked_at: "2026-09-24"
     temporal_rule: "Еженедельный acquiringFee не выдаётся за окончательный месячный acquiring expense."
+    guardrail: "Не приравнивать еженедельный acquiringFee к окончательной сумме «Издержки на приём платежей» без месячного отчёта и сверки периода."
 
   WB_ORDERS:
     metric_id: ORDERS
