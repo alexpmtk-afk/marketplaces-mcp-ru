@@ -101,6 +101,12 @@ def test_explicit_current_state_never_falls_back_to_historical_archive():
     assert result["next_action"] == "DO_NOT_QUERY_WEEKLY_ARCHIVE"
 
 
+def test_deductions_genitive_wording_resolves_to_finance_capability():
+    result = resolve_semantic_question("Сколько было удержаний и доплат за август?")
+    assert result["status"] == "AVAILABLE"
+    assert result["capability_id"] == "deductions_and_adjustments"
+
+
 def test_monetary_wb_reward_and_commission_rate_are_different_intents():
     money = resolve_semantic_question("Какая сумма комиссии WB за август?")
     assert money["status"] == "AVAILABLE"
