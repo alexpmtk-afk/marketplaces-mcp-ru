@@ -129,7 +129,7 @@ def test_wb_current_stock_has_plain_russian_summary():
         "grouping": "TOTAL",
         "stock_units": 42,
     })
-    assert shown["user_message"] == "Остаток: 42 шт."
+    assert shown["user_message"] == "Остатки «Склад WB»: 42 шт."
 
 
 def test_wb_sales_returns_archive_has_plain_russian_summary():
