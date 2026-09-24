@@ -34,6 +34,26 @@ def test_wb_price_knowledge_remains_verified_and_source_backed():
         )
 
 
+def test_wb_price_cabinet_bindings_use_exact_seller_labels():
+    before = get_knowledge_metric(
+        "WB_SELLER_PRICE_BEFORE_DISCOUNT", marketplace="wb", source_field="price"
+    )
+    discounted = get_knowledge_metric(
+        "WB_SELLER_PRICE_AFTER_DISCOUNT", marketplace="wb", source_field="discountedPrice"
+    )
+    club = get_knowledge_metric(
+        "WB_CLUB_PRICE_AFTER_DISCOUNT", marketplace="wb", source_field="clubDiscountedPrice"
+    )
+
+    assert before["cabinet_binding"]["surface_ru"] == "Товары и цены → Цены и скидки"
+    assert before["cabinet_binding"]["label_ru"] == "Цена продавца до скидки, ₽"
+    assert discounted["cabinet_binding"]["label_ru"] == "Цена со скидкой, ₽"
+    assert club["cabinet_binding"]["label_ru"] == "Цена со скидкой для WB Клуба, ₽"
+    for metric in (before, discounted, club):
+        assert metric["cabinet_binding"]["equivalence_status"] == "verified"
+        assert metric["cabinet_binding"]["source_refs"] == ["wb_seller_price_help_20260518"]
+
+
 def test_provider_specific_stock_knowledge_does_not_cross_marketplaces():
     wb = get_knowledge_metric(
         "CURRENT_STOCK", marketplace="wb", source_field="quantity"
@@ -154,6 +174,21 @@ def test_knowledge_verify_marks_old_sources_for_review_without_auto_update():
     assert result["status"] == "STALE_REVIEW_REQUIRED"
     assert result["stale_sources"]
     assert result["production_auto_update"] is False
+
+
+def test_wb_cabinet_classification_is_complete_and_fail_closed():
+    result = verify_marketplace_knowledge(today=date(2026, 9, 24), max_source_age_days=30)
+    wb = result["cabinet_binding_coverage"]["wb"]
+
+    assert wb["cabinet_classification_complete"] is True
+    assert wb["missing_cabinet_classification_count"] == 0
+    assert wb["missing_cabinet_classifications"] == []
+    assert wb["no_confirmed_direct_equivalent_records"] == [
+        "WB_AD_ADVERTISED_ITEMS",
+        "WB_AD_ROAS",
+    ]
+    assert wb["classification_status_counts"]["none"] == 2
+    assert wb["classified_record_count"] == wb["verified_knowledge_record_count"]
 
 
 def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
@@ -342,13 +377,16 @@ def test_wb_advertising_cabinet_bindings_match_official_labels_and_formulas():
     assert "Затраты ÷ сумма заказов" in drr["cabinet_binding"]["scope_ru"]
 
 
-def test_wb_roas_and_advertised_items_do_not_get_unproven_cabinet_labels():
+def test_wb_roas_and_advertised_items_are_explicitly_classified_without_fake_labels():
     roas = get_knowledge_metric("AD_ROAS", marketplace="wb", source_field="spend")
     advertised = get_knowledge_metric(
         "AD_ADVERTISED_ITEMS", marketplace="wb", source_field="advertised_items"
     )
-    assert roas is not None and "cabinet_binding" not in roas
-    assert advertised is not None and "cabinet_binding" not in advertised
+    for metric in (roas, advertised):
+        assert metric is not None
+        assert metric["cabinet_binding"]["equivalence_status"] == "none"
+        assert metric["cabinet_binding"]["label_ru"] == "Нет отдельного подтверждённого показателя"
+        assert metric["cabinet_binding"]["source_refs"] == ["wb_promotion_stats_help_20260617"]
 
 
 def test_wb_advertising_metric_family_is_fully_verified():

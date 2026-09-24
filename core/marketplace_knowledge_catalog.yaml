@@ -191,6 +191,12 @@ metrics:
     provider_binding:
       source_id: wb_current_prices
       field_path: price
+    cabinet_binding:
+      surface_ru: "Товары и цены → Цены и скидки"
+      label_ru: "Цена продавца до скидки, ₽"
+      scope_ru: "Цена, которую продавец устанавливает до применения своей скидки."
+      equivalence_status: verified
+      source_refs: [wb_seller_price_help_20260518]
     source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
     source_checked_at: "2026-09-23"
 
@@ -207,6 +213,12 @@ metrics:
     provider_binding:
       source_id: wb_current_prices
       field_path: discountedPrice
+    cabinet_binding:
+      surface_ru: "Товары и цены → Цены и скидки"
+      label_ru: "Цена со скидкой, ₽"
+      scope_ru: "Цена после применения скидки продавца; не является персональной итоговой ценой конкретного покупателя."
+      equivalence_status: verified
+      source_refs: [wb_seller_price_help_20260518]
     source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
     source_checked_at: "2026-09-23"
 
@@ -223,6 +235,12 @@ metrics:
     provider_binding:
       source_id: wb_current_prices
       field_path: clubDiscountedPrice
+    cabinet_binding:
+      surface_ru: "Товары и цены → Цены и скидки"
+      label_ru: "Цена со скидкой для WB Клуба, ₽"
+      scope_ru: "Цена товара после применения установленной продавцом скидки WB Клуба."
+      equivalence_status: verified
+      source_refs: [wb_seller_price_help_20260518]
     source_refs: [wb_seller_price_help_20260518, wb_prices_api_20260923]
     source_checked_at: "2026-09-23"
 
@@ -646,6 +664,12 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [advertised_items]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Нет отдельного подтверждённого показателя"
+      scope_ru: "В проверенной официальной инструкции WB Продвижения не подтверждён отдельный кабинетный показатель, эквивалентный provider-полю shks / advertised_items. Поле остаётся доступным как API-метрика без выдуманного названия кабинета."
+      equivalence_status: none
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [shks]
     source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
     source_checked_at: "2026-09-24"
@@ -865,6 +889,12 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [attributed_order_amount, spend]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Нет отдельного подтверждённого показателя"
+      scope_ru: "В проверенной официальной инструкции WB Продвижения отдельный кабинетный ROAS не подтверждён. Проект вычисляет ROAS из суммы рекламно-атрибутированных заказов и рекламных расходов, но не выдаёт его за именованный показатель кабинета."
+      equivalence_status: none
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [sum_price, sum]
     source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
     source_checked_at: "2026-09-24"

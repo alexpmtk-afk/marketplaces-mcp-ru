@@ -151,7 +151,7 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
                     raise MarketplaceKnowledgeError(
                         f"knowledge metric {knowledge_id} cabinet_binding must define {field}"
                     )
-            if cabinet_binding["equivalence_status"] not in {"verified", "provisional", "partial"}:
+            if cabinet_binding["equivalence_status"] not in {"verified", "provisional", "partial", "none"}:
                 raise MarketplaceKnowledgeError(
                     f"knowledge metric {knowledge_id} cabinet_binding has unsupported equivalence_status "
                     f"{cabinet_binding['equivalence_status']!r}"
@@ -166,14 +166,14 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
                     f"knowledge metric {knowledge_id} cabinet_binding references unknown sources: "
                     f"{cabinet_missing}"
                 )
-            if cabinet_binding["equivalence_status"] == "verified":
+            if cabinet_binding["equivalence_status"] in {"verified", "none"}:
                 cabinet_non_official = [
                     source_id for source_id in cabinet_refs
                     if sources[source_id].get("official") is not True
                 ]
                 if cabinet_non_official:
                     raise MarketplaceKnowledgeError(
-                        f"verified cabinet binding {knowledge_id} has non-official sources: "
+                        f"officially classified cabinet binding {knowledge_id} has non-official sources: "
                         f"{cabinet_non_official}"
                     )
 
@@ -328,6 +328,49 @@ def _provider_metric_coverage(
             ),
         }
     return out
+
+
+def _cabinet_binding_coverage(
+    catalog: dict[str, Any],
+    *,
+    marketplace: str,
+) -> dict[str, Any]:
+    """Measure whether every verified knowledge record has an explicit cabinet classification."""
+    wanted = str(marketplace or "").strip().lower()
+    records: list[tuple[str, dict[str, Any]]] = [
+        (knowledge_id, metric)
+        for knowledge_id, metric in (catalog.get("metrics") or {}).items()
+        if isinstance(metric, dict)
+        and str(metric.get("marketplace") or "").strip().lower() == wanted
+        and str(metric.get("semantic_status") or "") == "verified"
+    ]
+    counts: dict[str, int] = {}
+    missing: list[str] = []
+    no_direct: list[str] = []
+    for knowledge_id, metric in records:
+        binding = metric.get("cabinet_binding")
+        if not isinstance(binding, dict):
+            missing.append(str(knowledge_id))
+            continue
+        status = str(binding.get("equivalence_status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
+        if status == "none":
+            no_direct.append(str(knowledge_id))
+    return {
+        "marketplace": wanted,
+        "verified_knowledge_record_count": len(records),
+        "classified_record_count": len(records) - len(missing),
+        "classification_status_counts": dict(sorted(counts.items())),
+        "missing_cabinet_classification_count": len(missing),
+        "missing_cabinet_classifications": sorted(missing),
+        "no_confirmed_direct_equivalent_count": len(no_direct),
+        "no_confirmed_direct_equivalent_records": sorted(no_direct),
+        "cabinet_classification_complete": not missing,
+        "rule": (
+            "Every verified marketplace knowledge record must state whether its cabinet relation "
+            "is verified, partial/provisional, or has no confirmed direct cabinet equivalent."
+        ),
+    }
 
 
 def _weekly_report_field_coverage() -> dict[str, Any]:
@@ -536,6 +579,10 @@ def verify_marketplace_knowledge(
         "provisional_binding_count": len(provisional_bindings),
         "provisional_bindings": provisional_bindings,
         "provider_metric_coverage": _provider_metric_coverage(catalog, registry),
+        "cabinet_binding_coverage": {
+            "wb": _cabinet_binding_coverage(catalog, marketplace="wb"),
+            "ozon": _cabinet_binding_coverage(catalog, marketplace="ozon"),
+        },
         "weekly_report_field_coverage": _weekly_report_field_coverage(),
         "source_count": len(catalog.get("sources") or {}),
         "stale_sources": stale_sources,
