@@ -42,6 +42,16 @@ def test_explicit_complete_order_flow_requires_order_feed():
     assert result["normalized_query"]["complete_order_flow"] is True
 
 
+def test_unpaid_wording_requires_complete_order_source():
+    result = resolve_semantic_question(
+        "Сколько всего оформленных заказов сегодня, включая неоплаченные?"
+    )
+    assert result["status"] == "REQUIRES_OTHER_SOURCE"
+    assert result["concept_id"] == "all_orders_placed"
+    assert result["required_source_id"] == "wb_order_feed"
+    assert result["normalized_query"]["complete_order_flow"] is True
+
+
 def test_order_date_question_is_allowed_as_reported_operation_attribute():
     result = resolve_semantic_question("Какая дата заказа у этой продажи?")
     assert result["status"] == "AVAILABLE_WITH_LIMITATION"
