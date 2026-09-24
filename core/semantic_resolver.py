@@ -304,6 +304,26 @@ def resolve_semantic_question(
         if direct_field is not None:
             return _attach_metric_dictionary(_with_dimensions(direct_field, dimensions), metric_matches)
 
+    if dimensions.get("complete_order_flow"):
+        complete_route = next(
+            (
+                route
+                for route in intents_data["routes"]
+                if route.get("id") == "complete_order_flow"
+            ),
+            None,
+        )
+        if complete_route is None:
+            raise SemanticResolutionError("complete_order_flow route is missing")
+        result = _resolve_route(
+            complete_route,
+            ["complete_order_flow"],
+            registry_data,
+            intents_data,
+            dimensions,
+        )
+        return _attach_metric_dictionary(result, metric_matches)
+
     normalized = _normalize(question)
     candidates: list[tuple[int, int, dict[str, Any], list[str]]] = []
     for route in intents_data["routes"]:
