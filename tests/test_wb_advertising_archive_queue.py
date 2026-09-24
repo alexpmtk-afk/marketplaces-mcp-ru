@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from core.wb_advertising_archive import merge_annual_dataset, parse_csv
 from core.wb_advertising_archive_queue import (
     WBAdvertisingArchiveJobQueue,
-    _cluster_candidate,
     _request_lock_key,
 )
 
@@ -308,22 +307,7 @@ def test_product_attribution_enrichment_matches_xls_evidence_classes():
     assert "current_snapshot_not_event_time" in by_nm[1465123096]["conversion_type_quality_flags"]
 
 
-def test_cluster_candidate_requires_traffic_except_current_direct():
-    assert _cluster_candidate({
-        "conversion_type_current": "direct", "views": "0", "clicks": "0", "spend": "0",
-    }) is True
-    assert _cluster_candidate({
-        "conversion_type_current": "associated", "views": "0", "clicks": "0", "spend": "0",
-    }) is False
-    assert _cluster_candidate({
-        "conversion_type_current": "multicard", "views": "", "clicks": "", "spend": "",
-    }) is False
-    assert _cluster_candidate({
-        "conversion_type_current": "associated", "views": "10", "clicks": "0", "spend": "0",
-    }) is True
-
-
-def test_cluster_plan_excludes_zero_traffic_associated_rows_but_keeps_direct_rows():
+def test_cluster_plan_keeps_all_product_pairs_for_lossless_history():
     store = _MemoryStore()
     queue = _Queue(store)
     state = _state(phase="PLAN_CLUSTERS")
@@ -348,23 +332,18 @@ def test_cluster_plan_excludes_zero_traffic_associated_rows_but_keeps_direct_row
     folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_product_daily"))
     asyncio.run(store.upload_bytes(folder, name, raw))
 
-    staged_before_plan = asyncio.run(queue._read_stage_rows(state["job_id"], "ads_product_daily"))
-    associated = next(row for row in staged_before_plan if int(row["nm_id"]) == 1465123096)
-    assert associated["conversion_type_current"] == "associated"
-    assert float(associated["views"] or 0) == 0
-    assert float(associated["clicks"] or 0) == 0
-    assert float(associated["spend"] or 0) == 0
-    assert _cluster_candidate(associated) is False
-
     result = asyncio.run(queue._plan_clusters_step(state))
+    assert result["action"] == "cluster_plan_ready"
     pairs = {
         (item["advertId"], item["nmId"])
         for request in state["cluster_plan"]
         for item in request["json_body"]["items"]
     }
-    assert (33650945, 404071811) in pairs
-    assert (33650945, 999999999) in pairs
-    assert (33650945, 1465123096) not in pairs
+    assert pairs == {
+        (33650945, 404071811),
+        (33650945, 1465123096),
+        (33650945, 999999999),
+    }
 
 
 def test_cluster_plan_uses_staged_product_pairs_and_conservative_period_chunks():
