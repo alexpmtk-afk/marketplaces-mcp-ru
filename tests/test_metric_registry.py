@@ -10,7 +10,15 @@ def test_metric_registry_v1_is_canonical_semantic_dictionary_not_execution_autho
     assert registry["policy"]["metric_dictionary_grants_execution"] is False
     assert registry["policy"]["provider_field_is_not_business_name"] is True
     assert registry["policy"]["unknown_provider_mapping_must_not_be_inferred"] is True
-    assert len(registry["metrics"]) == 30
+    assert len(registry["metrics"]) == 31
+
+
+def test_payout_term_change_fee_has_exact_wb_semantics():
+    metric = load_metric_registry()["metrics"]["PAYOUT_TERM_CHANGE_FEE"]
+    assert metric["canonical_name_ru"] == "Комиссия за услугу «Вывести сейчас»"
+    assert metric["semantic_target"] == {"type": "CAPABILITY", "id": "payout_term_change_fee"}
+    assert metric["provider_mappings"]["wb"]["fields"] == ["paymentSchedule", "sellerOperName"]
+    assert metric["provider_mappings"]["ozon"]["status"] == "NOT_APPLICABLE"
 
 
 def test_drr_has_russian_canonical_name_latin_alias_and_real_wb_fields():
@@ -75,7 +83,7 @@ def test_metric_dictionary_is_visible_from_canonical_semantic_core():
     metrics_view = semantic_core_view("metrics")
 
     assert brain["validated"] is True
-    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 30
+    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 31
     assert brain["component_versions"]["metric_registry"] == "marketplace_metric_registry.v1"
     assert metrics_view["metrics"]["AD_DRR"]["abbreviation"] == "ДРР"
     assert brain["summary"]["safety"]["metric_dictionary_is_semantic_only"] is True

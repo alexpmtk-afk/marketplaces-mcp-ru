@@ -38,6 +38,7 @@ class FakeStore:
                 "sellerOperName",
                 "paidStorage",
                 "paidAcceptance",
+                "paymentSchedule",
                 "deliveryAmount",
                 "returnAmount",
                 "deliveryService",
@@ -137,6 +138,7 @@ def _annual_rows():
             "sellerOperName": "Штраф",
             "paidStorage": "10.00",
             "paidAcceptance": "2.50",
+            "paymentSchedule": "12.00",
             "nmId": "111",
         },
         {
@@ -372,12 +374,13 @@ def _annual_rows():
     ]
 
 
-def test_execution_registry_approves_ten_safe_capabilities():
+def test_execution_registry_approves_eleven_safe_capabilities():
     execution = load_semantic_execution()
     assert set(execution["executors"]) == {
         "penalties",
         "storage_charge",
         "acceptance_charge",
+        "payout_term_change_fee",
         "sale_and_return_operations",
         "logistics",
         "deductions_and_adjustments",
@@ -467,6 +470,25 @@ def test_storage_and_acceptance_sum_as_reported_with_product_filter():
     assert acceptance["calculation"]["totals_by_currency"] == [
         {"currency": "RUB", "amount": 10.0, "operation_rows": 2}
     ]
+
+
+def test_payout_term_change_fee_sums_exact_payment_schedule_field():
+    store = FakeStore(_registry_rows(full=True), _annual_rows())
+    result = asyncio.run(
+        execute_semantic_archive_question(
+            store,
+            question="Сколько списали за услугу Вывести сейчас?",
+            seller="wb_novokshenov",
+            date_from="2026-08-05",
+            date_to="2026-08-12",
+        )
+    )
+    assert result["ok"] is True
+    assert result["capability_id"] == "payout_term_change_fee"
+    assert result["calculation"]["totals_by_currency"] == [
+        {"currency": "RUB", "amount": 12.0, "operation_rows": 1}
+    ]
+    assert result["provenance"]["amount_field"] == "paymentSchedule"
 
 
 def test_sales_and_returns_use_explicit_doc_type_subtraction():
@@ -809,6 +831,19 @@ def test_sql_builder_uses_only_registered_fields_and_date_axis():
     assert '"currency"' in sql
     assert '"nmId"' in sql
     assert "2026-08-05" in sql and "2026-08-12" in sql
+
+
+def test_payout_service_sql_uses_payment_schedule_and_report_date():
+    execution = load_semantic_execution()
+    sql = build_semantic_archive_sql(
+        cabinet="wb_novokshenov",
+        executor=execution["executors"]["payout_term_change_fee"],
+        date_from="2026-08-05",
+        date_to="2026-08-12",
+    )
+    assert '"paymentSchedule"' in sql
+    assert '"rrDate"' in sql
+    assert '"currency"' in sql
 
 
 def test_sales_sql_uses_sale_date_and_explicit_operation_buckets():

@@ -162,10 +162,10 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 31
-    assert result["semantic_metric_count"] == 30
-    assert result["verified_metric_count"] == 29
-    assert result["verified_binding_count"] == 29
+    assert result["knowledge_record_count"] == 32
+    assert result["semantic_metric_count"] == 31
+    assert result["verified_metric_count"] == 30
+    assert result["verified_binding_count"] == 30
     assert result["provisional_binding_count"] == 2
     assert {
         (item["metric_id"], item["marketplace"])
@@ -283,6 +283,7 @@ def test_wb_finance_metrics_are_verified_knowledge():
         "DEDUCTIONS_ADJUSTMENTS",
         "WB_COMMISSION_REWARD",
         "ACQUIRING_PAYMENT_PROCESSING",
+        "PAYOUT_TERM_CHANGE_FEE",
     } <= verified
 
 
@@ -299,13 +300,20 @@ def test_wb_logistics_service_cabinet_bindings_use_weekly_report_labels():
     penalties = get_knowledge_metric(
         "PENALTIES", marketplace="wb", source_field="penalty"
     )
+    payout = get_knowledge_metric(
+        "PAYOUT_TERM_CHANGE_FEE", marketplace="wb", source_field="paymentSchedule"
+    )
 
     assert logistics["cabinet_binding"]["label_ru"] == "Стоимость логистики"
     assert storage["cabinet_binding"]["label_ru"] == "Стоимость хранения"
     assert acceptance["cabinet_binding"]["label_ru"] == "Стоимость операций при приёмке"
     assert penalties["cabinet_binding"]["label_ru"] == "Общая сумма штрафов"
+    assert payout["cabinet_binding"]["label_ru"] == "Разовое изменение срока перечисления денежных средств"
+    assert payout["cabinet_binding"]["surface_ru"] == "Финансовые отчёты → Еженедельные"
+    assert payout["cabinet_binding"]["equivalence_status"] == "partial"
+    assert payout["provider_binding"]["field_paths"] == ["paymentSchedule", "sellerOperName"]
 
-    for metric in (logistics, storage, acceptance, penalties):
+    for metric in (logistics, storage, acceptance, penalties, payout):
         assert metric["cabinet_binding"]["surface_ru"] == "Финансовые отчёты → Еженедельные"
         assert metric["cabinet_binding"]["equivalence_status"] == "partial"
         assert "Не " in metric["guardrail"]

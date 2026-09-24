@@ -339,6 +339,18 @@ metrics:
       wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [paidAcceptance]}
       ozon: {status: NOT_MAPPED, fields: []}
 
+  PAYOUT_TERM_CHANGE_FEE:
+    canonical_name_ru: Комиссия за услугу «Вывести сейчас»
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [вывести сейчас, комиссия за вывести сейчас, разовое изменение срока перечисления денежных средств, комиссия за изменение срока перечисления]
+    aliases_en: [payout term change fee, payout acceleration fee]
+    semantic_target: {type: CAPABILITY, id: payout_term_change_fee}
+    provider_mappings:
+      wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [paymentSchedule, sellerOperName]}
+      ozon: {status: NOT_APPLICABLE, fields: []}
+    guardrail: paymentSchedule — денежная комиссия за услугу «Вывести сейчас», а не график выплат или текущий срок перечисления.
+
   DEDUCTIONS_ADJUSTMENTS:
     canonical_name_ru: Удержания и корректировки
     kind: BUSINESS

@@ -428,6 +428,30 @@ metrics:
     source_checked_at: "2026-09-24"
     guardrail: "Не выдавать отдельную строку paidAcceptance за недельный итог «Стоимость операций при приёмке» без агрегации за тот же период."
 
+  WB_PAYOUT_TERM_CHANGE_FEE:
+    metric_id: PAYOUT_TERM_CHANGE_FEE
+    marketplace: wb
+    label_ru: "Комиссия за услугу «Вывести сейчас»"
+    definition_ru: "Сумма комиссии за разовое изменение срока перечисления денежных средств. В еженедельном финансовом отчёте WB хранится в paymentSchedule; sellerOperName задаёт контекст операции."
+    semantic_status: verified
+    unit: RUB
+    dimensions: [report_row, report_period, operation_type]
+    aliases_ru: ["вывести сейчас", "комиссия за вывести сейчас", "разовое изменение срока перечисления денежных средств"]
+    aliases_en: ["payout term change fee", "payout acceleration fee"]
+    historical_names: []
+    provider_binding:
+      source_id: wb_weekly_finance_main
+      field_paths: [paymentSchedule, sellerOperName]
+    cabinet_binding:
+      surface_ru: "Финансовые отчёты → Еженедельные"
+      label_ru: "Разовое изменение срока перечисления денежных средств"
+      scope_ru: "В детализации еженедельного отчёта paymentSchedule отражает комиссию за услугу «Вывести сейчас». Это отдельная денежная статья и не является обычным графиком выплат."
+      equivalence_status: partial
+      source_refs: [wb_finance_reports_api_20260923, wb_weekly_report_help_20260518]
+    source_refs: [wb_finance_reports_api_20260923, wb_weekly_report_help_20260518]
+    source_checked_at: "2026-09-24"
+    guardrail: "Не трактовать paymentSchedule как дату, расписание или текущий срок выплаты; суммировать только как комиссию услуги за тот же отчётный период."
+
   WB_DEDUCTIONS_ADJUSTMENTS:
     metric_id: DEDUCTIONS_ADJUSTMENTS
     marketplace: wb
