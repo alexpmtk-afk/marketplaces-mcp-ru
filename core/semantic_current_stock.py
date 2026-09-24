@@ -328,14 +328,41 @@ def _number(value: Decimal) -> int | float:
     return int(value) if value == value.to_integral_value() else float(value)
 
 
+def _optional_decimal(
+    row: dict[str, Any],
+    field: str,
+    index: int,
+) -> Decimal | None:
+    if field not in row:
+        return None
+    try:
+        return Decimal(str(row.get(field) or 0))
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise SemanticCurrentStockExecutionError(
+            f"WB current-stock row #{index} has invalid {field}"
+        ) from exc
+
+
 def _aggregate(items: list[dict[str, Any]], grouping: str) -> dict[str, Any]:
     total = Decimal("0")
+    in_way_to_client = Decimal("0")
+    in_way_from_client = Decimal("0")
+    transit_fields_complete = True
     grouped: dict[str, Decimal] = {}
     for index, raw in enumerate(items):
         if not isinstance(raw, dict):
             raise SemanticCurrentStockExecutionError(f"WB current-stock row #{index} is not an object")
         quantity = _quantity(raw, index)
         total += quantity
+
+        to_client = _optional_decimal(raw, "inWayToClient", index)
+        from_client = _optional_decimal(raw, "inWayFromClient", index)
+        if to_client is None or from_client is None:
+            transit_fields_complete = False
+        else:
+            in_way_to_client += to_client
+            in_way_from_client += from_client
+
         if grouping == "PRODUCT":
             key = raw.get("nmId")
             if key is None:
@@ -354,7 +381,28 @@ def _aggregate(items: list[dict[str, Any]], grouping: str) -> dict[str, Any]:
             continue
         grouped[group_key] = grouped.get(group_key, Decimal("0")) + quantity
 
-    result: dict[str, Any] = {"stock_units": _number(total)}
+    result: dict[str, Any] = {
+        "stock_units": _number(total),
+        "cabinet_label_ru": "Остатки «Склад WB»",
+        "transit_data_available": transit_fields_complete,
+    }
+    if transit_fields_complete:
+        result["in_way_to_client_units"] = _number(in_way_to_client)
+        result["in_way_from_client_units"] = _number(in_way_from_client)
+        result["in_transit_units"] = _number(in_way_to_client + in_way_from_client)
+        result["in_transit"] = {
+            "label_ru": "Товары в пути",
+            "units": _number(in_way_to_client + in_way_from_client),
+            "to_client": {
+                "label_ru": "Едут к покупателю",
+                "units": _number(in_way_to_client),
+            },
+            "from_client": {
+                "label_ru": "Возвращаются на склад",
+                "units": _number(in_way_from_client),
+            },
+        }
+
     if grouping == "PRODUCT":
         result["by_product"] = [
             {"nm_id": key, "stock_units": _number(value)}
@@ -466,7 +514,9 @@ async def execute_current_stock_question(
         "semantic_rule": "sum provider quantity across the current WB warehouse stock snapshot",
         "quality": (
             "Current WB warehouse stock snapshot only. It is not a historical stock series and "
-            "must not be used to answer inventory-at-past-date questions."
+            "must not be used to answer inventory-at-past-date questions. "
+            "When provider fields inWayToClient/inWayFromClient are present, transit is reported "
+            "separately and is never added to «Остатки “Склад WB”»."
         ),
         **totals,
     }
