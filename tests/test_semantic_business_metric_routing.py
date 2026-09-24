@@ -45,11 +45,12 @@ def test_canonical_router_executes_ordinary_orders_as_approved_metric(monkeypatc
 
 
 def test_complete_order_flow_is_not_silently_converted_to_operational_orders(monkeypatch):
-    captured = {}
+    called = False
 
     async def fake_legacy(modules, **kwargs):
-        captured.update(kwargs)
-        return {"ok": False, "error_type": "source_not_suitable"}
+        nonlocal called
+        called = True
+        return {"ok": True, "metric": "ORDERS"}
 
     monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
 
@@ -63,8 +64,9 @@ def test_complete_order_flow_is_not_silently_converted_to_operational_orders(mon
     ))
 
     assert result["ok"] is False
-    assert captured["question"] == "Покажи полный поток заказов за август"
-    assert captured["metric"] == ""
+    assert result["error_type"] == "source_not_suitable"
+    assert result["details"]["semantic_resolution"]["concept_id"] == "all_orders_placed"
+    assert called is False
 
 
 def test_unapproved_order_grouping_fails_before_source_execution(monkeypatch):
