@@ -659,16 +659,16 @@ class WBAdvertisingArchiveJobQueue:
         ]
         rows = normalize_product_identity_snapshot({"cards": cards}, observed_at=observed_at)
         if not rows:
-            state["status"] = "FAILED"
-            state["last_error"] = f"WB Content API did not resolve nm_id={expected_nm}"
-            await self._save(state)
-            await self._unschedule(str(state["job_id"]))
-            return {
-                "ok": False,
-                "job_id": state["job_id"],
-                "status": "FAILED",
-                "error": state["last_error"],
-            }
+            rows = [{
+                "observed_at": observed_at,
+                "nm_id": expected_nm,
+                "imt_id": None,
+                "title": None,
+                "vendor_code": None,
+                "subject_id": None,
+                "resolution_status": "not_found_current",
+                "raw_json": None,
+            }]
 
         stats = await self._merge_stage(
             str(state["job_id"]), "ads_product_identity_snapshots", rows
