@@ -3,7 +3,8 @@
 The advertising ingestion queue is intentionally responsible for bounded provider
 requests, while ``dataset_coverage_registry.csv`` is the durable proof that a
 specific request was already committed to canonical storage.  Reopening a
-COMPLETE annual job must therefore not replay the whole year.
+COMPLETE annual job must therefore avoid replaying stable old history while
+still re-reading a short recent correction window for mutable statistics.
 
 This module installs coverage-aware PLAN handlers on the advertising queue.  A
 planned provider request is skipped only when every dataset produced by that
@@ -13,7 +14,9 @@ cycle because they represent current state rather than immutable history.
 """
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo
 
 from .archive_coverage import complete_request_keys, request_key
 from .wb_advertising_archive import coverage_registry_location
@@ -29,6 +32,8 @@ from .wb_advertising_normalize import (
     split_date_range,
 )
 
+ADVERTISING_CORRECTION_WINDOW_DAYS = 7
+
 
 def _request_coverage_key(*, cabinet: str, dataset: str, request: dict[str, Any]) -> str:
     return request_key(
@@ -40,6 +45,38 @@ def _request_coverage_key(*, cabinet: str, dataset: str, request: dict[str, Any]
         date_to=str(request.get("date_to") or ""),
         scope=request.get("scope") or {},
     )
+
+
+def _moscow_yesterday() -> date:
+    return datetime.now(ZoneInfo("Europe/Moscow")).date() - timedelta(days=1)
+
+
+def request_requires_correction_refresh(
+    request: dict[str, Any],
+    *,
+    yesterday: date | None = None,
+    window_days: int = ADVERTISING_CORRECTION_WINDOW_DAYS,
+) -> bool:
+    """Re-fetch recently closed mutable statistics even when coverage exists.
+
+    WB advertising statistics can be corrected after the first observation.
+    This is an MCP refresh policy, not a provider retention guarantee: the most
+    recent closed days are deliberately re-read and upserted by stable key.
+    Older COMPLETE coverage remains reusable.
+    """
+    if str(request.get("kind") or "") not in {
+        "fullstats", "expenses", "payments", "search_clusters",
+    }:
+        return False
+    try:
+        request_end = date.fromisoformat(str(request.get("date_to") or "")[:10])
+    except ValueError:
+        return False
+    closed_end = yesterday or _moscow_yesterday()
+    if request_end > closed_end:
+        return False
+    floor = closed_end - timedelta(days=max(1, int(window_days)) - 1)
+    return request_end >= floor
 
 
 def request_fully_covered(
@@ -101,7 +138,8 @@ async def _filter_plan(
     pending = [
         request
         for request in plan
-        if not request_fully_covered(
+        if request_requires_correction_refresh(request)
+        or not request_fully_covered(
             cabinet=cabinet,
             request=request,
             complete_by_dataset=complete,
