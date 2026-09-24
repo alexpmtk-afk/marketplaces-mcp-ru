@@ -531,10 +531,17 @@ class WBAdvertisingArchiveJobQueue:
 
     async def _plan_clusters_step(self, state: dict[str, Any]) -> dict[str, Any]:
         product_rows = await self._read_stage_rows(str(state["job_id"]), "ads_product_daily")
+        if product_rows and any(not str(row.get("product_role") or "").strip() for row in product_rows):
+            raise RuntimeError(
+                "ads_product_daily product_role is missing; refetch fullstats with the current "
+                "normalizer before planning search-cluster requests"
+            )
         pairs = sorted({
             (int(row.get("campaign_id") or 0), int(row.get("nm_id") or 0))
             for row in product_rows
-            if int(row.get("campaign_id") or 0) > 0 and int(row.get("nm_id") or 0) > 0
+            if int(row.get("campaign_id") or 0) > 0
+            and int(row.get("nm_id") or 0) > 0
+            and str(row.get("product_role") or "") == "ad_traffic_product"
         })
         start_date, end_date = closed_history_period(int(state["year"]))
         periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
