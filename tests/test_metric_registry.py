@@ -83,7 +83,7 @@ def test_metric_dictionary_is_visible_from_canonical_semantic_core():
     metrics_view = semantic_core_view("metrics")
 
     assert brain["validated"] is True
-    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 30
+    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 31
     assert brain["component_versions"]["metric_registry"] == "marketplace_metric_registry.v1"
     assert metrics_view["metrics"]["AD_DRR"]["abbreviation"] == "ДРР"
     assert brain["summary"]["safety"]["metric_dictionary_is_semantic_only"] is True
