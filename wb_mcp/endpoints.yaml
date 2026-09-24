@@ -395,13 +395,15 @@ endpoints:
   - склады продавца
   - остатки продавца
   pagination: none
-- operation_id: wb_adv_count
+- operation_id: wb_get_adv_promotion_count
   section: promotion
   method: GET
   host: advert-api.wildberries.ru
   path: /adv/v1/promotion/count
   scope: promotion
   safety: read
+  rate_limit: 5 req/s
+  quota_proven: true
   summary: Campaign counts by type/status with the list of campaign IDs.
   doc: https://dev.wildberries.ru/en/openapi/promotion
   items_path: adverts
@@ -1927,6 +1929,8 @@ endpoints:
   path: /api/advert/v2/adverts
   scope: promotion
   safety: read
+  rate_limit: 5 req/s
+  quota_proven: true
   summary: Информация о кампаниях
   doc: ''
   items_path: adverts
@@ -2071,6 +2075,8 @@ endpoints:
   path: /adv/v1/upd
   scope: promotion
   safety: read
+  rate_limit: 1 req/s
+  quota_proven: true
   summary: Получение истории затрат
   doc: ''
   pagination: none
@@ -2081,6 +2087,8 @@ endpoints:
   path: /adv/v1/payments
   scope: promotion
   safety: read
+  rate_limit: 1 req/s
+  quota_proven: true
   summary: Получение истории пополнений счёта
   doc: ''
   pagination: none
@@ -2207,6 +2215,8 @@ endpoints:
   path: /adv/v3/fullstats
   scope: promotion
   safety: read
+  rate_limit: 3 req/min
+  quota_proven: true
   summary: Статистика кампаний
   doc: ''
   pagination: none
@@ -2271,13 +2281,16 @@ endpoints:
   doc: ''
   items_path: items
   pagination: none
-- operation_id: wb_post_adv_normquery_stats_2
+- operation_id: wb_post_adv_normquery_stats_v1
   section: Статистика
   method: POST
   host: advert-api.wildberries.ru
   path: /adv/v1/normquery/stats
   scope: promotion
   safety: read
+  read_only_post_proven: true
+  rate_limit: 10 req/min
+  quota_proven: true
   summary: Статистика по поисковым кластерам с детализацией по дням
   doc: ''
   items_path: items
