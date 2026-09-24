@@ -203,9 +203,22 @@ def test_cluster_plan_uses_staged_product_pairs_and_conservative_period_chunks()
     queue = _Queue(store)
     state = _state(phase="PLAN_CLUSTERS")
     rows = [
-        {"date": "2026-01-01", "campaign_id": 10, "app_type": 32, "nm_id": value}
+        {
+            "date": "2026-01-01",
+            "campaign_id": 10,
+            "app_type": 32,
+            "nm_id": value,
+            "product_role": "ad_traffic_product",
+        }
         for value in range(1, 102)
     ]
+    rows.append({
+        "date": "2026-01-01",
+        "campaign_id": 10,
+        "app_type": 32,
+        "nm_id": 999,
+        "product_role": "associated_conversion_candidate",
+    })
     raw, _ = merge_annual_dataset("ads_product_daily", None, rows)
     folder, name = asyncio.run(queue._stage_location(state["job_id"], "ads_product_daily"))
     asyncio.run(store.upload_bytes(folder, name, raw))
@@ -213,6 +226,12 @@ def test_cluster_plan_uses_staged_product_pairs_and_conservative_period_chunks()
     result = asyncio.run(queue._plan_clusters_step(state))
     assert result["action"] == "cluster_plan_ready"
     assert result["campaign_product_pairs"] == 101
+    planned_pairs = {
+        (int(item["advertId"]), int(item["nmId"]))
+        for request in state["cluster_plan"]
+        for item in request["json_body"]["items"]
+    }
+    assert (10, 999) not in planned_pairs
     assert state["phase"] == "FETCH_CLUSTERS"
     assert state["cluster_plan"]
     for item in state["cluster_plan"]:

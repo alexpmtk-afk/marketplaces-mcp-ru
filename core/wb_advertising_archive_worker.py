@@ -38,9 +38,9 @@ DATASET_FIELDS: dict[str, tuple[str, ...]] = {
         "advertised_items", "canceled", "spend", "attributed_order_amount",
     ),
     "ads_product_daily": (
-        "date", "campaign_id", "app_type", "nm_id", "name", "views", "clicks",
+        "date", "campaign_id", "app_type", "nm_id", "product_role", "name", "views", "clicks",
         "cart_adds", "ad_orders", "advertised_items", "canceled", "spend",
-        "attributed_order_amount",
+        "attributed_order_amount", "avg_position",
     ),
     "ads_search_cluster_daily": (
         "date", "campaign_id", "nm_id", "norm_query", "payment_type", "views", "clicks",

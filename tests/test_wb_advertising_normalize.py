@@ -110,6 +110,56 @@ def test_fullstats_normalization_preserves_daily_and_product_grains():
     assert product[0]["attributed_order_amount"] == "1900.03"
 
 
+def test_fullstats_classifies_traffic_vs_associated_conversion_and_keeps_position():
+    result = normalize_fullstats([{
+        "advertId": 101,
+        "boosterStats": [{"date": "2026-09-01", "nm": 777, "avg_position": 12.5}],
+        "days": [{
+            "date": "2026-09-01",
+            "views": 100,
+            "clicks": 10,
+            "atbs": 3,
+            "orders": 2,
+            "shks": 2,
+            "sum": 50,
+            "sum_price": 500,
+            "apps": [{
+                "appType": 32,
+                "nms": [
+                    {
+                        "nmId": 777,
+                        "views": 100,
+                        "clicks": 10,
+                        "atbs": 2,
+                        "orders": 1,
+                        "shks": 1,
+                        "sum": 50,
+                        "sum_price": 300,
+                    },
+                    {
+                        "nmId": 888,
+                        "views": 0,
+                        "clicks": 0,
+                        "atbs": 1,
+                        "orders": 1,
+                        "shks": 1,
+                        "sum": 0,
+                        "sum_price": 200,
+                    },
+                ],
+            }],
+        }],
+    }])
+    rows = result["ads_product_daily"]
+    by_nm = {row["nm_id"]: row for row in rows}
+    assert by_nm[777]["product_role"] == "ad_traffic_product"
+    assert by_nm[777]["avg_position"] == 12.5
+    assert by_nm[888]["product_role"] == "associated_conversion_candidate"
+    assert by_nm[888]["views"] == 0
+    assert by_nm[888]["clicks"] == 0
+    assert by_nm[888]["ad_orders"] == 1
+
+
 def test_fullstats_normalizer_never_invents_missing_rows():
     result = normalize_fullstats([{"advertId": 101, "days": []}])
     assert result == {"ads_campaign_daily": [], "ads_product_daily": []}
