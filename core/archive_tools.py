@@ -11,6 +11,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .archive_queue import WBFinanceArchiveJobQueue
+from .business_registry import resolve_business_cabinet
 from .archive_refresh import enqueue_refresh_cycle, normalize_refresh_family, refresh_catalog
 from .archive_refresh_verify import verify_registered_archive
 from .archive_resumable_diagnostic import WBFinanceResumableDiagnostic
@@ -60,6 +61,18 @@ def _available_sellers(marketplace: str) -> list[str]:
     if market == "ozon":
         return sorted(OZON_ARCHIVE_CABINETS)
     return []
+
+
+def _normalize_seller_token(marketplace: str, seller: str) -> str | None:
+    market = str(marketplace or "").strip().lower()
+    value = str(seller or "").strip()
+    available = set(_available_sellers(market))
+    if value in available:
+        return value
+    entry = resolve_business_cabinet(market, value)
+    if entry is None or entry.cabinet not in available:
+        return None
+    return entry.cabinet
 
 
 def _split_seller_scope(value: str) -> list[str]:
@@ -140,11 +153,30 @@ def _database_update_scope(
             "no_jobs_queued": True,
         }
 
-    selected_sellers = (
-        _available_sellers(market)
-        if seller_tokens == ["all"]
-        else seller_tokens
-    )
+    if seller_tokens == ["all"]:
+        selected_sellers = _available_sellers(market)
+    else:
+        selected_sellers = []
+        unknown_sellers: list[str] = []
+        for token in seller_tokens:
+            normalized = _normalize_seller_token(market, token)
+            if normalized is None:
+                unknown_sellers.append(token)
+            elif normalized not in selected_sellers:
+                selected_sellers.append(normalized)
+        if unknown_sellers:
+            return {
+                "ok": False,
+                "error": "unknown_seller",
+                "marketplace": market,
+                "unknown_sellers": unknown_sellers,
+                "available_sellers": _available_sellers(market),
+                "questions": [
+                    "Уточните магазин/кабинет: " + ", ".join(unknown_sellers)
+                ],
+                "no_jobs_queued": True,
+            }
+
     return {
         "ok": True,
         "marketplace": market,
