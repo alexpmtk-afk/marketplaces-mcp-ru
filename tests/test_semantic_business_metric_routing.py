@@ -44,6 +44,31 @@ def test_canonical_router_executes_ordinary_orders_as_approved_metric(monkeypatc
     }
 
 
+def test_unpaid_complete_order_wording_is_not_silently_converted_to_operational_orders(monkeypatch):
+    called = False
+
+    async def fake_legacy(modules, **kwargs):
+        nonlocal called
+        called = True
+        return {"ok": True}
+
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        date_from="2026-09-24",
+        date_to="2026-09-24",
+        question="Сколько всего оформленных заказов сегодня, включая неоплаченные?",
+    ))
+
+    assert result["ok"] is False
+    assert called is False
+    assert result["semantic_resolution"]["concept_id"] == "all_orders_placed"
+    assert result["semantic_resolution"]["normalized_query"]["complete_order_flow"] is True
+
+
 def test_complete_order_flow_is_not_silently_converted_to_operational_orders(monkeypatch):
     captured = {}
 
