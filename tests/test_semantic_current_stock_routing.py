@@ -4,6 +4,7 @@ import asyncio
 from datetime import date, timedelta
 
 import core.semantic_business_router as router
+import core.semantic_current_stock as stock
 from core.semantic_current_stock import execute_current_stock_question
 from core.semantic_resolver import resolve_semantic_question
 
@@ -89,3 +90,71 @@ def test_historical_stock_request_fails_before_any_provider_access():
     assert result["details"]["metric"] == "CURRENT_STOCK"
     assert result["details"]["required_source_id"] == "wb_historical_stock"
     assert result["details"]["rejected_substitute"] == "wb_current_stocks"
+
+
+def test_current_wb_stock_exposes_cabinet_label_and_transit_separately(monkeypatch):
+    async def fake_fetch_current_rows(wb, *, seller, nm_ids):
+        assert seller == "wb_laser_master"
+        assert nm_ids == [218395039]
+        return seller, {
+            "ok": True,
+            "source": "wb_analytics_stocks_wb_warehouses",
+            "items": [
+                {
+                    "nmId": 218395039,
+                    "warehouseName": "Коледино",
+                    "quantity": 3,
+                    "inWayToClient": 8,
+                    "inWayFromClient": 6,
+                }
+            ],
+        }
+
+    monkeypatch.setattr(stock, "_fetch_current_rows", fake_fetch_current_rows)
+
+    result = asyncio.run(execute_current_stock_question(
+        object(),
+        seller="wb_laser_master",
+        date_from="",
+        date_to="",
+        grouping="WAREHOUSE",
+        nm_ids=[218395039],
+    ))
+
+    assert result["ok"] is True
+    assert result["cabinet_label_ru"] == "Остатки «Склад WB»"
+    assert result["stock_units"] == 3
+    assert result["by_warehouse"] == [{"warehouse": "Коледино", "stock_units": 3}]
+    assert result["in_transit_units"] == 14
+    assert result["in_transit"] == {
+        "label_ru": "Товары в пути",
+        "units": 14,
+        "to_client": {"label_ru": "Едут к покупателю", "units": 8},
+        "from_client": {"label_ru": "Возвращаются на склад", "units": 6},
+    }
+
+
+def test_current_wb_stock_does_not_invent_transit_when_source_has_no_fields(monkeypatch):
+    async def fake_fetch_current_rows(wb, *, seller, nm_ids):
+        return seller, {
+            "ok": True,
+            "source": "wb_analytics_warehouse_remains_report",
+            "items": [
+                {"nmId": 218395039, "warehouseName": "Коледино", "quantity": 3}
+            ],
+        }
+
+    monkeypatch.setattr(stock, "_fetch_current_rows", fake_fetch_current_rows)
+
+    result = asyncio.run(execute_current_stock_question(
+        object(),
+        seller="wb_laser_master",
+        date_from="",
+        date_to="",
+        nm_ids=[218395039],
+    ))
+
+    assert result["ok"] is True
+    assert result["stock_units"] == 3
+    assert result["transit_data_available"] is False
+    assert "in_transit_units" not in result

@@ -657,6 +657,20 @@ async def wb_get_prices(
                 "currency": currency,
                 "money_unit": "major_currency_unit",
                 "divide_by_100": False,
+                "cabinet_prices": {
+                    "seller_price_before_discount": {
+                        "label_ru": "Цена продавца до скидки",
+                        "amount": size.get("price"),
+                    },
+                    "seller_price_after_discount": {
+                        "label_ru": "Цена со скидкой продавца",
+                        "amount": size.get("discountedPrice"),
+                    },
+                    "wb_club_price_after_discount": {
+                        "label_ru": "Цена для WB Клуба",
+                        "amount": size.get("clubDiscountedPrice"),
+                    },
+                },
             }
             if currency == "RUB":
                 row["price_rub"] = size.get("price")
@@ -668,7 +682,9 @@ async def wb_get_prices(
             "vendor_code": item.get("vendorCode"),
             "currency": currency,
             "discount_percent": item.get("discount"),
+            "discount_percent_label_ru": "Скидка продавца",
             "club_discount_percent": item.get("clubDiscount"),
+            "club_discount_percent_label_ru": "Скидка WB Клуба",
             "sizes": sizes,
         })
 
@@ -678,6 +694,25 @@ async def wb_get_prices(
         "source": "wb_prices_list",
         "cabinet": cabinet or None,
         "metric_id": "CURRENT_SELLING_PRICE",
+        "cabinet_surface_ru": "Товары и цены → Цены и скидки",
+        "price_scope": {
+            "standard_current_price_fields_complete": True,
+            "included_provider_fields": [
+                "price",
+                "discountedPrice",
+                "clubDiscountedPrice",
+                "discount",
+                "clubDiscount",
+            ],
+            "minimum_auto_promo_price": {
+                "status": "NOT_IN_APPROVED_CURRENT_PRICE_API",
+                "label_ru": "Минимальная цена для автоакций",
+            },
+            "promotion_entry_price": {
+                "status": "SEPARATE_PROMOTION_CONTEXT",
+                "label_ru": "Цена для участия в акции",
+            },
+        },
         "money_contract": {
             "provider_currency_field": "currencyIsoCode4217",
             "provider_values_are_major_currency_units": True,
@@ -978,6 +1013,8 @@ async def _wb_fbs_stock_result(
         "cabinet": resolved_cabinet,
         "metric_id": "CURRENT_FBS_STOCK",
         "data_class": "CURRENT_SELLER_WAREHOUSE_STOCK",
+        "cabinet_label_ru": "Остатки «Свой склад»",
+        "cabinet_surface_ru": "Товары и цены → карточка товара → Остатки",
         "nm_id": int(nm_id),
         "available_units": total,
         "sizes": sizes,
@@ -987,7 +1024,9 @@ async def _wb_fbs_stock_result(
         "warehouse_source": "wb_fbs_warehouses",
         "meaning": (
             "Current stock on seller-owned WB warehouses. "
-            "This is distinct from stock physically stored on Wildberries warehouses."
+            "In the seller cabinet product panel this business bucket is «Остатки “Свой склад”». "
+            "Individual warehouse names such as «АНТ ГК» are breakdown values inside this bucket, "
+            "not the business-metric name itself. This is distinct from «Остатки “Склад WB”»."
         ),
     }
 

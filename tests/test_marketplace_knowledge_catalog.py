@@ -86,24 +86,34 @@ def test_wb_stock_cabinet_bindings_are_verified_and_keep_fbw_fbs_separate():
     )
 
     assert wb_stock["cabinet_binding"] == {
-        "surface_ru": "Отчёт по остаткам на складе",
-        "label_ru": "Всего находится на складах",
+        "surface_ru": "Товары и цены → карточка товара → Остатки",
+        "label_ru": "Остатки «Склад WB»",
         "scope_ru": (
-            "Только товары, физически находящиеся на складах Wildberries; "
-            "товары в пути учитываются отдельными показателями."
+            "Товары, физически находящиеся на складах Wildberries. "
+            "В карточке товара этот bucket показывается отдельно от "
+            "«Свой склад» и от «Товары в пути»."
         ),
         "equivalence_status": "verified",
         "source_refs": ["wb_warehouse_stock_report_help_20260518"],
+        "live_cabinet_observation": (
+            "2026-09-24: seller cabinet product panel uses exact label "
+            "«Остатки “Склад WB”»."
+        ),
     }
     assert fbs_stock["cabinet_binding"] == {
-        "surface_ru": "Поставки и заказы → Управление остатками",
-        "label_ru": "Количество товаров",
+        "surface_ru": "Товары и цены → карточка товара → Остатки",
+        "label_ru": "Остатки «Свой склад»",
         "scope_ru": (
-            "Текущий остаток на выбранном виртуальном складе продавца по модели FBS; "
-            "это не остаток на складах Wildberries."
+            "Суммарный текущий остаток на виртуальных складах продавца. "
+            "Названия конкретных складов, например «АНТ ГК», являются детализацией "
+            "внутри этого bucket, а не названием показателя."
         ),
         "equivalence_status": "verified",
         "source_refs": ["wb_fbs_stock_management_help_20260827"],
+        "live_cabinet_observation": (
+            "2026-09-24: seller cabinet product panel uses exact label "
+            "«Остатки “Свой склад”»."
+        ),
     }
     assert wb_stock["provider_binding"]["field_path"] == "quantity"
     assert fbs_stock["provider_binding"]["field_paths"] == ["chrtId", "amount"]

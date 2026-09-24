@@ -113,6 +113,297 @@ def _normalize_wb_price_result(
     return out
 
 
+def _extract_wb_nm_ids(question: str, nm_ids: Optional[list[int]]) -> list[int]:
+    ids = [int(value) for value in (nm_ids or [])]
+    if not ids:
+        ids = [
+            int(value)
+            for value in re.findall(r"(?<!\d)\d{6,}(?!\d)", str(question or ""))
+        ]
+    return list(dict.fromkeys(ids))
+
+
+def _wb_product_snapshot_parts(
+    question: str,
+    *,
+    nm_ids: Optional[list[int]],
+) -> list[str]:
+    """Recognize a product-specific generic price/stock request.
+
+    This deliberately does not intercept explicit FBW/FBS-only wording or
+    historical/sales questions. It exists so a plain request such as
+    "цены и остатки по артикулу 218395039" returns the complete current
+    seller-cabinet product panel instead of one arbitrarily selected stock bucket.
+    """
+    ids = _extract_wb_nm_ids(question, nm_ids)
+    if len(ids) != 1:
+        return []
+
+    text = str(question or "").casefold().replace("ё", "е")
+    if any(term in text for term in ("продаж", "заказ", "возврат", "за период", "вчера", "позавчера")):
+        return []
+
+    stock_requested = "остат" in text
+    price_requested = bool(re.search(r"\bцен\w*|\bстоимост\w*", text))
+    if not stock_requested:
+        return []
+
+    explicit_stock_scope = (
+        any(term in text for term in (
+            "свой склад",
+            "склад продавца",
+            "fbs",
+            "fbw",
+        ))
+        or re.search(r"\bсклад\w*\s+(?:wb|wildberries)\b", text) is not None
+    )
+    if explicit_stock_scope:
+        return []
+
+    parts = ["stocks"]
+    if price_requested:
+        parts.insert(0, "prices")
+    return parts
+
+
+def _wb_product_snapshot_resolution(question: str, parts: list[str]) -> dict[str, Any]:
+    metric_ids: list[str] = []
+    source_ids: list[str] = []
+    if "prices" in parts:
+        metric_ids.extend([
+            "WB_SELLER_PRICE_BEFORE_DISCOUNT",
+            "WB_SELLER_PRICE_AFTER_DISCOUNT",
+            "WB_CLUB_PRICE_AFTER_DISCOUNT",
+        ])
+        source_ids.append("wb_current_prices")
+    if "stocks" in parts:
+        metric_ids.extend(["CURRENT_STOCK", "CURRENT_FBS_STOCK"])
+        source_ids.extend(["wb_current_stocks", "wb_fbs_stock"])
+    return {
+        "resolution_type": "BUSINESS_METRIC_SET",
+        "execution_allowed": True,
+        "status": "AVAILABLE",
+        "route_id": "wb_product_current_snapshot",
+        "metric_ids": metric_ids,
+        "source_ids": source_ids,
+        "normalized_query": {
+            "marketplace": "wb",
+            "temporal_class": "CURRENT_SNAPSHOT",
+            "period": None,
+            "metrics": metric_ids,
+            "parts": list(parts),
+        },
+        "guardrail": (
+            "Generic product stock means the seller-cabinet stock set: "
+            "«Остатки “Склад WB”», «Остатки “Свой склад”» and transit. "
+            "Transit is never added to physical stock. Generic product price means "
+            "all approved fields from the current Prices and Discounts endpoint."
+        ),
+        "question": question,
+    }
+
+
+def _wb_price_set_from_result(result: dict[str, Any], *, nm_id: int) -> dict[str, Any]:
+    products = [
+        item for item in (result.get("products") or [])
+        if isinstance(item, dict) and int(item.get("nm_id") or 0) == int(nm_id)
+    ]
+    if not products:
+        return {
+            "ok": False,
+            "error_type": "not_found",
+            "code": "PRODUCT_NOT_FOUND",
+            "message": f"WB price source returned no product {nm_id}.",
+        }
+
+    product = products[0]
+    sizes: list[dict[str, Any]] = []
+    for size in product.get("sizes") or []:
+        if not isinstance(size, dict):
+            continue
+        prices = []
+        for metric_id, value_key, label in (
+            ("WB_SELLER_PRICE_BEFORE_DISCOUNT", "price_amount", "Цена продавца до скидки"),
+            ("WB_SELLER_PRICE_AFTER_DISCOUNT", "discounted_price_amount", "Цена со скидкой продавца"),
+            ("WB_CLUB_PRICE_AFTER_DISCOUNT", "club_discounted_price_amount", "Цена для WB Клуба"),
+        ):
+            prices.append({
+                "metric_id": metric_id,
+                "label_ru": label,
+                "amount": size.get(value_key),
+                "currency": size.get("currency") or product.get("currency") or "RUB",
+                "available": size.get(value_key) is not None,
+            })
+        sizes.append({
+            "size_id": size.get("size_id"),
+            "tech_size": size.get("tech_size"),
+            "prices": prices,
+        })
+
+    return {
+        "ok": True,
+        "cabinet_surface_ru": "Товары и цены → Цены и скидки",
+        "discount_percent": product.get("discount_percent"),
+        "discount_percent_label_ru": "Скидка продавца",
+        "club_discount_percent": product.get("club_discount_percent"),
+        "club_discount_percent_label_ru": "Скидка WB Клуба",
+        "sizes": sizes,
+        "scope": deepcopy(result.get("price_scope") or {}),
+    }
+
+
+async def _execute_wb_product_current_snapshot(
+    modules: dict[str, Any],
+    *,
+    seller: str,
+    question: str,
+    nm_ids: Optional[list[int]],
+    parts: list[str],
+) -> dict[str, Any]:
+    wb = modules.get("wb")
+    if wb is None:
+        return make_error(
+            "source_not_suitable",
+            "Wildberries runtime module is required for the product current snapshot.",
+            operation_id="marketplace_business_query",
+            retryable=False,
+        )
+
+    ids = _extract_wb_nm_ids(question, nm_ids)
+    if len(ids) != 1:
+        return make_error(
+            "invalid_params",
+            "WB product current snapshot requires exactly one WB article.",
+            operation_id="marketplace_business_query",
+            retryable=False,
+            details={"nm_ids": ids},
+        )
+    nm_id = int(ids[0])
+
+    result: dict[str, Any] = {
+        "ok": True,
+        "complete": True,
+        "result_type": "WB_PRODUCT_CURRENT_SNAPSHOT",
+        "marketplace": "wb",
+        "seller": seller,
+        "nm_id": nm_id,
+        "requested_parts": list(parts),
+    }
+
+    if "prices" in parts:
+        payload = await wb.wb_get_prices(
+            limit=1000,
+            offset=0,
+            filter_nm_id=nm_id,
+            cabinet=seller,
+        )
+        try:
+            price_raw = json.loads(payload)
+        except (TypeError, json.JSONDecodeError):
+            return make_error(
+                "server_error",
+                "WB price executor returned a non-JSON result.",
+                operation_id="marketplace_business_query",
+                retryable=False,
+                details={"stage": "prices", "nm_id": nm_id},
+            )
+        if not isinstance(price_raw, dict) or price_raw.get("ok") is not True:
+            return {
+                "ok": False,
+                "complete": False,
+                "error_type": "provider_leg_failed",
+                "code": "PROVIDER_LEG_FAILED",
+                "stage": "prices",
+                "nm_id": nm_id,
+                "provider_error": price_raw,
+            }
+        normalized_price = _normalize_wb_price_result(
+            price_raw,
+            requested_metric_id="CURRENT_SELLING_PRICE",
+        )
+        price_set = _wb_price_set_from_result(normalized_price, nm_id=nm_id)
+        if price_set.get("ok") is not True:
+            return {**price_set, "complete": False, "stage": "prices"}
+        result["prices"] = price_set
+        result["price_metric_observations"] = normalized_price.get("metric_observations") or []
+
+    if "stocks" in parts:
+        try:
+            wb_stock = await execute_current_stock_question(
+                wb,
+                seller=seller,
+                date_from="",
+                date_to="",
+                grouping="WAREHOUSE",
+                nm_ids=[nm_id],
+            )
+        except SemanticCurrentStockExecutionError as exc:
+            return make_error(
+                "invalid_params",
+                str(exc),
+                operation_id="marketplace_business_query",
+                retryable=False,
+                details={"stage": "stock_wb", "nm_id": nm_id},
+            )
+        if wb_stock.get("ok") is not True:
+            return {
+                "ok": False,
+                "complete": False,
+                "error_type": "provider_leg_failed",
+                "code": "PROVIDER_LEG_FAILED",
+                "stage": "stock_wb",
+                "nm_id": nm_id,
+                "provider_error": wb_stock,
+            }
+
+        fbs_stock = await wb._wb_fbs_stock_result(
+            nm_id=nm_id,
+            cabinet=seller,
+        )
+        if not isinstance(fbs_stock, dict) or fbs_stock.get("ok") is not True:
+            return {
+                "ok": False,
+                "complete": False,
+                "error_type": "provider_leg_failed",
+                "code": "PROVIDER_LEG_FAILED",
+                "stage": "stock_own",
+                "nm_id": nm_id,
+                "provider_error": fbs_stock,
+            }
+
+        transit = wb_stock.get("in_transit")
+        if not isinstance(transit, dict):
+            transit = {
+                "label_ru": "Товары в пути",
+                "status": "UNAVAILABLE_FROM_CURRENT_SOURCE",
+            }
+
+        result["stocks"] = {
+            "warehouse_wb": {
+                "label_ru": "Остатки «Склад WB»",
+                "units": wb_stock.get("stock_units"),
+                "by_warehouse": deepcopy(wb_stock.get("by_warehouse") or []),
+                "source": wb_stock.get("source"),
+            },
+            "own_warehouse": {
+                "label_ru": "Остатки «Свой склад»",
+                "units": fbs_stock.get("available_units"),
+                "warehouses": deepcopy(fbs_stock.get("warehouses") or []),
+                "source": fbs_stock.get("source"),
+            },
+            "in_transit": deepcopy(transit),
+        }
+        result["as_of_date"] = wb_stock.get("as_of_date")
+
+    result["price_scope_note"] = (
+        "Минимальная цена для автоакций не входит в одобренный текущий API «Получить товары с ценами». "
+        "«Цена для участия в акции» относится к отдельному контексту конкретной акции и не подмешивается "
+        "в текущий набор цен товара."
+    )
+    result["knowledge_catalog_version"] = "marketplace_knowledge_catalog.v1"
+    return result
+
+
 def _marketplace_from_request(marketplace: str, question: str) -> str:
     explicit = str(marketplace or "").strip().lower()
     if explicit in {"ozon", "озон"}:
@@ -230,6 +521,28 @@ async def execute_business_query(
         )
 
     if natural_question and marketplace_key in {"wb", "wildberries"}:
+        snapshot_parts = _wb_product_snapshot_parts(
+            natural_question,
+            nm_ids=nm_ids,
+        )
+        if snapshot_parts:
+            resolution = _wb_product_snapshot_resolution(
+                natural_question,
+                snapshot_parts,
+            )
+            result = await _execute_wb_product_current_snapshot(
+                modules,
+                seller=seller,
+                question=natural_question,
+                nm_ids=nm_ids,
+                parts=snapshot_parts,
+            )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
         resolution = _resolution_with_period(
             resolve_semantic_question(natural_question),
             date_from=date_from,
@@ -345,7 +658,7 @@ async def execute_business_query(
                     )
                 ids = list(nm_ids or [])
                 if not ids:
-                    ids = [int(value) for value in re.findall(r"(?<!\\d)\\d{6,}(?!\\d)", natural_question)]
+                    ids = [int(value) for value in re.findall(r"(?<!\d)\d{6,}(?!\d)", natural_question)]
                 ids = list(dict.fromkeys(ids))
                 if len(ids) > 1:
                     return make_error(
