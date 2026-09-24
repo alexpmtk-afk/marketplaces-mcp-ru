@@ -1,8 +1,14 @@
 import asyncio
+from datetime import date
 
+import core.archive_refresh_advertising as refresh_ads
 from core.archive_coverage import coverage_record, encode_registry, request_key
 from core.archive_refresh import REFRESH_CONTRACTS
-from core.archive_refresh_advertising import _filter_plan, request_fully_covered
+from core.archive_refresh_advertising import (
+    _filter_plan,
+    request_fully_covered,
+    request_requires_correction_refresh,
+)
 from core.wb_advertising_archive_queue import WBAdvertisingArchiveJobQueue
 
 
@@ -123,3 +129,64 @@ def test_archive_refresh_import_installs_coverage_aware_queue_handlers():
     assert REFRESH_CONTRACTS["advertising"].coverage_model == "bounded_request_coverage_registry"
     assert WBAdvertisingArchiveJobQueue._plan_step.__module__ == "core.archive_refresh_advertising"
     assert WBAdvertisingArchiveJobQueue._plan_clusters_step.__module__ == "core.archive_refresh_advertising"
+
+
+
+def test_recent_closed_request_is_forced_into_correction_refresh_window():
+    request = {
+        **FULLSTATS,
+        "date_from": "2026-09-17",
+        "date_to": "2026-09-23",
+    }
+    assert request_requires_correction_refresh(
+        request,
+        yesterday=date(2026, 9, 23),
+        window_days=7,
+    )
+
+
+def test_old_request_is_not_forced_into_correction_refresh_window():
+    assert not request_requires_correction_refresh(
+        FULLSTATS,
+        yesterday=date(2026, 9, 23),
+        window_days=7,
+    )
+
+
+def test_filter_plan_replays_recent_covered_window_for_late_provider_corrections(monkeypatch):
+    async def run() -> None:
+        request = {
+            **FULLSTATS,
+            "date_from": "2026-09-17",
+            "date_to": "2026-09-23",
+        }
+        records = [
+            coverage_record(
+                marketplace="wb",
+                cabinet="wb_laser_master",
+                dataset=dataset,
+                operation_id=request["operation_id"],
+                date_from=request["date_from"],
+                date_to=request["date_to"],
+                scope=request["scope"],
+                annual_file=f"{dataset}.csv",
+                rows=100,
+                bytes_count=1000,
+                sha256="a" * 64,
+            )
+            for dataset in request["datasets"]
+        ]
+        queue = object.__new__(WBAdvertisingArchiveJobQueue)
+        queue.store = _CoverageStore(encode_registry(records))
+        monkeypatch.setattr(refresh_ads, "_moscow_yesterday", lambda: date(2026, 9, 23))
+
+        pending, skipped = await _filter_plan(
+            queue,
+            cabinet="wb_laser_master",
+            plan=[request],
+        )
+
+        assert skipped == 0
+        assert pending == [request]
+
+    asyncio.run(run())
