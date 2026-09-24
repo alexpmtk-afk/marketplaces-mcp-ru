@@ -193,6 +193,25 @@ def test_composite_wb_finance_binding_resolves_each_canonical_field():
         assert returns["semantic_status"] == "verified"
 
 
+def test_wb_sales_and_returns_cabinet_bindings_are_partial_not_equal():
+    sales = get_knowledge_metric("SALES", marketplace="wb", source_field="retailAmount")
+    returns = get_knowledge_metric("RETURNS", marketplace="wb", source_field="retailAmount")
+
+    assert sales is not None
+    assert returns is not None
+    assert sales["cabinet_binding"]["surface_ru"] == "Аналитика продавца → Лента заказов"
+    assert sales["cabinet_binding"]["label_ru"] == "Выкупы"
+    assert sales["cabinet_binding"]["equivalence_status"] == "partial"
+    assert "docTypeName=Продажа" in sales["cabinet_binding"]["scope_ru"]
+    assert "Не приравнивать" in sales["guardrail"]
+
+    assert returns["cabinet_binding"]["surface_ru"] == "Аналитика продавца → Лента заказов"
+    assert returns["cabinet_binding"]["label_ru"] == "Возвраты"
+    assert returns["cabinet_binding"]["equivalence_status"] == "partial"
+    assert "docTypeName=Возврат" in returns["cabinet_binding"]["scope_ru"]
+    assert "Не приравнивать" in returns["guardrail"]
+
+
 def test_composite_binding_detects_one_missing_registry_field():
     catalog = load_marketplace_knowledge_catalog()
     registry = deepcopy(load_metric_registry())

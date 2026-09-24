@@ -211,9 +211,16 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [docTypeName, saleDt, quantity, retailAmount]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Аналитика продавца → Лента заказов"
+      label_ru: "Выкупы"
+      scope_ru: "Ближайший кабинетный аналог, но не эквивалентный источник: «Выкупы» в «Ленте заказов» — статус заказов в кабинете, а SALES здесь — финансовые строки docTypeName=Продажа из еженедельного отчёта реализации с собственной датой операции saleDt."
+      equivalence_status: partial
+      source_refs: [wb_order_feed_help_20260731, wb_finance_reports_api_20260923]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_order_feed_help_20260731]
+    source_checked_at: "2026-09-24"
     formula_rule: "Продажа определяется значением docTypeName=Продажа; quantity и retailAmount не смешиваются с возвратами до отдельного расчёта bucket."
+    guardrail: "Не приравнивать финансовые строки «Продажа» к счётчику «Выкупы» в кабинете без отдельного правила периода и охвата."
 
   WB_RETURNS:
     metric_id: RETURNS
@@ -229,9 +236,16 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [docTypeName, saleDt, quantity, retailAmount]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Аналитика продавца → Лента заказов"
+      label_ru: "Возвраты"
+      scope_ru: "Ближайший кабинетный аналог, но не эквивалентный источник: вкладка «Возвраты» показывает текущие статусы заказов в кабинете, а RETURNS здесь — финансовые строки docTypeName=Возврат из еженедельного отчёта реализации с собственной датой операции saleDt."
+      equivalence_status: partial
+      source_refs: [wb_order_feed_help_20260731, wb_finance_reports_api_20260923]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_order_feed_help_20260731]
+    source_checked_at: "2026-09-24"
     formula_rule: "Возврат определяется значением docTypeName=Возврат; нельзя классифицировать возврат только по знаку retailAmount."
+    guardrail: "Не приравнивать финансовые строки «Возврат» к счётчику «Возвраты» в кабинете без отдельного правила периода и охвата."
 
   WB_LOGISTICS_COST:
     metric_id: LOGISTICS_COST
