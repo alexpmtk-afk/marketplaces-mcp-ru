@@ -277,3 +277,29 @@ def test_explicit_wb_warehouse_stock_wording_keeps_single_bucket_route(monkeypat
     assert result["metric"] == "CURRENT_STOCK"
     assert result.get("result_type") != "WB_PRODUCT_CURRENT_SNAPSHOT"
     assert called["nm_ids"] == [218395039]
+
+
+def test_complete_order_flow_never_falls_back_to_operational_orders(monkeypatch):
+    called = {"legacy": False}
+
+    async def fake_legacy(*args, **kwargs):
+        called["legacy"] = True
+        return {"ok": True, "metric": "ORDERS"}
+
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        question="Сколько всего оформленных заказов сегодня, включая неоплаченные?",
+    ))
+
+    assert result["ok"] is False
+    assert result["error_type"] == "source_not_suitable"
+    semantic = result["details"]["semantic_resolution"]
+    assert semantic["resolution_type"] == "NOT_COVERED"
+    assert semantic["concept_id"] == "all_orders_placed"
+    assert semantic["required_source_id"] == "wb_order_feed"
+    assert semantic["normalized_query"]["complete_order_flow"] is True
+    assert called["legacy"] is False
