@@ -44,6 +44,9 @@ class _Queue(WBAdvertisingArchiveJobQueue):
     def _resolve_creds(self, cabinet):
         return {"token": "test"}
 
+    def _resolve_content_creds(self, cabinet):
+        return {"token": "test-content"}
+
     async def _schedule(self, job_id, delay_seconds=0.0):
         self.scheduled.append((job_id, float(delay_seconds)))
 
@@ -222,6 +225,40 @@ def test_identity_plan_is_built_from_unique_fullstats_nm_ids():
     assert [item["scope"]["nm_id"] for item in state["identity_plan"]] == [404071811, 615105045]
     assert all(item["operation_id"] == "wb_content_cards_list" for item in state["identity_plan"])
     assert state["identity_plan"][0]["json_body"]["settings"]["filter"]["textSearch"] == "404071811"
+
+
+def test_missing_current_content_card_is_staged_as_unresolved_not_failed():
+    store = _MemoryStore()
+    queue = _Queue(store, {
+        "wb_content_cards_list": {
+            "ok": True,
+            "data": {"cards": []},
+        }
+    })
+    request = {
+        "kind": "product_identity",
+        "operation_id": "wb_content_cards_list",
+        "datasets": ["ads_product_identity_snapshots"],
+        "date_from": "2026-01-01",
+        "date_to": "2026-09-23",
+        "scope": {"nm_id": 999999999},
+        "json_body": {
+            "settings": {
+                "sort": {"ascending": False},
+                "filter": {"textSearch": "999999999", "withPhoto": -1},
+                "cursor": {"limit": 100},
+            }
+        },
+    }
+    state = _state(phase="FETCH_IDENTITIES", identity_plan=[request], identity_index=0)
+    result = asyncio.run(queue._fetch_identity_step(state))
+    assert result["action"] == "product_identity_staged"
+    assert state["status"] == "QUEUED"
+    rows = asyncio.run(queue._read_stage_rows(state["job_id"], "ads_product_identity_snapshots"))
+    assert len(rows) == 1
+    assert rows[0]["nm_id"] == "999999999"
+    assert rows[0]["imt_id"] == ""
+    assert rows[0]["resolution_status"] == "not_found_current"
 
 
 def test_product_attribution_enrichment_matches_xls_evidence_classes():
