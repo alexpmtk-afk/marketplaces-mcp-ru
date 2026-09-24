@@ -148,6 +148,7 @@ def test_product_identity_snapshot_preserves_multicard_id():
     assert rows[0]["nm_id"] == 615105045
     assert rows[0]["imt_id"] == 631725304
     assert rows[0]["subject_id"] == 2532
+    assert rows[0]["resolution_status"] == "resolved_current"
     assert rows[0]["observed_at"] == "2026-09-24T10:28:38Z"
 
 
@@ -236,3 +237,14 @@ def test_search_cluster_cpc_keeps_unavailable_metrics_null_not_zero():
     assert row["cpm"] is None
     assert row["cpc"] == 2.525
     assert row["quality_flags"] == ["cpc_views_ctr_cpm_not_available"]
+
+
+def test_unresolved_identity_never_becomes_associated_by_guess():
+    enriched = enrich_product_attribution(
+        [{"campaign_id": 1, "nm_id": 222}],
+        advertised_nm_ids_by_campaign={1: {111}},
+        imt_id_by_nm={111: 1000, 222: None},
+        observed_at="2026-09-24T10:28:38Z",
+    )
+    assert enriched[0]["conversion_type_current"] == "unknown"
+    assert enriched[0]["multicard_id_current"] is None
