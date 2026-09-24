@@ -148,16 +148,15 @@ def _wb_product_snapshot_parts(
     if not stock_requested:
         return []
 
-    explicit_stock_scope = any(term in text for term in (
-        "свой склад",
-        "склад продавца",
-        "fbs",
-        "склад wb",
-        "складах wb",
-        "склад wildberries",
-        "складах wildberries",
-        "fbw",
-    ))
+    explicit_stock_scope = (
+        any(term in text for term in (
+            "свой склад",
+            "склад продавца",
+            "fbs",
+            "fbw",
+        ))
+        or re.search(r"\bсклад\w*\s+(?:wb|wildberries)\b", text) is not None
+    )
     if explicit_stock_scope:
         return []
 
