@@ -468,7 +468,11 @@ async def execute_business_query(
                     retryable=False,
                 )
             if isinstance(result, dict) and result.get("ok"):
+                result["metric"] = "ORDERS"
+                result["marketplace"] = "WB"
                 result["route"] = "operational_exact_day"
+                result["source_operation"] = "wb_stats_orders"
+                result["semantic_rule"] = "count rows where isCancel=false; sum finishedPrice"
                 result["complete"] = True
                 result["source_validation"] = "official_operational_preliminary"
                 result["business_completeness"] = "PRELIMINARY_NOT_ALL_ORDERS"
