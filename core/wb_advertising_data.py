@@ -191,6 +191,11 @@ ROUTING_RULES = {
         "the 2026-09-18..24 Evidence Gate matched core orders/cart/order-amount semantics, exposed current multicard conversion labels, "
         "and showed small timing drift in clicks/spend plus extra zero-rich keyword rows"
     ),
+    "recommendations_placement_gap": (
+        "seller extended XLS may expose a separate Recommendations sheet with placement-specific daily metrics; "
+        "no equivalent historical Promotion API source is accepted yet, so this slice remains supplemental XLS evidence "
+        "and must not be synthesized from product Content API recommendations"
+    ),
 }
 
 QUALITY_GATES = {
