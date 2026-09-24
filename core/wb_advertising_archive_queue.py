@@ -674,11 +674,12 @@ class WBAdvertisingArchiveJobQueue:
             str(state["job_id"]), "ads_product_identity_snapshots", rows
         )
         state["staged_datasets"]["ads_product_identity_snapshots"] = stats
+        observation_date = observed_at[:10]
         state["completed_requests"].append({
             "operation_id": request["operation_id"],
             "datasets": ["ads_product_identity_snapshots"],
-            "date_from": request["date_from"],
-            "date_to": request["date_to"],
+            "date_from": observation_date,
+            "date_to": observation_date,
             "scope": request.get("scope") or {},
             "observed_at": observed_at,
         })
