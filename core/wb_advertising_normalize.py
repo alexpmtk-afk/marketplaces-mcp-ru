@@ -91,6 +91,126 @@ def plan_period_requests(operation_id: str, date_from: str, date_to: str) -> lis
     ]
 
 
+def _accepted_orders(created_orders: Any, canceled: Any) -> int:
+    """Derived accepted orders used only as an explicit reconciliation helper.
+
+    WB fullstats exposes created advertising-attributed orders and technical
+    cancellations separately. The seller XLS Evidence Gate matched
+    max(orders - canceled, 0) to its "Принятые заказы" column. Keep the field
+    explicitly derived so it is never confused with an independent provider
+    measure.
+    """
+    return max(0, _int(created_orders) - _int(canceled))
+
+
+def campaign_product_ids(payload: Any) -> dict[int, set[int]]:
+    """Extract the current campaign -> product membership from /api/advert/v2/adverts."""
+    if isinstance(payload, list):
+        campaigns = payload
+    elif isinstance(payload, dict):
+        campaigns = payload.get("adverts") or payload.get("data") or []
+        if isinstance(campaigns, dict):
+            campaigns = campaigns.get("adverts") or []
+    else:
+        campaigns = []
+    output: dict[int, set[int]] = {}
+    for campaign in campaigns:
+        if not isinstance(campaign, dict):
+            continue
+        campaign_id = _int(campaign.get("id") or campaign.get("advertId"))
+        if campaign_id <= 0:
+            continue
+        ids: set[int] = set()
+        for item in campaign.get("nm_settings") or campaign.get("nmSettings") or []:
+            if isinstance(item, dict):
+                nm_id = _int(item.get("nm_id") or item.get("nmId"))
+                if nm_id > 0:
+                    ids.add(nm_id)
+        for value in campaign.get("nms") or []:
+            nm_id = _int(value.get("nm_id") or value.get("nmId")) if isinstance(value, dict) else _int(value)
+            if nm_id > 0:
+                ids.add(nm_id)
+        output[campaign_id] = ids
+    return output
+
+
+def normalize_product_identity_snapshot(payload: Any, *, observed_at: str) -> list[dict[str, Any]]:
+    """Normalize Content API card identity needed for multicard attribution."""
+    observed_at = str(observed_at).strip()
+    if not observed_at:
+        raise ValueError("observed_at is required")
+    root = payload if isinstance(payload, dict) else {}
+    rows = root.get("cards") or []
+    output: list[dict[str, Any]] = []
+    for raw in rows:
+        if not isinstance(raw, dict):
+            continue
+        nm_id = _int(raw.get("nmID") or raw.get("nmId"))
+        if nm_id <= 0:
+            continue
+        output.append({
+            "observed_at": observed_at,
+            "nm_id": nm_id,
+            "imt_id": _int(raw.get("imtID") or raw.get("imtId")) or None,
+            "title": raw.get("title"),
+            "vendor_code": raw.get("vendorCode"),
+            "subject_id": _int(raw.get("subjectID") or raw.get("subjectId")) or None,
+            "raw_json": __import__("json").dumps(raw, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        })
+    output.sort(key=lambda row: int(row["nm_id"]))
+    return output
+
+
+def enrich_product_attribution(
+    rows: Iterable[Mapping[str, Any]],
+    *,
+    advertised_nm_ids_by_campaign: Mapping[int, Iterable[int]],
+    imt_id_by_nm: Mapping[int, int | None],
+    observed_at: str,
+) -> list[dict[str, Any]]:
+    """Add current-snapshot conversion classification without rewriting event time.
+
+    direct      = nm_id is currently configured in the campaign
+    multicard   = another nm_id sharing the current imtID with a configured item
+    associated  = another seller item outside the current multicard
+
+    The classification is intentionally suffixed/current-scoped because product
+    grouping and campaign membership can change after the historical event.
+    """
+    observed_at = str(observed_at).strip()
+    if not observed_at:
+        raise ValueError("observed_at is required")
+    advertised = {
+        int(campaign_id): {int(nm) for nm in values if int(nm) > 0}
+        for campaign_id, values in advertised_nm_ids_by_campaign.items()
+    }
+    identities = {int(nm): (int(imt) if imt not in (None, "", 0, "0") else None) for nm, imt in imt_id_by_nm.items()}
+    output: list[dict[str, Any]] = []
+    for source in rows:
+        row = dict(source)
+        campaign_id = _int(row.get("campaign_id"))
+        nm_id = _int(row.get("nm_id"))
+        campaign_nms = advertised.get(campaign_id, set())
+        advertised_imts = {identities.get(nm) for nm in campaign_nms if identities.get(nm)}
+        imt_id = identities.get(nm_id)
+        if nm_id in campaign_nms:
+            conversion_type = "direct"
+        elif imt_id and imt_id in advertised_imts:
+            conversion_type = "multicard"
+        elif nm_id > 0:
+            conversion_type = "associated"
+        else:
+            conversion_type = "unknown"
+        row.update({
+            "multicard_id_current": imt_id,
+            "conversion_type_current": conversion_type,
+            "conversion_type_observed_at": observed_at,
+            "conversion_type_quality_flags": ["current_snapshot_not_event_time"],
+        })
+        output.append(row)
+    return output
+
+
 def normalize_fullstats(payload: Any) -> dict[str, list[dict[str, Any]]]:
     """Normalize WB fullstats into campaign/day and product/day/app grains.
 
@@ -107,19 +227,35 @@ def normalize_fullstats(payload: Any) -> dict[str, list[dict[str, Any]]]:
         campaign_id = _int(campaign.get("advertId"))
         if campaign_id <= 0:
             continue
+        positions: dict[tuple[str, int], float | None] = {}
+        for booster in campaign.get("boosterStats") or []:
+            if not isinstance(booster, dict):
+                continue
+            nm_id = _int(booster.get("nm"))
+            if nm_id <= 0:
+                continue
+            try:
+                key_date = _date(booster.get("date"))
+            except ValueError:
+                continue
+            positions[(key_date, nm_id)] = _nullable_number(booster.get("avg_position"))
+
         for day in campaign.get("days") or []:
             if not isinstance(day, dict):
                 continue
             day_value = _date(day.get("date"))
+            created_orders = _int(day.get("orders"))
+            canceled = _int(day.get("canceled"))
             campaign_daily.append({
                 "date": day_value,
                 "campaign_id": campaign_id,
                 "views": _int(day.get("views")),
                 "clicks": _int(day.get("clicks")),
                 "cart_adds": _int(day.get("atbs")),
-                "ad_orders": _int(day.get("orders")),
+                "ad_orders": created_orders,
+                "accepted_orders_derived": _accepted_orders(created_orders, canceled),
                 "advertised_items": _int(day.get("shks")),
-                "canceled": _int(day.get("canceled")),
+                "canceled": canceled,
                 "spend": _money(day.get("sum")),
                 "attributed_order_amount": _money(day.get("sum_price")),
             })
@@ -133,6 +269,8 @@ def normalize_fullstats(payload: Any) -> dict[str, list[dict[str, Any]]]:
                     nm_id = _int(nm.get("nmId"))
                     if nm_id <= 0:
                         continue
+                    created_nm_orders = _int(nm.get("orders"))
+                    canceled_nm = _int(nm.get("canceled"))
                     product_daily.append({
                         "date": day_value,
                         "campaign_id": campaign_id,
@@ -142,14 +280,15 @@ def normalize_fullstats(payload: Any) -> dict[str, list[dict[str, Any]]]:
                         "views": _int(nm.get("views")),
                         "clicks": _int(nm.get("clicks")),
                         "cart_adds": _int(nm.get("atbs")),
-                        "ad_orders": _int(nm.get("orders")),
+                        "ad_orders": created_nm_orders,
+                        "accepted_orders_derived": _accepted_orders(created_nm_orders, canceled_nm),
                         "advertised_items": _int(nm.get("shks")),
-                        "canceled": _int(nm.get("canceled")),
+                        "canceled": canceled_nm,
                         "spend": _money(nm.get("sum")),
                         "attributed_order_amount": _money(nm.get("sum_price")),
+                        "avg_position": positions.get((day_value, nm_id)),
                     })
     return {"ads_campaign_daily": campaign_daily, "ads_product_daily": product_daily}
-
 
 def normalize_search_cluster_daily(
     payload: Any,
