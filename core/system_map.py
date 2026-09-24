@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-24.v23"
+ARCHITECTURE_VERSION = "2026-09-24.v24"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -81,7 +81,10 @@ SYSTEM_MAP: dict[str, Any] = {
         "canonical_source_of_truth": "Google Drive annual CSV plus dataset-specific coverage registries",
         "registry": "reports_registry.csv for WB finance; dataset_coverage_registry.csv for generic datasets such as advertising",
         "google_drive_path": "Мой диск/Marketplaces/MCP архив базы данных",
-        "default_update_scope": "all configured marketplace cabinets",
+        "default_update_scope": (
+            "none for mutating refreshes; marketplace, seller scope and dataset family must be explicit. "
+            "The value all is honored only when the caller explicitly requests it."
+        ),
         "refresh_coordinator": "core/archive_refresh.py; preferred MCP entry is marketplace_database_update",
         "refresh_lifecycle": "REQUEST -> DISCOVER -> COMPARE COVERAGE -> FETCH/RECONCILE -> NORMALIZE -> MERGE -> VERIFY -> PUBLISH -> COMMIT COVERAGE -> COMPLETE -> POST-CHECK",
         "update_behavior": "every refresh re-runs dataset-specific provider discovery/coverage reconciliation; fetch only missing or correction-eligible provider units; merge by stable key; publish verified canonical data; commit coverage only after publication",
@@ -146,6 +149,15 @@ SYSTEM_MAP: dict[str, Any] = {
         "profitability_boundary": "advertising attribution metrics are not actual business profit; real profitability requires approved joins to sales/buyouts, returns, finance and unit economics",
         "archive_domain": "База данных/WB/<cabinet>/<year>/advertising",
         "archive_status": "Advertising Archive V1 canonical annual datasets and dataset_coverage_registry.csv are implemented; campaign-level closed-period Semantic Core execution is coverage-gated",
+        "refresh_scope_gate": (
+            "marketplace_database_update must not infer marketplace, seller or dataset family; "
+            "marketplace_database_update_plan is the read-only preflight and ambiguous requests return clarification_required without queueing jobs"
+        ),
+        "refresh_policy": (
+            "every advertising refresh re-discovers the campaign roster, refreshes current campaign/product identity snapshots, "
+            "extends closed history only through yesterday Europe/Moscow, skips stable old COMPLETE coverage, and deliberately re-fetches "
+            "the most recent 7 closed days so late provider corrections replace stale rows by stable-key upsert"
+        ),
         "archive_v1_datasets": [
             "ads_campaign_roster_snapshots",
             "ads_campaign_daily",
