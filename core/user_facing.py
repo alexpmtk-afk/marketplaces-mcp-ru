@@ -173,7 +173,119 @@ def _metric_observation_message(result: dict[str, Any]) -> tuple[str | None, str
     return "; ".join(parts) + ".", note
 
 
+def _wb_product_current_snapshot_message(
+    result: dict[str, Any],
+) -> tuple[str | None, str | None]:
+    if result.get("result_type") != "WB_PRODUCT_CURRENT_SNAPSHOT":
+        return None, None
+
+    parts: list[str] = []
+    prices = result.get("prices")
+    if isinstance(prices, dict):
+        sizes = prices.get("sizes")
+        if isinstance(sizes, list) and sizes:
+            price_parts: list[str] = []
+            multi_size = len(sizes) > 1
+            for size in sizes:
+                if not isinstance(size, dict):
+                    continue
+                prefix = ""
+                if multi_size:
+                    shown_size = size.get("tech_size") or size.get("size_id")
+                    prefix = f"размер {shown_size}: " if shown_size not in (None, "") else ""
+                for item in size.get("prices") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    label = str(item.get("label_ru") or "Цена")
+                    if item.get("available") is not True:
+                        price_parts.append(f"{prefix}{label}: нет значения")
+                        continue
+                    currency = _currency_label(item.get("currency"))
+                    price_parts.append(
+                        f"{prefix}{label}: {_format_number(item.get('amount'))} {currency}".rstrip()
+                    )
+            if prices.get("discount_percent") is not None:
+                price_parts.append(
+                    f"Скидка продавца: {_format_number(prices.get('discount_percent'))}%"
+                )
+            if prices.get("club_discount_percent") is not None:
+                price_parts.append(
+                    f"Скидка WB Клуба: {_format_number(prices.get('club_discount_percent'))}%"
+                )
+            if price_parts:
+                parts.append("Цены — " + "; ".join(price_parts) + ".")
+
+    stocks = result.get("stocks")
+    if isinstance(stocks, dict):
+        stock_parts: list[str] = []
+        warehouse_wb = stocks.get("warehouse_wb")
+        if isinstance(warehouse_wb, dict) and warehouse_wb.get("units") is not None:
+            stock_parts.append(
+                f"{warehouse_wb.get('label_ru') or 'Остатки «Склад WB»'}: "
+                f"{_format_number(warehouse_wb.get('units'))} шт."
+            )
+        own = stocks.get("own_warehouse")
+        if isinstance(own, dict) and own.get("units") is not None:
+            own_text = (
+                f"{own.get('label_ru') or 'Остатки «Свой склад»'}: "
+                f"{_format_number(own.get('units'))} шт."
+            )
+            warehouses = own.get("warehouses")
+            named = []
+            if isinstance(warehouses, list):
+                for row in warehouses:
+                    if not isinstance(row, dict):
+                        continue
+                    if row.get("warehouse_name") and row.get("available_units") is not None:
+                        named.append(
+                            f"{row.get('warehouse_name')} — "
+                            f"{_format_number(row.get('available_units'))} шт."
+                        )
+            if named:
+                own_text += " (" + "; ".join(named) + ")"
+            stock_parts.append(own_text)
+
+        transit = stocks.get("in_transit")
+        if isinstance(transit, dict):
+            if transit.get("units") is not None:
+                transit_text = (
+                    f"{transit.get('label_ru') or 'Товары в пути'}: "
+                    f"{_format_number(transit.get('units'))} шт."
+                )
+                to_client = transit.get("to_client")
+                from_client = transit.get("from_client")
+                breakdown = []
+                if isinstance(to_client, dict) and to_client.get("units") is not None:
+                    breakdown.append(
+                        f"{to_client.get('label_ru') or 'Едут к покупателю'} — "
+                        f"{_format_number(to_client.get('units'))}"
+                    )
+                if isinstance(from_client, dict) and from_client.get("units") is not None:
+                    breakdown.append(
+                        f"{from_client.get('label_ru') or 'Возвращаются на склад'} — "
+                        f"{_format_number(from_client.get('units'))}"
+                    )
+                if breakdown:
+                    transit_text += " (" + "; ".join(breakdown) + ")"
+                stock_parts.append(transit_text)
+            elif transit.get("status"):
+                stock_parts.append("Товары в пути: источник не вернул отдельные данные.")
+
+        if stock_parts:
+            parts.append("Остатки — " + " ".join(stock_parts))
+
+    if not parts:
+        return None, None
+
+    note = str(result.get("price_scope_note") or "").strip() or None
+    return " ".join(parts), note
+
+
 def _success_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
+    snapshot_message, snapshot_note = _wb_product_current_snapshot_message(result)
+    if snapshot_message:
+        return snapshot_message, snapshot_note
+
     observation_message, observation_note = _metric_observation_message(result)
     if observation_message:
         return observation_message, observation_note
@@ -203,7 +315,8 @@ def _success_message(result: dict[str, Any]) -> tuple[str | None, str | None]:
 
     if result.get("metric") == "CURRENT_STOCK" and result.get("stock_units") is not None:
         grouping = str(result.get("grouping") or "TOTAL").upper()
-        message = f"Остаток: {_format_number(result.get('stock_units'))} шт."
+        label = str(result.get("cabinet_label_ru") or "Остатки «Склад WB»")
+        message = f"{label}: {_format_number(result.get('stock_units'))} шт."
         if grouping == "PRODUCT" and isinstance(result.get("by_product"), list):
             message += f" Товаров в разбивке: {len(result['by_product'])}."
         elif grouping == "WAREHOUSE" and isinstance(result.get("by_warehouse"), list):
