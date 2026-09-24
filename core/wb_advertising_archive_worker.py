@@ -64,7 +64,8 @@ DATASET_FIELDS: dict[str, tuple[str, ...]] = {
         "updated_at", "deleted_at", "nm_settings_json", "type", "raw_json",
     ),
     "ads_product_identity_snapshots": (
-        "observed_at", "nm_id", "imt_id", "title", "vendor_code", "subject_id", "raw_json",
+        "observed_at", "nm_id", "imt_id", "title", "vendor_code", "subject_id",
+        "resolution_status", "raw_json",
     ),
 }
 
