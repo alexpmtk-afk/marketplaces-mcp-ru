@@ -33,6 +33,22 @@ sources:
     source_version: "current-warehouse-inventory-checked-2026-09-23"
     checked_at: "2026-09-23"
 
+  wb_warehouse_stock_report_help_20260518:
+    marketplace: wb
+    title: "Wildberries Seller Help — Отчёт по остаткам на складе"
+    url: "https://seller.wildberries.ru/instructions/en/kz/material/warehouse-stocks-report"
+    official: true
+    source_version: "updated-2026-05-18"
+    checked_at: "2026-09-24"
+
+  wb_fbs_stock_management_help_20260827:
+    marketplace: wb
+    title: "Wildberries Seller Help — Управление остатками по модели FBS"
+    url: "https://seller.wildberries.ru/instructions/ru/uz/material/stocks-management"
+    official: true
+    source_version: "updated-2026-08-27"
+    checked_at: "2026-09-24"
+
   wb_warehouse_remains_release_20250313:
     marketplace: wb
     title: "Wildberries API — изменение отчёта об остатках на складах WB"
@@ -152,8 +168,14 @@ metrics:
     provider_binding:
       source_id: wb_current_stocks
       field_path: quantity
-    source_refs: [wb_current_stock_api_20260923, wb_warehouse_remains_release_20250313]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Отчёт по остаткам на складе"
+      label_ru: "Всего находится на складах"
+      scope_ru: "Только товары, физически находящиеся на складах Wildberries; товары в пути учитываются отдельными показателями."
+      equivalence_status: verified
+      source_refs: [wb_warehouse_stock_report_help_20260518]
+    source_refs: [wb_current_stock_api_20260923, wb_warehouse_remains_release_20250313, wb_warehouse_stock_report_help_20260518]
+    source_checked_at: "2026-09-24"
     temporal_rule: "Только текущий день; исторический остаток должен использовать отдельный исторический источник."
     live_evidence:
       checked_at: "2026-09-23"
@@ -360,10 +382,16 @@ metrics:
     provider_binding:
       source_id: wb_fbs_stock
       field_paths: [chrtId, amount]
+    cabinet_binding:
+      surface_ru: "Поставки и заказы → Управление остатками"
+      label_ru: "Количество товаров"
+      scope_ru: "Текущий остаток на выбранном виртуальном складе продавца по модели FBS; это не остаток на складах Wildberries."
+      equivalence_status: verified
+      source_refs: [wb_fbs_stock_management_help_20260827]
     provider_raw_fields: [chrtId, amount]
     provider_operation: wb_post_api_stocks_warehouseid
-    source_refs: [wb_seller_stocks_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_seller_stocks_api_20260923, wb_fbs_stock_management_help_20260827]
+    source_checked_at: "2026-09-24"
     temporal_rule: "Только текущий seller-warehouse snapshot; не использовать как исторический остаток или остаток на складах WB."
 
   WB_AD_VIEWS:
