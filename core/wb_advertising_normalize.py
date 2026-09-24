@@ -155,6 +155,7 @@ def normalize_product_identity_snapshot(payload: Any, *, observed_at: str) -> li
             "title": raw.get("title"),
             "vendor_code": raw.get("vendorCode"),
             "subject_id": _int(raw.get("subjectID") or raw.get("subjectId")) or None,
+            "resolution_status": "resolved_current",
             "raw_json": __import__("json").dumps(raw, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
         })
     output.sort(key=lambda row: int(row["nm_id"]))
@@ -195,7 +196,9 @@ def enrich_product_attribution(
         imt_id = identities.get(nm_id)
         if nm_id in campaign_nms:
             conversion_type = "direct"
-        elif imt_id and imt_id in advertised_imts:
+        elif not imt_id or not advertised_imts:
+            conversion_type = "unknown"
+        elif imt_id in advertised_imts:
             conversion_type = "multicard"
         elif nm_id > 0:
             conversion_type = "associated"
