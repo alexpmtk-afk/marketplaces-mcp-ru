@@ -35,12 +35,15 @@ DATASET_FIELDS: dict[str, tuple[str, ...]] = {
     ),
     "ads_campaign_daily": (
         "date", "campaign_id", "views", "clicks", "cart_adds", "ad_orders",
-        "advertised_items", "canceled", "spend", "attributed_order_amount",
+        "accepted_orders_derived", "advertised_items", "canceled", "spend",
+        "attributed_order_amount",
     ),
     "ads_product_daily": (
         "date", "campaign_id", "app_type", "nm_id", "name", "views", "clicks",
-        "cart_adds", "ad_orders", "advertised_items", "canceled", "spend",
-        "attributed_order_amount",
+        "cart_adds", "ad_orders", "accepted_orders_derived", "advertised_items",
+        "canceled", "spend", "attributed_order_amount", "avg_position",
+        "multicard_id_current", "conversion_type_current",
+        "conversion_type_observed_at", "conversion_type_quality_flags",
     ),
     "ads_search_cluster_daily": (
         "date", "campaign_id", "nm_id", "norm_query", "payment_type", "views", "clicks",
@@ -56,7 +59,11 @@ DATASET_FIELDS: dict[str, tuple[str, ...]] = {
         "request_date_from", "request_date_to",
     ),
     "ads_campaign_snapshots": (
-        "observed_at", "campaign_id", "status", "payment_type", "name", "type", "raw_json",
+        "observed_at", "campaign_id", "status", "payment_type", "bid_type", "currency",
+        "campaign_nm_ids", "name", "type", "raw_json",
+    ),
+    "ads_product_identity_snapshots": (
+        "observed_at", "nm_id", "imt_id", "title", "vendor_code", "subject_id", "raw_json",
     ),
 }
 
@@ -518,8 +525,13 @@ class WBAdvertisingArchiveWorker:
             raise RuntimeError(f"No completed provider requests prove advertising dataset {dataset}")
 
         quality_flags: list[str] = []
-        if dataset in {"ads_campaign_roster_snapshots", "ads_campaign_snapshots"}:
+        if dataset in {"ads_campaign_roster_snapshots", "ads_campaign_snapshots", "ads_product_identity_snapshots"}:
             quality_flags.append("observation_snapshot_not_event_history")
+        if dataset == "ads_product_daily":
+            stage_parent, stage_name = await self.queue._stage_location(job_id, dataset)
+            _, raw = await self.store.download_named(stage_parent, stage_name)
+            if raw and b"current_snapshot_not_event_time" in raw:
+                quality_flags.append("current_attribution_snapshot_not_event_history")
         if dataset == "ads_search_cluster_daily":
             stage_parent, stage_name = await self.queue._stage_location(job_id, dataset)
             _, raw = await self.store.download_named(stage_parent, stage_name)
