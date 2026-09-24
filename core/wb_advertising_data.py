@@ -87,7 +87,10 @@ DATASETS: dict[str, dict[str, Any]] = {
         "archive": True,
         "rate_limit": "100 req/min per seller account",
         "meaning": "current nm_id to imtID/product-card identity used to reproduce multicard attribution with explicit observation time",
-        "quality_rule": "current card grouping is observation-time context and must not be presented as historical event-time truth",
+        "quality_rule": (
+            "current card grouping is observation-time context and must not be presented as historical event-time truth; "
+            "a product absent from the current Content API is retained with resolution_status=not_found_current and does not receive a guessed conversion class"
+        ),
     },
     "ads_search_cluster_daily": {
         "layer": "historical",
