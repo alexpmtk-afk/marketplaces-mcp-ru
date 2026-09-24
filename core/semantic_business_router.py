@@ -4,7 +4,9 @@ from __future__ import annotations
 import json
 import re
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from . import request_source_system_map as _request_source_system_map  # noqa: F401
 from .business_router import execute_business_query as execute_legacy_business_query
@@ -35,12 +37,31 @@ def _j(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, default=str)
 
 
+def _moscow_today():
+    return datetime.now(ZoneInfo("Europe/Moscow")).date()
+
+
 def _resolution_with_period(
     resolution: dict[str, Any], *, date_from: str, date_to: str,
 ) -> dict[str, Any]:
     enriched = deepcopy(resolution)
     normalized = dict(enriched.get("normalized_query") or {})
-    normalized["period"] = {"date_from": date_from, "date_to": date_to}
+
+    resolved_from = str(date_from or "").strip()
+    resolved_to = str(date_to or "").strip()
+    hint = str(normalized.get("period_hint") or "").upper()
+
+    if not resolved_from and not resolved_to and hint in {"TODAY", "YESTERDAY"}:
+        target = _moscow_today()
+        if hint == "YESTERDAY":
+            target = target - timedelta(days=1)
+        resolved_from = target.isoformat()
+        resolved_to = target.isoformat()
+
+    normalized["period"] = {
+        "date_from": resolved_from,
+        "date_to": resolved_to,
+    }
     enriched["normalized_query"] = normalized
     return enriched
 
@@ -576,12 +597,13 @@ async def execute_business_query(
                 )
 
             if metric_id == "ORDERS":
+                period = (resolution.get("normalized_query") or {}).get("period") or {}
                 result = await execute_legacy_business_query(
                     modules,
                     marketplace=marketplace or "wb",
                     seller=seller,
-                    date_from=date_from,
-                    date_to=date_to,
+                    date_from=str(period.get("date_from") or date_from or ""),
+                    date_to=str(period.get("date_to") or date_to or ""),
                     metric="ORDERS",
                     question="",
                     nm_ids=nm_ids,

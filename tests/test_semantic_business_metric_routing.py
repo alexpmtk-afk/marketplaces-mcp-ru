@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import date
 import json
 
 import core.semantic_business_router as router
@@ -305,3 +306,93 @@ def test_complete_order_flow_never_falls_back_to_operational_orders(monkeypatch)
     assert semantic["required_source_id"] == "wb_order_feed"
     assert semantic["normalized_query"]["complete_order_flow"] is True
     assert called["legacy"] is False
+
+
+def test_today_orders_materialize_moscow_date_before_execution(monkeypatch):
+    captured = {}
+
+    async def fake_legacy(modules, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "metric": "ORDERS",
+            "orders_count": 7,
+            "orders_amount": 12345,
+            "source": "wb_stats_orders",
+        }
+
+    monkeypatch.setattr(router, "_moscow_today", lambda: date(2026, 9, 24))
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        question="Сколько заказов сегодня?",
+    ))
+
+    assert result["ok"] is True
+    assert captured["date_from"] == "2026-09-24"
+    assert captured["date_to"] == "2026-09-24"
+    assert result["normalized_query"]["period"] == {
+        "date_from": "2026-09-24",
+        "date_to": "2026-09-24",
+    }
+
+
+def test_yesterday_orders_materialize_previous_moscow_date(monkeypatch):
+    captured = {}
+
+    async def fake_legacy(modules, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "metric": "ORDERS",
+            "orders_count": 5,
+            "orders_amount": 9000,
+            "source": "wb_stats_orders",
+        }
+
+    monkeypatch.setattr(router, "_moscow_today", lambda: date(2026, 9, 24))
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        question="Сколько заказов вчера?",
+    ))
+
+    assert result["ok"] is True
+    assert captured["date_from"] == "2026-09-23"
+    assert captured["date_to"] == "2026-09-23"
+
+
+def test_explicit_order_dates_override_relative_period_materialization(monkeypatch):
+    captured = {}
+
+    async def fake_legacy(modules, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "metric": "ORDERS",
+            "orders_count": 1,
+            "orders_amount": 1,
+            "source": "wb_stats_orders",
+        }
+
+    monkeypatch.setattr(router, "_moscow_today", lambda: date(2026, 9, 24))
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        date_from="2026-09-20",
+        date_to="2026-09-20",
+        question="Сколько заказов сегодня?",
+    ))
+
+    assert result["ok"] is True
+    assert captured["date_from"] == "2026-09-20"
+    assert captured["date_to"] == "2026-09-20"
