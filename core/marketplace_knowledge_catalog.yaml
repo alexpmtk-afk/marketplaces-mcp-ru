@@ -161,6 +161,14 @@ sources:
     source_version: "checked-2026-09-23"
     checked_at: "2026-09-23"
 
+  wb_promotion_stats_help_20260617:
+    marketplace: wb
+    title: "Wildberries Seller Help — Статистика и управление продвижением"
+    url: "https://seller.wildberries.ru/instructions/ru/kz/material/statistics-and-promotion-management"
+    official: true
+    source_version: "updated-2026-06-17"
+    checked_at: "2026-09-24"
+
   ozon_seller_api_postman_mirror_20260923:
     marketplace: ozon
     title: "Ozon Seller API — внешний mirror документации, использован только как provisional evidence"
@@ -541,9 +549,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [views]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Показы"
+      scope_ru: "Количество показов продвигаемой карточки в статистике кампаний WB Продвижение."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [views]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
 
   WB_AD_CLICKS:
     metric_id: AD_CLICKS
@@ -559,9 +573,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [clicks]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Клики"
+      scope_ru: "Количество кликов по продвигаемым товарам по правилам атрибуции WB Продвижение."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [clicks]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
 
   WB_AD_CART_ADDS:
     metric_id: AD_CART_ADDS
@@ -577,9 +597,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [cart_adds]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Добавление в корзину"
+      scope_ru: "Количество добавлений товаров в корзину с учётом правил ассоциированных конверсий WB Продвижение."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [atbs]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
 
   WB_AD_ORDERS:
     metric_id: AD_ORDERS
@@ -595,9 +621,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [ad_orders]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Заказы"
+      scope_ru: "Количество заказанных товаров, атрибутированных кампании, включая ассоциированные конверсии по правилам WB Продвижение."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [orders]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     guardrail: "Не подменять общей метрикой ORDERS."
 
   WB_AD_ADVERTISED_ITEMS:
@@ -615,8 +647,8 @@ metrics:
       source_id: wb_ads_data
       field_paths: [advertised_items]
     provider_raw_fields: [shks]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
 
   WB_AD_CANCELED:
     metric_id: AD_CANCELED
@@ -632,9 +664,16 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [canceled]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Отмены"
+      scope_ru: "Ближайший кабинетный показатель отмен в рекламной статистике. Конкретный состав отмен зависит от представления статистики, поэтому автоматическое равенство всех срезов не утверждается."
+      equivalence_status: partial
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [canceled]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
+    guardrail: "Не смешивать кабинетные «Отмены» с общими возвратами/отменами магазина вне рекламной атрибуции."
 
   WB_AD_SPEND:
     metric_id: AD_SPEND
@@ -650,9 +689,16 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [spend]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Затраты, ₽"
+      scope_ru: "Расходы кампании на продвижение. В статистике значение может уточняться до 3 дней; окончательную сумму расходов WB рекомендует смотреть в разделе «Финансы»."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [sum]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
+    guardrail: "Свежие данные «Затраты, ₽» могут уточняться до 3 дней; не выдавать ранний снимок за окончательную сумму списаний."
 
   WB_AD_ATTRIBUTED_ORDER_AMOUNT:
     metric_id: AD_ATTRIBUTED_ORDER_AMOUNT
@@ -668,9 +714,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [attributed_order_amount]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика кампании"
+      label_ru: "Заказов на сумму"
+      scope_ru: "Сумма заказов товаров в рамках рекламной кампании с учётом правил рекламной атрибуции."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [sum_price]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     guardrail: "Не считать общей выручкой продавца."
 
   WB_AD_CTR:
@@ -687,9 +739,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [clicks, views]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "CTR, %"
+      scope_ru: "Доля показов, приведших к кликам; кабинетная формула: Клики ÷ Показы × 100."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [clicks, views, ctr]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     formula_rule: "100 * clicks / views; если views<=0, значение не вычисляется."
 
   WB_AD_CPC:
@@ -706,9 +764,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [spend, clicks]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "CPC, ₽"
+      scope_ru: "Стоимость одного клика; кабинетная формула: Затраты ÷ Клики."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [sum, clicks, cpc]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     formula_rule: "spend / clicks; если clicks<=0, значение не вычисляется."
 
   WB_AD_CLICK_TO_ORDER_CR:
@@ -725,9 +789,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [ad_orders, clicks]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "CR, %"
+      scope_ru: "Конверсия из клика в заказ; кабинетная формула: Заказы ÷ Клики × 100."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [orders, clicks, cr]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     formula_rule: "100 * ad_orders / clicks; если clicks<=0, значение не вычисляется."
 
   WB_AD_CPO:
@@ -744,9 +814,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [spend, ad_orders]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика → Товары"
+      label_ru: "CPO, ₽"
+      scope_ru: "Стоимость одного рекламно-атрибутированного заказа; кабинетная формула: Затраты ÷ Заказы."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [sum, orders]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     formula_rule: "spend / ad_orders; если ad_orders<=0, значение не вычисляется."
 
   WB_AD_DRR:
@@ -763,9 +839,15 @@ metrics:
     provider_binding:
       source_id: wb_ads_data
       field_paths: [spend, attributed_order_amount]
+    cabinet_binding:
+      surface_ru: "Продвижение → WB Продвижение → Статистика"
+      label_ru: "Доля затрат, %"
+      scope_ru: "Кабинетный показатель доли расходов на продвижение: Затраты ÷ сумма заказов из кампании × 100. В проекте это рекламный ДРР, а не общий ДРР бизнеса."
+      equivalence_status: verified
+      source_refs: [wb_promotion_stats_help_20260617]
     provider_raw_fields: [sum, sum_price]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     formula_rule: "100 * spend / attributed_order_amount; если attributed_order_amount<=0, значение не вычисляется."
     guardrail: "Не подменять общим ДРР бизнеса."
 
@@ -784,8 +866,8 @@ metrics:
       source_id: wb_ads_data
       field_paths: [attributed_order_amount, spend]
     provider_raw_fields: [sum_price, sum]
-    source_refs: [wb_promotion_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_promotion_api_20260923, wb_promotion_stats_help_20260617]
+    source_checked_at: "2026-09-24"
     formula_rule: "attributed_order_amount / spend; если spend<=0, значение не вычисляется."
     guardrail: "Не выдавать за общую прибыльность бизнеса."
 

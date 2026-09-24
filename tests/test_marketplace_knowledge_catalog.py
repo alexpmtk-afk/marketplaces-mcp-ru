@@ -308,6 +308,49 @@ def test_wb_operational_orders_and_fbs_stock_are_verified():
     assert fbs["semantic_status"] == "verified"
 
 
+def test_wb_advertising_cabinet_bindings_match_official_labels_and_formulas():
+    expected = {
+        ("AD_VIEWS", "views"): ("Показы", "verified"),
+        ("AD_CLICKS", "clicks"): ("Клики", "verified"),
+        ("AD_CART_ADDS", "cart_adds"): ("Добавление в корзину", "verified"),
+        ("AD_ORDERS", "ad_orders"): ("Заказы", "verified"),
+        ("AD_CANCELED", "canceled"): ("Отмены", "partial"),
+        ("AD_SPEND", "spend"): ("Затраты, ₽", "verified"),
+        ("AD_ATTRIBUTED_ORDER_AMOUNT", "attributed_order_amount"): ("Заказов на сумму", "verified"),
+        ("AD_CTR", "clicks"): ("CTR, %", "verified"),
+        ("AD_CPC", "spend"): ("CPC, ₽", "verified"),
+        ("AD_CLICK_TO_ORDER_CR", "ad_orders"): ("CR, %", "verified"),
+        ("AD_CPO", "spend"): ("CPO, ₽", "verified"),
+        ("AD_DRR", "spend"): ("Доля затрат, %", "verified"),
+    }
+    for (metric_id, field), (label, status) in expected.items():
+        metric = get_knowledge_metric(metric_id, marketplace="wb", source_field=field)
+        assert metric is not None
+        assert metric["cabinet_binding"]["label_ru"] == label
+        assert metric["cabinet_binding"]["equivalence_status"] == status
+        assert metric["cabinet_binding"]["source_refs"] == ["wb_promotion_stats_help_20260617"]
+
+    ctr = get_knowledge_metric("AD_CTR", marketplace="wb", source_field="views")
+    cpc = get_knowledge_metric("AD_CPC", marketplace="wb", source_field="clicks")
+    cr = get_knowledge_metric("AD_CLICK_TO_ORDER_CR", marketplace="wb", source_field="clicks")
+    cpo = get_knowledge_metric("AD_CPO", marketplace="wb", source_field="ad_orders")
+    drr = get_knowledge_metric("AD_DRR", marketplace="wb", source_field="attributed_order_amount")
+    assert "Клики ÷ Показы × 100" in ctr["cabinet_binding"]["scope_ru"]
+    assert "Затраты ÷ Клики" in cpc["cabinet_binding"]["scope_ru"]
+    assert "Заказы ÷ Клики × 100" in cr["cabinet_binding"]["scope_ru"]
+    assert "Затраты ÷ Заказы" in cpo["cabinet_binding"]["scope_ru"]
+    assert "Затраты ÷ сумма заказов" in drr["cabinet_binding"]["scope_ru"]
+
+
+def test_wb_roas_and_advertised_items_do_not_get_unproven_cabinet_labels():
+    roas = get_knowledge_metric("AD_ROAS", marketplace="wb", source_field="spend")
+    advertised = get_knowledge_metric(
+        "AD_ADVERTISED_ITEMS", marketplace="wb", source_field="advertised_items"
+    )
+    assert roas is not None and "cabinet_binding" not in roas
+    assert advertised is not None and "cabinet_binding" not in advertised
+
+
 def test_wb_advertising_metric_family_is_fully_verified():
     result = verify_marketplace_knowledge(today=date(2026, 9, 23), max_source_age_days=30)
     verified = set(result["provider_metric_coverage"]["wb"]["verified_metric_ids"])
