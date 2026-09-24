@@ -8,6 +8,7 @@ from core.archive_refresh_advertising import (
     _filter_plan,
     request_fully_covered,
     request_requires_correction_refresh,
+    split_refresh_period,
 )
 from core.wb_advertising_archive_queue import WBAdvertisingArchiveJobQueue
 
@@ -190,3 +191,26 @@ def test_filter_plan_replays_recent_covered_window_for_late_provider_corrections
         assert pending == [request]
 
     asyncio.run(run())
+
+
+
+def test_split_refresh_period_makes_exact_seven_day_current_tail():
+    stable, recent = split_refresh_period(
+        "2026-01-01",
+        "2026-09-23",
+        yesterday=date(2026, 9, 23),
+        window_days=7,
+    )
+    assert stable == ("2026-01-01", "2026-09-16")
+    assert recent == ("2026-09-17", "2026-09-23")
+
+
+def test_split_refresh_period_does_not_resegment_old_closed_year():
+    stable, recent = split_refresh_period(
+        "2025-01-01",
+        "2025-12-31",
+        yesterday=date(2026, 9, 23),
+        window_days=7,
+    )
+    assert stable == ("2025-01-01", "2025-12-31")
+    assert recent is None
