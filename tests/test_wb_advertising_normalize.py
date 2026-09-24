@@ -3,7 +3,10 @@ from __future__ import annotations
 import pytest
 
 from core.wb_advertising_normalize import (
+    campaign_product_ids,
+    enrich_product_attribution,
     normalize_fullstats,
+    normalize_product_identity_snapshot,
     normalize_search_cluster_daily,
     plan_fullstats_requests,
     plan_period_requests,
@@ -54,6 +57,7 @@ def test_fullstats_normalization_preserves_daily_and_product_grains():
     result = normalize_fullstats([
         {
             "advertId": 101,
+            "boosterStats": [{"date": "2026-09-01", "nm": 777, "avg_position": 63}],
             "days": [
                 {
                     "date": "2026-09-01T00:00:00Z",
@@ -97,6 +101,7 @@ def test_fullstats_normalization_preserves_daily_and_product_grains():
         "clicks": 100,
         "cart_adds": 20,
         "ad_orders": 10,
+        "accepted_orders_derived": 9,
         "advertised_items": 9,
         "canceled": 1,
         "spend": "500.20",
@@ -108,11 +113,69 @@ def test_fullstats_normalization_preserves_daily_and_product_grains():
     assert product[0]["nm_id"] == 777
     assert product[0]["spend"] == "200.08"
     assert product[0]["attributed_order_amount"] == "1900.03"
+    assert product[0]["accepted_orders_derived"] == 4
+    assert product[0]["avg_position"] == 63.0
 
 
 def test_fullstats_normalizer_never_invents_missing_rows():
     result = normalize_fullstats([{"advertId": 101, "days": []}])
     assert result == {"ads_campaign_daily": [], "ads_product_daily": []}
+
+
+
+def test_campaign_product_ids_reads_current_nm_settings():
+    mapping = campaign_product_ids({
+        "adverts": [{
+            "id": 33650945,
+            "nm_settings": [
+                {"nm_id": 404071811, "bids_kopecks": {"search": 173}},
+            ],
+        }]
+    })
+    assert mapping == {33650945: {404071811}}
+
+
+def test_product_identity_snapshot_preserves_multicard_id():
+    rows = normalize_product_identity_snapshot({
+        "cards": [{
+            "nmID": 615105045,
+            "imtID": 631725304,
+            "title": "Вертикальная полка",
+            "vendorCode": "ABC",
+            "subjectID": 2532,
+        }]
+    }, observed_at="2026-09-24T10:28:38Z")
+    assert rows[0]["nm_id"] == 615105045
+    assert rows[0]["imt_id"] == 631725304
+    assert rows[0]["subject_id"] == 2532
+    assert rows[0]["resolution_status"] == "resolved_current"
+    assert rows[0]["observed_at"] == "2026-09-24T10:28:38Z"
+
+
+def test_xls_evidence_conversion_types_can_be_recovered_from_current_imt_id():
+    rows = [
+        {"campaign_id": 33650945, "nm_id": 404071811},
+        {"campaign_id": 33650945, "nm_id": 615105045},
+        {"campaign_id": 33650945, "nm_id": 713641223},
+        {"campaign_id": 33650945, "nm_id": 1465123096},
+    ]
+    enriched = enrich_product_attribution(
+        rows,
+        advertised_nm_ids_by_campaign={33650945: {404071811}},
+        imt_id_by_nm={
+            404071811: 631725304,
+            615105045: 631725304,
+            713641223: 631725304,
+            1465123096: 3956687619,
+        },
+        observed_at="2026-09-24T10:28:38Z",
+    )
+    assert [row["conversion_type_current"] for row in enriched] == [
+        "direct", "multicard", "multicard", "associated",
+    ]
+    assert enriched[1]["multicard_id_current"] == 631725304
+    assert enriched[3]["multicard_id_current"] == 3956687619
+    assert enriched[0]["conversion_type_quality_flags"] == ["current_snapshot_not_event_time"]
 
 
 def test_search_cluster_cpm_preserves_provider_metrics():
@@ -174,3 +237,14 @@ def test_search_cluster_cpc_keeps_unavailable_metrics_null_not_zero():
     assert row["cpm"] is None
     assert row["cpc"] == 2.525
     assert row["quality_flags"] == ["cpc_views_ctr_cpm_not_available"]
+
+
+def test_unresolved_identity_never_becomes_associated_by_guess():
+    enriched = enrich_product_attribution(
+        [{"campaign_id": 1, "nm_id": 222}],
+        advertised_nm_ids_by_campaign={1: {111}},
+        imt_id_by_nm={111: 1000, 222: None},
+        observed_at="2026-09-24T10:28:38Z",
+    )
+    assert enriched[0]["conversion_type_current"] == "unknown"
+    assert enriched[0]["multicard_id_current"] is None

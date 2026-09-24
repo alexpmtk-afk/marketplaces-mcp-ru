@@ -8,7 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-DATA_CONTRACT_VERSION = "wb_ads_data_v1.1"
+DATA_CONTRACT_VERSION = "wb_ads_data_v1.2"
 ARCHIVE_STATUS = "archive_primitives_in_progress"
 
 DATASETS: dict[str, dict[str, Any]] = {
@@ -40,6 +40,7 @@ DATASETS: dict[str, dict[str, Any]] = {
             "canceled", "spend", "attributed_order_amount",
         ],
         "derived_measures": [
+            "accepted_orders_derived",
             "ctr_pct", "cpc", "click_to_order_cr_pct", "cpo",
             "drr_order_pct", "roas",
         ],
@@ -60,11 +61,36 @@ DATASETS: dict[str, dict[str, Any]] = {
         "max_days_per_request": 31,
         "max_campaign_ids_per_request": 50,
         "semantic_class": "advertising_attribution_operational",
+        "additional_measures": [
+            "accepted_orders_derived",
+            "avg_position",
+            "multicard_id_current",
+            "conversion_type_current",
+        ],
+        "enrichment_sources": [
+            "wb_get_api_advert_adverts",
+            "wb_content_cards_list",
+        ],
         "limitations": [
             "same attribution boundary as campaign statistics",
             "app_type is a provider platform/app dimension and is not relabeled as ad placement",
             "rows from different app_type values must not be silently collapsed before aggregation rules are applied",
+            "conversion_type_current and multicard_id_current are based on a current campaign/content snapshot and are not historical event-time truth",
+            "accepted_orders_derived is max(ad_orders-canceled,0), reconciled to the seller XLS Evidence Gate but remains an explicit derived measure",
         ],
+    },
+    "ads_product_identity_snapshots": {
+        "layer": "current_state_snapshot",
+        "provider_operation": "wb_content_cards_list",
+        "provider_path": "/content/v2/get/cards/list",
+        "grain": ["observed_at", "nm_id"],
+        "archive": True,
+        "rate_limit": "100 req/min per seller account",
+        "meaning": "current nm_id to imtID/product-card identity used to reproduce multicard attribution with explicit observation time",
+        "quality_rule": (
+            "current card grouping is observation-time context and must not be presented as historical event-time truth; "
+            "a product absent from the current Content API is retained with resolution_status=not_found_current and does not receive a guessed conversion class"
+        ),
     },
     "ads_search_cluster_daily": {
         "layer": "historical",
@@ -163,6 +189,16 @@ ROUTING_RULES = {
     ),
     "financial_spend": "reconcile campaign-stat spend with ads_expenses; do not assume identical semantics",
     "missing_provider_rows": "never silently coerce missing campaign/stat rows to zero",
+    "xls_reconciliation": (
+        "seller XLS is supplemental reconciliation evidence, not the canonical automated history source; "
+        "the 2026-09-18..24 Evidence Gate matched core orders/cart/order-amount semantics, exposed current multicard conversion labels, "
+        "and showed small timing drift in clicks/spend plus extra zero-rich keyword rows"
+    ),
+    "recommendations_placement_gap": (
+        "seller extended XLS may expose a separate Recommendations sheet with placement-specific daily metrics; "
+        "no equivalent historical Promotion API source is accepted yet, so this slice remains supplemental XLS evidence "
+        "and must not be synthesized from product Content API recommendations"
+    ),
 }
 
 QUALITY_GATES = {

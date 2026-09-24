@@ -111,10 +111,39 @@ def test_payments_without_provider_id_get_stable_fingerprint():
 
 def test_campaign_snapshot_requires_observation_time_and_preserves_raw_provider_row():
     rows = normalize_campaign_info_snapshot([
-        {"advertId": 77, "status": 9, "payment_type": "cpm", "name": "Campaign", "type": 8, "extra": {"x": 1}}
+        {
+            "advertId": 77,
+            "status": 9,
+            "bid_type": "manual",
+            "currency": "RUB",
+            "status": 9,
+            "settings": {
+                "payment_type": "cpm",
+                "name": "Campaign",
+                "placements": {"search": True, "recommendations": False},
+            },
+            "timestamps": {
+                "created": "2026-01-01T10:00:00+03:00",
+                "started": "2026-01-02T10:00:00+03:00",
+                "updated": "2026-09-14T20:00:00+03:00",
+                "deleted": "2100-01-01T00:00:00+03:00",
+            },
+            "type": 8,
+            "nm_settings": [{"nm_id": 777, "bids_kopecks": {"search": 100}}],
+            "extra": {"x": 1},
+        }
     ], observed_at="2026-09-14T20:15:00Z")
     assert rows[0]["campaign_id"] == 77
     assert rows[0]["observed_at"] == "2026-09-14T20:15:00Z"
+    assert rows[0]["payment_type"] == "cpm"
+    assert rows[0]["name"] == "Campaign"
+    assert rows[0]["bid_type"] == "manual"
+    assert rows[0]["currency"] == "RUB"
+    assert rows[0]["campaign_nm_ids"] == [777]
+    assert rows[0]["placements"] == {"search": True, "recommendations": False}
+    assert rows[0]["created_at"] == "2026-01-01T10:00:00+03:00"
+    assert rows[0]["updated_at"] == "2026-09-14T20:00:00+03:00"
+    assert rows[0]["nm_settings_json"][0]["nm_id"] == 777
     assert '"extra":{"x":1}' in rows[0]["raw_json"]
 
 
@@ -165,3 +194,12 @@ def test_roster_snapshot_merge_keeps_same_campaign_at_different_observation_time
     _, parsed = parse_csv(second)
     assert stats["added_rows"] == 1
     assert len(parsed) == 2
+
+
+def test_product_identity_has_separate_canonical_state_path():
+    folder, name = canonical_location("wb_laser_master", 2026, "ads_product_identity_snapshots")
+    assert folder == [
+        "База данных", "WB", "wb_laser_master", "2026",
+        "advertising", "state", "product_identity",
+    ]
+    assert name == "wb_laser_master__ads_product_identity_snapshots__2026.csv"

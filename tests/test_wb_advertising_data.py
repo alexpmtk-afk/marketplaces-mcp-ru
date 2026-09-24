@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def test_contract_exposes_required_layers_and_status():
     data = advertising_data_map()
-    assert data["version"] == DATA_CONTRACT_VERSION == "wb_ads_data_v1.1"
+    assert data["version"] == DATA_CONTRACT_VERSION == "wb_ads_data_v1.2"
     assert data["status"] == ARCHIVE_STATUS == "archive_primitives_in_progress"
     assert data["layers"] == [
         "provider_source",
@@ -87,6 +87,7 @@ def test_required_provider_operations_cover_archive_v1_sources():
         "wb_get_adv_upd",
         "wb_get_adv_payments",
         "wb_get_api_advert_adverts",
+        "wb_content_cards_list",
     } <= ops
 
 
@@ -103,9 +104,22 @@ def test_runtime_catalog_contains_read_only_advertising_sources():
         "wb_post_adv_normquery_get_bids": "/adv/v0/normquery/get-bids",
         "wb_post_adv_normquery_get_minus": "/adv/v0/normquery/get-minus",
         "wb_adv_budget": "/adv/v1/budget",
+        "wb_content_cards_list": "/content/v2/get/cards/list",
     }
     for operation_id, path in expected.items():
         spec = catalog.get(operation_id)
         assert spec is not None, operation_id
         assert spec.path == path
         assert spec.safety == "read"
+
+
+def test_xls_evidence_contract_is_explicit_and_current_snapshot_scoped():
+    product = DATASETS["ads_product_daily"]
+    assert "accepted_orders_derived" in product["additional_measures"]
+    assert "multicard_id_current" in product["additional_measures"]
+    assert "wb_content_cards_list" in product["enrichment_sources"]
+    assert any("not historical event-time truth" in item for item in product["limitations"])
+    identity = DATASETS["ads_product_identity_snapshots"]
+    assert identity["archive"] is True
+    assert identity["grain"] == ["observed_at", "nm_id"]
+    assert "supplemental reconciliation evidence" in ROUTING_RULES["xls_reconciliation"]

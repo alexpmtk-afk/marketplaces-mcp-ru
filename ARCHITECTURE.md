@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL
-**Version:** `2026-09-23.v22`
+**Version:** `2026-09-24.v23`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -255,6 +255,8 @@ Advertising capability:
 Sales/returns use `saleDt` and explicit `docTypeName` buckets, with Продажа minus Возврат for the approved `retailAmount` / `quantity` calculation. Logistics keeps `deliveryService` and `rebillLogisticCost` separate. Deductions keep `deduction` and `additionalPayment` separate and are never silently netted. Monetary WB reward uses `vw` and `vwNds`; it is not derived from `commissionPercent/kvw/kvwBase`. Weekly `acquiringFee` is `PRELIMINARY_WEEKLY_PAYMENT_ACCEPTANCE_WITHHOLDING`, not the final monthly acquiring expense.
 
 Historical fulfillment observations use `deliveryMethod`, `officeName` and `rrDate`; their data class is `HISTORICAL_OBSERVED_FULFILLMENT` and they never confirm current fulfillment configuration. Historical warehouse tariff context uses `dlvPrc`, `fixTariffDateFrom`, `fixTariffDateTo`, `warehouseLogisticsCoeff` and `officeName`; its data class is `HISTORICAL_APPLIED_WAREHOUSE_TARIFF_CONTEXT` and it never confirms the current live warehouse tariff.
+
+Advertising Archive V1 also stores `ads_product_identity_snapshots` as observation-time `nm_id → imtID` context. Direct/multicard/associated product labels derived from current campaign/card snapshots must retain their observation time and must not be presented as historical event-time truth. Seller extended XLS remains supplemental reconciliation evidence; its placement-specific `Рекомендации` slice is not synthesized when no accepted historical Promotion API source exists.
 
 Advertising archive metrics retain data class `ADVERTISING_ATTRIBUTION_OPERATIONAL`. DRR/ROAS and attributed orders are advertising-attribution metrics; they are not total seller revenue, the complete marketplace order flow or business profitability.
 

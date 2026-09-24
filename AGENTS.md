@@ -4,6 +4,7 @@ Guardrails for humans and AI agents working in this repo. Adapted from
 [letya999/ai-repo-safety-skill](https://github.com/letya999/ai-repo-safety-skill).
 
 ## Canonical architecture — read before architecture/storage/deployment work
+- Canonical architecture version: `2026-09-24.v23`.
 - The machine-readable source of truth is `core/system_map.py` (`SYSTEM_MAP`, `SYSTEM_INSTRUCTIONS`).
 - Human mirror: `ARCHITECTURE.md`.
 - **Current production runtime is the dedicated Linux REMOTE server, not Yandex Cloud.**

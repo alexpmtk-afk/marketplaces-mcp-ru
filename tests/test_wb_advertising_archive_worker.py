@@ -209,3 +209,25 @@ def test_worker_marks_job_complete_only_after_all_dataset_commits():
     assert result["status"] == "COMPLETE"
     assert queue.state["status"] == "COMPLETE"
     assert queue.state["phase"] == "COMPLETE"
+
+
+def test_empty_product_identity_dataset_has_snapshot_schema():
+    raw = _empty_csv("ads_product_identity_snapshots")
+    fields, rows = parse_csv(raw)
+    assert rows == []
+    assert fields[:3] == ["observed_at", "nm_id", "imt_id"]
+
+
+def test_product_daily_schema_preserves_xls_reconciliation_fields():
+    raw = _empty_csv("ads_product_daily")
+    fields, rows = parse_csv(raw)
+    assert rows == []
+    for field in (
+        "accepted_orders_derived",
+        "avg_position",
+        "multicard_id_current",
+        "conversion_type_current",
+        "conversion_type_observed_at",
+        "conversion_type_quality_flags",
+    ):
+        assert field in fields

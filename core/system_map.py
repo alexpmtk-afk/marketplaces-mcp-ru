@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-23.v22"
+ARCHITECTURE_VERSION = "2026-09-24.v23"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -152,12 +152,26 @@ SYSTEM_MAP: dict[str, Any] = {
             "ads_product_daily",
             "ads_search_cluster_daily",
             "ads_campaign_snapshots",
+            "ads_product_identity_snapshots",
             "ads_expenses",
             "ads_payments",
         ],
         "historical_routing": "closed cabinet-level campaign advertising analytics are archive-first only when roster plus campaign fullstats FULL_COVERAGE is proven; current state/control stays live",
         "semantic_metric_contract": "wb_ads_m0.v1",
         "semantic_v1_scope": "cabinet-level ads_campaign_daily only; product/nm_id questions fail closed until ads_product_daily receives its own approved semantic contract",
+        "xls_evidence_gate": (
+            "seller extended XLS is supplemental reconciliation evidence, not the automated historical source; "
+            "18-24.09.2026 reconciliation confirmed core order/cart/order-amount semantics, showed small timing drift in traffic/spend, "
+            "and exposed conversion labels plus zero-rich keyword rows"
+        ),
+        "product_attribution_enrichment": (
+            "current campaign nm membership plus Content API nm_id->imtID snapshots may classify rows as direct/multicard/associated; "
+            "the classification must retain observation time and current_snapshot_not_event_time quality provenance"
+        ),
+        "recommendations_placement_gap": (
+            "extended seller XLS can contain a separate Recommendations sheet with daily placement metrics; "
+            "no accepted historical Promotion API source reproduces this slice yet, so it stays supplemental evidence and is never synthesized"
+        ),
         "write_control_status": "not accepted in M0; dedicated start/pause/stop/bid/budget/product/cluster control tools require a later safety-reviewed phase",
         "safety_override": "provider GET endpoints that mutate campaign state (start/pause/stop/delete) are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb",
     },
@@ -240,6 +254,7 @@ SYSTEM_MAP: dict[str, Any] = {
             "archive execution requires FULL_COVERAGE for the entire requested period before any calculation",
             "registry coverage without the corresponding canonical annual file fails closed",
             "advertising coverage requires a complete campaign-roster observation plus complete fullstats coverage for every expected eligible campaign",
+            "product identity and direct/multicard/associated labels derived from current campaign/card snapshots are observation-time context, not historical event-time truth",
             "advertising_performance V1 is cabinet-level only; nm_id/product requests must not be substituted with cabinet totals",
             "advertising DRR/ROAS use wb_ads_m0.v1 attribution formulas and must not be presented as total seller revenue or business profitability",
             "current-day advertising questions do not use the closed historical archive",

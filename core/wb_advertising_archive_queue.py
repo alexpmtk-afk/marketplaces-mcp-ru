@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 from .archive_coverage import request_key
 from .rate_limit import redis_connection_kwargs, redis_url_from_env
+from .tools import resolve_named_cabinet
 from .wb_advertising import _resolve_ads_creds
 from .wb_advertising_archive import (
     ARCHIVE_CABINETS,
@@ -27,7 +28,9 @@ from .wb_advertising_archive import (
     parse_csv,
 )
 from .wb_advertising_normalize import (
+    enrich_product_attribution,
     normalize_fullstats,
+    normalize_product_identity_snapshot,
     normalize_search_cluster_daily,
     plan_fullstats_requests,
     plan_period_requests,
@@ -198,6 +201,15 @@ class WBAdvertisingArchiveJobQueue:
             raise RuntimeError(str((error or {}).get("message") or error or "WB Promotion credentials unavailable"))
         return creds
 
+    def _resolve_content_creds(self, cabinet: str) -> dict[str, str]:
+        creds, error = resolve_named_cabinet(self.wb.client, cabinet)
+        if error or not creds or not creds.get("token"):
+            raise RuntimeError(
+                str((error or {}).get("message") if isinstance(error, dict) else error)
+                or f"WB content credential unavailable for {cabinet}"
+            )
+        return {"token": str(creds["token"])}
+
     async def _provider_call(
         self,
         operation_id: str,
@@ -251,6 +263,8 @@ class WBAdvertisingArchiveJobQueue:
             "provider_calls": 0,
             "fetch_plan": [],
             "fetch_index": 0,
+            "identity_plan": [],
+            "identity_index": 0,
             "cluster_plan": [],
             "cluster_index": 0,
             "completed_requests": [],
@@ -277,6 +291,7 @@ class WBAdvertisingArchiveJobQueue:
             "year": state.get("year"),
             "provider_calls": int(state.get("provider_calls", 0) or 0),
             "fetch_progress": [int(state.get("fetch_index", 0) or 0), len(state.get("fetch_plan") or [])],
+            "identity_progress": [int(state.get("identity_index", 0) or 0), len(state.get("identity_plan") or [])],
             "cluster_progress": [int(state.get("cluster_index", 0) or 0), len(state.get("cluster_plan") or [])],
             "staged_datasets": state.get("staged_datasets") or {},
             "commit": state.get("commit") or {},
@@ -316,11 +331,21 @@ class WBAdvertisingArchiveJobQueue:
             plan = state.get("fetch_plan") or []
             index = int(state.get("fetch_index", 0) or 0)
             if index >= len(plan):
-                state["phase"] = "PLAN_CLUSTERS"
+                state["phase"] = "PLAN_IDENTITIES"
                 state["status"] = "QUEUED"
                 await self._save(state)
                 await self._schedule(selected, 0)
-                return {"ok": True, "job_id": selected, "action": "base_fetch_complete", "phase": "PLAN_CLUSTERS"}
+                return {"ok": True, "job_id": selected, "action": "base_fetch_complete", "phase": "PLAN_IDENTITIES"}
+            request = dict(plan[index])
+        elif phase == "FETCH_IDENTITIES":
+            plan = state.get("identity_plan") or []
+            index = int(state.get("identity_index", 0) or 0)
+            if index >= len(plan):
+                state["phase"] = "ENRICH_PRODUCTS"
+                state["status"] = "QUEUED"
+                await self._save(state)
+                await self._schedule(selected, 0)
+                return {"ok": True, "job_id": selected, "action": "identity_fetch_complete", "phase": "ENRICH_PRODUCTS"}
             request = dict(plan[index])
         elif phase == "FETCH_CLUSTERS":
             plan = state.get("cluster_plan") or []
@@ -330,6 +355,10 @@ class WBAdvertisingArchiveJobQueue:
             request = dict(plan[index])
         elif phase == "PLAN":
             return await self._plan_step(state)
+        elif phase == "PLAN_IDENTITIES":
+            return await self._plan_identities_step(state)
+        elif phase == "ENRICH_PRODUCTS":
+            return await self._enrich_products_step(state)
         elif phase == "PLAN_CLUSTERS":
             return await self._plan_clusters_step(state)
         else:
@@ -347,6 +376,8 @@ class WBAdvertisingArchiveJobQueue:
                     return await self._discover_step(state)
                 if phase == "FETCH":
                     return await self._fetch_step(state, cluster=False)
+                if phase == "FETCH_IDENTITIES":
+                    return await self._fetch_identity_step(state)
                 if phase == "FETCH_CLUSTERS":
                     return await self._fetch_step(state, cluster=True)
                 state["status"] = "QUEUED"
@@ -466,7 +497,7 @@ class WBAdvertisingArchiveJobQueue:
         if index >= len(plan):
             if cluster:
                 return await self._mark_ready_to_commit(state)
-            state["phase"] = "PLAN_CLUSTERS"
+            state["phase"] = "PLAN_IDENTITIES"
             state["status"] = "QUEUED"
             await self._save(state)
             await self._schedule(str(state["job_id"]), 0)
@@ -529,12 +560,185 @@ class WBAdvertisingArchiveJobQueue:
             "datasets": list(staged),
         }
 
+    async def _plan_identities_step(self, state: dict[str, Any]) -> dict[str, Any]:
+        product_rows = await self._read_stage_rows(str(state["job_id"]), "ads_product_daily")
+        nm_ids = sorted({
+            int(row.get("nm_id") or 0)
+            for row in product_rows
+            if int(row.get("nm_id") or 0) > 0
+        })
+        start, end = closed_history_period(int(state["year"]))
+        plan = [
+            {
+                "kind": "product_identity",
+                "operation_id": "wb_content_cards_list",
+                "datasets": ["ads_product_identity_snapshots"],
+                "date_from": start,
+                "date_to": end,
+                "scope": {"nm_id": nm_id},
+                "json_body": {
+                    "settings": {
+                        "sort": {"ascending": False},
+                        "filter": {"textSearch": str(nm_id), "withPhoto": -1},
+                        "cursor": {"limit": 100},
+                    }
+                },
+            }
+            for nm_id in nm_ids
+        ]
+        state["identity_plan"] = plan
+        state["identity_index"] = 0
+        if not plan:
+            state["phase"] = "ENRICH_PRODUCTS"
+            state["status"] = "QUEUED"
+            await self._save(state)
+            await self._schedule(str(state["job_id"]), 0)
+            return {"ok": True, "job_id": state["job_id"], "action": "identity_plan_empty"}
+        state["phase"] = "FETCH_IDENTITIES"
+        state["status"] = "QUEUED"
+        await self._save(state)
+        await self._schedule(str(state["job_id"]), 0)
+        return {
+            "ok": True,
+            "job_id": state["job_id"],
+            "action": "identity_plan_ready",
+            "provider_requests": len(plan),
+            "nm_ids": len(nm_ids),
+        }
+
+    async def _fetch_identity_step(self, state: dict[str, Any]) -> dict[str, Any]:
+        plan = state.get("identity_plan") or []
+        index = int(state.get("identity_index", 0) or 0)
+        if index >= len(plan):
+            state["phase"] = "ENRICH_PRODUCTS"
+            state["status"] = "QUEUED"
+            await self._save(state)
+            await self._schedule(str(state["job_id"]), 0)
+            return {"ok": True, "job_id": state["job_id"], "action": "identity_fetch_complete"}
+
+        request = dict(plan[index])
+        creds = self._resolve_content_creds(str(state["cabinet"]))
+        payload = await self._provider_call(
+            str(request["operation_id"]),
+            creds,
+            query=request.get("query"),
+            json_body=request.get("json_body"),
+        )
+        waiting = await self._wait_or_fail(state, payload)
+        if waiting is not None:
+            return waiting
+
+        observed_at = _utc_now()
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        expected_nm = int((request.get("scope") or {}).get("nm_id") or 0)
+        cards = [
+            row for row in (data.get("cards") or [])
+            if isinstance(row, dict)
+            and int(row.get("nmID") or row.get("nmId") or 0) == expected_nm
+        ]
+        rows = normalize_product_identity_snapshot({"cards": cards}, observed_at=observed_at)
+        if not rows:
+            rows = [{
+                "observed_at": observed_at,
+                "nm_id": expected_nm,
+                "imt_id": None,
+                "title": None,
+                "vendor_code": None,
+                "subject_id": None,
+                "resolution_status": "not_found_current",
+                "raw_json": None,
+            }]
+
+        stats = await self._merge_stage(
+            str(state["job_id"]), "ads_product_identity_snapshots", rows
+        )
+        state["staged_datasets"]["ads_product_identity_snapshots"] = stats
+        observation_date = observed_at[:10]
+        state["completed_requests"].append({
+            "operation_id": request["operation_id"],
+            "datasets": ["ads_product_identity_snapshots"],
+            "date_from": observation_date,
+            "date_to": observation_date,
+            "scope": request.get("scope") or {},
+            "observed_at": observed_at,
+        })
+        state["identity_index"] = index + 1
+        state["status"] = "QUEUED"
+        state["last_retry_after_seconds"] = 0
+        state["last_error"] = None
+        await self._save(state)
+        await self._schedule(str(state["job_id"]), 0)
+        return {
+            "ok": True,
+            "job_id": state["job_id"],
+            "action": "product_identity_staged",
+            "nm_id": expected_nm,
+            "request_index": index + 1,
+            "request_total": len(plan),
+        }
+
+    async def _enrich_products_step(self, state: dict[str, Any]) -> dict[str, Any]:
+        job_id = str(state["job_id"])
+        product_rows = await self._read_stage_rows(job_id, "ads_product_daily")
+        campaign_rows = await self._read_stage_rows(job_id, "ads_campaign_snapshots")
+        identity_rows = await self._read_stage_rows(job_id, "ads_product_identity_snapshots")
+
+        advertised: dict[int, set[int]] = {}
+        observed_times: list[str] = []
+        for row in campaign_rows:
+            campaign_id = int(row.get("campaign_id") or 0)
+            if campaign_id <= 0:
+                continue
+            raw = row.get("campaign_nm_ids") or "[]"
+            try:
+                values = json.loads(raw) if isinstance(raw, str) else raw
+            except json.JSONDecodeError:
+                values = []
+            advertised[campaign_id] = {
+                int(value) for value in (values or []) if int(value) > 0
+            }
+            if row.get("observed_at"):
+                observed_times.append(str(row["observed_at"]))
+
+        imt_by_nm: dict[int, int | None] = {}
+        for row in identity_rows:
+            nm_id = int(row.get("nm_id") or 0)
+            if nm_id <= 0:
+                continue
+            raw_imt = row.get("imt_id")
+            imt_by_nm[nm_id] = int(raw_imt) if raw_imt not in (None, "", "0", 0) else None
+            if row.get("observed_at"):
+                observed_times.append(str(row["observed_at"]))
+
+        observed_at = max(observed_times) if observed_times else _utc_now()
+        enriched = enrich_product_attribution(
+            product_rows,
+            advertised_nm_ids_by_campaign=advertised,
+            imt_id_by_nm=imt_by_nm,
+            observed_at=observed_at,
+        )
+        stats = await self._merge_stage(job_id, "ads_product_daily", enriched)
+        state["staged_datasets"]["ads_product_daily"] = stats
+        state["phase"] = "PLAN_CLUSTERS"
+        state["status"] = "QUEUED"
+        state["last_error"] = None
+        await self._save(state)
+        await self._schedule(job_id, 0)
+        return {
+            "ok": True,
+            "job_id": job_id,
+            "action": "product_attribution_enriched",
+            "rows": len(enriched),
+            "observed_at": observed_at,
+        }
+
     async def _plan_clusters_step(self, state: dict[str, Any]) -> dict[str, Any]:
         product_rows = await self._read_stage_rows(str(state["job_id"]), "ads_product_daily")
         pairs = sorted({
             (int(row.get("campaign_id") or 0), int(row.get("nm_id") or 0))
             for row in product_rows
-            if int(row.get("campaign_id") or 0) > 0 and int(row.get("nm_id") or 0) > 0
+            if int(row.get("campaign_id") or 0) > 0
+            and int(row.get("nm_id") or 0) > 0
         })
         start_date, end_date = closed_history_period(int(state["year"]))
         periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
