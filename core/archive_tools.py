@@ -53,6 +53,110 @@ def _not_configured() -> str:
     })
 
 
+def _available_sellers(marketplace: str) -> list[str]:
+    market = str(marketplace or "").strip().lower()
+    if market == "wb":
+        return sorted(set(ARCHIVE_CABINETS) | set(ADS_ARCHIVE_CABINETS))
+    if market == "ozon":
+        return sorted(OZON_ARCHIVE_CABINETS)
+    return []
+
+
+def _split_seller_scope(value: str) -> list[str]:
+    raw = str(value or "").strip()
+    if not raw:
+        return []
+    if raw.lower() == "all":
+        return ["all"]
+    return [item.strip() for item in re.split(r"[,;]", raw) if item.strip()]
+
+
+def _database_update_scope(
+    marketplace: str = "",
+    seller: str = "",
+    dataset_family: str = "",
+) -> dict[str, Any]:
+    """Validate a database-update request without starting any provider work.
+
+    Mutating refreshes never infer marketplace, cabinet or dataset family.
+    The caller must provide all three explicitly; all is accepted only when
+    it was explicitly supplied for seller and/or dataset family.
+    """
+    market = str(marketplace or "").strip().lower()
+    seller_value = str(seller or "").strip()
+    family_value = str(dataset_family or "").strip()
+
+    missing: list[str] = []
+    questions: list[str] = []
+    if not market:
+        missing.append("marketplace")
+        questions.append("Какой маркетплейс обновлять: WB или Ozon?")
+    if not seller_value:
+        missing.append("seller")
+        questions.append("Какой магазин/кабинет обновлять? Укажите конкретный кабинет или явно all.")
+    if not family_value:
+        missing.append("dataset_family")
+        questions.append(
+            "Какую базу обновлять? Для WB: finance или advertising; "
+            "для Ozon: current или final; all — только если нужны все базы выбранного маркетплейса."
+        )
+    if missing:
+        return {
+            "ok": False,
+            "error": "clarification_required",
+            "missing_fields": missing,
+            "questions": questions,
+            "no_jobs_queued": True,
+        }
+
+    if market not in {"wb", "ozon"}:
+        return {
+            "ok": False,
+            "error": "unsupported_marketplace",
+            "marketplace": market,
+            "supported_marketplaces": ["wb", "ozon"],
+            "no_jobs_queued": True,
+        }
+
+    try:
+        families = normalize_refresh_family(family_value, marketplace=market)
+    except ValueError as exc:
+        return {
+            "ok": False,
+            "error": "archive_refresh_not_registered",
+            "marketplace": market,
+            "message": str(exc),
+            "registered": refresh_catalog(),
+            "no_jobs_queued": True,
+        }
+
+    seller_tokens = _split_seller_scope(seller_value)
+    if not seller_tokens:
+        return {
+            "ok": False,
+            "error": "clarification_required",
+            "missing_fields": ["seller"],
+            "questions": ["Какой магазин/кабинет обновлять?"],
+            "no_jobs_queued": True,
+        }
+
+    selected_sellers = (
+        _available_sellers(market)
+        if seller_tokens == ["all"]
+        else seller_tokens
+    )
+    return {
+        "ok": True,
+        "marketplace": market,
+        "seller_scope": seller_value,
+        "selected_sellers": selected_sellers,
+        "dataset_families": list(families),
+        "explicit_all_sellers": seller_tokens == ["all"],
+        "explicit_all_families": family_value.strip().lower() == "all",
+        "no_jobs_queued": True,
+    }
+
+
 async def _query_year(store: Any, year: int, sql: str) -> dict[str, Any]:
     statement = str(sql).strip()
     if statement.endswith(";"):
@@ -140,6 +244,38 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         })
 
     @mcp.tool(
+        name="marketplace_database_update_plan",
+        annotations={"title": "Plan marketplace database update scope", "readOnlyHint": True, "openWorldHint": False},
+    )
+    async def marketplace_database_update_plan(
+        marketplace: str = "",
+        seller: str = "",
+        dataset_family: str = "",
+        year: int = date.today().year,
+    ) -> str:
+        """Validate exactly what a future database update would touch.
+
+        This tool never queues jobs. Missing marketplace, seller or dataset
+        family produces structured clarification questions instead of silently
+        defaulting to WB/all/all.
+        """
+        scope = _database_update_scope(marketplace, seller, dataset_family)
+        if not scope.get("ok"):
+            return _j(scope)
+        contracts = {
+            item["dataset_family"]: item
+            for item in refresh_catalog()
+            if item["dataset_family"] in set(scope["dataset_families"])
+        }
+        scope["year"] = int(year)
+        scope["contracts"] = contracts
+        scope["update_rule"] = (
+            "Only the explicitly selected marketplace, seller scope and dataset families may be queued. "
+            "Advertising refresh re-discovers the campaign roster every cycle and reconciles closed history through yesterday Europe/Moscow."
+        )
+        return _j(scope)
+
+    @mcp.tool(
         name="marketplace_database_verify",
         annotations={"title": "Verify canonical marketplace database integrity", "readOnlyHint": True, "openWorldHint": False},
     )
@@ -215,10 +351,10 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         annotations={"title": "Update canonical marketplace databases", "readOnlyHint": False, "openWorldHint": True},
     )
     async def marketplace_database_update(
-        marketplace: str = "wb",
+        marketplace: str = "",
         year: int = date.today().year,
-        seller: str = "all",
-        dataset_family: str = "all",
+        seller: str = "",
+        dataset_family: str = "",
     ) -> str:
         """Preferred top-level tool for requests such as "update our database".
 
@@ -226,22 +362,15 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         Ozon CURRENT refetches the complete open month so later status,
         cancellation and financial corrections replace stale observations.
         """
+        scope = _database_update_scope(marketplace, seller, dataset_family)
+        if not scope.get("ok"):
+            return _j(scope)
         if store is None:
             return _not_configured()
-        marketplace = str(marketplace).strip().lower()
-        try:
-            families = normalize_refresh_family(
-                dataset_family,
-                marketplace=marketplace,
-            )
-        except ValueError as exc:
-            return _j({
-                "ok": False,
-                "error": "archive_refresh_not_registered",
-                "marketplace": marketplace,
-                "message": str(exc),
-                "registered": refresh_catalog(),
-            })
+
+        marketplace = str(scope["marketplace"])
+        families = tuple(str(item) for item in scope["dataset_families"])
+        selected_sellers = [str(item) for item in scope["selected_sellers"]]
 
         jobs: list[dict[str, Any]] = []
         worker_tools: set[str] = set()
@@ -250,7 +379,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             for family in families:
                 if family == "finance":
                     queue = WBFinanceArchiveJobQueue(wb, store)
-                    sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+                    sellers = selected_sellers
                     jobs.extend([
                         await enqueue_refresh_cycle(
                             queue,
@@ -263,7 +392,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
                     worker_tools.add("marketplace_archive_worker_step")
                 elif family == "advertising":
                     queue = WBAdvertisingArchiveJobQueue(wb, store)
-                    sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+                    sellers = selected_sellers
                     jobs.extend([
                         await enqueue_refresh_cycle(
                             queue,
@@ -276,11 +405,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
                     worker_tools.add("marketplace_advertising_archive_worker_step")
 
         elif marketplace == "ozon":
-            sellers = (
-                OZON_ARCHIVE_CABINETS
-                if seller.strip().lower() == "all"
-                else (seller,)
-            )
+            sellers = selected_sellers
             for family in families:
                 if family == "ozon_final":
                     final_queue = OzonFinalArchiveJobQueue(ozon, store)
@@ -303,6 +428,8 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
             "marketplace": marketplace,
             "year": int(year),
             "dataset_families": list(families),
+            "selected_sellers": selected_sellers,
+            "scope_was_explicit": True,
             "queued": bool(scheduled),
             "queued_jobs": len(scheduled),
             "jobs": jobs,
@@ -362,7 +489,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
     )
     async def marketplace_archive_update(
         year: int = date.today().year,
-        seller: str = "all",
+        seller: str = "",
         max_reports_per_cabinet: int = 4,
     ) -> str:
         """Compatibility wrapper for the WB weekly-finance dataset family.
@@ -372,10 +499,13 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         authority for what is already ingested, preventing duplicate downloads.
         """
         del max_reports_per_cabinet
+        scope = _database_update_scope("wb", seller, "finance")
+        if not scope.get("ok"):
+            return _j(scope)
         if store is None:
             return _not_configured()
         queue = WBFinanceArchiveJobQueue(wb, store)
-        sellers = ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+        sellers = [str(item) for item in scope["selected_sellers"]]
         jobs = [
             await enqueue_refresh_cycle(queue, family="finance", year=int(year), seller=item)
             for item in sellers
@@ -459,7 +589,7 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
     )
     async def marketplace_advertising_archive_update(
         year: int = date.today().year,
-        seller: str = "all",
+        seller: str = "",
     ) -> str:
         """Compatibility wrapper for the WB advertising archive family.
 
@@ -468,10 +598,13 @@ def register_archive_tools(mcp: FastMCP, modules: dict[str, Any], store: Any | N
         registered stable key and coverage is committed only after verified
         canonical publication.
         """
+        scope = _database_update_scope("wb", seller, "advertising")
+        if not scope.get("ok"):
+            return _j(scope)
         if store is None:
             return _not_configured()
         queue = WBAdvertisingArchiveJobQueue(wb, store)
-        sellers = ADS_ARCHIVE_CABINETS if seller.strip().lower() == "all" else (seller,)
+        sellers = [str(item) for item in scope["selected_sellers"]]
         jobs = [
             await enqueue_refresh_cycle(queue, family="advertising", year=int(year), seller=item)
             for item in sellers
