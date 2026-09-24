@@ -45,11 +45,12 @@ def test_canonical_router_executes_ordinary_orders_as_approved_metric(monkeypatc
 
 
 def test_complete_order_flow_is_not_silently_converted_to_operational_orders(monkeypatch):
-    captured = {}
+    called = False
 
     async def fake_legacy(modules, **kwargs):
-        captured.update(kwargs)
-        return {"ok": False, "error_type": "source_not_suitable"}
+        nonlocal called
+        called = True
+        return {"ok": True, "metric": "ORDERS"}
 
     monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
 
@@ -63,8 +64,9 @@ def test_complete_order_flow_is_not_silently_converted_to_operational_orders(mon
     ))
 
     assert result["ok"] is False
-    assert captured["question"] == "Покажи полный поток заказов за август"
-    assert captured["metric"] == ""
+    assert result["error_type"] == "source_not_suitable"
+    assert result["details"]["semantic_resolution"]["concept_id"] == "all_orders_placed"
+    assert called is False
 
 
 def test_unapproved_order_grouping_fails_before_source_execution(monkeypatch):
@@ -277,3 +279,29 @@ def test_explicit_wb_warehouse_stock_wording_keeps_single_bucket_route(monkeypat
     assert result["metric"] == "CURRENT_STOCK"
     assert result.get("result_type") != "WB_PRODUCT_CURRENT_SNAPSHOT"
     assert called["nm_ids"] == [218395039]
+
+
+def test_complete_order_flow_never_falls_back_to_operational_orders(monkeypatch):
+    called = {"legacy": False}
+
+    async def fake_legacy(*args, **kwargs):
+        called["legacy"] = True
+        return {"ok": True, "metric": "ORDERS"}
+
+    monkeypatch.setattr(router, "execute_legacy_business_query", fake_legacy)
+
+    result = asyncio.run(router.execute_business_query(
+        {"wb": object()},
+        marketplace="wb",
+        seller="wb_laser_master",
+        question="Сколько всего оформленных заказов сегодня, включая неоплаченные?",
+    ))
+
+    assert result["ok"] is False
+    assert result["error_type"] == "source_not_suitable"
+    semantic = result["details"]["semantic_resolution"]
+    assert semantic["resolution_type"] == "NOT_COVERED"
+    assert semantic["concept_id"] == "all_orders_placed"
+    assert semantic["required_source_id"] == "wb_order_feed"
+    assert semantic["normalized_query"]["complete_order_flow"] is True
+    assert called["legacy"] is False
