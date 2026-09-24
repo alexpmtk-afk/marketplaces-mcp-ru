@@ -51,6 +51,8 @@ def test_catalog_registers_refresh_invariants_and_stable_keys():
     assert catalog["finance"]["stable_keys"]["wb_weekly_finance_main"] == ["reportId", "rrdId"]
     assert catalog["finance"]["coverage_model"] == "provider_report_registry"
     assert catalog["advertising"]["stable_keys"]["ads_campaign_daily"] == ["date", "campaign_id"]
+    assert catalog["advertising"]["stable_keys"]["ads_product_identity_snapshots"] == ["observed_at", "nm_id"]
+    assert "ads_product_identity_snapshots" in catalog["advertising"]["datasets"]
     assert catalog["advertising"]["coverage_model"] == "bounded_request_coverage_registry"
     assert catalog["current"]["marketplace"] == "ozon"
     assert catalog["current"]["stable_keys"]["ozon_current_orders_fbo"] == ["posting_number"]
@@ -68,6 +70,8 @@ def test_normalize_refresh_family_aliases():
     assert normalize_refresh_family("all") == ("advertising", "finance")
     assert normalize_refresh_family("wb_weekly_finance_main") == ("finance",)
     assert normalize_refresh_family("ads") == ("advertising",)
+    assert normalize_refresh_family("реклама") == ("advertising",)
+    assert normalize_refresh_family("финансы") == ("finance",)
     assert normalize_refresh_family("all", marketplace="ozon") == (
         "ozon_final",
         "ozon_current",
@@ -150,6 +154,8 @@ def test_complete_advertising_job_reopens_without_stale_plan_or_commit_state():
         "provider_calls": 120,
         "fetch_plan": [{"old": True}],
         "fetch_index": 1,
+        "identity_plan": [{"old": True}],
+        "identity_index": 1,
         "cluster_plan": [{"old": True}],
         "cluster_index": 1,
         "completed_requests": [{"old": True}],
@@ -168,6 +174,8 @@ def test_complete_advertising_job_reopens_without_stale_plan_or_commit_state():
     assert queue.state["phase"] == "DISCOVER"
     assert queue.state["provider_calls"] == 120
     assert queue.state["fetch_plan"] == []
+    assert queue.state["identity_plan"] == []
+    assert queue.state["identity_index"] == 0
     assert queue.state["cluster_plan"] == []
     assert queue.state["completed_requests"] == []
     assert queue.state["staged_datasets"] == {}

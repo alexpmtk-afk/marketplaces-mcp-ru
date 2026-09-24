@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from core.archive_tools import _query_year
+from core.archive_tools import _database_update_scope, _query_year
 from core.wb_finance_archive import encode_csv
 
 
@@ -49,3 +49,90 @@ def test_archive_query_exposes_union_view():
 def test_archive_query_blocks_external_readers():
     with pytest.raises(ValueError):
         asyncio.run(_query_year(FakeStore(), 2026, "SELECT * FROM read_csv('/etc/passwd')"))
+
+
+
+def test_database_update_scope_requires_marketplace_seller_and_family():
+    result = _database_update_scope()
+    assert result["ok"] is False
+    assert result["error"] == "clarification_required"
+    assert result["missing_fields"] == ["marketplace", "seller", "dataset_family"]
+    assert result["no_jobs_queued"] is True
+    assert len(result["questions"]) == 3
+
+
+def test_database_update_scope_is_precise_for_one_wb_advertising_cabinet():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="wb_novokshenov",
+        dataset_family="advertising",
+    )
+    assert result["ok"] is True
+    assert result["marketplace"] == "wb"
+    assert result["selected_sellers"] == ["wb_novokshenov"]
+    assert result["dataset_families"] == ["advertising"]
+    assert result["explicit_all_sellers"] is False
+    assert result["explicit_all_families"] is False
+    assert result["no_jobs_queued"] is True
+
+
+def test_database_update_scope_expands_all_only_when_explicit():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="all",
+        dataset_family="all",
+    )
+    assert result["ok"] is True
+    assert result["selected_sellers"] == [
+        "wb_dmitrieva",
+        "wb_laser_master",
+        "wb_novokshenov",
+    ]
+    assert result["dataset_families"] == ["advertising", "finance"]
+    assert result["explicit_all_sellers"] is True
+    assert result["explicit_all_families"] is True
+
+
+def test_database_update_scope_accepts_russian_advertising_alias():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="wb_dmitrieva",
+        dataset_family="реклама",
+    )
+    assert result["ok"] is True
+    assert result["dataset_families"] == ["advertising"]
+
+
+def test_database_update_scope_rejects_unknown_marketplace_without_queueing():
+    result = _database_update_scope(
+        marketplace="unknown",
+        seller="all",
+        dataset_family="all",
+    )
+    assert result["ok"] is False
+    assert result["error"] == "unsupported_marketplace"
+    assert result["no_jobs_queued"] is True
+
+
+
+def test_database_update_scope_normalizes_business_seller_name_before_queueing():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="ИП Новокшенов",
+        dataset_family="advertising",
+    )
+    assert result["ok"] is True
+    assert result["selected_sellers"] == ["wb_novokshenov"]
+    assert result["no_jobs_queued"] is True
+
+
+def test_database_update_scope_rejects_unknown_seller_before_queueing():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="Несуществующий магазин",
+        dataset_family="advertising",
+    )
+    assert result["ok"] is False
+    assert result["error"] == "unknown_seller"
+    assert result["unknown_sellers"] == ["Несуществующий магазин"]
+    assert result["no_jobs_queued"] is True

@@ -14,6 +14,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .archive_coverage import request_key
+from .business_registry import resolve_business_cabinet
 from .rate_limit import redis_connection_kwargs, redis_url_from_env
 from .tools import resolve_named_cabinet
 from .wb_advertising import _resolve_ads_creds
@@ -111,9 +112,12 @@ class WBAdvertisingArchiveJobQueue:
     @staticmethod
     def normalize_cabinet(seller: str) -> str:
         value = str(seller).strip()
-        if value not in ARCHIVE_CABINETS:
-            raise ValueError(f"Unknown WB advertising cabinet: {seller}")
-        return value
+        if value in ARCHIVE_CABINETS:
+            return value
+        entry = resolve_business_cabinet("wb", value)
+        if entry is None or entry.cabinet not in ARCHIVE_CABINETS:
+            raise ValueError(f"Unknown WB advertising seller/cabinet: {seller}")
+        return entry.cabinet
 
     @staticmethod
     def job_id(cabinet: str, year: int) -> str:

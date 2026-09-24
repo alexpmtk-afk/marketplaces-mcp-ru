@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-ARCHITECTURE_VERSION = "2026-09-24.v23"
+ARCHITECTURE_VERSION = "2026-09-24.v24"
 
 SYSTEM_MAP: dict[str, Any] = {
     "architecture_version": ARCHITECTURE_VERSION,
@@ -81,7 +81,10 @@ SYSTEM_MAP: dict[str, Any] = {
         "canonical_source_of_truth": "Google Drive annual CSV plus dataset-specific coverage registries",
         "registry": "reports_registry.csv for WB finance; dataset_coverage_registry.csv for generic datasets such as advertising",
         "google_drive_path": "Мой диск/Marketplaces/MCP архив базы данных",
-        "default_update_scope": "all configured marketplace cabinets",
+        "default_update_scope": (
+            "none for mutating refreshes; marketplace, seller scope and dataset family must be explicit. "
+            "The value all is honored only when the caller explicitly requests it."
+        ),
         "refresh_coordinator": "core/archive_refresh.py; preferred MCP entry is marketplace_database_update",
         "refresh_lifecycle": "REQUEST -> DISCOVER -> COMPARE COVERAGE -> FETCH/RECONCILE -> NORMALIZE -> MERGE -> VERIFY -> PUBLISH -> COMMIT COVERAGE -> COMPLETE -> POST-CHECK",
         "update_behavior": "every refresh re-runs dataset-specific provider discovery/coverage reconciliation; fetch only missing or correction-eligible provider units; merge by stable key; publish verified canonical data; commit coverage only after publication",
@@ -146,6 +149,15 @@ SYSTEM_MAP: dict[str, Any] = {
         "profitability_boundary": "advertising attribution metrics are not actual business profit; real profitability requires approved joins to sales/buyouts, returns, finance and unit economics",
         "archive_domain": "База данных/WB/<cabinet>/<year>/advertising",
         "archive_status": "Advertising Archive V1 canonical annual datasets and dataset_coverage_registry.csv are implemented; campaign-level closed-period Semantic Core execution is coverage-gated",
+        "refresh_scope_gate": (
+            "marketplace_database_update must not infer marketplace, seller or dataset family; "
+            "marketplace_database_update_plan is the read-only preflight and ambiguous requests return clarification_required without queueing jobs"
+        ),
+        "refresh_policy": (
+            "every advertising refresh re-discovers the campaign roster, refreshes current campaign/product identity snapshots, "
+            "extends closed history only through yesterday Europe/Moscow, skips stable old COMPLETE coverage, and deliberately re-fetches "
+            "the most recent 7 closed days so late provider corrections replace stale rows by stable-key upsert"
+        ),
         "archive_v1_datasets": [
             "ads_campaign_roster_snapshots",
             "ads_campaign_daily",
@@ -324,7 +336,8 @@ Transient upload failures must use bounded exponential backoff with jitter. Non-
 Only after staged Drive verification, durable-backup verification, and verified canonical promotion may the worker COMMIT registry/job progress.
 After the REMOTE migration, never assume that Yandex Object Storage, YDB, Lockbox, or any legacy yandex-object-storage path is the active production durable backend merely because legacy code or names remain. Before any mutating archive refresh/recovery, perform a read-only REMOTE backend audit from actual service environment/config and fail closed if the durable backend cannot be proven.
 For database/archive tasks, use shared server state, registry/idempotent update logic, official WB/Ozon APIs, and the canonical Drive archive. Do not invent chat-local storage or bypass Drive with another source of truth.
-For an ordinary request to update/refresh the marketplace database, prefer marketplace_database_update. COMPLETE is refresh-cycle completion only, never permanent finality: every new refresh must re-run the registered dataset's provider discovery/coverage reconciliation and ingest only missing or correction-eligible data according to its stable key.
+For an ordinary request to update/refresh the marketplace database, first require explicit marketplace, seller/cabinet scope and dataset family. Never infer a missing value and never silently substitute all. If any of those three fields is missing, use the read-only marketplace_database_update_plan or return the clarification_required questions; queue no jobs. The value all is valid only when the user explicitly requested all sellers or all dataset families. Once the scope is explicit, prefer marketplace_database_update. COMPLETE is refresh-cycle completion only, never permanent finality: every new refresh must re-run the registered dataset's provider discovery/coverage reconciliation and ingest only missing or correction-eligible data according to its stable key.
+For WB advertising refreshes, re-discover the complete campaign roster every cycle, refresh current campaign and product-identity observations, archive only closed days through yesterday Europe/Moscow, reuse stable old COMPLETE coverage, and deliberately re-fetch the most recent 7 closed days so late provider corrections upsert over stale rows instead of creating duplicates.
 Do not claim that a database update succeeded merely because jobs were queued. Wait until all requested jobs reach COMPLETE, then call marketplace_database_verify and require canonical-file presence, stable-key integrity, registry/coverage consistency and date/high-watermark evidence. Date is freshness evidence where meaningful but never replaces a stronger provider-native identity such as reportId, event key or canonical request coverage.
 A future archive dataset must be registered with provider discovery, coverage/cursor model, stable row key, freshness evidence, merge semantics and completion invariants before the generic database update workflow may claim to refresh it.
 For business questions, preserve the user's original wording and pass it through Semantic Core. Normalize source-independent measure/grouping/period/filter dimensions with core/business_query_parser.py before selecting a source; the parser must not choose provider fields. The original question outranks a conflicting legacy metric hint.

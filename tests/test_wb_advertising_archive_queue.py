@@ -80,6 +80,10 @@ def _state(**extra):
     return base
 
 
+def test_advertising_queue_accepts_business_seller_name():
+    assert WBAdvertisingArchiveJobQueue.normalize_cabinet("ИП Новокшенов") == "wb_novokshenov"
+
+
 def test_resource_lock_is_narrow_to_dataset_period_and_scope():
     first = _request_lock_key("wb_novokshenov", {
         "operation_id": "wb_get_adv_fullstats",

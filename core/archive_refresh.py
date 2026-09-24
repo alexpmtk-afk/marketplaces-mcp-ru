@@ -62,13 +62,15 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
             "ads_product_daily",
             "ads_search_cluster_daily",
             "ads_campaign_snapshots",
+            "ads_product_identity_snapshots",
             "ads_expenses",
             "ads_payments",
         ),
         coverage_model="bounded_request_coverage_registry",
-        refresh_strategy="reconcile_closed_provider_history_and_upsert_by_dataset_stable_key",
+        refresh_strategy="reconcile_closed_provider_history_skip_complete_old_requests_refetch_recent_7_closed_days_and_upsert_by_dataset_stable_key",
         freshness_evidence=(
             "closed provider period ending yesterday Europe/Moscow",
+            "recent 7 closed days are deliberately re-fetched for late provider corrections",
             "dataset_coverage_registry.csv COMPLETE request coverage",
             "canonical annual dataset stable-key content",
         ),
@@ -78,6 +80,7 @@ REFRESH_CONTRACTS: dict[str, ArchiveRefreshContract] = {
             "ads_product_daily": ("date", "campaign_id", "app_type", "nm_id"),
             "ads_search_cluster_daily": ("date", "campaign_id", "nm_id", "norm_query"),
             "ads_campaign_snapshots": ("observed_at", "campaign_id"),
+            "ads_product_identity_snapshots": ("observed_at", "nm_id"),
             "ads_expenses": ("event_fingerprint",),
             "ads_payments": ("event_key",),
         },
@@ -166,8 +169,15 @@ def normalize_refresh_family(
             "finance": ("finance",),
             "wb_weekly_finance_main": ("finance",),
             "weekly_finance": ("finance",),
+            "weekly": ("finance",),
+            "основной": ("finance",),
+            "финансы": ("finance",),
             "advertising": ("advertising",),
             "ads": ("advertising",),
+            "ad": ("advertising",),
+            "promotion": ("advertising",),
+            "реклама": ("advertising",),
+            "рекламные_кампании": ("advertising",),
         }
     elif market == "ozon":
         aliases = {
@@ -179,6 +189,10 @@ def normalize_refresh_family(
             "ozon_current": ("ozon_current",),
             "orders": ("ozon_current",),
             "accruals": ("ozon_current",),
+            "текущая": ("ozon_current",),
+            "текущий": ("ozon_current",),
+            "закрытые_месяцы": ("ozon_final",),
+            "реализация": ("ozon_final",),
         }
     else:
         raise ValueError(f"Unsupported archive marketplace: {marketplace!r}")
@@ -206,6 +220,8 @@ def _reset_advertising_state(state: dict[str, Any]) -> None:
     state["phase"] = "DISCOVER"
     state["fetch_plan"] = []
     state["fetch_index"] = 0
+    state["identity_plan"] = []
+    state["identity_index"] = 0
     state["cluster_plan"] = []
     state["cluster_index"] = 0
     state["completed_requests"] = []

@@ -3,7 +3,8 @@
 The advertising ingestion queue is intentionally responsible for bounded provider
 requests, while ``dataset_coverage_registry.csv`` is the durable proof that a
 specific request was already committed to canonical storage.  Reopening a
-COMPLETE annual job must therefore not replay the whole year.
+COMPLETE annual job must therefore avoid replaying stable old history while
+still re-reading a short recent correction window for mutable statistics.
 
 This module installs coverage-aware PLAN handlers on the advertising queue.  A
 planned provider request is skipped only when every dataset produced by that
@@ -13,7 +14,9 @@ cycle because they represent current state rather than immutable history.
 """
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo
 
 from .archive_coverage import complete_request_keys, request_key
 from .wb_advertising_archive import coverage_registry_location
@@ -29,6 +32,43 @@ from .wb_advertising_normalize import (
     split_date_range,
 )
 
+ADVERTISING_CORRECTION_WINDOW_DAYS = 7
+
+
+def split_refresh_period(
+    date_from: str,
+    date_to: str,
+    *,
+    yesterday: date | None = None,
+    window_days: int = ADVERTISING_CORRECTION_WINDOW_DAYS,
+) -> tuple[tuple[str, str] | None, tuple[str, str] | None]:
+    """Split a closed-history range into stable history and recent corrections."""
+    start = date.fromisoformat(str(date_from)[:10])
+    end = date.fromisoformat(str(date_to)[:10])
+    if end < start:
+        raise ValueError("date_to must not precede date_from")
+    reference_yesterday = yesterday or _moscow_yesterday()
+    correction_floor = reference_yesterday - timedelta(days=max(1, int(window_days)) - 1)
+    if end < correction_floor:
+        return (start.isoformat(), end.isoformat()), None
+
+    closed_end = min(end, reference_yesterday)
+    floor = closed_end - timedelta(days=max(1, int(window_days)) - 1)
+    recent_start = max(start, floor)
+    stable_end = recent_start - timedelta(days=1)
+
+    stable = (
+        (start.isoformat(), stable_end.isoformat())
+        if start <= stable_end
+        else None
+    )
+    recent = (
+        (recent_start.isoformat(), closed_end.isoformat())
+        if recent_start <= closed_end
+        else None
+    )
+    return stable, recent
+
 
 def _request_coverage_key(*, cabinet: str, dataset: str, request: dict[str, Any]) -> str:
     return request_key(
@@ -40,6 +80,38 @@ def _request_coverage_key(*, cabinet: str, dataset: str, request: dict[str, Any]
         date_to=str(request.get("date_to") or ""),
         scope=request.get("scope") or {},
     )
+
+
+def _moscow_yesterday() -> date:
+    return datetime.now(ZoneInfo("Europe/Moscow")).date() - timedelta(days=1)
+
+
+def request_requires_correction_refresh(
+    request: dict[str, Any],
+    *,
+    yesterday: date | None = None,
+    window_days: int = ADVERTISING_CORRECTION_WINDOW_DAYS,
+) -> bool:
+    """Re-fetch recently closed mutable statistics even when coverage exists.
+
+    WB advertising statistics can be corrected after the first observation.
+    This is an MCP refresh policy, not a provider retention guarantee: the most
+    recent closed days are deliberately re-read and upserted by stable key.
+    Older COMPLETE coverage remains reusable.
+    """
+    if str(request.get("kind") or "") not in {
+        "fullstats", "expenses", "payments", "search_clusters",
+    }:
+        return False
+    try:
+        request_end = date.fromisoformat(str(request.get("date_to") or "")[:10])
+    except ValueError:
+        return False
+    closed_end = yesterday or _moscow_yesterday()
+    if request_end > closed_end:
+        return False
+    floor = closed_end - timedelta(days=max(1, int(window_days)) - 1)
+    return request_end >= floor
 
 
 def request_fully_covered(
@@ -101,7 +173,8 @@ async def _filter_plan(
     pending = [
         request
         for request in plan
-        if not request_fully_covered(
+        if request_requires_correction_refresh(request)
+        or not request_fully_covered(
             cabinet=cabinet,
             request=request,
             complete_by_dataset=complete,
@@ -132,36 +205,42 @@ async def _coverage_aware_plan_step(
             "query": {"ids": ",".join(str(value) for value in ids)},
         })
 
-    for item in plan_fullstats_requests(fullstats_ids, start, end):
-        ids = list(item["campaign_ids"])
-        plan.append({
-            "kind": "fullstats",
-            "operation_id": "wb_get_adv_fullstats",
-            "datasets": ["ads_campaign_daily", "ads_product_daily"],
-            "date_from": item["date_from"],
-            "date_to": item["date_to"],
-            "scope": {"campaign_ids": ids},
-            "query": {
-                "ids": ",".join(str(value) for value in ids),
-                "beginDate": item["date_from"],
-                "endDate": item["date_to"],
-            },
-        })
+    stable_period, correction_period = split_refresh_period(start, end)
+    fullstats_periods = [
+        period for period in (stable_period, correction_period) if period is not None
+    ]
+    for period_start, period_end in fullstats_periods:
+        for item in plan_fullstats_requests(fullstats_ids, period_start, period_end):
+            ids = list(item["campaign_ids"])
+            plan.append({
+                "kind": "fullstats",
+                "operation_id": "wb_get_adv_fullstats",
+                "datasets": ["ads_campaign_daily", "ads_product_daily"],
+                "date_from": item["date_from"],
+                "date_to": item["date_to"],
+                "scope": {"campaign_ids": ids},
+                "query": {
+                    "ids": ",".join(str(value) for value in ids),
+                    "beginDate": item["date_from"],
+                    "endDate": item["date_to"],
+                },
+            })
 
     for operation_id, dataset in (
         ("wb_get_adv_upd", "ads_expenses"),
         ("wb_get_adv_payments", "ads_payments"),
     ):
-        for item in plan_period_requests(operation_id, start, end):
-            plan.append({
-                "kind": "expenses" if dataset == "ads_expenses" else "payments",
-                "operation_id": operation_id,
-                "datasets": [dataset],
-                "date_from": item["date_from"],
-                "date_to": item["date_to"],
-                "scope": {},
-                "query": {"from": item["date_from"], "to": item["date_to"]},
-            })
+        for period_start, period_end in fullstats_periods:
+            for item in plan_period_requests(operation_id, period_start, period_end):
+                plan.append({
+                    "kind": "expenses" if dataset == "ads_expenses" else "payments",
+                    "operation_id": operation_id,
+                    "datasets": [dataset],
+                    "date_from": item["date_from"],
+                    "date_to": item["date_to"],
+                    "scope": {},
+                    "query": {"from": item["date_from"], "to": item["date_to"]},
+                })
 
     pending, skipped = await _filter_plan(
         self,
@@ -196,7 +275,12 @@ async def _coverage_aware_plan_clusters_step(
         if int(row.get("campaign_id") or 0) > 0 and int(row.get("nm_id") or 0) > 0
     })
     start_date, end_date = closed_history_period(int(state["year"]))
-    periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
+    stable_period, correction_period = split_refresh_period(start_date, end_date)
+    periods: list[tuple[str, str]] = []
+    for period in (stable_period, correction_period):
+        if period is None:
+            continue
+        periods.extend(split_date_range(period[0], period[1], max_days=CLUSTER_PERIOD_DAYS))
     plan: list[dict[str, Any]] = []
     for start, end in periods:
         for chunk in _chunks(pairs, 100):

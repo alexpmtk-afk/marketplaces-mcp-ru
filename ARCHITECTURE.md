@@ -1,7 +1,7 @@
 # Marketplaces MCP — Canonical Architecture
 
 **Status:** CANONICAL
-**Version:** `2026-09-24.v23`
+**Version:** `2026-09-24.v24`
 
 This document mirrors the server-side `core.system_map.SYSTEM_MAP`. The MCP tool `marketplace_system_map` is the machine-readable source of truth exposed to every connected client.
 
@@ -259,6 +259,10 @@ Historical fulfillment observations use `deliveryMethod`, `officeName` and `rrDa
 Advertising Archive V1 also stores `ads_product_identity_snapshots` as observation-time `nm_id → imtID` context. Direct/multicard/associated product labels derived from current campaign/card snapshots must retain their observation time and must not be presented as historical event-time truth. Seller extended XLS remains supplemental reconciliation evidence; its placement-specific `Рекомендации` slice is not synthesized when no accepted historical Promotion API source exists.
 
 Advertising archive metrics retain data class `ADVERTISING_ATTRIBUTION_OPERATIONAL`. DRR/ROAS and attributed orders are advertising-attribution metrics; they are not total seller revenue, the complete marketplace order flow or business profitability.
+
+Database refresh scope is explicit for every mutating top-level update. The server must not infer marketplace, seller/cabinet or dataset family from omitted fields; an ambiguous request returns a clarification requirement and queues nothing. The explicit value `all` remains supported only when the caller actually requests all sellers or all dataset families.
+
+WB Advertising refresh is roster-driven and correction-aware: every cycle re-discovers campaigns, refreshes current campaign/product-identity observations, writes historical statistics only through yesterday in Europe/Moscow, reuses old COMPLETE coverage, and intentionally re-fetches the most recent 7 closed days so late WB corrections overwrite stale rows through stable-key upsert.
 
 ## Hard source boundaries
 
