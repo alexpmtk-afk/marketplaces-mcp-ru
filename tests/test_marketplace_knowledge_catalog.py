@@ -241,6 +241,36 @@ def test_wb_finance_metrics_are_verified_knowledge():
     } <= verified
 
 
+def test_wb_finance_cabinet_bindings_are_partial_and_period_safe():
+    deductions = get_knowledge_metric(
+        "DEDUCTIONS_ADJUSTMENTS", marketplace="wb", source_field="deduction"
+    )
+    commission = get_knowledge_metric(
+        "WB_COMMISSION_REWARD", marketplace="wb", source_field="vw"
+    )
+    acquiring = get_knowledge_metric(
+        "ACQUIRING_PAYMENT_PROCESSING", marketplace="wb", source_field="acquiringFee"
+    )
+
+    assert deductions["cabinet_binding"]["surface_ru"] == "Главная → Баланс → Приход и расход"
+    assert deductions["cabinet_binding"]["label_ru"] == "Удержания / доплаты"
+    assert deductions["cabinet_binding"]["equivalence_status"] == "partial"
+    assert "оперативный слой" in deductions["cabinet_binding"]["scope_ru"]
+
+    assert commission["cabinet_binding"]["surface_ru"] == "Главная → Баланс → Приход и расход"
+    assert commission["cabinet_binding"]["label_ru"] == "Комиссия Wildberries"
+    assert commission["cabinet_binding"]["equivalence_status"] == "partial"
+    assert "не сворачиваются" in commission["cabinet_binding"]["scope_ru"]
+
+    assert acquiring["cabinet_binding"]["surface_ru"] == (
+        "Финансовые отчёты → Отчёт об издержках на приём платежей"
+    )
+    assert acquiring["cabinet_binding"]["label_ru"] == "Издержки на приём платежей"
+    assert acquiring["cabinet_binding"]["equivalence_status"] == "partial"
+    assert "месячный" in acquiring["cabinet_binding"]["scope_ru"]
+    assert "Не приравнивать" in acquiring["guardrail"]
+
+
 def test_wb_operational_orders_and_fbs_stock_are_verified():
     orders = get_knowledge_metric("ORDERS", marketplace="wb", source_field="finishedPrice")
     fbs = get_knowledge_metric("CURRENT_FBS_STOCK", marketplace="wb", source_field="amount")
