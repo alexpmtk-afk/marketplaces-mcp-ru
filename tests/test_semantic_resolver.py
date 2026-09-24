@@ -94,6 +94,13 @@ def test_exact_physical_field_question_returns_field_semantics():
     assert result["status"] == "AVAILABLE_WITH_LIMITATION"
 
 
+def test_payout_service_name_does_not_trigger_generic_current_state():
+    result = resolve_semantic_question("Сколько списали за услугу Вывести сейчас за август?")
+    assert result["status"] == "AVAILABLE_WITH_LIMITATION"
+    assert result["capability_id"] == "payout_term_change_fee"
+    assert result["route_id"] == "payout_term_change_fee"
+
+
 def test_explicit_current_state_never_falls_back_to_historical_archive():
     result = resolve_semantic_question("Какая комиссия Wildberries сейчас?")
     assert result["status"] == "REQUIRES_OTHER_SOURCE"
