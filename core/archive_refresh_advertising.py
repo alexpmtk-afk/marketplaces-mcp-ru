@@ -47,7 +47,12 @@ def split_refresh_period(
     end = date.fromisoformat(str(date_to)[:10])
     if end < start:
         raise ValueError("date_to must not precede date_from")
-    closed_end = min(end, yesterday or _moscow_yesterday())
+    reference_yesterday = yesterday or _moscow_yesterday()
+    correction_floor = reference_yesterday - timedelta(days=max(1, int(window_days)) - 1)
+    if end < correction_floor:
+        return (start.isoformat(), end.isoformat()), None
+
+    closed_end = min(end, reference_yesterday)
     floor = closed_end - timedelta(days=max(1, int(window_days)) - 1)
     recent_start = max(start, floor)
     stable_end = recent_start - timedelta(days=1)
