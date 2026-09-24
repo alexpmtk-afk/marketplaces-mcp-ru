@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_canonical_map_fixes_storage_boundaries():
-    assert ARCHITECTURE_VERSION == "2026-09-24.v23"
+    assert ARCHITECTURE_VERSION == "2026-09-24.v24"
     assert SYSTEM_MAP["status"] == "CANONICAL"
     runtime = SYSTEM_MAP["runtime"]
     assert runtime["production"] == "dedicated Linux REMOTE server"
@@ -69,6 +69,8 @@ def test_canonical_map_fixes_storage_boundaries():
     assert archive["wb_weekly_finance_main"]["report_type"] == 1
     assert archive["wb_weekly_finance_main"]["logical_week"] == "Monday-Sunday"
     assert archive["wb_weekly_finance_main"]["row_deduplication"] == "(reportId, rrdId)"
+    assert "none for mutating refreshes" in archive["default_update_scope"]
+    assert "explicit" in archive["default_update_scope"]
 
 
 def test_large_annual_files_use_staged_resumable_drive_api_not_canonical_overwrite():
@@ -111,6 +113,8 @@ def test_wb_advertising_live_and_archive_boundaries_are_canonical():
     assert "cabinet-level" in policy["semantic_v1_scope"]
     assert "ads_product_daily" in policy["semantic_v1_scope"]
     assert "FULL_COVERAGE" in policy["historical_routing"]
+    assert "marketplace_database_update_plan" in policy["refresh_scope_gate"]
+    assert "7 closed days" in policy["refresh_policy"]
     assert policy["write_control_status"].startswith("not accepted in M0")
     assert "WRITE/DESTRUCTIVE" in policy["safety_override"]
 
