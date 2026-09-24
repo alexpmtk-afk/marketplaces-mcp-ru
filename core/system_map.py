@@ -168,6 +168,10 @@ SYSTEM_MAP: dict[str, Any] = {
             "current campaign nm membership plus Content API nm_id->imtID snapshots may classify rows as direct/multicard/associated; "
             "the classification must retain observation time and current_snapshot_not_event_time quality provenance"
         ),
+        "recommendations_placement_gap": (
+            "extended seller XLS can contain a separate Recommendations sheet with daily placement metrics; "
+            "no accepted historical Promotion API source reproduces this slice yet, so it stays supplemental evidence and is never synthesized"
+        ),
         "write_control_status": "not accepted in M0; dedicated start/pause/stop/bid/budget/product/cluster control tools require a later safety-reviewed phase",
         "safety_override": "provider GET endpoints that mutate campaign state (start/pause/stop/delete) are WRITE/DESTRUCTIVE at MCP level regardless of HTTP verb",
     },
