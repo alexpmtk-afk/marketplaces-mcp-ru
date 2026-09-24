@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 from copy import deepcopy
+from datetime import date, timedelta
 from typing import Any, Optional
 
 from . import request_source_system_map as _request_source_system_map  # noqa: F401
@@ -33,6 +34,36 @@ from .user_facing import present_business_result
 
 def _j(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, default=str)
+
+
+def _materialize_orders_relative_period(
+    resolution: dict[str, Any], *, date_from: str, date_to: str,
+) -> tuple[str, str]:
+    """Turn approved relative ORDERS periods into concrete ISO dates.
+
+    Explicit caller dates always win. Only registered relative period hints are
+    materialized here; unknown/unsupported periods remain untouched and fail
+    closed in the legacy executor instead of being guessed.
+    """
+    if date_from or date_to:
+        return date_from, date_to
+
+    normalized = resolution.get("normalized_query") or {}
+    hint = str(normalized.get("period_hint") or "").upper()
+    today = date.today()
+
+    if hint == "TODAY":
+        value = today.isoformat()
+        return value, value
+    if hint == "YESTERDAY":
+        value = (today - timedelta(days=1)).isoformat()
+        return value, value
+    if hint == "WEEK":
+        start = today - timedelta(days=today.weekday())
+        return start.isoformat(), today.isoformat()
+    if hint == "MONTH":
+        return today.replace(day=1).isoformat(), today.isoformat()
+    return date_from, date_to
 
 
 def _resolution_with_period(
@@ -576,12 +607,22 @@ async def execute_business_query(
                 )
 
             if metric_id == "ORDERS":
+                order_date_from, order_date_to = _materialize_orders_relative_period(
+                    resolution,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+                resolution = _resolution_with_period(
+                    resolution,
+                    date_from=order_date_from,
+                    date_to=order_date_to,
+                )
                 result = await execute_legacy_business_query(
                     modules,
                     marketplace=marketplace or "wb",
                     seller=seller,
-                    date_from=date_from,
-                    date_to=date_to,
+                    date_from=order_date_from,
+                    date_to=order_date_to,
                     metric="ORDERS",
                     question="",
                     nm_ids=nm_ids,
