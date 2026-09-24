@@ -105,6 +105,30 @@ sources:
     source_version: "updated-2026-06-18"
     checked_at: "2026-09-24"
 
+  wb_weekly_report_help_20260518:
+    marketplace: wb
+    title: "Wildberries Seller Help — Еженедельные отчёты реализации"
+    url: "https://seller.wildberries.ru/instructions/en/by/material/how-to-read-general-financial-report"
+    official: true
+    source_version: "updated-2026-05-18"
+    checked_at: "2026-09-24"
+
+  wb_storage_help_20260909:
+    marketplace: wb
+    title: "Wildberries Seller Help — Как рассчитывается хранение товара на складе"
+    url: "https://seller.wildberries.ru/instructions/ru/ru/material/storage-of-goods-in-a-warehouse"
+    official: true
+    source_version: "updated-2026-09-09"
+    checked_at: "2026-09-24"
+
+  wb_penalties_help_20260521:
+    marketplace: wb
+    title: "Wildberries Seller Help — Штрафы, удержания и другие взыскания"
+    url: "https://seller.wildberries.ru/instructions/en/ru/material/A-71"
+    official: true
+    source_version: "updated-2026-05-21"
+    checked_at: "2026-09-24"
+
   wb_reports_api_20260923:
     marketplace: wb
     title: "Wildberries API — Отчёты / Заказы"
@@ -293,9 +317,16 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [deliveryAmount, returnAmount, deliveryService, rebillLogisticCost]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансовые отчёты → Еженедельные"
+      label_ru: "Стоимость логистики"
+      scope_ru: "В кабинете это сводная сумма логистики за неделю. В детализации API денежные deliveryService и rebillLogisticCost и счётчики deliveryAmount/returnAmount остаются отдельными компонентами и не складываются вслепую."
+      equivalence_status: partial
+      source_refs: [wb_weekly_report_help_20260518]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_weekly_report_help_20260518]
+    source_checked_at: "2026-09-24"
     formula_rule: "deliveryService и rebillLogisticCost не объединяются молча; счётчики deliveryAmount/returnAmount остаются отдельными."
+    guardrail: "Не выдавать один из детальных компонентов или логистический счётчик за итоговую строку «Стоимость логистики» без утверждённой агрегации за тот же период."
 
   WB_PENALTIES:
     metric_id: PENALTIES
@@ -311,9 +342,16 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [penalty, bonusTypeName, sellerOperName]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансовые отчёты → Еженедельные"
+      label_ru: "Общая сумма штрафов"
+      scope_ru: "Кабинет показывает сводную сумму штрафов за отчётную неделю. Поле penalty хранит детальные суммы, а bonusTypeName и sellerOperName — контекст причины/операции."
+      equivalence_status: partial
+      source_refs: [wb_weekly_report_help_20260518, wb_penalties_help_20260521]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_weekly_report_help_20260518, wb_penalties_help_20260521]
+    source_checked_at: "2026-09-24"
     formula_rule: "penalty суммируется в знаке отчёта; знак самостоятельно не переосмысливается."
+    guardrail: "Не выдавать отдельную строку penalty за «Общую сумму штрафов» без агрегации за тот же отчётный период."
 
   WB_STORAGE_COST:
     metric_id: STORAGE_COST
@@ -329,8 +367,15 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [paidStorage]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансовые отчёты → Еженедельные"
+      label_ru: "Стоимость хранения"
+      scope_ru: "Кабинет показывает сумму хранения за отчётную неделю; детальное поле paidStorage относится к отдельным строкам отчёта и требует суммирования в пределах того же периода."
+      equivalence_status: partial
+      source_refs: [wb_weekly_report_help_20260518, wb_storage_help_20260909]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_weekly_report_help_20260518, wb_storage_help_20260909]
+    source_checked_at: "2026-09-24"
+    guardrail: "Не приравнивать одну строку paidStorage к недельной строке «Стоимость хранения» без агрегации за отчётный период."
 
   WB_ACCEPTANCE_COST:
     metric_id: ACCEPTANCE_COST
@@ -346,8 +391,15 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [paidAcceptance]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансовые отчёты → Еженедельные"
+      label_ru: "Стоимость операций при приёмке"
+      scope_ru: "Кабинет показывает сводную сумму приёмки за отчётную неделю; paidAcceptance — детальный денежный компонент строк отчёта."
+      equivalence_status: partial
+      source_refs: [wb_weekly_report_help_20260518]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_weekly_report_help_20260518]
+    source_checked_at: "2026-09-24"
+    guardrail: "Не выдавать отдельную строку paidAcceptance за недельный итог «Стоимость операций при приёмке» без агрегации за тот же период."
 
   WB_DEDUCTIONS_ADJUSTMENTS:
     metric_id: DEDUCTIONS_ADJUSTMENTS
