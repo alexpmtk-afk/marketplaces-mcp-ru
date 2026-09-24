@@ -549,6 +549,18 @@ async def execute_business_query(
             date_to=date_to,
         )
 
+        if resolution.get("resolution_type") in {"NOT_COVERED", "UNKNOWN", "AMBIGUOUS"}:
+            return make_error(
+                "source_not_suitable",
+                "The WB question is understood but the required approved source or executor is not available.",
+                operation_id="marketplace_business_query",
+                retryable=False,
+                details={
+                    "question": natural_question,
+                    "semantic_resolution": resolution,
+                },
+            )
+
         if resolution.get("resolution_type") == "BUSINESS_METRIC":
             metric_id = str(resolution.get("metric_id") or "")
             if resolution.get("execution_allowed") is not True:
