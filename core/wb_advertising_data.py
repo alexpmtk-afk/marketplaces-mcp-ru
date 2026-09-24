@@ -8,7 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-DATA_CONTRACT_VERSION = "wb_ads_data_v1.1"
+DATA_CONTRACT_VERSION = "wb_ads_data_v1.2"
 ARCHIVE_STATUS = "archive_primitives_in_progress"
 
 DATASETS: dict[str, dict[str, Any]] = {
@@ -64,6 +64,10 @@ DATASETS: dict[str, dict[str, Any]] = {
             "same attribution boundary as campaign statistics",
             "app_type is a provider platform/app dimension and is not relabeled as ad placement",
             "rows from different app_type values must not be silently collapsed before aggregation rules are applied",
+            "product_role is inferred from the historical fullstats window: own views/clicks/spend means ad_traffic_product",
+            "conversion activity without own traffic/spend is associated_conversion_candidate, not proven advertised inventory",
+            "current campaign composition must not be projected backwards into historical periods",
+            "search-cluster requests are planned only for ad_traffic_product rows",
         ],
     },
     "ads_search_cluster_daily": {
