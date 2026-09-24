@@ -65,6 +65,14 @@ sources:
     source_version: "checked-2026-09-23"
     checked_at: "2026-09-23"
 
+  wb_weekly_realization_help_20260518:
+    marketplace: wb
+    title: "Wildberries Seller Help — Еженедельные отчёты реализации и детализация"
+    url: "https://seller.wildberries.ru/instructions/en/by/material/how-to-read-general-financial-report"
+    official: true
+    source_version: "updated-2026-05-18"
+    checked_at: "2026-09-24"
+
   wb_finance_reports_release_20260415:
     marketplace: wb
     title: "Wildberries API — новые методы отчётов реализации и стандартизация полей"
@@ -348,9 +356,24 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [commissionPercent, kvwBase, kvw, ppvzSalesCommission, vw, vwNds, forPay]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансы → Финансовые отчёты → Отчёты реализации → Детализация"
+      label_ru: "Вознаграждение Вайлдберриз (ВВ), без НДС"
+      scope_ru: "Точное семейство полей детализации: денежное вознаграждение хранится отдельно от процентных коэффициентов и суммы к перечислению продавцу. Нельзя подменять сумму вознаграждения полем процента КВВ или forPay."
+      equivalence_status: verified
+      field_labels_ru:
+        commissionPercent: "Размер КВВ, %"
+        kvwBase: "Размер КВВ без НДС, % — базовый"
+        kvw: "Итоговый КВВ без НДС, %"
+        ppvzSalesCommission: "Вознаграждение с продаж до вычета услуг поверенного, без НДС"
+        forPay: "К перечислению продавцу за реализованный товар"
+        vw: "Вознаграждение Вайлдберриз (ВВ), без НДС"
+        vwNds: "НДС с вознаграждения Вайлдберриз"
+      source_refs: [wb_finance_reports_api_20260923, wb_weekly_realization_help_20260518]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_weekly_realization_help_20260518]
+    source_checked_at: "2026-09-24"
     formula_rule: "Процентные/ставочные поля не используются как денежная сумма без отдельного утверждённого правила."
+    guardrail: "Если вопрос звучит просто как «комиссия», сервер обязан различить процент КВВ, сумму вознаграждения без НДС, НДС и сумму к перечислению продавцу; эти значения не взаимозаменяемы."
 
   WB_ACQUIRING_PAYMENT_PROCESSING:
     metric_id: ACQUIRING_PAYMENT_PROCESSING
@@ -366,9 +389,21 @@ metrics:
     provider_binding:
       source_id: wb_weekly_finance_main
       field_paths: [acquiringFee, acquiringPercent, paymentProcessing, acquiringBank]
-    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415]
-    source_checked_at: "2026-09-23"
+    cabinet_binding:
+      surface_ru: "Финансы → Финансовые отчёты → Отчёты реализации → Детализация"
+      label_ru: "Эквайринг/Комиссии за организацию платежей"
+      scope_ru: "Точное семейство полей детализации: acquiringFee — денежная сумма издержек, acquiringPercent — процент, paymentProcessing — тип платежа, acquiringBank — банк-эквайер. Поля нельзя суммировать или трактовать как одно значение."
+      equivalence_status: verified
+      field_labels_ru:
+        acquiringFee: "Эквайринг/Комиссии за организацию платежей"
+        acquiringPercent: "Размер комиссии за эквайринг/Комиссии за организацию платежей, %"
+        paymentProcessing: "Тип платежа за Эквайринг/Комиссии за организацию платежей"
+        acquiringBank: "Наименование банка-эквайера"
+      source_refs: [wb_finance_reports_api_20260923, wb_weekly_realization_help_20260518]
+    source_refs: [wb_finance_reports_api_20260923, wb_finance_reports_release_20260415, wb_weekly_realization_help_20260518]
+    source_checked_at: "2026-09-24"
     temporal_rule: "Еженедельный acquiringFee не выдаётся за окончательный месячный acquiring expense."
+    guardrail: "Денежную сумму эквайринга брать только из acquiringFee; acquiringPercent не суммировать как деньги, paymentProcessing и acquiringBank использовать только как описание/разрез."
 
   WB_ORDERS:
     metric_id: ORDERS
