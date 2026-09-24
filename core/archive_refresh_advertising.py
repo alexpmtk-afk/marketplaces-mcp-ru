@@ -35,6 +35,36 @@ from .wb_advertising_normalize import (
 ADVERTISING_CORRECTION_WINDOW_DAYS = 7
 
 
+def split_refresh_period(
+    date_from: str,
+    date_to: str,
+    *,
+    yesterday: date | None = None,
+    window_days: int = ADVERTISING_CORRECTION_WINDOW_DAYS,
+) -> tuple[tuple[str, str] | None, tuple[str, str] | None]:
+    """Split a closed-history range into stable history and recent corrections."""
+    start = date.fromisoformat(str(date_from)[:10])
+    end = date.fromisoformat(str(date_to)[:10])
+    if end < start:
+        raise ValueError("date_to must not precede date_from")
+    closed_end = min(end, yesterday or _moscow_yesterday())
+    floor = closed_end - timedelta(days=max(1, int(window_days)) - 1)
+    recent_start = max(start, floor)
+    stable_end = recent_start - timedelta(days=1)
+
+    stable = (
+        (start.isoformat(), stable_end.isoformat())
+        if start <= stable_end
+        else None
+    )
+    recent = (
+        (recent_start.isoformat(), closed_end.isoformat())
+        if recent_start <= closed_end
+        else None
+    )
+    return stable, recent
+
+
 def _request_coverage_key(*, cabinet: str, dataset: str, request: dict[str, Any]) -> str:
     return request_key(
         marketplace="wb",
@@ -170,36 +200,42 @@ async def _coverage_aware_plan_step(
             "query": {"ids": ",".join(str(value) for value in ids)},
         })
 
-    for item in plan_fullstats_requests(fullstats_ids, start, end):
-        ids = list(item["campaign_ids"])
-        plan.append({
-            "kind": "fullstats",
-            "operation_id": "wb_get_adv_fullstats",
-            "datasets": ["ads_campaign_daily", "ads_product_daily"],
-            "date_from": item["date_from"],
-            "date_to": item["date_to"],
-            "scope": {"campaign_ids": ids},
-            "query": {
-                "ids": ",".join(str(value) for value in ids),
-                "beginDate": item["date_from"],
-                "endDate": item["date_to"],
-            },
-        })
+    stable_period, correction_period = split_refresh_period(start, end)
+    fullstats_periods = [
+        period for period in (stable_period, correction_period) if period is not None
+    ]
+    for period_start, period_end in fullstats_periods:
+        for item in plan_fullstats_requests(fullstats_ids, period_start, period_end):
+            ids = list(item["campaign_ids"])
+            plan.append({
+                "kind": "fullstats",
+                "operation_id": "wb_get_adv_fullstats",
+                "datasets": ["ads_campaign_daily", "ads_product_daily"],
+                "date_from": item["date_from"],
+                "date_to": item["date_to"],
+                "scope": {"campaign_ids": ids},
+                "query": {
+                    "ids": ",".join(str(value) for value in ids),
+                    "beginDate": item["date_from"],
+                    "endDate": item["date_to"],
+                },
+            })
 
     for operation_id, dataset in (
         ("wb_get_adv_upd", "ads_expenses"),
         ("wb_get_adv_payments", "ads_payments"),
     ):
-        for item in plan_period_requests(operation_id, start, end):
-            plan.append({
-                "kind": "expenses" if dataset == "ads_expenses" else "payments",
-                "operation_id": operation_id,
-                "datasets": [dataset],
-                "date_from": item["date_from"],
-                "date_to": item["date_to"],
-                "scope": {},
-                "query": {"from": item["date_from"], "to": item["date_to"]},
-            })
+        for period_start, period_end in fullstats_periods:
+            for item in plan_period_requests(operation_id, period_start, period_end):
+                plan.append({
+                    "kind": "expenses" if dataset == "ads_expenses" else "payments",
+                    "operation_id": operation_id,
+                    "datasets": [dataset],
+                    "date_from": item["date_from"],
+                    "date_to": item["date_to"],
+                    "scope": {},
+                    "query": {"from": item["date_from"], "to": item["date_to"]},
+                })
 
     pending, skipped = await _filter_plan(
         self,
@@ -234,7 +270,12 @@ async def _coverage_aware_plan_clusters_step(
         if int(row.get("campaign_id") or 0) > 0 and int(row.get("nm_id") or 0) > 0
     })
     start_date, end_date = closed_history_period(int(state["year"]))
-    periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
+    stable_period, correction_period = split_refresh_period(start_date, end_date)
+    periods: list[tuple[str, str]] = []
+    for period in (stable_period, correction_period):
+        if period is None:
+            continue
+        periods.extend(split_date_range(period[0], period[1], max_days=CLUSTER_PERIOD_DAYS))
     plan: list[dict[str, Any]] = []
     for start, end in periods:
         for chunk in _chunks(pairs, 100):
