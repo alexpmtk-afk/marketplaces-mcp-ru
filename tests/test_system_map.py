@@ -312,6 +312,10 @@ def test_server_instructions_contain_hard_architecture_boundaries():
     assert "source of truth" in SYSTEM_INSTRUCTIONS
     assert "marketplace_database_update" in SYSTEM_INSTRUCTIONS
     assert "marketplace_database_verify" in SYSTEM_INSTRUCTIONS
+    assert "explicit marketplace, seller/cabinet scope and dataset family" in SYSTEM_INSTRUCTIONS
+    assert "Never infer a missing value" in SYSTEM_INSTRUCTIONS
+    assert "marketplace_database_update_plan" in SYSTEM_INSTRUCTIONS
+    assert "most recent 7 closed days" in SYSTEM_INSTRUCTIONS
     assert "permanent finality" in SYSTEM_INSTRUCTIONS
     assert "date/high-watermark" in SYSTEM_INSTRUCTIONS
     assert "wb_ads" in SYSTEM_INSTRUCTIONS
