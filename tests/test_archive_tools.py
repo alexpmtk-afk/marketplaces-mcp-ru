@@ -112,3 +112,27 @@ def test_database_update_scope_rejects_unknown_marketplace_without_queueing():
     assert result["ok"] is False
     assert result["error"] == "unsupported_marketplace"
     assert result["no_jobs_queued"] is True
+
+
+
+def test_database_update_scope_normalizes_business_seller_name_before_queueing():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="ИП Новокшенов",
+        dataset_family="advertising",
+    )
+    assert result["ok"] is True
+    assert result["selected_sellers"] == ["wb_novokshenov"]
+    assert result["no_jobs_queued"] is True
+
+
+def test_database_update_scope_rejects_unknown_seller_before_queueing():
+    result = _database_update_scope(
+        marketplace="wb",
+        seller="Несуществующий магазин",
+        dataset_family="advertising",
+    )
+    assert result["ok"] is False
+    assert result["error"] == "unknown_seller"
+    assert result["unknown_sellers"] == ["Несуществующий магазин"]
+    assert result["no_jobs_queued"] is True
