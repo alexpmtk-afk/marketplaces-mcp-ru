@@ -156,6 +156,33 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
                     f"knowledge metric {knowledge_id} cabinet_binding has unsupported equivalence_status "
                     f"{cabinet_binding['equivalence_status']!r}"
                 )
+
+            field_labels = cabinet_binding.get("field_labels_ru")
+            if field_labels is not None:
+                field_labels = _require_mapping(
+                    field_labels,
+                    f"knowledge metric {knowledge_id} cabinet_binding field_labels_ru",
+                )
+                if not field_labels:
+                    raise MarketplaceKnowledgeError(
+                        f"knowledge metric {knowledge_id} cabinet_binding field_labels_ru must not be empty"
+                    )
+                provider_fields = set(binding_fields)
+                for provider_field, human_label in field_labels.items():
+                    if not isinstance(provider_field, str) or not provider_field.strip():
+                        raise MarketplaceKnowledgeError(
+                            f"knowledge metric {knowledge_id} cabinet_binding field_labels_ru has invalid field"
+                        )
+                    if provider_field not in provider_fields:
+                        raise MarketplaceKnowledgeError(
+                            f"knowledge metric {knowledge_id} cabinet field {provider_field!r} "
+                            f"is not present in provider_binding"
+                        )
+                    if not isinstance(human_label, str) or not human_label.strip():
+                        raise MarketplaceKnowledgeError(
+                            f"knowledge metric {knowledge_id} cabinet label for {provider_field!r} "
+                            f"must be a non-empty string"
+                        )
             cabinet_refs = _require_string_list(
                 cabinet_binding.get("source_refs"),
                 f"knowledge metric {knowledge_id} cabinet_binding source_refs",
