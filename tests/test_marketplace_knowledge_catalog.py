@@ -57,6 +57,49 @@ def test_provider_specific_stock_knowledge_does_not_cross_marketplaces():
     assert get_knowledge_metric("CURRENT_STOCK") is None
 
 
+def test_wb_stock_cabinet_bindings_are_verified_and_keep_fbw_fbs_separate():
+    wb_stock = get_knowledge_metric(
+        "CURRENT_STOCK", marketplace="wb", source_field="quantity"
+    )
+    fbs_stock = get_knowledge_metric(
+        "CURRENT_FBS_STOCK", marketplace="wb", source_field="amount"
+    )
+
+    assert wb_stock["cabinet_binding"] == {
+        "surface_ru": "Отчёт по остаткам на складе",
+        "label_ru": "Всего находится на складах",
+        "scope_ru": (
+            "Только товары, физически находящиеся на складах Wildberries; "
+            "товары в пути учитываются отдельными показателями."
+        ),
+        "equivalence_status": "verified",
+        "source_refs": ["wb_warehouse_stock_report_help_20260518"],
+    }
+    assert fbs_stock["cabinet_binding"] == {
+        "surface_ru": "Поставки и заказы → Управление остатками",
+        "label_ru": "Количество товаров",
+        "scope_ru": (
+            "Текущий остаток на выбранном виртуальном складе продавца по модели FBS; "
+            "это не остаток на складах Wildberries."
+        ),
+        "equivalence_status": "verified",
+        "source_refs": ["wb_fbs_stock_management_help_20260827"],
+    }
+    assert wb_stock["provider_binding"]["field_path"] == "quantity"
+    assert fbs_stock["provider_binding"]["field_paths"] == ["chrtId", "amount"]
+
+
+def test_verified_cabinet_binding_requires_official_source():
+    catalog = load_marketplace_knowledge_catalog()
+    catalog = deepcopy(catalog)
+    catalog["sources"]["wb_warehouse_stock_report_help_20260518"]["official"] = False
+
+    from core.marketplace_knowledge import validate_marketplace_knowledge_catalog
+
+    with pytest.raises(MarketplaceKnowledgeError, match="non-official sources"):
+        validate_marketplace_knowledge_catalog(catalog)
+
+
 def test_knowledge_catalog_cross_validates_against_metric_registry():
     catalog = load_marketplace_knowledge_catalog()
     registry = load_metric_registry()

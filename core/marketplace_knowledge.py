@@ -141,6 +141,42 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
                     f"verified knowledge metric {knowledge_id} has non-official sources: {non_official}"
                 )
 
+        cabinet_binding = metric.get("cabinet_binding")
+        if cabinet_binding is not None:
+            cabinet_binding = _require_mapping(
+                cabinet_binding, f"knowledge metric {knowledge_id} cabinet_binding"
+            )
+            for field in ("surface_ru", "label_ru", "scope_ru", "equivalence_status"):
+                if not isinstance(cabinet_binding.get(field), str) or not cabinet_binding[field].strip():
+                    raise MarketplaceKnowledgeError(
+                        f"knowledge metric {knowledge_id} cabinet_binding must define {field}"
+                    )
+            if cabinet_binding["equivalence_status"] not in {"verified", "provisional"}:
+                raise MarketplaceKnowledgeError(
+                    f"knowledge metric {knowledge_id} cabinet_binding has unsupported equivalence_status "
+                    f"{cabinet_binding['equivalence_status']!r}"
+                )
+            cabinet_refs = _require_string_list(
+                cabinet_binding.get("source_refs"),
+                f"knowledge metric {knowledge_id} cabinet_binding source_refs",
+            )
+            cabinet_missing = [source_id for source_id in cabinet_refs if source_id not in sources]
+            if cabinet_missing:
+                raise MarketplaceKnowledgeError(
+                    f"knowledge metric {knowledge_id} cabinet_binding references unknown sources: "
+                    f"{cabinet_missing}"
+                )
+            if cabinet_binding["equivalence_status"] == "verified":
+                cabinet_non_official = [
+                    source_id for source_id in cabinet_refs
+                    if sources[source_id].get("official") is not True
+                ]
+                if cabinet_non_official:
+                    raise MarketplaceKnowledgeError(
+                        f"verified cabinet binding {knowledge_id} has non-official sources: "
+                        f"{cabinet_non_official}"
+                    )
+
 
 def load_marketplace_knowledge_catalog(
     path: str | Path | None = None,
