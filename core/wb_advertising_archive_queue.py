@@ -755,13 +755,24 @@ class WBAdvertisingArchiveJobQueue:
 
     async def _plan_clusters_step(self, state: dict[str, Any]) -> dict[str, Any]:
         product_rows = await self._read_stage_rows(str(state["job_id"]), "ads_product_daily")
-        pairs = sorted({
-            (int(row.get("campaign_id") or 0), int(row.get("nm_id") or 0))
-            for row in product_rows
-            if int(row.get("campaign_id") or 0) > 0
-            and int(row.get("nm_id") or 0) > 0
-            and _cluster_candidate(row)
-        })
+        pair_flags: dict[tuple[int, int], dict[str, bool]] = {}
+        for row in product_rows:
+            campaign_id = int(row.get("campaign_id") or 0)
+            nm_id = int(row.get("nm_id") or 0)
+            if campaign_id <= 0 or nm_id <= 0:
+                continue
+            key = (campaign_id, nm_id)
+            flags = pair_flags.setdefault(key, {"has_traffic": False, "is_direct": False})
+            conversion = str(row.get("conversion_type_current") or "").strip().lower()
+            flags["is_direct"] = flags["is_direct"] or conversion == "direct"
+            flags["has_traffic"] = flags["has_traffic"] or _cluster_candidate({
+                **row,
+                "conversion_type_current": "",
+            })
+        pairs = sorted(
+            key for key, flags in pair_flags.items()
+            if flags["has_traffic"] or flags["is_direct"]
+        )
         start_date, end_date = closed_history_period(int(state["year"]))
         periods = split_date_range(start_date, end_date, max_days=CLUSTER_PERIOD_DAYS)
         plan: list[dict[str, Any]] = []
