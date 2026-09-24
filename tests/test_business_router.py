@@ -160,7 +160,11 @@ def test_one_day_orders_keep_existing_exact_day_path_but_mark_preliminary():
     ))
 
     assert result["ok"] is True
+    assert result["metric"] == "ORDERS"
+    assert result["marketplace"] == "WB"
     assert result["route"] == "operational_exact_day"
+    assert result["source_operation"] == "wb_stats_orders"
+    assert result["semantic_rule"] == "count rows where isCancel=false; sum finishedPrice"
     assert result["source_validation"] == "official_operational_preliminary"
     assert result["business_completeness"] == "PRELIMINARY_NOT_ALL_ORDERS"
     assert result["complete"] is True
