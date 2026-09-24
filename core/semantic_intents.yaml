@@ -164,6 +164,12 @@ routes:
     target_id: CURRENT_SELLING_PRICE
     match_any: [цена товара, цену товара, цена артикула, цену артикула, сколько стоит товар, текущая цена товара, текущую цену товара, цена по товару, цену на товар, цену на любой товар]
 
+  - id: payout_term_change_fee
+    priority: 1870
+    target_type: capability
+    target_id: payout_term_change_fee
+    match_any: [услуга вывести сейчас, вывести сейчас, комиссия за вывести сейчас, разовое изменение срока перечисления денежных средств, изменение срока перечисления денежных средств]
+
   - id: current_state_generic
     priority: 1800
     target_type: inline_not_covered
