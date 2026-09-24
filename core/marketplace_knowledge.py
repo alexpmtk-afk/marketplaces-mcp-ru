@@ -151,7 +151,7 @@ def validate_marketplace_knowledge_catalog(data: dict[str, Any]) -> None:
                     raise MarketplaceKnowledgeError(
                         f"knowledge metric {knowledge_id} cabinet_binding must define {field}"
                     )
-            if cabinet_binding["equivalence_status"] not in {"verified", "provisional"}:
+            if cabinet_binding["equivalence_status"] not in {"verified", "provisional", "partial"}:
                 raise MarketplaceKnowledgeError(
                     f"knowledge metric {knowledge_id} cabinet_binding has unsupported equivalence_status "
                     f"{cabinet_binding['equivalence_status']!r}"

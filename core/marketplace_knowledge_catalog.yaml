@@ -81,6 +81,14 @@ sources:
     source_version: "checked-2026-09-23"
     checked_at: "2026-09-23"
 
+  wb_order_feed_help_20260731:
+    marketplace: wb
+    title: "Wildberries Seller Help — Отчёт «Лента заказов»"
+    url: "https://seller.wildberries.ru/instructions/en/kg/material/order-feed-report"
+    official: true
+    source_version: "updated-2026-07-31"
+    checked_at: "2026-09-24"
+
   wb_seller_stocks_api_20260923:
     marketplace: wb
     title: "Wildberries API — Остатки на складах продавца"
@@ -362,11 +370,17 @@ metrics:
     provider_binding:
       source_id: wb_stats_orders
       field_paths: [date, isCancel, finishedPrice]
+    cabinet_binding:
+      surface_ru: "Аналитика продавца → Лента заказов"
+      label_ru: "Все заказы"
+      scope_ru: "Ближайший кабинетный аналог, но не эквивалентный источник: «Лента заказов» показывает полный кабинетный поток по всем моделям и статусам, тогда как /api/v1/supplier/orders может не содержать часть заказов без подтверждённой оплаты."
+      equivalence_status: partial
+      source_refs: [wb_order_feed_help_20260731, wb_reports_api_20260923]
     provider_raw_fields: [date, isCancel, finishedPrice]
-    source_refs: [wb_reports_api_20260923]
-    source_checked_at: "2026-09-23"
+    source_refs: [wb_reports_api_20260923, wb_order_feed_help_20260731]
+    source_checked_at: "2026-09-24"
     formula_rule: "UNITS=count(rows where isCancel=false for requested day); AMOUNT_RUB=sum(finishedPrice for the same rows)."
-    guardrail: "Не выдавать за продажи, выручку, выплаты или полный поток всех оформленных заказов."
+    guardrail: "Не выдавать за продажи, выручку, выплаты или полный поток всех оформленных заказов. Не приравнивать результат /supplier/orders к счётчику «Все заказы» в «Ленте заказов»."
 
   WB_CURRENT_FBS_STOCK:
     metric_id: CURRENT_FBS_STOCK

@@ -267,6 +267,29 @@ def test_wb_advertising_raw_and_derived_bindings_do_not_cross_metrics():
     ) is None
 
 
+def test_wb_orders_cabinet_binding_records_partial_not_equal_to_order_feed():
+    orders = get_knowledge_metric(
+        "ORDERS", marketplace="wb", source_field="finishedPrice"
+    )
+
+    assert orders is not None
+    assert orders["cabinet_binding"]["surface_ru"] == "Аналитика продавца → Лента заказов"
+    assert orders["cabinet_binding"]["label_ru"] == "Все заказы"
+    assert orders["cabinet_binding"]["equivalence_status"] == "partial"
+    assert "не эквивалентный" in orders["cabinet_binding"]["scope_ru"]
+    assert "/api/v1/supplier/orders" in orders["cabinet_binding"]["scope_ru"]
+    assert "Не приравнивать" in orders["guardrail"]
+
+
+def test_partial_cabinet_binding_is_not_promoted_to_verified():
+    catalog = load_marketplace_knowledge_catalog()
+    orders = catalog["metrics"]["WB_ORDERS"]
+
+    assert orders["semantic_status"] == "verified"
+    assert orders["cabinet_binding"]["equivalence_status"] == "partial"
+    assert orders["cabinet_binding"]["equivalence_status"] != "verified"
+
+
 def test_wb_orders_binding_detects_field_drift():
     catalog = load_marketplace_knowledge_catalog()
     registry = deepcopy(load_metric_registry())
