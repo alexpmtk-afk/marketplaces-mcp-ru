@@ -25,6 +25,7 @@ from .semantic_current_stock import (
 )
 from .semantic_ozon_snapshot import (
     OZON_PRICE_METRICS,
+    OZON_STOCK_METRICS,
     SemanticOzonSnapshotError,
     execute_ozon_current_snapshot,
     requested_snapshot_metrics,
@@ -457,12 +458,12 @@ def _ozon_snapshot_resolution(question: str, metrics: list[str]) -> dict[str, An
     result: dict[str, Any] = {
         "resolution_type": target_type,
         "execution_allowed": True,
-        "status": "AVAILABLE_WITH_LIMITATION" if any(metric in OZON_PRICE_METRICS for metric in metrics) else "AVAILABLE",
+        "status": "AVAILABLE_WITH_LIMITATION" if any(metric in (OZON_PRICE_METRICS | OZON_STOCK_METRICS) for metric in metrics) else "AVAILABLE",
         "route_id": "ozon_current_snapshot",
         "source_ids": [
             source for source in (
                 "ozon_current_prices" if any(metric in OZON_PRICE_METRICS for metric in metrics) else "",
-                "ozon_current_stocks" if "CURRENT_STOCK" in metrics else "",
+                "ozon_current_stocks" if any(metric in OZON_STOCK_METRICS for metric in metrics) else "",
             ) if source
         ],
         "canonical_metrics": canonical,
@@ -548,7 +549,17 @@ async def execute_business_query(
             details={
                 "question": natural_question,
                 "semantic_status": "REQUIRES_OTHER_SOURCE_OR_EXECUTOR",
-                "approved_ozon_metrics": ["CURRENT_SELLING_PRICE", "CURRENT_STOCK"],
+                "approved_ozon_metrics": [
+                    "CURRENT_SELLING_PRICE",
+                    "OZON_BASE_PRICE",
+                    "OZON_OLD_PRICE",
+                    "OZON_MIN_PRICE",
+                    "CURRENT_STOCK",
+                    "OZON_FBO_AVAILABLE_STOCK",
+                    "OZON_FBO_RESERVED_STOCK",
+                    "OZON_FBS_AVAILABLE_STOCK",
+                    "OZON_FBS_RESERVED_STOCK",
+                ],
             },
         )
 
