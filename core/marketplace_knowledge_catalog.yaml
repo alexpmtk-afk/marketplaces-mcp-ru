@@ -1016,6 +1016,54 @@ metrics:
     verification_note: "Live 2026-09-01..2026-09-24: Placements 3694.83 RUB expense; TemporaryPlacementsAgent 1767 RUB expense; approved storage total 5461.83 RUB."
     formula_rule: "expense_rub = abs(sum(accrued)) for approved storage type ids 46, 60, 78, 79, 102."
     guardrail: "Do not include logistics, commission, advertising or unrelated fees."
+  OZON_CURRENT_OTHER_SERVICES:
+    metric_id: OTHER_SERVICES_COST
+    marketplace: ozon
+    label_ru: "Прочие услуги Ozon"
+    definition_ru: "Текущие прочие услуги Ozon по утвержденному списку типов начислений, не входящих в логистику, хранение, комиссию, продвижение, штрафы и компенсации."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [open_month, accrual_type]
+    aliases_ru: ["прочие услуги ozon", "другие услуги ozon", "прочие расходы ozon"]
+    aliases_en: ["Ozon other services", "Ozon other services cost"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_accruals
+      field_paths:
+        - "non_item_fee.type_id"
+        - "non_item_fee.accrued"
+        - "item_fees.fees[].fees[].type_id"
+        - "item_fees.fees[].fees[].accrued"
+    source_refs: [ozon_current_accrual_contract_20260925]
+    source_checked_at: "2026-09-25"
+    verification_note: "Live 2026-09-01..2026-09-24: approved non-delivery service types 1,22,38,39,52,63,71,76,84 total -33201.00 RUB. Type 45 is excluded because it occurs inside delivery.services and is already included in LOGISTICS_COST."
+    formula_rule: "expense_rub = abs(sum(accrued)) for approved other-service type ids 1,22,38,39,52,63,71,76,84 from non-item/item fee locations only."
+    guardrail: "Never add delivery.services here; they are already included in delivery.total_accrued. Promotion, fines, compensation, storage and sale commission remain separate."
+
+  OZON_CURRENT_DEDUCTIONS_ADJUSTMENTS:
+    metric_id: DEDUCTIONS_ADJUSTMENTS
+    marketplace: ozon
+    label_ru: "Удержания и корректировки Ozon"
+    definition_ru: "Текущие удержания/корректировки Ozon по утвержденным типам взаиморасчетов и корректировок."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [open_month, accrual_type]
+    aliases_ru: ["удержания ozon", "корректировки ozon", "взаимозачет ozon"]
+    aliases_en: ["Ozon deductions", "Ozon adjustments"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_accruals
+      field_paths:
+        - "non_item_fee.type_id"
+        - "non_item_fee.accrued"
+        - "item_fees.fees[].fees[].type_id"
+        - "item_fees.fees[].fees[].accrued"
+    source_refs: [ozon_current_accrual_contract_20260925]
+    source_checked_at: "2026-09-25"
+    verification_note: "Live 2026-09-01..2026-09-24: reviewed adjustment type ids 11,57,72,83 had no accruals, so the verified value is 0 RUB."
+    formula_rule: "value_rub = abs(sum(accrued)) for reviewed type ids 11,57,72,83 in non-item/item fee locations."
+    guardrail: "If an approved adjustment type appears inside delivery.services, fail closed to prevent double-counting against logistics."
+
   OZON_FINAL_SALES:
     metric_id: SALES
     marketplace: ozon
