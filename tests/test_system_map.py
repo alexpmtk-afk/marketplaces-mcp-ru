@@ -165,6 +165,7 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "ads_campaign_daily",
         "ads_campaign_roster_snapshots",
         "ozon_final_realization",
+        "ozon_current_accruals",
     }
     assert set(semantic["approved_archive_executors"]) == {
         "penalties",
@@ -179,6 +180,8 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "warehouse_tariff_context",
         "advertising_performance",
         "ozon_final_sales_returns_units",
+        "ozon_current_commission",
+        "ozon_current_logistics",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert "dataset_coverage_registry.csv" in semantic["execution_gate"]
