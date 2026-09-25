@@ -99,7 +99,7 @@ def stock_response(product_id="3276772809", sku="3276433388"):
 
 def test_metric_registry_registers_current_selling_price_and_ozon_stock_mapping():
     registry = load_metric_registry()
-    assert len(registry["metrics"]) == 41
+    assert len(registry["metrics"]) == 42
     price = registry["metrics"]["CURRENT_SELLING_PRICE"]
     stock = registry["metrics"]["CURRENT_STOCK"]
     assert price["provider_mappings"]["ozon"]["source_id"] == "ozon_current_prices"
