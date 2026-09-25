@@ -496,7 +496,7 @@ async def execute_ozon_orders_question(
             ozon,
             kind=kind,
             period=period,
-            statuses=request["statuses"] if request["metric_id"] == "OZON_POSTINGS" else [],
+            statuses=request["statuses"] if request["metric_id"] in {"OZON_POSTINGS", "OZON_CANCELLED_POSTINGS"} else [],
             creds=creds,
         )
         if error:
