@@ -89,6 +89,21 @@ def test_metric_dictionary_is_visible_from_canonical_semantic_core():
     assert brain["summary"]["safety"]["metric_dictionary_is_semantic_only"] is True
 
 
+def test_ozon_final_sales_returns_have_separate_unit_bindings():
+    registry = load_metric_registry()["metrics"]
+
+    assert registry["SALES"]["provider_mappings"]["ozon"]["status"] == "EXECUTOR_OWNED"
+    assert registry["SALES"]["provider_mappings"]["ozon"]["source_id"] == "ozon_final_realization"
+    assert registry["SALES"]["provider_mappings"]["ozon"]["fields"] == [
+        "delivery_commission.quantity"
+    ]
+    assert registry["RETURNS"]["provider_mappings"]["ozon"]["status"] == "EXECUTOR_OWNED"
+    assert registry["RETURNS"]["provider_mappings"]["ozon"]["source_id"] == "ozon_final_realization"
+    assert registry["RETURNS"]["provider_mappings"]["ozon"]["fields"] == [
+        "return_commission.quantity"
+    ]
+
+
 def test_ozon_stock_fields_have_distinct_stable_metric_ids():
     registry = load_metric_registry()["metrics"]
 
