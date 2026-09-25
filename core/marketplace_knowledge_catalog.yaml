@@ -193,6 +193,14 @@ sources:
     source_version: "live-verified-2026-04-13"
     checked_at: "2026-09-25"
 
+  ozon_mcp_curated_order_semantics_20260411:
+    marketplace: ozon
+    title: "Ozon Seller API — curated FBO/FBS posting semantics from ozon-mcp"
+    url: "https://github.com/PCDCK/ozon-mcp/blob/7e1bea2dd7510064311f1d357d014bb012a18847/src/ozon_mcp/knowledge/workflows.yaml"
+    official: false
+    source_version: "fbo-live-verified-2026-04-11"
+    checked_at: "2026-09-25"
+
 metrics:
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     marketplace: wb
@@ -942,6 +950,61 @@ metrics:
     source_checked_at: "2026-09-24"
     formula_rule: "attributed_order_amount / spend; если spend<=0, значение не вычисляется."
     guardrail: "Не выдавать за общую прибыльность бизнеса."
+
+  OZON_ORDERS:
+    metric_id: OZON_ORDERS
+    marketplace: ozon
+    label_ru: "Заказы Ozon"
+    definition_ru: "Количество уникальных заказов Ozon за выбранный период. Один заказ определяется по order_number и дедуплицируется по объединению FBO/FBS отправлений; FBO и FBS нельзя просто складывать, потому что один order_number может встречаться в обоих потоках."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [period, fulfillment_type]
+    aliases_ru: ["заказы ozon", "заказы озон", "количество заказов ozon", "сколько заказов ozon"]
+    aliases_en: ["Ozon orders", "Ozon order count"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_order_postings
+      field_path: order_number
+    calculation_inputs: [order_number, posting_number, order_id, in_process_at]
+    source_refs: [ozon_mcp_curated_order_semantics_20260411]
+    source_checked_at: "2026-09-25"
+    verification_note: "На live-данных ozon_laser_master за 2026-09-01..2026-09-25 подтверждено, что posting_number не равен заказу: 944 отправления соответствовали 834 уникальным order_number; 7 order_number встречались одновременно в FBO и FBS."
+    guardrail: "Статус и substatus относятся к posting_number. Не присваивать один синтетический статус всему order_number; денежную сумму заказов этим контрактом не считать."
+    live_evidence:
+      checked_at: "2026-09-25"
+      cabinet: ozon_laser_master
+      period: "2026-09-01..2026-09-25"
+      postings: 944
+      unique_orders: 834
+      cross_fulfillment_orders: 7
+      result: PASS
+
+  OZON_POSTINGS:
+    metric_id: OZON_POSTINGS
+    marketplace: ozon
+    label_ru: "Отправления Ozon"
+    definition_ru: "Количество уникальных отправлений Ozon по posting_number за выбранный период. FBO и FBS являются отдельными потоками; status и substatus описывают состояние конкретного отправления."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [period, fulfillment_type, status, substatus]
+    aliases_ru: ["отправления ozon", "отправления озон", "количество отправлений ozon", "сколько отправлений ozon"]
+    aliases_en: ["Ozon postings", "Ozon shipments", "Ozon posting count"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_order_postings
+      field_path: posting_number
+    calculation_inputs: [posting_number, order_number, status, substatus, in_process_at]
+    source_refs: [ozon_mcp_curated_order_semantics_20260411]
+    source_checked_at: "2026-09-25"
+    verification_note: "Live-проверка обоих потоков выполнена через ozon_fbo_list и ozon_fbs_list. В одном order_number могут быть несколько posting_number и у них могут различаться статусы."
+    guardrail: "Не называть posting_number заказом. Статусы агрегировать только на уровне отправлений; FBO/FBS сохранять отдельными измерениями."
+    live_evidence:
+      checked_at: "2026-09-25"
+      cabinet: ozon_laser_master
+      period: "2026-09-01..2026-09-25"
+      fbo_postings: 252
+      fbs_postings: 692
+      result: PASS
 
   OZON_CURRENT_STOCK:
     metric_id: CURRENT_STOCK
