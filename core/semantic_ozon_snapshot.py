@@ -35,13 +35,13 @@ _OZON_STOCK_METRIC_CONTRACT = {
         "result_key": "current_stock",
         "bucket": None,
         "measure": "available",
-        "source_field": "sum(stocks.present-stocks.reserved)",
+        "source_field": "stocks.present",
     },
     "OZON_FBO_AVAILABLE_STOCK": {
         "result_key": "ozon_fbo_available_stock",
         "bucket": "fbo",
         "measure": "available",
-        "source_field": "stocks.present-stocks.reserved",
+        "source_field": "stocks.present",
     },
     "OZON_FBO_RESERVED_STOCK": {
         "result_key": "ozon_fbo_reserved_stock",
@@ -53,7 +53,7 @@ _OZON_STOCK_METRIC_CONTRACT = {
         "result_key": "ozon_fbs_available_stock",
         "bucket": "fbs",
         "measure": "available",
-        "source_field": "stocks.present-stocks.reserved",
+        "source_field": "stocks.present",
     },
     "OZON_FBS_RESERVED_STOCK": {
         "result_key": "ozon_fbs_reserved_stock",
