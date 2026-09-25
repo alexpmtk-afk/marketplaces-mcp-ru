@@ -10,7 +10,7 @@ def test_metric_registry_v1_is_canonical_semantic_dictionary_not_execution_autho
     assert registry["policy"]["metric_dictionary_grants_execution"] is False
     assert registry["policy"]["provider_field_is_not_business_name"] is True
     assert registry["policy"]["unknown_provider_mapping_must_not_be_inferred"] is True
-    assert len(registry["metrics"]) == 34
+    assert len(registry["metrics"]) == 38
 
 
 def test_payout_term_change_fee_has_exact_wb_semantics():
@@ -83,10 +83,41 @@ def test_metric_dictionary_is_visible_from_canonical_semantic_core():
     metrics_view = semantic_core_view("metrics")
 
     assert brain["validated"] is True
-    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 34
+    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 38
     assert brain["component_versions"]["metric_registry"] == "marketplace_metric_registry.v1"
     assert metrics_view["metrics"]["AD_DRR"]["abbreviation"] == "ДРР"
     assert brain["summary"]["safety"]["metric_dictionary_is_semantic_only"] is True
+
+
+def test_ozon_stock_fields_have_distinct_stable_metric_ids():
+    registry = load_metric_registry()["metrics"]
+
+    assert registry["CURRENT_STOCK"]["provider_mappings"]["ozon"]["fields"] == [
+        "stocks.present",
+        "stocks.reserved",
+        "stocks.type",
+        "sku",
+        "warehouse_ids",
+    ]
+    assert registry["OZON_FBO_AVAILABLE_STOCK"]["provider_mappings"]["ozon"]["fields"] == [
+        "stocks.present", "stocks.reserved", "stocks.type"
+    ]
+    assert registry["OZON_FBO_RESERVED_STOCK"]["provider_mappings"]["ozon"]["fields"] == [
+        "stocks.reserved", "stocks.type"
+    ]
+    assert registry["OZON_FBS_AVAILABLE_STOCK"]["provider_mappings"]["ozon"]["fields"] == [
+        "stocks.present", "stocks.reserved", "stocks.type"
+    ]
+    assert registry["OZON_FBS_RESERVED_STOCK"]["provider_mappings"]["ozon"]["fields"] == [
+        "stocks.reserved", "stocks.type"
+    ]
+
+    assert [item["metric_id"] for item in resolve_metric_terms("остаток FBO Ozon")] == [
+        "OZON_FBO_AVAILABLE_STOCK"
+    ]
+    assert [item["metric_id"] for item in resolve_metric_terms("резерв FBS Ozon")] == [
+        "OZON_FBS_RESERVED_STOCK"
+    ]
 
 
 def test_ozon_price_fields_have_distinct_stable_metric_ids():
