@@ -58,6 +58,45 @@ business_metrics:
     current_only: true
     guardrail: Для WB значения price/discountedPrice уже выражены в currencyIsoCode4217; RUB нельзя делить на 100. Для Ozon отдельный executor использует marketing_seller_price. Историческую цену нельзя подменять текущим снимком.
 
+  OZON_BASE_PRICE:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Цена продавца до акций Ozon из price.price; не подменять текущей ценой продажи marketing_seller_price.
+
+  OZON_OLD_PRICE:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Зачёркнутая цена Ozon из price.old_price; не подменять текущей ценой продажи.
+
+  OZON_MIN_PRICE:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_prices
+    data_class: CURRENT_OPERATIONAL_PRICE
+    default_measure: AMOUNT_RUB
+    allowed_measures: [AMOUNT_RUB]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Минимально допустимый ценовой порог Ozon из price.min_price; не подменять текущей ценой продажи.
+
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     status: AVAILABLE_WITH_LIMITATION
     marketplace: wb
