@@ -208,6 +208,34 @@ metrics:
       feeds. status/substatus are posting-level dimensions and must not be
       promoted to one synthetic order status.
 
+  OZON_CANCELLED_POSTINGS:
+    canonical_name_ru: Отменённые отправления Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - отмены ozon
+      - отмены озон
+      - отмененные отправления ozon
+      - отменённые отправления ozon
+      - количество отмен ozon
+      - сколько отмен ozon
+    aliases_en:
+      - Ozon cancelled postings
+      - Ozon cancellations
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_CANCELLED_POSTINGS}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_order_postings
+        fields: [posting_number, order_number, status, substatus, in_process_at]
+        provider_aliases: [posting_number, status, substatus]
+    guardrail: >-
+      Cancellation is posting-scoped. Count distinct posting_number with
+      provider status=cancelled across the selected FBO/FBS feeds. Do not call
+      this RETURNS and do not synthesize one cancellation status for order_number.
+
   CURRENT_SELLING_PRICE:
     canonical_name_ru: Текущая цена продажи
     abbreviation: null
