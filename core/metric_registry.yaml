@@ -337,7 +337,15 @@ metrics:
     semantic_target: {type: CAPABILITY, id: storage_charge}
     provider_mappings:
       wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [paidStorage]}
-      ozon: {status: NOT_MAPPED, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_current_accruals
+        fields:
+          - "non_item_fee.type_id"
+          - "non_item_fee.accrued"
+          - "item_fees.fees[].fees[].type_id"
+          - "item_fees.fees[].fees[].accrued"
+    guardrail: Ozon storage uses only provider storage placement types 46 60 78 79 102 from COMPLETE CURRENT accrual coverage; unrelated fees are excluded.
 
   ACCEPTANCE_COST:
     canonical_name_ru: Платная приёмка
