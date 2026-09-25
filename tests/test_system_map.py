@@ -147,6 +147,7 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "OZON_FBS_RESERVED_STOCK",
         "OZON_ORDERS",
         "OZON_POSTINGS",
+        "OZON_CANCELLED_POSTINGS",
     }
     assert "Seller Analytics" in semantic["current_stock_source"]
     assert "Ozon" in semantic["current_stock_source"]
@@ -200,6 +201,7 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     assert "FBO and FBS" in rules
     assert "Ozon order semantics use distinct order_number" in rules
     assert "Ozon posting semantics use distinct posting_number" in rules
+    assert "Ozon cancellations are distinct posting_number rows" in rules
     assert "monetary order totals are fail-closed" in rules
     assert "Ozon closed-month SALES units use delivery_commission.quantity" in rules
     assert "RETURNS units use return_commission.quantity" in rules
@@ -217,6 +219,9 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     ozon_postings = SYSTEM_MAP["routing_policy"]["ozon_postings"]
     assert "distinct posting_number" in ozon_postings
     assert "status/substatus" in ozon_postings
+    ozon_cancellations = SYSTEM_MAP["routing_policy"]["ozon_cancellations"]
+    assert "status=cancelled" in ozon_cancellations
+    assert "not RETURNS" in ozon_cancellations
     ozon_final = SYSTEM_MAP["routing_policy"]["ozon_final_sales_returns"]
     assert "delivery_commission.quantity" in ozon_final
     assert "return_commission.quantity" in ozon_final
