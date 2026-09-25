@@ -213,6 +213,58 @@ def test_canonical_router_executes_ozon_postings_as_distinct_metric(monkeypatch)
     assert result["semantic_resolution"]["metric_id"] == "OZON_POSTINGS"
 
 
+def test_canonical_router_executes_closed_month_ozon_sales_from_archive(monkeypatch):
+    captured = {}
+
+    async def fake_sales_returns(store, **kwargs):
+        captured["store"] = store
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "complete": True,
+            "metric_id": "SALES",
+            "value": 667,
+            "unit": "UNITS",
+            "sales_units": 667,
+            "return_units": 27,
+        }
+
+    monkeypatch.setattr(
+        router, "execute_ozon_final_sales_returns_question", fake_sales_returns
+    )
+    archive = object()
+    result = asyncio.run(router.execute_business_query(
+        {"ozon": object(), "_archive_store": archive},
+        marketplace="ozon",
+        seller="ozon_laser_master",
+        date_from="2026-08-01",
+        date_to="2026-08-31",
+        question="Сколько продаж Ozon за август?",
+    ))
+
+    assert result["ok"] is True
+    assert captured["store"] is archive
+    assert captured["seller"] == "ozon_laser_master"
+    assert captured["date_from"] == "2026-08-01"
+    assert captured["date_to"] == "2026-08-31"
+    assert result["semantic_resolution"]["route_id"] == "ozon_final_sales_returns"
+    assert result["semantic_resolution"]["metric_id"] == "SALES"
+    assert result["semantic_resolution"]["normalized_query"]["requested_measure"] == "UNITS"
+
+
+def test_canonical_router_requires_archive_for_ozon_final_sales():
+    result = asyncio.run(router.execute_business_query(
+        {"ozon": object()},
+        marketplace="ozon",
+        seller="ozon_laser_master",
+        question="Сколько возвратов Ozon за август 2026?",
+    ))
+
+    assert result["ok"] is False
+    assert result["error_type"] == "source_not_suitable"
+    assert result["details"]["semantic_resolution"]["route_id"] == "ozon_final_sales_returns"
+
+
 class _SnapshotWb:
     async def wb_get_prices(self, **kwargs):
         assert kwargs["filter_nm_id"] == 218395039
