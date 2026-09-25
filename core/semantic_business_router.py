@@ -33,6 +33,11 @@ from .semantic_ozon_logistics import (
     execute_ozon_current_logistics,
     requested_ozon_logistics,
 )
+from .semantic_ozon_storage import (
+    SemanticOzonStorageError,
+    execute_ozon_current_storage,
+    requested_ozon_storage,
+)
 from .semantic_ozon_orders import (
     OZON_ORDER_METRICS,
     SemanticOzonOrdersError,
@@ -614,6 +619,59 @@ async def execute_business_query(
                     str(exc),
                     operation_id="marketplace_business_query",
                     retryable=False,
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
+        storage_request = requested_ozon_storage(natural_question)
+        if storage_request:
+            resolution = {
+                "resolution_type": "BUSINESS_METRIC",
+                "execution_allowed": True,
+                "status": "AVAILABLE_WITH_LIMITATION",
+                "route_id": "ozon_current_storage",
+                "metric_id": "STORAGE_COST",
+                "source_ids": ["ozon_current_accruals"],
+                "normalized_query": {
+                    "marketplace": "ozon",
+                    "temporal_class": "CURRENT_OPEN_MONTH",
+                    "metric": "STORAGE_COST",
+                    "requested_measure": "RUB",
+                },
+                "guardrail": (
+                    "Ozon storage uses only explicit provider storage/placement "
+                    "types 46, 60, 78, 79 and 102 from COMPLETE canonical CURRENT "
+                    "accrual coverage. Logistics, commission, advertising and unrelated "
+                    "fees are not substituted."
+                ),
+            }
+            store = modules.get("_archive_store")
+            if store is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Canonical Google Drive archive is required for Ozon storage.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_current_storage(
+                    store,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonStorageError as exc:
+                result = make_error(
+                    "source_not_suitable",
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
                 )
             if isinstance(result, dict):
                 return _attach_semantic_context(
