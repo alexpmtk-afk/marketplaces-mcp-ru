@@ -1004,7 +1004,7 @@ metrics:
     historical_names: []
     provider_binding:
       source_id: ozon_current_accruals
-      field_paths: [non_item_fee.type_id, non_item_fee.accrued]
+      field_paths: [non_item_fee.type_id, non_item_fee.accrued, item_fees.fees[].fees[].type_id, item_fees.fees[].fees[].accrued, posting.products[].delivery.services[].type_id, posting.products[].delivery.services[].accrued]
     source_refs: [ozon_current_accrual_contract_20260925]
     source_checked_at: "2026-09-25"
     verification_note: "Live 2026-09-01..2026-09-24: Placements 3694.83 RUB expense; TemporaryPlacementsAgent 1767 RUB expense; approved storage total 5461.83 RUB."
