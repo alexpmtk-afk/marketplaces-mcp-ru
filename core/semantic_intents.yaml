@@ -58,6 +58,30 @@ business_metrics:
     current_only: true
     guardrail: Для WB значения price/discountedPrice уже выражены в currencyIsoCode4217; RUB нельзя делить на 100. Для Ozon отдельный executor использует marketing_seller_price. Историческую цену нельзя подменять текущим снимком.
 
+  OZON_ORDERS:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_order_postings
+    data_class: OPERATIONAL_ORDER_FEED
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL]
+    product_filter_supported: false
+    current_period_supported: true
+    guardrail: Уникальные заказы считаются по distinct order_number на объединении FBO/FBS. FBO и FBS нельзя складывать без дедупликации. Статус относится к отправлению, а денежная сумма заказов этим контрактом не покрыта.
+
+  OZON_POSTINGS:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_order_postings
+    data_class: OPERATIONAL_POSTING_FEED
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL]
+    product_filter_supported: false
+    current_period_supported: true
+    guardrail: Отправление определяется по posting_number. status/substatus являются измерениями отправления; FBO и FBS не смешивать без явного общего запроса.
+
   OZON_FBO_AVAILABLE_STOCK:
     status: AVAILABLE_WITH_LIMITATION
     marketplace: ozon
@@ -189,6 +213,18 @@ business_metrics:
     guardrail: Цена после установленной скидки WB Клуба; не обещает финальную персональную цену покупателя.
 
 routes:
+  - id: ozon_postings
+    priority: 2040
+    target_type: business_metric
+    target_id: OZON_POSTINGS
+    match_any: [отправления ozon, отправлений ozon, отправления озон, отправлений озон, отправления fbo ozon, отправления fbs ozon]
+
+  - id: ozon_orders
+    priority: 2030
+    target_type: business_metric
+    target_id: OZON_ORDERS
+    match_any: [заказы ozon, заказов ozon, заказы озон, заказов озон, заказы fbo ozon, заказы fbs ozon]
+
   - id: ozon_fbo_reserved_stock
     priority: 2015
     target_type: business_metric
