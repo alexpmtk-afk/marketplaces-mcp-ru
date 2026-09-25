@@ -345,6 +345,8 @@ metrics:
           - "non_item_fee.accrued"
           - "item_fees.fees[].fees[].type_id"
           - "item_fees.fees[].fees[].accrued"
+          - "posting.products[].delivery.services[].type_id"
+          - "posting.products[].delivery.services[].accrued"
     guardrail: Ozon storage uses only provider storage placement types 46 60 78 79 102 from COMPLETE CURRENT accrual coverage; unrelated fees are excluded.
 
   ACCEPTANCE_COST:
