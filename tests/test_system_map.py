@@ -137,6 +137,9 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "CURRENT_STOCK",
         "CURRENT_FBS_STOCK",
         "CURRENT_SELLING_PRICE",
+        "OZON_BASE_PRICE",
+        "OZON_OLD_PRICE",
+        "OZON_MIN_PRICE",
     }
     assert "Seller Analytics" in semantic["current_stock_source"]
     assert "warehouse-remains" in semantic["current_stock_source"]

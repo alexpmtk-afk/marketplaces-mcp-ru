@@ -54,6 +54,42 @@ def test_wb_price_cabinet_bindings_use_exact_seller_labels():
         assert metric["cabinet_binding"]["source_refs"] == ["wb_seller_price_help_20260518"]
 
 
+def test_ozon_price_knowledge_keeps_each_provider_field_separate():
+    current = get_knowledge_metric(
+        "CURRENT_SELLING_PRICE", marketplace="ozon", source_field="price.marketing_seller_price"
+    )
+    base = get_knowledge_metric(
+        "OZON_BASE_PRICE", marketplace="ozon", source_field="price.price"
+    )
+    old = get_knowledge_metric(
+        "OZON_OLD_PRICE", marketplace="ozon", source_field="price.old_price"
+    )
+    minimum = get_knowledge_metric(
+        "OZON_MIN_PRICE", marketplace="ozon", source_field="price.min_price"
+    )
+
+    assert current["label_ru"] == "Цена Ozon с учётом акций продавца"
+    assert base["label_ru"] == "Цена продавца до акций Ozon"
+    assert old["label_ru"] == "Зачёркнутая цена Ozon"
+    assert minimum["label_ru"] == "Минимально допустимая цена Ozon"
+
+    assert {
+        current["provider_binding"]["field_path"],
+        base["provider_binding"]["field_path"],
+        old["provider_binding"]["field_path"],
+        minimum["provider_binding"]["field_path"],
+    } == {
+        "price.marketing_seller_price",
+        "price.price",
+        "price.old_price",
+        "price.min_price",
+    }
+    assert all(
+        metric["semantic_status"] == "provisional"
+        for metric in (current, base, old, minimum)
+    )
+
+
 def test_provider_specific_stock_knowledge_does_not_cross_marketplaces():
     wb = get_knowledge_metric(
         "CURRENT_STOCK", marketplace="wb", source_field="quantity"
@@ -162,17 +198,20 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 32
-    assert result["semantic_metric_count"] == 31
+    assert result["knowledge_record_count"] == 35
+    assert result["semantic_metric_count"] == 34
     assert result["verified_metric_count"] == 30
     assert result["verified_binding_count"] == 30
-    assert result["provisional_binding_count"] == 2
+    assert result["provisional_binding_count"] == 5
     assert {
         (item["metric_id"], item["marketplace"])
         for item in result["provisional_bindings"]
     } == {
         ("CURRENT_STOCK", "ozon"),
         ("CURRENT_SELLING_PRICE", "ozon"),
+        ("OZON_BASE_PRICE", "ozon"),
+        ("OZON_OLD_PRICE", "ozon"),
+        ("OZON_MIN_PRICE", "ozon"),
     }
     assert result["stale_sources"] == []
 
@@ -221,6 +260,9 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
     assert set(ozon["provisional_metric_ids"]) == {
         "CURRENT_STOCK",
         "CURRENT_SELLING_PRICE",
+        "OZON_BASE_PRICE",
+        "OZON_OLD_PRICE",
+        "OZON_MIN_PRICE",
     }
     assert "ORDERS" in ozon["registry_unresolved_metric_ids"]
     assert ozon["metric_coverage_complete"] is False

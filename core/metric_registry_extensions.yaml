@@ -61,3 +61,79 @@ metrics:
       buyer-specific discounts or platform subsidies may change the checkout
       price. Historical price requires an approved historical source and must
       never be reconstructed from the current snapshot.
+
+
+  OZON_BASE_PRICE:
+    canonical_name_ru: Цена продавца до акций Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru:
+      - цена продавца до акций ozon
+      - цена до акций ozon
+      - базовая цена ozon
+    aliases_en:
+      - Ozon seller price before promotions
+      - Ozon base price
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_BASE_PRICE}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_prices
+        fields: [price.price, price.currency_code]
+        provider_aliases: [price]
+    guardrail: >-
+      price.price is the seller price before Ozon promotions. Do not present it
+      as the actual current buyer-facing selling price when
+      marketing_seller_price is available.
+
+  OZON_OLD_PRICE:
+    canonical_name_ru: Зачёркнутая цена Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru:
+      - зачеркнутая цена ozon
+      - зачёркнутая цена ozon
+      - старая цена ozon
+      - цена до скидок ozon
+    aliases_en:
+      - Ozon old price
+      - Ozon strikethrough price
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_OLD_PRICE}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_prices
+        fields: [price.old_price, price.currency_code]
+        provider_aliases: [old_price]
+    guardrail: >-
+      price.old_price is the strikethrough/reference price before discounts.
+      It is not the current selling price.
+
+  OZON_MIN_PRICE:
+    canonical_name_ru: Минимально допустимая цена Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru:
+      - минимальная цена ozon
+      - минимально допустимая цена ozon
+      - минимальный порог цены ozon
+    aliases_en:
+      - Ozon minimum price
+      - Ozon minimum allowed price
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_MIN_PRICE}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_prices
+        fields: [price.min_price, price.currency_code]
+        provider_aliases: [min_price]
+    guardrail: >-
+      price.min_price is the configured minimum price threshold accepted for
+      seller pricing. It is not the current selling price and must not be
+      substituted for marketing_seller_price.
