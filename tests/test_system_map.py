@@ -183,6 +183,8 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "ozon_current_commission",
         "ozon_current_logistics",
         "ozon_current_storage",
+        "ozon_current_other_services",
+        "ozon_current_deductions_adjustments",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert "dataset_coverage_registry.csv" in semantic["execution_gate"]
@@ -212,6 +214,8 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     assert "partial-month and open-month substitution are fail-closed" in rules
     assert "amount/total/standard_fee" in rules
     assert "storage/placement type ids 46, 60, 78, 79 and 102" in rules
+    assert "non-delivery type ids 1, 22, 38, 39, 52, 63, 71, 76 and 84" in rules
+    assert "type ids 11, 57, 72 and 83" in rules
     assert "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric" in rules
     assert "CURRENT_SELLING_PRICE for WB" in rules
     assert "divide_by_100 is forbidden" in rules
