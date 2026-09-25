@@ -23,6 +23,11 @@ from .semantic_current_stock import (
     SemanticCurrentStockExecutionError,
     execute_current_stock_question,
 )
+from .semantic_ozon_commission import (
+    SemanticOzonCommissionError,
+    execute_ozon_current_commission,
+    requested_ozon_commission,
+)
 from .semantic_ozon_orders import (
     OZON_ORDER_METRICS,
     SemanticOzonOrdersError,
@@ -604,6 +609,57 @@ async def execute_business_query(
                     str(exc),
                     operation_id="marketplace_business_query",
                     retryable=False,
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
+        commission_request = requested_ozon_commission(natural_question)
+        if commission_request:
+            resolution = {
+                "resolution_type": "BUSINESS_METRIC",
+                "execution_allowed": True,
+                "status": "AVAILABLE_WITH_LIMITATION",
+                "route_id": "ozon_current_commission",
+                "metric_id": "COMMISSION",
+                "source_ids": ["ozon_current_accruals"],
+                "normalized_query": {
+                    "marketplace": "ozon",
+                    "temporal_class": "CURRENT_OPEN_MONTH",
+                    "metric": "COMMISSION",
+                    "requested_measure": "RUB",
+                },
+                "guardrail": (
+                    "Ozon commission uses only canonical CURRENT accrual posting.products[]."
+                    "commission.sale_commission with COMPLETE coverage. Other fees are not substituted."
+                ),
+            }
+            store = modules.get("_archive_store")
+            if store is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Canonical Google Drive archive is required for Ozon commission.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_current_commission(
+                    store,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonCommissionError as exc:
+                result = make_error(
+                    "source_not_suitable",
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
                 )
             if isinstance(result, dict):
                 return _attach_semantic_context(
