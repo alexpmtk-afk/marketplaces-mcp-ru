@@ -130,6 +130,7 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
     assert "semantic_execution.yaml" in semantic["execution_registry"]
     assert "semantic_archive.py" in semantic["archive_executor"]
     assert "semantic_advertising.py" in semantic["archive_executor"]
+    assert "semantic_ozon_sales_returns.py" in semantic["archive_executor"]
     assert "semantic_current_stock.py" in semantic["operational_executor"]
     assert semantic["runtime_entry"] == "marketplace_business_query"
     assert set(semantic["approved_operational_business_metrics"]) == {
@@ -154,12 +155,15 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
     assert "distinct order_number" in semantic["current_order_source"]
     assert "distinct posting_number" in semantic["current_order_source"]
     assert "status/substatus belong to postings" in semantic["current_order_source"]
+    assert "delivery_commission.quantity" in semantic["ozon_final_sales_returns_source"]
+    assert "return_commission.quantity" in semantic["ozon_final_sales_returns_source"]
     assert "RUB" in semantic["current_price_source"]
     assert "never be divided by 100" in semantic["current_price_source"]
     assert set(semantic["current_archive_datasets"]) == {
         "wb_weekly_finance_main",
         "ads_campaign_daily",
         "ads_campaign_roster_snapshots",
+        "ozon_final_realization",
     }
     assert set(semantic["approved_archive_executors"]) == {
         "penalties",
@@ -173,6 +177,7 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "observed_fulfillment_method",
         "warehouse_tariff_context",
         "advertising_performance",
+        "ozon_final_sales_returns_units",
     }
     assert "FULL_COVERAGE" in semantic["execution_gate"]
     assert "dataset_coverage_registry.csv" in semantic["execution_gate"]
@@ -182,6 +187,7 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
     assert "CURRENT_STOCK" in semantic["runtime_integration"]
     assert "Ozon order questions use distinct order_number" in semantic["runtime_integration"]
     assert "posting/status questions use posting_number" in semantic["runtime_integration"]
+    assert "Closed-month Ozon sales/returns unit questions" in semantic["runtime_integration"]
     assert "advertising" in semantic["runtime_integration"].lower()
 
 
@@ -195,6 +201,10 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     assert "Ozon order semantics use distinct order_number" in rules
     assert "Ozon posting semantics use distinct posting_number" in rules
     assert "monetary order totals are fail-closed" in rules
+    assert "Ozon closed-month SALES units use delivery_commission.quantity" in rules
+    assert "RETURNS units use return_commission.quantity" in rules
+    assert "partial-month and open-month substitution are fail-closed" in rules
+    assert "amount/total/standard_fee" in rules
     assert "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric" in rules
     assert "CURRENT_SELLING_PRICE for WB" in rules
     assert "divide_by_100 is forbidden" in rules
@@ -207,6 +217,10 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     ozon_postings = SYSTEM_MAP["routing_policy"]["ozon_postings"]
     assert "distinct posting_number" in ozon_postings
     assert "status/substatus" in ozon_postings
+    ozon_final = SYSTEM_MAP["routing_policy"]["ozon_final_sales_returns"]
+    assert "delivery_commission.quantity" in ozon_final
+    assert "return_commission.quantity" in ozon_final
+    assert "partial-month" in ozon_final
     routing = SYSTEM_MAP["routing_policy"]["current_stock"]
     assert "WB CURRENT_STOCK" in routing
     assert "Ozon CURRENT_STOCK" in routing
