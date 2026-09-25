@@ -145,6 +145,21 @@ def test_ozon_order_and_posting_knowledge_are_distinct():
     assert postings["semantic_status"] == "provisional"
 
 
+def test_ozon_cancellations_are_distinct_from_returns():
+    cancellations = get_knowledge_metric(
+        "OZON_CANCELLED_POSTINGS", marketplace="ozon", source_field="posting_number"
+    )
+    returns = get_knowledge_metric(
+        "RETURNS", marketplace="ozon", source_field="return_commission.quantity"
+    )
+
+    assert cancellations["label_ru"] == "Отменённые отправления Ozon"
+    assert cancellations["fixed_filter"]["status"] == "cancelled"
+    assert cancellations["provider_binding"]["field_path"] == "posting_number"
+    assert "это не возврат" in cancellations["definition_ru"].lower()
+    assert returns["knowledge_id"] == "OZON_FINAL_RETURNS"
+
+
 def test_provider_specific_stock_knowledge_does_not_cross_marketplaces():
     wb = get_knowledge_metric(
         "CURRENT_STOCK", marketplace="wb", source_field="quantity"
@@ -253,11 +268,11 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 43
-    assert result["semantic_metric_count"] == 40
+    assert result["knowledge_record_count"] == 44
+    assert result["semantic_metric_count"] == 41
     assert result["verified_metric_count"] == 30
     assert result["verified_binding_count"] == 30
-    assert result["provisional_binding_count"] == 13
+    assert result["provisional_binding_count"] == 14
     assert {
         (item["metric_id"], item["marketplace"])
         for item in result["provisional_bindings"]
@@ -273,6 +288,7 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
         ("OZON_FBS_RESERVED_STOCK", "ozon"),
         ("OZON_ORDERS", "ozon"),
         ("OZON_POSTINGS", "ozon"),
+        ("OZON_CANCELLED_POSTINGS", "ozon"),
         ("SALES", "ozon"),
         ("RETURNS", "ozon"),
     }
@@ -332,6 +348,7 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
         "OZON_FBS_RESERVED_STOCK",
         "OZON_ORDERS",
         "OZON_POSTINGS",
+        "OZON_CANCELLED_POSTINGS",
         "SALES",
         "RETURNS",
     }

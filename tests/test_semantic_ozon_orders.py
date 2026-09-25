@@ -86,6 +86,44 @@ def test_request_parser_separates_orders_postings_and_fulfillment():
     assert postings["statuses"] == ["delivered"]
 
 
+def test_plain_ozon_cancellations_route_to_cancelled_postings():
+    request = requested_ozon_order_request("Сколько отмен Ozon за сентябрь?")
+    assert request["metric_id"] == "OZON_CANCELLED_POSTINGS"
+    assert request["statuses"] == ["cancelled"]
+    assert request["fulfillment"] == "all"
+
+
+def test_cancelled_postings_are_counted_at_posting_scope():
+    ozon = FakeOzon([
+        posting_response([
+            row("P-FBO-1", "O1", "cancelled"),
+            row("P-FBO-2", "O1", "cancelled"),
+        ]),
+        posting_response([
+            row("P-FBS-1", "O2", "cancelled"),
+        ]),
+    ])
+
+    result = asyncio.run(execute_ozon_orders_question(
+        ozon,
+        question="Сколько отмен Ozon за сентябрь?",
+        seller="ozon_laser_master",
+    ))
+
+    assert result["ok"] is True
+    assert result["metric_id"] == "OZON_CANCELLED_POSTINGS"
+    assert result["value"] == 3
+    assert result["postings"] == 3
+    assert result["orders"] == 2
+    assert result["status_filter"] == ["cancelled"]
+    assert result["by_status"] == {"cancelled": 3}
+    assert all(
+        call["json_body"]["filter"]["statuses"] == ["cancelled"]
+        for call in ozon.client.calls
+    )
+    assert result["metric_observations"][0]["source_field"] == "posting_number"
+
+
 def test_orders_dedupe_order_number_across_fbo_and_fbs():
     ozon = FakeOzon([
         posting_response([

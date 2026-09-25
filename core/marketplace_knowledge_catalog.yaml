@@ -1054,6 +1054,34 @@ metrics:
       fbs_postings: 692
       result: PASS
 
+  OZON_CANCELLED_POSTINGS:
+    metric_id: OZON_CANCELLED_POSTINGS
+    marketplace: ozon
+    label_ru: "Отменённые отправления Ozon"
+    definition_ru: "Количество уникальных отправлений Ozon по posting_number со статусом cancelled за выбранный период. Отмена является состоянием отправления; это не возврат и не единый статус order_number."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [period, fulfillment_type, status, substatus]
+    aliases_ru: ["отмены ozon", "отмены озон", "отменённые отправления ozon", "отмененные отправления ozon", "количество отмен ozon", "сколько отмен ozon"]
+    aliases_en: ["Ozon cancelled postings", "Ozon cancellations"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_order_postings
+      field_path: posting_number
+    calculation_inputs: [posting_number, order_number, status, substatus, in_process_at]
+    fixed_filter:
+      status: cancelled
+    source_refs: [ozon_mcp_curated_order_semantics_20260411]
+    source_checked_at: "2026-09-25"
+    verification_note: "На live-проверке ozon_laser_master за 2026-09-01..2026-09-25 общий posting status breakdown содержал 120 строк cancelled; статус проверяется только на уровне posting_number."
+    guardrail: "Не смешивать отменённые отправления с RETURNS из закрытого финансового отчёта реализации. Не присваивать cancelled всему order_number, если у его отправлений разные статусы."
+    live_evidence:
+      checked_at: "2026-09-25"
+      cabinet: ozon_laser_master
+      period: "2026-09-01..2026-09-25"
+      cancelled_postings: 120
+      result: PASS
+
   OZON_CURRENT_STOCK:
     metric_id: CURRENT_STOCK
     marketplace: ozon

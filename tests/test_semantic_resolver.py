@@ -89,6 +89,14 @@ def test_ozon_orders_route_to_provider_specific_operational_metric():
     assert result["normalized_query"]["measure"] == "UNITS"
 
 
+def test_ozon_cancellations_route_to_cancelled_postings_metric():
+    result = resolve_semantic_question("Сколько отмен Ozon за месяц?")
+    assert result["resolution_type"] == "BUSINESS_METRIC"
+    assert result["metric_id"] == "OZON_CANCELLED_POSTINGS"
+    assert result["source_id"] == "ozon_order_postings"
+    assert result["status"] == "AVAILABLE_WITH_LIMITATION"
+
+
 def test_ozon_postings_route_separately_from_orders():
     result = resolve_semantic_question("Сколько отправлений Ozon за месяц?")
     assert result["resolution_type"] == "BUSINESS_METRIC"
