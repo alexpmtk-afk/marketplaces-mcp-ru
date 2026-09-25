@@ -23,6 +23,107 @@ metrics:
         provider_aliases:
           - present
           - reserved
+    guardrail: >-
+      For Ozon, stocks.present includes reserved units. CURRENT_STOCK therefore
+      means sellable/available stock and is calculated as sum(present - reserved)
+      across returned FBO/FBS buckets. Never expose sum(present) as available.
+
+  OZON_FBO_AVAILABLE_STOCK:
+    canonical_name_ru: Доступный остаток FBO Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - остаток fbo ozon
+      - остатки fbo ozon
+      - доступный остаток fbo ozon
+      - доступно fbo ozon
+    aliases_en:
+      - Ozon FBO available stock
+      - Ozon FBO sellable stock
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_FBO_AVAILABLE_STOCK}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_stocks
+        fields: [stocks.present, stocks.reserved, stocks.type]
+        provider_aliases: [present, reserved, type]
+    guardrail: >-
+      Only stock rows with type=fbo are included. Available units equal
+      present - reserved; present itself includes the reserved quantity.
+
+  OZON_FBO_RESERVED_STOCK:
+    canonical_name_ru: Резерв FBO Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - резерв fbo ozon
+      - зарезервировано fbo ozon
+      - резерв на fbo ozon
+    aliases_en:
+      - Ozon FBO reserved stock
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_FBO_RESERVED_STOCK}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_stocks
+        fields: [stocks.reserved, stocks.type]
+        provider_aliases: [reserved, type]
+    guardrail: >-
+      Only stock rows with type=fbo are included. This is reserved quantity,
+      not available stock.
+
+  OZON_FBS_AVAILABLE_STOCK:
+    canonical_name_ru: Доступный остаток FBS Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - остаток fbs ozon
+      - остатки fbs ozon
+      - доступный остаток fbs ozon
+      - доступно fbs ozon
+      - остаток на складе продавца ozon
+    aliases_en:
+      - Ozon FBS available stock
+      - Ozon FBS sellable stock
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_FBS_AVAILABLE_STOCK}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_stocks
+        fields: [stocks.present, stocks.reserved, stocks.type]
+        provider_aliases: [present, reserved, type]
+    guardrail: >-
+      Only stock rows with type=fbs are included. Available units equal
+      present - reserved; do not mix with FBO stock.
+
+  OZON_FBS_RESERVED_STOCK:
+    canonical_name_ru: Резерв FBS Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - резерв fbs ozon
+      - зарезервировано fbs ozon
+      - резерв на fbs ozon
+    aliases_en:
+      - Ozon FBS reserved stock
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_FBS_RESERVED_STOCK}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: MAPPED
+        source_id: ozon_current_stocks
+        fields: [stocks.reserved, stocks.type]
+        provider_aliases: [reserved, type]
+    guardrail: >-
+      Only stock rows with type=fbs are included. This is reserved quantity,
+      not available stock.
   CURRENT_SELLING_PRICE:
     canonical_name_ru: Текущая цена продажи
     abbreviation: null

@@ -54,7 +54,7 @@ def test_current_stock_observation_uses_marketplace_specific_knowledge():
 
     assert wb.label == "Текущие остатки на складах WB"
     assert wb.semantic_status == "verified"
-    assert ozon.label == "Текущие остатки Ozon"
+    assert ozon.label == "Доступный остаток Ozon"
     assert ozon.semantic_status == "provisional"
 
 

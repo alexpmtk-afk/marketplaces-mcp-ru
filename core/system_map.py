@@ -209,10 +209,10 @@ SYSTEM_MAP: dict[str, Any] = {
         "resolver": "core/semantic_resolver.py",
         "execution_registry": "core/semantic_execution.yaml for weekly finance",
         "archive_executor": "core/semantic_archive.py for weekly finance; core/semantic_advertising.py for advertising",
-        "operational_executor": "core/semantic_current_stock.py for current WB warehouse stock; wb_mcp/server.py owns normalized current WB price and seller-warehouse FBS stock; ORDERS uses the approved legacy operational executor",
+        "operational_executor": "core/semantic_current_stock.py for current WB warehouse stock; core/semantic_ozon_snapshot.py owns Ozon current price and stock semantics; wb_mcp/server.py owns normalized current WB price and seller-warehouse FBS stock; ORDERS uses the approved legacy operational executor",
         "runtime_entry": "marketplace_business_query",
-        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE", "OZON_BASE_PRICE", "OZON_OLD_PRICE", "OZON_MIN_PRICE"],
-        "current_stock_source": "CURRENT_STOCK uses WB Seller Analytics current WB-warehouse stock; Base-token fallback is the official asynchronous warehouse-remains report. CURRENT_FBS_STOCK uses seller warehouses plus read-only POST /api/v3/stocks/{warehouseId}",
+        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE", "OZON_BASE_PRICE", "OZON_OLD_PRICE", "OZON_MIN_PRICE", "OZON_FBO_AVAILABLE_STOCK", "OZON_FBO_RESERVED_STOCK", "OZON_FBS_AVAILABLE_STOCK", "OZON_FBS_RESERVED_STOCK"],
+        "current_stock_source": "WB CURRENT_STOCK uses Seller Analytics current WB-warehouse stock and CURRENT_FBS_STOCK uses seller warehouses. Ozon uses /v4/product/info/stocks: present includes reserved, so available stock is present - reserved, with FBO and FBS kept separate.",
         "current_price_source": "WB /api/v2/list/goods/filter uses explicit WB price fields; RUB values are rubles and must never be divided by 100. Ozon /v5/product/info/prices keeps marketing_seller_price, price, old_price and min_price as distinct concepts; they must never be silently substituted for one another.",
         "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
         "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
@@ -254,6 +254,7 @@ SYSTEM_MAP: dict[str, Any] = {
             "ordinary ORDERS questions including today use the approved operational Statistics Orders source; explicit complete-order-flow wording remains separate and fail-closed without the full order-feed source",
             "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK from the live WB Seller Analytics WB-warehouse stock source; Base tokens may use the official asynchronous warehouse-remains report fallback",
             "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric and must use seller warehouses plus the read-only inventory endpoint; never substitute CURRENT_STOCK on WB warehouses",
+            "Ozon stock semantics use present - reserved for available units because present includes reserved; FBO and FBS available/reserved quantities remain separate metrics and may not substitute for one another",
             "CURRENT_SELLING_PRICE for WB uses the provider price fields as major currency units; currencyIsoCode4217=RUB means rubles and divide_by_100 is forbidden",
             "Ozon price semantics are distinct: CURRENT_SELLING_PRICE uses price.marketing_seller_price, OZON_BASE_PRICE uses price.price, OZON_OLD_PRICE uses price.old_price, and OZON_MIN_PRICE uses price.min_price; none may substitute for another",
             "CURRENT_STOCK, CURRENT_FBS_STOCK and CURRENT_SELLING_PRICE are present snapshots only; historical requests must fail closed unless a separate historical source/contract is approved",
@@ -283,7 +284,7 @@ SYSTEM_MAP: dict[str, Any] = {
         ],
         "runtime_integration": (
             "marketplace_business_query preserves the original question and first normalizes source-independent business dimensions with business_query_parser. "
-            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. Ozon current price questions use the named-cabinet /v5/product/info/prices snapshot with distinct mappings for marketing_seller_price, price, old_price and min_price. None of these current snapshots may substitute for a historical date. "
+            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. Ozon current price questions use the named-cabinet /v5/product/info/prices snapshot with distinct mappings for marketing_seller_price, price, old_price and min_price. Ozon current stock questions use the named-cabinet stock snapshot; available = present - reserved, and FBO/FBS stay separate. None of these current snapshots may substitute for a historical date. "
             "Approved penalties/storage/acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context route to the coverage-gated weekly-finance archive executor. "
             "Approved closed-period cabinet-level WB advertising questions route to the dedicated coverage-gated advertising archive executor. "
             "Product-level advertising, current-day advertising without its live executor, commission-rate, final acquiring-expense and current tariff/configuration questions fail closed instead of being substituted. "
@@ -296,7 +297,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "historical_queries": "read canonical Google Drive archive only after semantic approval and FULL_COVERAGE validation",
         "current_or_uncovered": "use an explicitly suitable provider/API source or return a source/coverage gap; never silently query a partial archive",
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
-        "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics stock snapshot for WB warehouses in the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
+        "current_stock": "WB CURRENT_STOCK uses the current Seller Analytics snapshot. Ozon CURRENT_STOCK is total sellable stock from current stock buckets using present - reserved; OZON_FBO_* and OZON_FBS_* keep available/reserved fulfillment scopes separate. Historical dates require a separate approved source.",
         "current_fbs_stock": "CURRENT_FBS_STOCK is seller-warehouse inventory from GET /api/v3/warehouses plus read-only POST /api/v3/stocks/{warehouseId}; never substitute WB-warehouse stock",
         "current_price": "WB CURRENT_SELLING_PRICE uses /api/v2/list/goods/filter. Ozon current price metrics use /v5/product/info/prices and keep marketing_seller_price, price, old_price and min_price semantically separate; historical price requests require a separate approved historical source.",
         "current_tariffs": "do not use weekly-report historical coefficients as live tariff truth; current tariff questions require a suitable live source",

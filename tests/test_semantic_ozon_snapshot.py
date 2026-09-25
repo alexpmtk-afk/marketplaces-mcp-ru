@@ -99,7 +99,7 @@ def stock_response(product_id="3276772809", sku="3276433388"):
 
 def test_metric_registry_registers_current_selling_price_and_ozon_stock_mapping():
     registry = load_metric_registry()
-    assert len(registry["metrics"]) == 34
+    assert len(registry["metrics"]) == 38
     price = registry["metrics"]["CURRENT_SELLING_PRICE"]
     stock = registry["metrics"]["CURRENT_STOCK"]
     assert price["provider_mappings"]["ozon"]["source_id"] == "ozon_current_prices"
@@ -146,6 +146,97 @@ def test_question_can_request_current_and_old_ozon_prices_together():
     assert result["ozon_old_price"]["amount"] == "1820"
     assert result["price_metrics"]["CURRENT_SELLING_PRICE"]["amount"] == "981"
     assert result["price_metrics"]["OZON_OLD_PRICE"]["amount"] == "1820"
+
+
+def test_ozon_available_stock_subtracts_reserved_and_keeps_fbo_fbs_separate():
+    response = {
+        "ok": True,
+        "data": {
+            "items": [{
+                "product_id": "3276772809",
+                "offer_id": "ТРН.03.006.9005.02.15/3",
+                "stocks": {
+                    "fbo": {"present": 12, "reserved": 2, "sku": "3276433388", "warehouse_ids": [1]},
+                    "fbs": {"present": 5, "reserved": 1, "sku": "3276433388", "warehouse_ids": [42]},
+                },
+            }]
+        },
+    }
+    ozon = FakeOzon([entity_response(), response])
+
+    result = asyncio.run(execute_ozon_current_snapshot(
+        ozon,
+        question="Какой остаток Ozon LaserMaster по артикулу 3276433388?",
+    ))
+
+    assert result["ok"] is True
+    assert result["requested_metrics"] == ["CURRENT_STOCK"]
+    stock = result["current_stock"]
+    assert stock["present_units"] == 17
+    assert stock["reserved_units"] == 3
+    assert stock["available_units"] == 14
+    assert stock["formula"] == "available = present - reserved"
+    assert stock["buckets"]["fbo"] == {
+        "type": "fbo", "present": 12, "reserved": 2, "available": 10, "row_count": 1,
+    }
+    assert stock["buckets"]["fbs"] == {
+        "type": "fbs", "present": 5, "reserved": 1, "available": 4, "row_count": 1,
+    }
+
+
+def test_specific_ozon_stock_questions_do_not_mix_fbo_fbs_or_reserve():
+    response = {
+        "ok": True,
+        "data": {
+            "items": [{
+                "product_id": "3276772809",
+                "offer_id": "ТРН.03.006.9005.02.15/3",
+                "stocks": {
+                    "fbo": {"present": 12, "reserved": 2, "sku": "3276433388", "warehouse_ids": [1]},
+                    "fbs": {"present": 5, "reserved": 1, "sku": "3276433388", "warehouse_ids": [42]},
+                },
+            }]
+        },
+    }
+    cases = [
+        ("Какой остаток FBO Ozon LaserMaster по артикулу 3276433388?", "OZON_FBO_AVAILABLE_STOCK", "ozon_fbo_available_stock", 10),
+        ("Какой резерв FBO Ozon LaserMaster по артикулу 3276433388?", "OZON_FBO_RESERVED_STOCK", "ozon_fbo_reserved_stock", 2),
+        ("Какой остаток FBS Ozon LaserMaster по артикулу 3276433388?", "OZON_FBS_AVAILABLE_STOCK", "ozon_fbs_available_stock", 4),
+        ("Какой резерв FBS Ozon LaserMaster по артикулу 3276433388?", "OZON_FBS_RESERVED_STOCK", "ozon_fbs_reserved_stock", 1),
+    ]
+
+    for question, metric_id, result_key, value in cases:
+        ozon = FakeOzon([entity_response(), response])
+        result = asyncio.run(execute_ozon_current_snapshot(ozon, question=question))
+        assert result["ok"] is True, result
+        assert result["requested_metrics"] == [metric_id], result
+        assert result[result_key]["metric_id"] == metric_id
+        assert result[result_key]["value"] == value
+        assert "current_stock" not in result
+        observations = {item["metric_id"]: item for item in result["metric_observations"]}
+        assert observations[metric_id]["value"] == value
+
+
+def test_ozon_stock_fails_closed_when_reserved_exceeds_present():
+    response = {
+        "ok": True,
+        "data": {
+            "items": [{
+                "product_id": "3276772809",
+                "offer_id": "ТРН.03.006.9005.02.15/3",
+                "stocks": {
+                    "fbo": {"present": 1, "reserved": 2, "sku": "3276433388", "warehouse_ids": [1]},
+                },
+            }]
+        },
+    }
+    ozon = FakeOzon([entity_response(), response])
+    result = asyncio.run(execute_ozon_current_snapshot(
+        ozon,
+        question="Какой остаток Ozon LaserMaster по артикулу 3276433388?",
+    ))
+    assert result["ok"] is False
+    assert result["code"] == "STOCK_SEMANTICS_INVALID"
 
 
 def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dates():

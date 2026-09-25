@@ -185,6 +185,14 @@ sources:
     source_version: "live-verified-2026-04-13"
     checked_at: "2026-09-25"
 
+  ozon_mcp_curated_stock_semantics_20260413:
+    marketplace: ozon
+    title: "Ozon Seller API — curated live-verified stock semantics from ozon-mcp"
+    url: "https://github.com/PCDCK/ozon-mcp/blob/7e1bea2dd7510064311f1d357d014bb012a18847/src/ozon_mcp/knowledge/quirks.yaml"
+    official: false
+    source_version: "live-verified-2026-04-13"
+    checked_at: "2026-09-25"
+
 metrics:
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     marketplace: wb
@@ -938,26 +946,108 @@ metrics:
   OZON_CURRENT_STOCK:
     metric_id: CURRENT_STOCK
     marketplace: ozon
-    label_ru: "Текущие остатки Ozon"
-    definition_ru: "Операционный текущий остаток кабинета Ozon, вычисляемый как сумма provider-поля present по возвращённым FBO/FBS stock buckets. Reserved хранится отдельно и не прибавляется к доступному остатку."
+    label_ru: "Доступный остаток Ozon"
+    definition_ru: "Суммарное количество единиц, доступных для продажи по текущему снимку Ozon. Для каждого FBO/FBS bucket доступно = present - reserved, потому что present уже включает reserved; общий остаток — сумма доступного FBO и FBS."
     semantic_status: provisional
     unit: UNITS
     dimensions: [product, fulfillment_type, current_snapshot]
-    aliases_ru: ["текущие остатки ozon", "остаток ozon"]
-    aliases_en: ["current Ozon stock", "Ozon stock on hand"]
+    aliases_ru: ["текущие остатки ozon", "остаток ozon", "доступный остаток ozon"]
+    aliases_en: ["current Ozon available stock", "Ozon sellable stock"]
     historical_names: []
     provider_binding:
       source_id: ozon_current_stocks
       field_path: stocks.present
-    source_refs: [ozon_seller_api_postman_mirror_20260923]
-    source_checked_at: "2026-09-23"
-    verification_note: "Live API binding подтверждён, но точное официальное Ozon-определение и название в кабинете/отчёте ещё не подтверждены официальным источником, поэтому статус provisional."
+    calculation_inputs: [stocks.present, stocks.reserved, stocks.type]
+    source_refs: [ozon_seller_api_postman_mirror_20260923, ozon_mcp_curated_stock_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "API binding и правило present включает reserved подтверждены live-verified curated evidence; exact cabinet wording пока provisional."
+    guardrail: "Нельзя использовать сумму stocks.present как доступный остаток: сначала вычесть stocks.reserved внутри каждого bucket."
     live_evidence:
       checked_at: "2026-09-23"
       cabinet: ozon_laser_master
       sku: "3276433388"
       product_id: "3276772809"
       result: PASS
+
+  OZON_FBO_AVAILABLE_STOCK:
+    metric_id: OZON_FBO_AVAILABLE_STOCK
+    marketplace: ozon
+    label_ru: "Доступный остаток FBO Ozon"
+    definition_ru: "Доступное для продажи количество по строкам stocks.type=fbo. Формула: present - reserved."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [product, fulfillment_type, current_snapshot]
+    aliases_ru: ["остаток fbo ozon", "доступный остаток fbo ozon", "доступно fbo ozon"]
+    aliases_en: ["Ozon FBO available stock", "Ozon FBO sellable stock"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_stocks
+      field_path: stocks.present
+    calculation_inputs: [stocks.present, stocks.reserved, stocks.type]
+    source_refs: [ozon_mcp_curated_stock_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "FBO bucket и правило present-reserved подтверждены curated live-verified evidence."
+    guardrail: "Использовать только type=fbo; не смешивать с FBS."
+
+  OZON_FBO_RESERVED_STOCK:
+    metric_id: OZON_FBO_RESERVED_STOCK
+    marketplace: ozon
+    label_ru: "Резерв FBO Ozon"
+    definition_ru: "Количество единиц в резерве по строкам stocks.type=fbo."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [product, fulfillment_type, current_snapshot]
+    aliases_ru: ["резерв fbo ozon", "зарезервировано fbo ozon"]
+    aliases_en: ["Ozon FBO reserved stock"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_stocks
+      field_path: stocks.reserved
+    filter_fields: [stocks.type]
+    source_refs: [ozon_mcp_curated_stock_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "Поле reserved и FBO bucket подтверждены curated live-verified evidence."
+    guardrail: "Это резерв, а не доступный остаток."
+
+  OZON_FBS_AVAILABLE_STOCK:
+    metric_id: OZON_FBS_AVAILABLE_STOCK
+    marketplace: ozon
+    label_ru: "Доступный остаток FBS Ozon"
+    definition_ru: "Доступное для продажи количество по строкам stocks.type=fbs. Формула: present - reserved."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [product, fulfillment_type, current_snapshot]
+    aliases_ru: ["остаток fbs ozon", "доступный остаток fbs ozon", "доступно fbs ozon", "остаток на складе продавца ozon"]
+    aliases_en: ["Ozon FBS available stock", "Ozon FBS sellable stock"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_stocks
+      field_path: stocks.present
+    calculation_inputs: [stocks.present, stocks.reserved, stocks.type]
+    source_refs: [ozon_mcp_curated_stock_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "FBS bucket и правило present-reserved подтверждены curated live-verified evidence."
+    guardrail: "Использовать только type=fbs; не смешивать с FBO."
+
+  OZON_FBS_RESERVED_STOCK:
+    metric_id: OZON_FBS_RESERVED_STOCK
+    marketplace: ozon
+    label_ru: "Резерв FBS Ozon"
+    definition_ru: "Количество единиц в резерве по строкам stocks.type=fbs."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [product, fulfillment_type, current_snapshot]
+    aliases_ru: ["резерв fbs ozon", "зарезервировано fbs ozon"]
+    aliases_en: ["Ozon FBS reserved stock"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_stocks
+      field_path: stocks.reserved
+    filter_fields: [stocks.type]
+    source_refs: [ozon_mcp_curated_stock_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "Поле reserved и FBS bucket подтверждены curated live-verified evidence."
+    guardrail: "Это резерв, а не доступный остаток."
 
   OZON_CURRENT_SELLING_PRICE:
     metric_id: CURRENT_SELLING_PRICE
