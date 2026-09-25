@@ -444,6 +444,8 @@ endpoints:
   path: /v1/finance/accrual/types
   scope: seller
   safety: read
+  read_only_post_proven: true
+  service_quota_proven: true
   pagination: none
   summary: Current Ozon accrual type dictionary; use IDs to interpret accrual records.
   params: {}
