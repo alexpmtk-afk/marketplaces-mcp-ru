@@ -108,7 +108,8 @@ def test_ozon_stock_knowledge_uses_present_minus_reserved_and_keeps_fbo_fbs_sepa
     )
 
     assert total["label_ru"] == "Доступный остаток Ozon"
-    assert total["provider_binding"]["field_paths"] == [
+    assert total["provider_binding"]["field_path"] == "stocks.present"
+    assert total["calculation_inputs"] == [
         "stocks.present", "stocks.reserved", "stocks.type"
     ]
     assert "present - reserved" in total["definition_ru"]
