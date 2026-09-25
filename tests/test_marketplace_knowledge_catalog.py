@@ -125,6 +125,26 @@ def test_ozon_stock_knowledge_uses_present_minus_reserved_and_keeps_fbo_fbs_sepa
     )
 
 
+def test_ozon_order_and_posting_knowledge_are_distinct():
+    orders = get_knowledge_metric(
+        "OZON_ORDERS", marketplace="ozon", source_field="order_number"
+    )
+    postings = get_knowledge_metric(
+        "OZON_POSTINGS", marketplace="ozon", source_field="posting_number"
+    )
+
+    assert orders is not None
+    assert postings is not None
+    assert orders["label_ru"] == "Заказы Ozon"
+    assert postings["label_ru"] == "Отправления Ozon"
+    assert orders["provider_binding"]["field_path"] == "order_number"
+    assert postings["provider_binding"]["field_path"] == "posting_number"
+    assert "FBO и FBS нельзя просто складывать" in orders["definition_ru"]
+    assert "status и substatus" in postings["definition_ru"]
+    assert orders["semantic_status"] == "provisional"
+    assert postings["semantic_status"] == "provisional"
+
+
 def test_provider_specific_stock_knowledge_does_not_cross_marketplaces():
     wb = get_knowledge_metric(
         "CURRENT_STOCK", marketplace="wb", source_field="quantity"
@@ -233,11 +253,11 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 39
-    assert result["semantic_metric_count"] == 38
+    assert result["knowledge_record_count"] == 41
+    assert result["semantic_metric_count"] == 40
     assert result["verified_metric_count"] == 30
     assert result["verified_binding_count"] == 30
-    assert result["provisional_binding_count"] == 9
+    assert result["provisional_binding_count"] == 11
     assert {
         (item["metric_id"], item["marketplace"])
         for item in result["provisional_bindings"]
@@ -251,6 +271,8 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
         ("OZON_FBO_RESERVED_STOCK", "ozon"),
         ("OZON_FBS_AVAILABLE_STOCK", "ozon"),
         ("OZON_FBS_RESERVED_STOCK", "ozon"),
+        ("OZON_ORDERS", "ozon"),
+        ("OZON_POSTINGS", "ozon"),
     }
     assert result["stale_sources"] == []
 
@@ -306,6 +328,8 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
         "OZON_FBO_RESERVED_STOCK",
         "OZON_FBS_AVAILABLE_STOCK",
         "OZON_FBS_RESERVED_STOCK",
+        "OZON_ORDERS",
+        "OZON_POSTINGS",
     }
     assert "ORDERS" in ozon["registry_unresolved_metric_ids"]
     assert ozon["metric_coverage_complete"] is False
