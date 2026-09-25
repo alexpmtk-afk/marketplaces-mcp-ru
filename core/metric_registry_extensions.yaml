@@ -1,5 +1,31 @@
 version: marketplace_metric_registry.ozon_snapshot.v1
 metrics:
+  SALES:
+    provider_mappings:
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_final_realization
+        fields: [delivery_commission.quantity]
+        provider_aliases: [delivery_commission.quantity]
+    guardrail: >-
+      Ozon closed-month SALES V1 is units only and uses
+      delivery_commission.quantity from the canonical FINAL realization report.
+      Monetary fields are not approved yet; CURRENT/open-month sales must not be
+      substituted from FINAL.
+
+  RETURNS:
+    provider_mappings:
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_final_realization
+        fields: [return_commission.quantity]
+        provider_aliases: [return_commission.quantity]
+    guardrail: >-
+      Ozon closed-month RETURNS V1 is units only and uses
+      return_commission.quantity from the canonical FINAL realization report.
+      Monetary fields are not approved yet; CURRENT/open-month returns must not
+      be substituted from FINAL.
+
   CURRENT_STOCK:
     provider_mappings:
       wb:

@@ -253,11 +253,11 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 41
+    assert result["knowledge_record_count"] == 43
     assert result["semantic_metric_count"] == 40
     assert result["verified_metric_count"] == 30
     assert result["verified_binding_count"] == 30
-    assert result["provisional_binding_count"] == 11
+    assert result["provisional_binding_count"] == 13
     assert {
         (item["metric_id"], item["marketplace"])
         for item in result["provisional_bindings"]
@@ -273,6 +273,8 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
         ("OZON_FBS_RESERVED_STOCK", "ozon"),
         ("OZON_ORDERS", "ozon"),
         ("OZON_POSTINGS", "ozon"),
+        ("SALES", "ozon"),
+        ("RETURNS", "ozon"),
     }
     assert result["stale_sources"] == []
 
@@ -313,7 +315,7 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
     assert wb["metric_coverage_complete"] is False
 
     ozon = coverage["ozon"]
-    assert ozon["registry_mapping_status_counts"]["NOT_MAPPED"] == 24
+    assert ozon["registry_mapping_status_counts"]["NOT_MAPPED"] == 22
     assert set(ozon["knowledge_bound_metric_ids"]) >= {
         "CURRENT_STOCK",
         "CURRENT_SELLING_PRICE",
@@ -330,9 +332,31 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
         "OZON_FBS_RESERVED_STOCK",
         "OZON_ORDERS",
         "OZON_POSTINGS",
+        "SALES",
+        "RETURNS",
     }
     assert "ORDERS" in ozon["registry_unresolved_metric_ids"]
     assert ozon["metric_coverage_complete"] is False
+
+
+def test_ozon_final_sales_returns_knowledge_uses_separate_unit_fields():
+    sales = get_knowledge_metric(
+        "SALES", marketplace="ozon", source_field="delivery_commission.quantity"
+    )
+    returns = get_knowledge_metric(
+        "RETURNS", marketplace="ozon", source_field="return_commission.quantity"
+    )
+
+    assert sales is not None
+    assert returns is not None
+    assert sales["knowledge_id"] == "OZON_FINAL_SALES"
+    assert returns["knowledge_id"] == "OZON_FINAL_RETURNS"
+    assert sales["unit"] == "UNITS"
+    assert returns["unit"] == "UNITS"
+    assert sales["semantic_status"] == "provisional"
+    assert returns["semantic_status"] == "provisional"
+    assert "amount/total/standard_fee" in sales["guardrail"]
+    assert "amount/total/standard_fee" in returns["guardrail"]
 
 
 def test_composite_wb_finance_binding_resolves_each_canonical_field():

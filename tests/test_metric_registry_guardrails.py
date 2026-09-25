@@ -11,7 +11,16 @@ def test_ozon_mappings_are_explicitly_fail_closed_for_cross_marketplace_metrics(
     assert registry["policy"]["ozon_unmapped_must_fail_closed"] is True
     assert registry["metrics"]["AD_DRR"]["provider_mappings"]["ozon"]["status"] == "NOT_MAPPED"
     assert registry["metrics"]["AD_CTR"]["provider_mappings"]["ozon"]["status"] == "NOT_MAPPED"
-    assert registry["metrics"]["SALES"]["provider_mappings"]["ozon"]["status"] == "NOT_MAPPED"
+    assert registry["metrics"]["SALES"]["provider_mappings"]["ozon"]["status"] == "EXECUTOR_OWNED"
+    assert registry["metrics"]["RETURNS"]["provider_mappings"]["ozon"]["status"] == "EXECUTOR_OWNED"
+    assert registry["metrics"]["SALES"]["provider_mappings"]["ozon"]["fields"] == [
+        "delivery_commission.quantity"
+    ]
+    assert registry["metrics"]["RETURNS"]["provider_mappings"]["ozon"]["fields"] == [
+        "return_commission.quantity"
+    ]
+    assert "Monetary fields are not approved yet" in registry["metrics"]["SALES"]["guardrail"]
+    assert "Monetary fields are not approved yet" in registry["metrics"]["RETURNS"]["guardrail"]
 
 
 def test_derived_metric_without_formula_reference_is_rejected():

@@ -208,15 +208,16 @@ SYSTEM_MAP: dict[str, Any] = {
         "business_query_parser": "core/business_query_parser.py normalizes metric-independent measure/grouping/period/filter dimensions before source selection",
         "resolver": "core/semantic_resolver.py",
         "execution_registry": "core/semantic_execution.yaml for weekly finance",
-        "archive_executor": "core/semantic_archive.py for weekly finance; core/semantic_advertising.py for advertising",
+        "archive_executor": "core/semantic_archive.py for WB weekly finance; core/semantic_advertising.py for WB advertising; core/semantic_ozon_sales_returns.py for closed-month Ozon FINAL sales/returns units",
         "operational_executor": "core/semantic_current_stock.py for current WB warehouse stock; core/semantic_ozon_snapshot.py owns Ozon current price and stock semantics; core/semantic_ozon_orders.py owns Ozon order/posting semantics; wb_mcp/server.py owns normalized current WB price and seller-warehouse FBS stock; ORDERS uses the approved legacy operational executor",
         "runtime_entry": "marketplace_business_query",
         "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE", "OZON_BASE_PRICE", "OZON_OLD_PRICE", "OZON_MIN_PRICE", "OZON_FBO_AVAILABLE_STOCK", "OZON_FBO_RESERVED_STOCK", "OZON_FBS_AVAILABLE_STOCK", "OZON_FBS_RESERVED_STOCK", "OZON_ORDERS", "OZON_POSTINGS"],
         "current_stock_source": "WB CURRENT_STOCK uses Seller Analytics current WB-warehouse stock and CURRENT_FBS_STOCK uses seller warehouses. Ozon uses /v4/product/info/stocks: present includes reserved, so available stock is present - reserved, with FBO and FBS kept separate.",
         "current_price_source": "WB /api/v2/list/goods/filter uses explicit WB price fields; RUB values are rubles and must never be divided by 100. Ozon /v5/product/info/prices keeps marketing_seller_price, price, old_price and min_price as distinct concepts; they must never be silently substituted for one another.",
         "current_order_source": "Ozon operational orders/postings use the named-cabinet FBO and FBS posting list feeds. OZON_ORDERS = distinct order_number across the selected feeds; OZON_POSTINGS = distinct posting_number. FBO and FBS order counts overlap and must be deduplicated; status/substatus belong to postings.",
-        "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
-        "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
+        "ozon_final_sales_returns_source": "Closed-month Ozon sales/returns V1 reads canonical FINAL realization monthly_source after COMPLETE final_coverage_registry verification, SHA-256 parity, row-count parity and stable-key validation. SALES units = sum(delivery_commission.quantity); RETURNS units = sum(return_commission.quantity). Money and partial/open-month attribution remain fail-closed.",
+        "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots", "ozon_final_realization"],
+        "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas; Ozon FINAL realization: closed monthly provider rows with delivery_commission and return_commission components",
         "resolution_outcomes": [
             "AVAILABLE",
             "AVAILABLE_WITH_LIMITATION",
@@ -236,8 +237,9 @@ SYSTEM_MAP: dict[str, Any] = {
             "observed_fulfillment_method",
             "warehouse_tariff_context",
             "advertising_performance",
+            "ozon_final_sales_returns_units",
         ],
-        "execution_gate": "FULL_COVERAGE from the dataset-specific COMPLETE registry plus canonical annual file presence; finance uses reports_registry.csv, advertising uses dataset_coverage_registry.csv and roster/fullstats scope proof",
+        "execution_gate": "FULL_COVERAGE from the dataset-specific COMPLETE registry; WB finance uses reports_registry.csv, advertising uses dataset_coverage_registry.csv and roster/fullstats scope proof, and Ozon FINAL sales/returns requires one COMPLETE final_coverage_registry month plus exact monthly SHA-256/row-count/stable-key parity",
         "money_policy": "sum values exactly as reported except formulas that explicitly define subtraction by operation type; never combine different currencies and never silently net unrelated financial components",
         "question_policy": {
             "preferred_input": "the user's original natural-language question",
@@ -259,6 +261,9 @@ SYSTEM_MAP: dict[str, Any] = {
             "Ozon order semantics use distinct order_number across FBO/FBS; FBO and FBS order counts must never be added without deduplication",
             "Ozon posting semantics use distinct posting_number; status/substatus belong to postings and must not be promoted to one synthetic order status",
             "Ozon monetary order totals are fail-closed until a separate approved monetary contract exists",
+            "Ozon closed-month SALES units use delivery_commission.quantity from COMPLETE FINAL realization; RETURNS units use return_commission.quantity",
+            "Ozon FINAL sales/returns V1 accepts only one complete closed calendar month; partial-month and open-month substitution are fail-closed",
+            "Ozon FINAL amount/total/standard_fee fields are not treated as sales/return money until a separate monetary semantic contract is approved",
             "CURRENT_SELLING_PRICE for WB uses the provider price fields as major currency units; currencyIsoCode4217=RUB means rubles and divide_by_100 is forbidden",
             "Ozon price semantics are distinct: CURRENT_SELLING_PRICE uses price.marketing_seller_price, OZON_BASE_PRICE uses price.price, OZON_OLD_PRICE uses price.old_price, and OZON_MIN_PRICE uses price.min_price; none may substitute for another",
             "CURRENT_STOCK, CURRENT_FBS_STOCK and CURRENT_SELLING_PRICE are present snapshots only; historical requests must fail closed unless a separate historical source/contract is approved",
@@ -288,7 +293,7 @@ SYSTEM_MAP: dict[str, Any] = {
         ],
         "runtime_integration": (
             "marketplace_business_query preserves the original question and first normalizes source-independent business dimensions with business_query_parser. "
-            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. Ozon current price questions use the named-cabinet /v5/product/info/prices snapshot with distinct mappings for marketing_seller_price, price, old_price and min_price. Ozon current stock questions use the named-cabinet stock snapshot; available = present - reserved, and FBO/FBS stay separate. Ozon order questions use distinct order_number across FBO/FBS posting feeds, while Ozon posting/status questions use posting_number and keep status/substatus at posting scope. None of these current snapshots may substitute for a historical date. "
+            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. Ozon current price questions use the named-cabinet /v5/product/info/prices snapshot with distinct mappings for marketing_seller_price, price, old_price and min_price. Ozon current stock questions use the named-cabinet stock snapshot; available = present - reserved, and FBO/FBS stay separate. Ozon order questions use distinct order_number across FBO/FBS posting feeds, while Ozon posting/status questions use posting_number and keep status/substatus at posting scope. Closed-month Ozon sales/returns unit questions route to canonical FINAL realization with COMPLETE coverage/hash/stable-key verification; SALES uses delivery_commission.quantity and RETURNS uses return_commission.quantity. Ozon sales/returns money, partial-month ranges and open-month CURRENT semantics remain fail-closed until separately approved. None of the current snapshots may substitute for a historical date. "
             "Approved penalties/storage/acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context route to the coverage-gated weekly-finance archive executor. "
             "Approved closed-period cabinet-level WB advertising questions route to the dedicated coverage-gated advertising archive executor. "
             "Product-level advertising, current-day advertising without its live executor, commission-rate, final acquiring-expense and current tariff/configuration questions fail closed instead of being substituted. "
@@ -306,6 +311,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "current_price": "WB CURRENT_SELLING_PRICE uses /api/v2/list/goods/filter. Ozon current price metrics use /v5/product/info/prices and keep marketing_seller_price, price, old_price and min_price semantically separate; historical price requests require a separate approved historical source.",
         "ozon_orders": "OZON_ORDERS counts distinct order_number across the selected FBO/FBS posting feeds; never add FBO and FBS order counts without deduplication. Order status is not synthesized from posting status.",
         "ozon_postings": "OZON_POSTINGS counts distinct posting_number; fulfillment type plus status/substatus remain posting-level dimensions. Monetary order totals require a separate approved contract.",
+        "ozon_final_sales_returns": "For one complete closed calendar month, SALES units = sum(delivery_commission.quantity) and RETURNS units = sum(return_commission.quantity) from canonical COMPLETE Ozon FINAL realization. Verify coverage, monthly SHA-256, row count and stable keys before answering. Money, partial-month attribution and open-month substitution are forbidden until separately approved.",
         "current_tariffs": "do not use weekly-report historical coefficients as live tariff truth; current tariff questions require a suitable live source",
         "advertising_live_vs_archive": "campaign state/current control remains live; closed cabinet-level advertising analytics are archive-first after roster/fullstats FULL_COVERAGE proof; product-level advertising remains fail-closed until ads_product_daily is semantically approved",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",

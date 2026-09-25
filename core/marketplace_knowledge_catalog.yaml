@@ -201,6 +201,14 @@ sources:
     source_version: "fbo-live-verified-2026-04-11"
     checked_at: "2026-09-25"
 
+  ozon_final_realization_contract_20260925:
+    marketplace: ozon
+    title: "Marketplaces MCP — Ozon FINAL realization read contract and production archive"
+    url: "https://github.com/alexpmtk-afk/marketplaces-mcp-ru/blob/main/ozon_mcp/endpoints.yaml"
+    official: false
+    source_version: "production-final-archive-checked-2026-09-25"
+    checked_at: "2026-09-25"
+
 metrics:
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     marketplace: wb
@@ -950,6 +958,46 @@ metrics:
     source_checked_at: "2026-09-24"
     formula_rule: "attributed_order_amount / spend; если spend<=0, значение не вычисляется."
     guardrail: "Не выдавать за общую прибыльность бизнеса."
+
+  OZON_FINAL_SALES:
+    metric_id: SALES
+    marketplace: ozon
+    label_ru: "Реализованные единицы Ozon"
+    definition_ru: "Количество единиц в официальном закрытом месячном отчёте реализации Ozon по полю delivery_commission.quantity. Используется только для COMPLETE FINAL realization и только для целого закрытого календарного месяца."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [closed_report_month, product, posting]
+    aliases_ru: ["продажи ozon", "продано ozon", "реализация ozon", "реализованные единицы ozon"]
+    aliases_en: ["Ozon sales units", "Ozon realized units"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_final_realization
+      field_path: delivery_commission.quantity
+    source_refs: [ozon_final_realization_contract_20260925]
+    source_checked_at: "2026-09-25"
+    verification_note: "Канонический FINAL ozon_laser_master за 2026-08 содержит 670 строк; сумма delivery_commission.quantity = 667. Coverage COMPLETE, monthly SHA-256 и stable key проверяются исполнителем."
+    formula_rule: "sales_units = sum(delivery_commission.quantity) внутри одного COMPLETE закрытого report_month."
+    guardrail: "Не использовать amount/total/standard_fee как сумму продаж без отдельного утверждённого денежного контракта. Не применять к открытому текущему месяцу и не делить месячный FINAL на произвольный диапазон дней."
+
+  OZON_FINAL_RETURNS:
+    metric_id: RETURNS
+    marketplace: ozon
+    label_ru: "Возвращённые единицы Ozon"
+    definition_ru: "Количество возвращённых единиц в официальном закрытом месячном отчёте реализации Ozon по полю return_commission.quantity. Используется только для COMPLETE FINAL realization и только для целого закрытого календарного месяца."
+    semantic_status: provisional
+    unit: UNITS
+    dimensions: [closed_report_month, product, posting]
+    aliases_ru: ["возвраты ozon", "возвращено ozon", "возвращённые единицы ozon"]
+    aliases_en: ["Ozon return units", "Ozon returned units"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_final_realization
+      field_path: return_commission.quantity
+    source_refs: [ozon_final_realization_contract_20260925]
+    source_checked_at: "2026-09-25"
+    verification_note: "Канонический FINAL ozon_laser_master за 2026-08 содержит сумму return_commission.quantity = 27. Coverage COMPLETE, monthly SHA-256 и stable key проверяются исполнителем."
+    formula_rule: "return_units = sum(return_commission.quantity) внутри одного COMPLETE закрытого report_month."
+    guardrail: "Не использовать amount/total/standard_fee как сумму возвратов без отдельного утверждённого денежного контракта. Не применять к открытому текущему месяцу и не делить месячный FINAL на произвольный диапазон дней."
 
   OZON_ORDERS:
     metric_id: OZON_ORDERS
