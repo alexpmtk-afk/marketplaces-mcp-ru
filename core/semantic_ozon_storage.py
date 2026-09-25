@@ -60,17 +60,7 @@ def _norm(v: Any) -> str:
 
 def requested_ozon_storage(question: str) -> dict[str, Any] | None:
     t = _norm(question)
-    if not any(
-        x in t
-        for x in (
-            "хранен",
-            "размещение товаров",
-            "размещение на склад",
-            "временное размещение",
-            "долгосрочное размещение",
-            "краткосрочное размещение",
-        )
-    ):
+    if "хранен" not in t and "размещ" not in t:
         return None
     if any(x in t for x in ("реклам", "продвижен", "размещение рекламы")):
         return None
