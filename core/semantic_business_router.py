@@ -29,6 +29,11 @@ from .semantic_ozon_orders import (
     execute_ozon_orders_question,
     requested_ozon_order_request,
 )
+from .semantic_ozon_sales_returns import (
+    SemanticOzonFinalSalesReturnsError,
+    execute_ozon_final_sales_returns_question,
+    requested_ozon_sales_returns,
+)
 from .semantic_ozon_snapshot import (
     OZON_PRICE_METRICS,
     OZON_STOCK_METRICS,
@@ -486,6 +491,40 @@ def _ozon_orders_resolution(question: str, request: dict[str, Any]) -> dict[str,
     }
 
 
+def _ozon_sales_returns_resolution(
+    question: str, request: dict[str, Any],
+) -> dict[str, Any]:
+    metrics = list(request.get("metrics") or [])
+    dictionary = {item["metric_id"]: item for item in resolve_metric_terms(question)}
+    canonical = [deepcopy(dictionary[metric]) for metric in metrics if metric in dictionary]
+    result: dict[str, Any] = {
+        "resolution_type": "BUSINESS_METRIC" if len(metrics) == 1 else "BUSINESS_METRIC_SET",
+        "execution_allowed": True,
+        "status": "AVAILABLE_WITH_LIMITATION",
+        "route_id": "ozon_final_sales_returns",
+        "source_ids": ["ozon_final_realization"],
+        "canonical_metrics": canonical,
+        "normalized_query": {
+            "marketplace": "ozon",
+            "temporal_class": "CLOSED_FULL_MONTH_FINAL",
+            "period": None,
+            "metrics": metrics,
+            "requested_measure": request.get("requested_measure"),
+        },
+        "guardrail": (
+            "Closed-month Ozon sales/returns V1 is units only from canonical FINAL realization. "
+            "SALES uses delivery_commission.quantity; RETURNS uses return_commission.quantity. "
+            "Money, partial-month attribution and open-month substitution are fail-closed."
+        ),
+    }
+    if len(metrics) == 1:
+        result["metric_id"] = metrics[0]
+        result["canonical_metric"] = canonical[0] if canonical else None
+    else:
+        result["metric_ids"] = metrics
+    return result
+
+
 def _ozon_snapshot_resolution(question: str, metrics: list[str]) -> dict[str, Any]:
     dictionary = {item["metric_id"]: item for item in resolve_metric_terms(question)}
     canonical = [deepcopy(dictionary[metric]) for metric in metrics if metric in dictionary]
@@ -572,6 +611,46 @@ async def execute_business_query(
                 )
             return result
 
+        sales_returns_request = requested_ozon_sales_returns(natural_question)
+        if sales_returns_request:
+            resolution = _ozon_sales_returns_resolution(
+                natural_question, sales_returns_request,
+            )
+            store = modules.get("_archive_store")
+            if store is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Canonical Google Drive archive is required for closed-month Ozon sales/returns.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_final_sales_returns_question(
+                    store,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonFinalSalesReturnsError as exc:
+                lowered = str(exc).casefold()
+                error_type = "coverage_gap" if (
+                    "coverage" in lowered or "hash" in lowered or "stable-key" in lowered
+                ) else "source_not_suitable"
+                result = make_error(
+                    error_type,
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
         # Ozon current snapshot is intentionally resolved before legacy period
         # parsing. CURRENT_SNAPSHOT metrics do not require fake date_from/date_to.
         snapshot_metrics = requested_snapshot_metrics(natural_question)
@@ -630,6 +709,8 @@ async def execute_business_query(
                     "OZON_FBS_RESERVED_STOCK",
                     "OZON_ORDERS",
                     "OZON_POSTINGS",
+                    "SALES",
+                    "RETURNS",
                 ],
             },
         )
