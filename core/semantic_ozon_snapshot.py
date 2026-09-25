@@ -1,8 +1,8 @@
 """Canonical Ozon current-snapshot executor for server-side business semantics.
 
-The module owns the narrow approved vertical slice CURRENT_SELLING_PRICE +
-CURRENT_STOCK.  It never switches the shared active cabinet, never substitutes
-historical data, and never returns a partial price/stock answer as complete.
+The module owns the approved current Ozon price concepts plus CURRENT_STOCK.
+It never switches the shared active cabinet, never substitutes historical data,
+and never returns a partial price/stock answer as complete.
 """
 from __future__ import annotations
 
@@ -14,8 +14,41 @@ from .metric_observation import build_metric_observation
 from .metric_registry import resolve_metric_terms
 from .tools import resolve_named_cabinet
 
-OZON_SNAPSHOT_EXECUTOR_VERSION = "ozon_current_snapshot.v1"
-SUPPORTED_METRICS = frozenset({"CURRENT_SELLING_PRICE", "CURRENT_STOCK"})
+OZON_SNAPSHOT_EXECUTOR_VERSION = "ozon_current_snapshot.v2"
+OZON_PRICE_METRICS = frozenset({
+    "CURRENT_SELLING_PRICE",
+    "OZON_BASE_PRICE",
+    "OZON_OLD_PRICE",
+    "OZON_MIN_PRICE",
+})
+SUPPORTED_METRICS = frozenset({*OZON_PRICE_METRICS, "CURRENT_STOCK"})
+
+_OZON_PRICE_FIELD_CONTRACT = {
+    "CURRENT_SELLING_PRICE": {
+        "field": "marketing_seller_price",
+        "result_key": "current_selling_price",
+        "meaning": "current Ozon selling price with seller promotions applied",
+        "limitation": "not guaranteed to equal a personalized final checkout price",
+    },
+    "OZON_BASE_PRICE": {
+        "field": "price",
+        "result_key": "ozon_base_price",
+        "meaning": "seller price before Ozon promotions",
+        "limitation": "not the current selling price when marketing_seller_price differs",
+    },
+    "OZON_OLD_PRICE": {
+        "field": "old_price",
+        "result_key": "ozon_old_price",
+        "meaning": "strikethrough/reference price before discounts",
+        "limitation": "not the current selling price",
+    },
+    "OZON_MIN_PRICE": {
+        "field": "min_price",
+        "result_key": "ozon_min_price",
+        "meaning": "minimum allowed seller price threshold",
+        "limitation": "not the current selling price",
+    },
+}
 
 
 class SemanticOzonSnapshotError(RuntimeError):
@@ -172,7 +205,15 @@ def requested_snapshot_metrics(question: str) -> list[str]:
     lowered = str(question or "").casefold().replace("ё", "е")
     if "CURRENT_STOCK" not in metrics and "остат" in lowered:
         metrics.append("CURRENT_STOCK")
-    if "CURRENT_SELLING_PRICE" not in metrics and any(marker in lowered for marker in ("цена", "сколько стоит")):
+    has_specific_price = any(
+        metric in OZON_PRICE_METRICS and metric != "CURRENT_SELLING_PRICE"
+        for metric in metrics
+    )
+    if (
+        "CURRENT_SELLING_PRICE" not in metrics
+        and not has_specific_price
+        and any(marker in lowered for marker in ("цена", "сколько стоит"))
+    ):
         metrics.append("CURRENT_SELLING_PRICE")
     return list(dict.fromkeys(metrics))
 
@@ -227,25 +268,30 @@ def _decimal_text(value: Any) -> str | None:
         return None
 
 
-def _price_result(item: dict[str, Any]) -> dict[str, Any] | None:
+def _price_result(item: dict[str, Any], metric_id: str = "CURRENT_SELLING_PRICE") -> dict[str, Any] | None:
+    contract = _OZON_PRICE_FIELD_CONTRACT.get(metric_id)
+    if contract is None:
+        return None
     price = item.get("price") if isinstance(item.get("price"), dict) else item
-    amount = _decimal_text(price.get("marketing_seller_price"))
+    field = str(contract["field"])
+    amount = _decimal_text(price.get(field))
     if amount is None:
         return None
     currency = str(price.get("currency_code") or item.get("currency_code") or "RUB")
     return {
-        "metric_id": "CURRENT_SELLING_PRICE",
+        "metric_id": metric_id,
         "amount": amount,
         "currency": currency,
-        "provider_field": "marketing_seller_price",
+        "provider_field": field,
+        "provider_path": f"price.{field}",
         "provider_values": {
             "marketing_seller_price": price.get("marketing_seller_price"),
             "price": price.get("price"),
             "old_price": price.get("old_price"),
             "min_price": price.get("min_price"),
         },
-        "meaning": "seller-side current selling price after seller promotions",
-        "limitation": "not guaranteed to equal a buyer-specific final checkout price",
+        "meaning": str(contract["meaning"]),
+        "limitation": str(contract["limitation"]),
     }
 
 
@@ -380,7 +426,8 @@ async def execute_ozon_current_snapshot(
         "entity": entity,
     }
 
-    if "CURRENT_SELLING_PRICE" in metrics:
+    requested_price_metrics = [metric for metric in metrics if metric in OZON_PRICE_METRICS]
+    if requested_price_metrics:
         price_spec = ozon.catalog.get("ozon_prices_get")
         if price_spec is None:
             return {"ok": False, "error": "source_contract_missing", "code": "SOURCE_CONTRACT_MISSING", "stage": "price", "complete": False}
@@ -394,24 +441,39 @@ async def execute_ozon_current_snapshot(
         price_item, price_error = _pick_single(_items(price_response), stage="price", entity=entity)
         if price_error:
             return {**price_error, "entity": entity, "cabinet": cabinet, "leg_states": {**leg_states, "price": "FAIL"}}
-        parsed_price = _price_result(price_item or {})
-        if parsed_price is None:
-            return {"ok": False, "error": "price_semantics_missing", "code": "PRICE_SEMANTICS_MISSING", "stage": "price", "complete": False, "entity": entity, "cabinet": cabinet}
-        result["current_selling_price"] = parsed_price
-        price_observation = build_metric_observation(
-            metric_id="CURRENT_SELLING_PRICE",
-            value=parsed_price["amount"],
-            unit=parsed_price["currency"],
-            marketplace="ozon",
-            source_name="ozon_current_prices",
-            source_field="price.marketing_seller_price",
-        ).to_dict()
-        price_observation["dimensions"] = {
-            "product_id": entity.get("product_id"),
-            "offer_id": entity.get("offer_id"),
-            "sku": entity.get("sku"),
-        }
-        result.setdefault("metric_observations", []).append(price_observation)
+
+        price_metrics: dict[str, Any] = {}
+        for metric_id in requested_price_metrics:
+            parsed_price = _price_result(price_item or {}, metric_id)
+            if parsed_price is None:
+                return {
+                    "ok": False,
+                    "error": "price_semantics_missing",
+                    "code": "PRICE_SEMANTICS_MISSING",
+                    "stage": "price",
+                    "complete": False,
+                    "entity": entity,
+                    "cabinet": cabinet,
+                    "metric_id": metric_id,
+                }
+            price_metrics[metric_id] = parsed_price
+            result[_OZON_PRICE_FIELD_CONTRACT[metric_id]["result_key"]] = parsed_price
+            price_observation = build_metric_observation(
+                metric_id=metric_id,
+                value=parsed_price["amount"],
+                unit=parsed_price["currency"],
+                marketplace="ozon",
+                source_name="ozon_current_prices",
+                source_field=parsed_price["provider_path"],
+            ).to_dict()
+            price_observation["dimensions"] = {
+                "product_id": entity.get("product_id"),
+                "offer_id": entity.get("offer_id"),
+                "sku": entity.get("sku"),
+            }
+            result.setdefault("metric_observations", []).append(price_observation)
+
+        result["price_metrics"] = price_metrics
         leg_states["price"] = "PASS"
 
     if "CURRENT_STOCK" in metrics:
@@ -460,10 +522,17 @@ async def execute_ozon_current_snapshot(
         leg_states["stock"] = "PASS"
 
     result["leg_states"] = leg_states
-    result["complete"] = all(leg_states.get(stage) == "PASS" for stage in (["entity"] + (["price"] if "CURRENT_SELLING_PRICE" in metrics else []) + (["stock"] if "CURRENT_STOCK" in metrics else [])))
+    result["complete"] = all(
+        leg_states.get(stage) == "PASS"
+        for stage in (
+            ["entity"]
+            + (["price"] if requested_price_metrics else [])
+            + (["stock"] if "CURRENT_STOCK" in metrics else [])
+        )
+    )
     result["provenance"] = {
         "entity_source": "ozon_product_info_list",
-        "price_source": "ozon_prices_get" if "CURRENT_SELLING_PRICE" in metrics else None,
+        "price_source": "ozon_prices_get" if requested_price_metrics else None,
         "stock_source": "ozon_stocks_info" if "CURRENT_STOCK" in metrics else None,
         "named_cabinet": True,
         "join_key": "product_id",
