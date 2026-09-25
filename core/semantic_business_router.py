@@ -38,6 +38,11 @@ from .semantic_ozon_storage import (
     execute_ozon_current_storage,
     requested_ozon_storage,
 )
+from .semantic_ozon_other_adjustments import (
+    SemanticOzonOtherAdjustmentsError,
+    execute_ozon_current_other_adjustments,
+    requested_ozon_other_adjustments,
+)
 from .semantic_ozon_orders import (
     OZON_ORDER_METRICS,
     SemanticOzonOrdersError,
@@ -619,6 +624,65 @@ async def execute_business_query(
                     str(exc),
                     operation_id="marketplace_business_query",
                     retryable=False,
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
+        other_adjustments_request = requested_ozon_other_adjustments(natural_question)
+        if other_adjustments_request:
+            metric_id = str(other_adjustments_request["metric"])
+            route_id = (
+                "ozon_current_other_services"
+                if metric_id == "OTHER_SERVICES_COST"
+                else "ozon_current_deductions_adjustments"
+            )
+            resolution = {
+                "resolution_type": "BUSINESS_METRIC",
+                "execution_allowed": True,
+                "status": "AVAILABLE_WITH_LIMITATION",
+                "route_id": route_id,
+                "metric_id": metric_id,
+                "source_ids": ["ozon_current_accruals"],
+                "normalized_query": {
+                    "marketplace": "ozon",
+                    "temporal_class": "CURRENT_OPEN_MONTH",
+                    "metric": metric_id,
+                    "requested_measure": "RUB",
+                },
+                "guardrail": (
+                    "Ozon other services and deductions/adjustments use explicit "
+                    "reviewed provider type allowlists from COMPLETE canonical CURRENT "
+                    "accrual coverage. delivery.services are excluded from other services "
+                    "because they are already included in LOGISTICS_COST."
+                ),
+            }
+            store = modules.get("_archive_store")
+            if store is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Canonical Google Drive archive is required for Ozon finance semantics.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_current_other_adjustments(
+                    store,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonOtherAdjustmentsError as exc:
+                result = make_error(
+                    "source_not_suitable",
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
                 )
             if isinstance(result, dict):
                 return _attach_semantic_context(
