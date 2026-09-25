@@ -129,6 +129,16 @@ datasets:
       authoritative_for: [доказательство состава кампаний, включённых в план архивной загрузки]
       not_authoritative_for: [история всех изменений статуса кампании]
 capabilities:
+  other_services_cost:
+    source_id: ozon_current_accruals
+    status: AVAILABLE_WITH_LIMITATION
+    fields:
+      - non_item_fee.type_id
+      - non_item_fee.accrued
+      - item_fees.fees[].fees[].type_id
+      - item_fees.fees[].fees[].accrued
+    scope: ozon_current_other_services_reviewed_allowlist
+    guardrail: Ozon other services use a reviewed non-delivery allowlist; logistics, storage, sales commission, promotion, fines and compensation remain separate.
   advertising_performance:
     source_id: wb_ads_data
     status: AVAILABLE_WITH_LIMITATION
