@@ -157,6 +157,62 @@ def test_unapproved_order_grouping_fails_before_source_execution(monkeypatch):
     assert result["details"]["semantic_resolution"]["normalized_query"]["grouping"] == "PRODUCT"
 
 
+def test_canonical_router_executes_ozon_orders_before_generic_ozon_fallback(monkeypatch):
+    captured = {}
+
+    async def fake_ozon_orders(ozon, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "complete": True,
+            "metric_id": "OZON_ORDERS",
+            "value": 12,
+            "unit": "UNITS",
+        }
+
+    monkeypatch.setattr(router, "execute_ozon_orders_question", fake_ozon_orders)
+
+    result = asyncio.run(router.execute_business_query(
+        {"ozon": object()},
+        marketplace="ozon",
+        seller="ozon_laser_master",
+        date_from="2026-09-01",
+        date_to="2026-09-25",
+        question="Сколько заказов Ozon за сентябрь?",
+    ))
+
+    assert result["ok"] is True
+    assert captured["question"] == "Сколько заказов Ozon за сентябрь?"
+    assert captured["seller"] == "ozon_laser_master"
+    assert captured["date_from"] == "2026-09-01"
+    assert captured["date_to"] == "2026-09-25"
+    assert result["semantic_resolution"]["metric_id"] == "OZON_ORDERS"
+    assert result["semantic_resolution"]["route_id"] == "ozon_orders_postings"
+
+
+def test_canonical_router_executes_ozon_postings_as_distinct_metric(monkeypatch):
+    async def fake_ozon_orders(ozon, **kwargs):
+        return {
+            "ok": True,
+            "complete": True,
+            "metric_id": "OZON_POSTINGS",
+            "value": 15,
+            "unit": "UNITS",
+        }
+
+    monkeypatch.setattr(router, "execute_ozon_orders_question", fake_ozon_orders)
+
+    result = asyncio.run(router.execute_business_query(
+        {"ozon": object()},
+        marketplace="ozon",
+        seller="ozon_laser_master",
+        question="Сколько отправлений Ozon за месяц?",
+    ))
+
+    assert result["ok"] is True
+    assert result["semantic_resolution"]["metric_id"] == "OZON_POSTINGS"
+
+
 class _SnapshotWb:
     async def wb_get_prices(self, **kwargs):
         assert kwargs["filter_nm_id"] == 218395039
