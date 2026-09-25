@@ -168,6 +168,47 @@ def test_enqueue_resumes_incomplete_without_resetting_progress(monkeypatch):
     assert scheduled == [("ozon-current-ozon_laser_master-2026-09", 0)]
 
 
+def test_enqueue_resumes_failed_job_from_saved_phase(monkeypatch):
+    queue = OzonCurrentArchiveJobQueue(SimpleNamespace(), SimpleNamespace())
+    existing = {
+        "job_id": "ozon-current-ozon_laser_master-2026-09",
+        "status": "FAILED",
+        "phase": "PUBLISH",
+        "year": 2026,
+        "period": "2026-09",
+        "refresh_generation": 1,
+        "last_error": "temporary Drive verification failure",
+        "last_retry_after_seconds": 0,
+    }
+    saved = []
+    scheduled = []
+
+    async def load(_job_id):
+        return dict(existing)
+
+    async def save(state):
+        saved.append(dict(state))
+
+    async def schedule(job_id, delay_seconds=0):
+        scheduled.append((job_id, delay_seconds))
+
+    monkeypatch.setattr(current, "current_period", lambda today=None: (date(2026, 9, 1), date(2026, 9, 23)))
+    monkeypatch.setattr(queue, "_load", load)
+    monkeypatch.setattr(queue, "_save", save)
+    monkeypatch.setattr(queue, "_schedule", schedule)
+
+    result = asyncio.run(queue.enqueue(year=2026, seller="ozon_laser_master"))
+
+    assert result["refresh_action"] == "resumed_failed"
+    assert result["status"] == "QUEUED"
+    assert result["phase"] == "PUBLISH"
+    assert result["refresh_generation"] == 1
+    assert saved[-1]["status"] == "QUEUED"
+    assert saved[-1]["phase"] == "PUBLISH"
+    assert saved[-1]["last_error"] is None
+    assert scheduled == [("ozon-current-ozon_laser_master-2026-09", 0)]
+
+
 def test_enqueue_rejects_non_open_year(monkeypatch):
     queue = OzonCurrentArchiveJobQueue(SimpleNamespace(), SimpleNamespace())
     monkeypatch.setattr(current, "current_period", lambda today=None: (date(2026, 9, 1), date(2026, 9, 23)))

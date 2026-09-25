@@ -394,15 +394,30 @@ class OzonCurrentArchiveJobQueue:
         generation = 1
         action = "created"
         if existing is not None and existing.get("status") != "COMPLETE":
+            previous_status = str(existing.get("status") or "")
+            if previous_status == "FAILED":
+                existing["status"] = "QUEUED"
+                existing["last_error"] = None
+                existing["last_retry_after_seconds"] = 0
+                existing["retry_resumed_at_utc"] = _utc_now()
+                await self._save(existing)
             await self._schedule(job_id, 0)
             return {
                 "ok": True,
                 "job_id": job_id,
                 "created": False,
                 "reopened": False,
-                "refresh_action": "resumed_existing",
+                "refresh_action": (
+                    "resumed_failed"
+                    if previous_status == "FAILED"
+                    else "resumed_existing"
+                ),
                 "scheduled": True,
-                "status": existing.get("status"),
+                "status": (
+                    "QUEUED"
+                    if previous_status == "FAILED"
+                    else existing.get("status")
+                ),
                 "phase": existing.get("phase"),
                 "cabinet": cabinet,
                 "year": existing.get("year"),
