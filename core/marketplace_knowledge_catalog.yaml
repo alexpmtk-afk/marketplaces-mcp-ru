@@ -991,6 +991,25 @@ metrics:
     formula_rule: "expense_rub = abs(sum(posting.products[].delivery.total_accrued)) для строк POSTING внутри выбранного периода COMPLETE CURRENT coverage."
     guardrail: "Не добавлять отдельно commission.sale_commission, хранение, штрафы или прочие fee bucket. Вложенные delivery.services используются для расшифровки состава, но не складываются поверх total_accrued."
 
+  OZON_CURRENT_STORAGE_COST:
+    metric_id: STORAGE_COST
+    marketplace: ozon
+    label_ru: "Расходы на хранение Ozon"
+    definition_ru: "Расходы на явно обозначенные Ozon виды хранения и размещения в каноническом CURRENT-архиве начислений."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [open_month, accrual_type]
+    aliases_ru: ["хранение ozon", "стоимость хранения ozon", "размещение товаров ozon"]
+    aliases_en: ["Ozon storage cost", "Ozon placement cost"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_accruals
+      field_paths: [non_item_fee.type_id, non_item_fee.accrued]
+    source_refs: [ozon_current_accrual_contract_20260925]
+    source_checked_at: "2026-09-25"
+    verification_note: "Live 2026-09-01..2026-09-24: Placements 3694.83 RUB expense; TemporaryPlacementsAgent 1767 RUB expense; approved storage total 5461.83 RUB."
+    formula_rule: "expense_rub = abs(sum(accrued)) for approved storage type ids 46, 60, 78, 79, 102."
+    guardrail: "Do not include logistics, commission, advertising or unrelated fees."
   OZON_FINAL_SALES:
     metric_id: SALES
     marketplace: ozon
