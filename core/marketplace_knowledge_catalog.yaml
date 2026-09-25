@@ -209,6 +209,14 @@ sources:
     source_version: "production-final-archive-checked-2026-09-25"
     checked_at: "2026-09-25"
 
+  ozon_current_accrual_contract_20260925:
+    marketplace: ozon
+    title: "Marketplaces MCP — Ozon CURRENT accrual finance contract and live verification"
+    url: "https://github.com/alexpmtk-afk/marketplaces-mcp-ru/blob/main/ozon_mcp/endpoints.yaml"
+    official: false
+    source_version: "production-current-accrual-live-verified-2026-09-25"
+    checked_at: "2026-09-25"
+
 metrics:
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     marketplace: wb
@@ -958,6 +966,30 @@ metrics:
     source_checked_at: "2026-09-24"
     formula_rule: "attributed_order_amount / spend; если spend<=0, значение не вычисляется."
     guardrail: "Не выдавать за общую прибыльность бизнеса."
+
+  OZON_CURRENT_LOGISTICS_COST:
+    metric_id: LOGISTICS_COST
+    marketplace: ozon
+    label_ru: "Расходы на логистику и доставку Ozon"
+    definition_ru: "Текущие расходы на логистику/доставку Ozon за выбранный диапазон открытого месяца. Исполнитель суммирует posting.products[].delivery.total_accrued из COMPLETE канонического CURRENT-архива начислений."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [open_month, posting, product, delivery_service]
+    aliases_ru: ["логистика ozon", "расходы на логистику ozon", "стоимость логистики ozon", "стоимость доставки ozon"]
+    aliases_en: ["Ozon logistics cost", "Ozon delivery cost"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_accruals
+      field_path: posting.products[].delivery.total_accrued
+    calculation_inputs:
+      - posting.products[].delivery.total_accrued
+      - posting.products[].delivery.services[].type_id
+      - posting.products[].delivery.services[].accrued
+    source_refs: [ozon_current_accrual_contract_20260925]
+    source_checked_at: "2026-09-25"
+    verification_note: "На live-данных ozon_laser_master за 2026-09-01..2026-09-24 сумма delivery.total_accrued = -149140.37 ₽ и точно равна сумме вложенных delivery.services[].accrued; расхождение 0.00 ₽."
+    formula_rule: "expense_rub = abs(sum(posting.products[].delivery.total_accrued)) для строк POSTING внутри выбранного периода COMPLETE CURRENT coverage."
+    guardrail: "Не добавлять отдельно commission.sale_commission, хранение, штрафы или прочие fee bucket. Вложенные delivery.services используются для расшифровки состава, но не складываются поверх total_accrued."
 
   OZON_FINAL_SALES:
     metric_id: SALES
