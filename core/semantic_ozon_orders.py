@@ -22,7 +22,7 @@ from .metric_observation import build_metric_observation
 from .tools import resolve_named_cabinet
 
 OZON_ORDERS_EXECUTOR_VERSION = "ozon_orders_postings.v1"
-OZON_ORDER_METRICS = frozenset({"OZON_ORDERS", "OZON_POSTINGS"})
+OZON_ORDER_METRICS = frozenset({"OZON_ORDERS", "OZON_POSTINGS", "OZON_CANCELLED_POSTINGS"})
 MOSCOW = ZoneInfo("Europe/Moscow")
 
 _STATUS_MARKERS = {
@@ -65,10 +65,15 @@ def requested_ozon_order_request(question: str) -> dict[str, Any] | None:
     text = _norm(question)
     has_orders = bool(re.search(r"\bзаказ", text))
     has_postings = "отправлени" in text
-    if not has_orders and not has_postings:
+    has_cancellation = any(marker in text for marker in ("отмен", "аннулир"))
+    if not has_orders and not has_postings and not has_cancellation:
         return None
 
-    metric_id = "OZON_POSTINGS" if has_postings else "OZON_ORDERS"
+    metric_id = (
+        "OZON_CANCELLED_POSTINGS"
+        if has_cancellation and not has_orders and not has_postings
+        else ("OZON_POSTINGS" if has_postings else "OZON_ORDERS")
+    )
 
     has_fbo = any(marker in text for marker in (" fbo", "фбо"))
     has_fbs = any(marker in text for marker in (" fbs", "фбс"))
@@ -82,6 +87,8 @@ def requested_ozon_order_request(question: str) -> dict[str, Any] | None:
     for status, markers in _STATUS_MARKERS.items():
         if any(_norm(marker) in text for marker in markers):
             statuses.append(status)
+    if metric_id == "OZON_CANCELLED_POSTINGS" and "cancelled" not in statuses:
+        statuses.append("cancelled")
 
     dimensions = parse_business_query_dimensions(question)
     requested_measure = dimensions.get("requested_measure") or "UNITS"
@@ -554,7 +561,7 @@ async def execute_ozon_orders_question(
         "knowledge_catalog_version": "marketplace_knowledge_catalog.v1",
     }
 
-    if metric_id == "OZON_POSTINGS":
+    if metric_id in {"OZON_POSTINGS", "OZON_CANCELLED_POSTINGS"}:
         result["by_status"] = summary["by_status"]
         result["by_substatus"] = summary["by_substatus"]
 
