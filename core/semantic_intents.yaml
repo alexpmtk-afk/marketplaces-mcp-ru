@@ -82,6 +82,18 @@ business_metrics:
     current_period_supported: true
     guardrail: Отправление определяется по posting_number. status/substatus являются измерениями отправления; FBO и FBS не смешивать без явного общего запроса.
 
+  OZON_CANCELLED_POSTINGS:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_order_postings
+    data_class: OPERATIONAL_POSTING_FEED
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL]
+    product_filter_supported: false
+    current_period_supported: true
+    guardrail: Отмены Ozon считаются только как distinct posting_number со status=cancelled. Это не RETURNS и не единый статус order_number.
+
   OZON_FBO_AVAILABLE_STOCK:
     status: AVAILABLE_WITH_LIMITATION
     marketplace: ozon
@@ -213,6 +225,12 @@ business_metrics:
     guardrail: Цена после установленной скидки WB Клуба; не обещает финальную персональную цену покупателя.
 
 routes:
+  - id: ozon_cancelled_postings
+    priority: 2050
+    target_type: business_metric
+    target_id: OZON_CANCELLED_POSTINGS
+    match_any: [отмены ozon, отмен ozon, отмены озон, отмен озон, отмененные отправления ozon, отменённые отправления ozon, сколько отмен ozon]
+
   - id: ozon_postings
     priority: 2040
     target_type: business_metric
