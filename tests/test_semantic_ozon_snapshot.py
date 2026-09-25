@@ -99,7 +99,7 @@ def stock_response(product_id="3276772809", sku="3276433388"):
 
 def test_metric_registry_registers_current_selling_price_and_ozon_stock_mapping():
     registry = load_metric_registry()
-    assert len(registry["metrics"]) == 31
+    assert len(registry["metrics"]) == 34
     price = registry["metrics"]["CURRENT_SELLING_PRICE"]
     stock = registry["metrics"]["CURRENT_STOCK"]
     assert price["provider_mappings"]["ozon"]["source_id"] == "ozon_current_prices"
@@ -107,6 +107,45 @@ def test_metric_registry_registers_current_selling_price_and_ozon_stock_mapping(
     assert stock["provider_mappings"]["ozon"]["source_id"] == "ozon_current_stocks"
     matches = resolve_metric_terms("Какая цена и остаток сейчас?")
     assert {item["metric_id"] for item in matches} >= {"CURRENT_SELLING_PRICE", "CURRENT_STOCK"}
+
+
+def test_specific_ozon_price_questions_do_not_fall_back_to_current_selling_price():
+    cases = [
+        ("Какая цена до акций Ozon LaserMaster по артикулу 3276433388?", "OZON_BASE_PRICE", "ozon_base_price", "1001", "price"),
+        ("Какая старая цена Ozon LaserMaster по артикулу 3276433388?", "OZON_OLD_PRICE", "ozon_old_price", "1820", "old_price"),
+        ("Какая минимальная цена Ozon LaserMaster по артикулу 3276433388?", "OZON_MIN_PRICE", "ozon_min_price", "996", "min_price"),
+    ]
+
+    for question, metric_id, result_key, expected_amount, expected_field in cases:
+        ozon = FakeOzon([entity_response(), price_response()])
+        result = asyncio.run(execute_ozon_current_snapshot(
+            ozon,
+            question=question,
+        ))
+
+        assert result["ok"] is True, result
+        assert result["requested_metrics"] == [metric_id], result
+        assert "current_selling_price" not in result, result
+        assert result[result_key]["metric_id"] == metric_id
+        assert result[result_key]["amount"] == expected_amount
+        assert result[result_key]["provider_field"] == expected_field
+        observations = {item["metric_id"]: item for item in result["metric_observations"]}
+        assert observations[metric_id]["source_field"] == f"price.{expected_field}"
+
+
+def test_question_can_request_current_and_old_ozon_prices_together():
+    ozon = FakeOzon([entity_response(), price_response()])
+    result = asyncio.run(execute_ozon_current_snapshot(
+        ozon,
+        question="Какая текущая цена и старая цена Ozon LaserMaster по артикулу 3276433388?",
+    ))
+
+    assert result["ok"] is True
+    assert set(result["requested_metrics"]) == {"CURRENT_SELLING_PRICE", "OZON_OLD_PRICE"}
+    assert result["current_selling_price"]["amount"] == "981"
+    assert result["ozon_old_price"]["amount"] == "1820"
+    assert result["price_metrics"]["CURRENT_SELLING_PRICE"]["amount"] == "981"
+    assert result["price_metrics"]["OZON_OLD_PRICE"]["amount"] == "1820"
 
 
 def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dates():
@@ -130,6 +169,7 @@ def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dat
     }
     assert result["current_selling_price"]["amount"] == "981"
     assert result["current_selling_price"]["provider_field"] == "marketing_seller_price"
+    assert result["current_selling_price"]["provider_path"] == "price.marketing_seller_price"
     assert result["current_stock"]["available_units"] == 1
     assert result["current_stock"]["reserved_units"] == 0
     assert result["provenance"]["join_key"] == "product_id"
