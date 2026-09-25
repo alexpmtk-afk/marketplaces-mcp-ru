@@ -65,6 +65,13 @@ def _raw(row: dict[str,str]) -> dict[str,Any]:
     return value
 
 def _money(v: Any) -> Decimal:
+    if isinstance(v, dict):
+        for key in ("amount", "value", "accrued"):
+            if v.get(key) not in (None, ""):
+                v = v.get(key)
+                break
+        else:
+            raise SemanticOzonCommissionError("Ozon commission money object has no approved numeric field")
     try:
         return Decimal(str(v or "0").replace(",","."))
     except InvalidOperation as exc:
