@@ -709,6 +709,7 @@ async def execute_business_query(
                     "OZON_FBS_RESERVED_STOCK",
                     "OZON_ORDERS",
                     "OZON_POSTINGS",
+                    "OZON_CANCELLED_POSTINGS",
                     "SALES",
                     "RETURNS",
                 ],
