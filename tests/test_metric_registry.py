@@ -10,7 +10,7 @@ def test_metric_registry_v1_is_canonical_semantic_dictionary_not_execution_autho
     assert registry["policy"]["metric_dictionary_grants_execution"] is False
     assert registry["policy"]["provider_field_is_not_business_name"] is True
     assert registry["policy"]["unknown_provider_mapping_must_not_be_inferred"] is True
-    assert len(registry["metrics"]) == 41
+    assert len(registry["metrics"]) == 42
 
 
 def test_payout_term_change_fee_has_exact_wb_semantics():
@@ -83,10 +83,22 @@ def test_metric_dictionary_is_visible_from_canonical_semantic_core():
     metrics_view = semantic_core_view("metrics")
 
     assert brain["validated"] is True
-    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 41
+    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 42
     assert brain["component_versions"]["metric_registry"] == "marketplace_metric_registry.v1"
     assert metrics_view["metrics"]["AD_DRR"]["abbreviation"] == "ДРР"
     assert brain["summary"]["safety"]["metric_dictionary_is_semantic_only"] is True
+
+
+def test_ozon_other_services_and_adjustments_are_executor_owned():
+    registry = load_metric_registry()["metrics"]
+
+    other = registry["OTHER_SERVICES_COST"]["provider_mappings"]["ozon"]
+    adjustments = registry["DEDUCTIONS_ADJUSTMENTS"]["provider_mappings"]["ozon"]
+
+    assert other["status"] == "EXECUTOR_OWNED"
+    assert other["source_id"] == "ozon_current_accruals"
+    assert adjustments["status"] == "EXECUTOR_OWNED"
+    assert adjustments["source_id"] == "ozon_current_accruals"
 
 
 def test_ozon_final_sales_returns_have_separate_unit_bindings():
