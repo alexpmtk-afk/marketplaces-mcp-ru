@@ -211,9 +211,9 @@ SYSTEM_MAP: dict[str, Any] = {
         "archive_executor": "core/semantic_archive.py for weekly finance; core/semantic_advertising.py for advertising",
         "operational_executor": "core/semantic_current_stock.py for current WB warehouse stock; wb_mcp/server.py owns normalized current WB price and seller-warehouse FBS stock; ORDERS uses the approved legacy operational executor",
         "runtime_entry": "marketplace_business_query",
-        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE"],
+        "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE", "OZON_BASE_PRICE", "OZON_OLD_PRICE", "OZON_MIN_PRICE"],
         "current_stock_source": "CURRENT_STOCK uses WB Seller Analytics current WB-warehouse stock; Base-token fallback is the official asynchronous warehouse-remains report. CURRENT_FBS_STOCK uses seller warehouses plus read-only POST /api/v3/stocks/{warehouseId}",
-        "current_price_source": "WB /api/v2/list/goods/filter with server-owned major-currency-unit contract; RUB price fields are rubles and must never be divided by 100",
+        "current_price_source": "WB /api/v2/list/goods/filter uses explicit WB price fields. Ozon /v5/product/info/prices keeps marketing_seller_price, price, old_price and min_price as distinct concepts; they must never be silently substituted for one another.",
         "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
         "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
         "resolution_outcomes": [
@@ -255,6 +255,7 @@ SYSTEM_MAP: dict[str, Any] = {
             "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK from the live WB Seller Analytics WB-warehouse stock source; Base tokens may use the official asynchronous warehouse-remains report fallback",
             "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric and must use seller warehouses plus the read-only inventory endpoint; never substitute CURRENT_STOCK on WB warehouses",
             "CURRENT_SELLING_PRICE for WB uses the provider price fields as major currency units; currencyIsoCode4217=RUB means rubles and divide_by_100 is forbidden",
+            "Ozon price semantics are distinct: CURRENT_SELLING_PRICE uses price.marketing_seller_price, OZON_BASE_PRICE uses price.price, OZON_OLD_PRICE uses price.old_price, and OZON_MIN_PRICE uses price.min_price; none may substitute for another",
             "CURRENT_STOCK, CURRENT_FBS_STOCK and CURRENT_SELLING_PRICE are present snapshots only; historical requests must fail closed unless a separate historical source/contract is approved",
             "a generic current-state marker is only a fallback; it must not block a more specific approved operational business metric, and it must not make historical archive capabilities look current",
             "historical fulfillment may use deliveryMethod but must not be presented as current configuration",
@@ -282,7 +283,7 @@ SYSTEM_MAP: dict[str, Any] = {
         ],
         "runtime_integration": (
             "marketplace_business_query preserves the original question and first normalizes source-independent business dimensions with business_query_parser. "
-            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. None of these current snapshots may substitute for a historical date. "
+            "Ordinary WB ORDERS questions, including today, route to the approved operational Statistics Orders source; CURRENT_STOCK routes to live WB-warehouse stock, CURRENT_FBS_STOCK routes separately to seller-warehouse inventory, and CURRENT_SELLING_PRICE uses the normalized WB price executor with explicit currency units. Ozon current price questions use the named-cabinet /v5/product/info/prices snapshot with distinct mappings for marketing_seller_price, price, old_price and min_price. None of these current snapshots may substitute for a historical date. "
             "Approved penalties/storage/acceptance, sales/returns, logistics, deductions/adjustments, monetary WB reward, preliminary weekly acquiring, historical fulfillment observations and historical warehouse tariff context route to the coverage-gated weekly-finance archive executor. "
             "Approved closed-period cabinet-level WB advertising questions route to the dedicated coverage-gated advertising archive executor. "
             "Product-level advertising, current-day advertising without its live executor, commission-rate, final acquiring-expense and current tariff/configuration questions fail closed instead of being substituted. "
@@ -297,7 +298,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "complete_orders": "do not substitute WB Statistics Orders for a request that semantically means the complete order flow",
         "current_stock": "CURRENT_STOCK uses the current WB Seller Analytics stock snapshot for WB warehouses in the named cabinet; historical stock dates require a separate approved source and never receive today's snapshot",
         "current_fbs_stock": "CURRENT_FBS_STOCK is seller-warehouse inventory from GET /api/v3/warehouses plus read-only POST /api/v3/stocks/{warehouseId}; never substitute WB-warehouse stock",
-        "current_price": "CURRENT_SELLING_PRICE for WB uses /api/v2/list/goods/filter and treats price fields as currency major units; RUB values are rubles and must never be divided by 100",
+        "current_price": "WB CURRENT_SELLING_PRICE uses /api/v2/list/goods/filter. Ozon current price metrics use /v5/product/info/prices and keep marketing_seller_price, price, old_price and min_price semantically separate; historical price requests require a separate approved historical source.",
         "current_tariffs": "do not use weekly-report historical coefficients as live tariff truth; current tariff questions require a suitable live source",
         "advertising_live_vs_archive": "campaign state/current control remains live; closed cabinet-level advertising analytics are archive-first after roster/fullstats FULL_COVERAGE proof; product-level advertising remains fail-closed until ads_product_daily is semantically approved",
         "multi_client": "all clients see the same remote canonical Drive state; no chat-local architecture decisions",
