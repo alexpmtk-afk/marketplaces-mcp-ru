@@ -381,7 +381,41 @@ metrics:
     semantic_target: {type: CAPABILITY, id: deductions_and_adjustments}
     provider_mappings:
       wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [deduction, additionalPayment, bonusTypeName]}
-      ozon: {status: NOT_MAPPED, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_current_accruals
+        fields:
+          - "non_item_fee.type_id"
+          - "non_item_fee.accrued"
+          - "item_fees.fees[].fees[].type_id"
+          - "item_fees.fees[].fees[].accrued"
+    guardrail: >-
+      Ozon deductions/adjustments use only reviewed settlement/correction type ids
+      11, 57, 72 and 83. If one of those types appears in delivery.services,
+      execution fails closed to prevent double-counting against logistics.
+
+  OTHER_SERVICES_COST:
+    canonical_name_ru: Прочие услуги маркетплейса
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [прочие услуги, другие услуги, прочие расходы, прочие комиссии и услуги]
+    aliases_en: [other marketplace services, other services cost]
+    semantic_target: {type: CAPABILITY, id: other_services_cost}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_current_accruals
+        fields:
+          - "non_item_fee.type_id"
+          - "non_item_fee.accrued"
+          - "item_fees.fees[].fees[].type_id"
+          - "item_fees.fees[].fees[].accrued"
+    guardrail: >-
+      Ozon other services use only reviewed type ids 1, 22, 38, 39, 52, 63, 71,
+      76 and 84 from non-item/item fee locations. delivery.services are excluded
+      because they are already included in LOGISTICS_COST; promotion, fines,
+      compensation, storage and sales commission remain separate.
 
   WB_COMMISSION_REWARD:
     canonical_name_ru: Комиссия и вознаграждение Wildberries
