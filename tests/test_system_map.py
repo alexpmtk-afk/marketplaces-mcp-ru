@@ -140,11 +140,15 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "OZON_BASE_PRICE",
         "OZON_OLD_PRICE",
         "OZON_MIN_PRICE",
+        "OZON_FBO_AVAILABLE_STOCK",
+        "OZON_FBO_RESERVED_STOCK",
+        "OZON_FBS_AVAILABLE_STOCK",
+        "OZON_FBS_RESERVED_STOCK",
     }
     assert "Seller Analytics" in semantic["current_stock_source"]
-    assert "warehouse-remains" in semantic["current_stock_source"]
-    assert "CURRENT_FBS_STOCK" in semantic["current_stock_source"]
-    assert "read-only POST /api/v3/stocks/{warehouseId}" in semantic["current_stock_source"]
+    assert "Ozon" in semantic["current_stock_source"]
+    assert "present includes reserved" in semantic["current_stock_source"]
+    assert "present - reserved" in semantic["current_stock_source"]
     assert "RUB" in semantic["current_price_source"]
     assert "never be divided by 100" in semantic["current_price_source"]
     assert set(semantic["current_archive_datasets"]) == {
@@ -179,6 +183,8 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     rules = "\n".join(semantic["rules"])
     assert "ordinary ORDERS questions including today" in rules
     assert "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK" in rules
+    assert "Ozon stock semantics use present - reserved" in rules
+    assert "FBO and FBS" in rules
     assert "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric" in rules
     assert "CURRENT_SELLING_PRICE for WB" in rules
     assert "divide_by_100 is forbidden" in rules
@@ -186,9 +192,12 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     assert "historical requests must fail closed" in rules
     assert "generic current-state marker" in rules
     routing = SYSTEM_MAP["routing_policy"]["current_stock"]
-    assert "current WB Seller Analytics stock snapshot" in routing
-    assert "historical stock dates" in routing
-    assert "today's snapshot" in routing
+    assert "WB CURRENT_STOCK" in routing
+    assert "Ozon CURRENT_STOCK" in routing
+    assert "present - reserved" in routing
+    assert "OZON_FBO_*" in routing
+    assert "OZON_FBS_*" in routing
+    assert "Historical dates" in routing
 
 
 def test_advertising_semantic_guardrails_are_canonical():
