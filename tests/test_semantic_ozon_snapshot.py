@@ -270,7 +270,7 @@ def test_raw_question_resolves_named_cabinet_product_price_and_stock_without_dat
     observations = {item["metric_id"]: item for item in result["metric_observations"]}
     assert observations["CURRENT_SELLING_PRICE"]["source_field"] == "price.marketing_seller_price"
     assert observations["CURRENT_SELLING_PRICE"]["semantic_status"] == "provisional"
-    assert observations["CURRENT_STOCK"]["source_field"] == "sum(stocks.present-stocks.reserved)"
+    assert observations["CURRENT_STOCK"]["source_field"] == "stocks.present"
     assert observations["CURRENT_STOCK"]["semantic_status"] == "provisional"
     assert result["knowledge_catalog_version"] == "marketplace_knowledge_catalog.v1"
 
