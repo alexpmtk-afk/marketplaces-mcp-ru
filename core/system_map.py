@@ -213,7 +213,7 @@ SYSTEM_MAP: dict[str, Any] = {
         "runtime_entry": "marketplace_business_query",
         "approved_operational_business_metrics": ["ORDERS", "CURRENT_STOCK", "CURRENT_FBS_STOCK", "CURRENT_SELLING_PRICE", "OZON_BASE_PRICE", "OZON_OLD_PRICE", "OZON_MIN_PRICE"],
         "current_stock_source": "CURRENT_STOCK uses WB Seller Analytics current WB-warehouse stock; Base-token fallback is the official asynchronous warehouse-remains report. CURRENT_FBS_STOCK uses seller warehouses plus read-only POST /api/v3/stocks/{warehouseId}",
-        "current_price_source": "WB /api/v2/list/goods/filter uses explicit WB price fields. Ozon /v5/product/info/prices keeps marketing_seller_price, price, old_price and min_price as distinct concepts; they must never be silently substituted for one another.",
+        "current_price_source": "WB /api/v2/list/goods/filter uses explicit WB price fields; RUB values are rubles and must never be divided by 100. Ozon /v5/product/info/prices keeps marketing_seller_price, price, old_price and min_price as distinct concepts; they must never be silently substituted for one another.",
         "current_archive_datasets": ["wb_weekly_finance_main", "ads_campaign_daily", "ads_campaign_roster_snapshots"],
         "current_archive_schema": "WB weekly finance: 92 reviewed physical columns; WB advertising V1: registered campaign daily and campaign-roster schemas",
         "resolution_outcomes": [
