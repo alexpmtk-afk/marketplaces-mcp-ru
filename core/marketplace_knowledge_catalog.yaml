@@ -177,6 +177,14 @@ sources:
     source_version: "checked-2026-09-23"
     checked_at: "2026-09-23"
 
+  ozon_mcp_curated_price_semantics_20260413:
+    marketplace: ozon
+    title: "Ozon Seller API — curated live-verified price semantics from ozon-mcp"
+    url: "https://github.com/PCDCK/ozon-mcp/blob/7e1bea2dd7510064311f1d357d014bb012a18847/src/ozon_mcp/knowledge/quirks.yaml"
+    official: false
+    source_version: "live-verified-2026-04-13"
+    checked_at: "2026-09-25"
+
 metrics:
   WB_SELLER_PRICE_BEFORE_DISCOUNT:
     marketplace: wb
@@ -954,20 +962,21 @@ metrics:
   OZON_CURRENT_SELLING_PRICE:
     metric_id: CURRENT_SELLING_PRICE
     marketplace: ozon
-    label_ru: "Текущая цена продажи Ozon"
-    definition_ru: "Текущее seller-side значение цены из поля marketing_seller_price после скидок продавца. Оно не считается гарантированной персональной итоговой ценой покупателя."
+    label_ru: "Цена Ozon с учётом акций продавца"
+    definition_ru: "Текущее значение price.marketing_seller_price: цена с учётом акций продавца. Это основной seller-side показатель для ответа на обычный вопрос «какая сейчас цена товара?», но он не гарантирует персональную итоговую цену конкретного покупателя при дополнительных субсидиях или персональных скидках Ozon."
     semantic_status: provisional
     unit: RUB
     dimensions: [product, current_snapshot]
-    aliases_ru: ["текущая цена ozon", "цена продажи ozon"]
-    aliases_en: ["current Ozon selling price"]
+    aliases_ru: ["текущая цена ozon", "цена продажи ozon", "цена с акциями продавца ozon"]
+    aliases_en: ["current Ozon selling price", "Ozon marketing seller price"]
     historical_names: []
     provider_binding:
       source_id: ozon_current_prices
       field_path: price.marketing_seller_price
-    source_refs: [ozon_seller_api_postman_mirror_20260923]
-    source_checked_at: "2026-09-23"
-    verification_note: "Live API binding подтверждён, но exact cabinet/report wording ещё не подтверждён официальным Ozon-источником, поэтому статус provisional."
+    source_refs: [ozon_seller_api_postman_mirror_20260923, ozon_mcp_curated_price_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "Поле и его отличие от price/old_price подтверждены API-контрактом и live-verified curated evidence; точное название в интерфейсе кабинета Ozon ещё не подтверждено официальной страницей, поэтому статус provisional."
+    guardrail: "Не подменять этим полем old_price, min_price или price.price; не обещать персональную checkout-цену конкретного покупателя."
     live_evidence:
       checked_at: "2026-09-23"
       cabinet: ozon_laser_master
@@ -975,3 +984,60 @@ metrics:
       product_id: "3276772809"
       observed_value_rub: "981"
       result: PASS
+
+  OZON_BASE_PRICE:
+    metric_id: OZON_BASE_PRICE
+    marketplace: ozon
+    label_ru: "Цена продавца до акций Ozon"
+    definition_ru: "Значение price.price — цена продавца до применения акций Ozon. Не является текущей ценой продажи, если marketing_seller_price отличается."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [product, current_snapshot]
+    aliases_ru: ["цена продавца до акций ozon", "цена до акций ozon", "базовая цена ozon"]
+    aliases_en: ["Ozon seller price before promotions", "Ozon base price"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_prices
+      field_path: price.price
+    source_refs: [ozon_seller_api_postman_mirror_20260923, ozon_mcp_curated_price_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "Смысл поля подтверждён live-verified curated evidence; точное название в кабинете ещё не подтверждено официальной страницей."
+    guardrail: "Не выдавать price.price за текущую цену покупателя, когда доступен marketing_seller_price."
+
+  OZON_OLD_PRICE:
+    metric_id: OZON_OLD_PRICE
+    marketplace: ozon
+    label_ru: "Зачёркнутая цена Ozon"
+    definition_ru: "Значение price.old_price — цена до скидок, используемая как зачёркнутая/reference-цена."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [product, current_snapshot]
+    aliases_ru: ["зачёркнутая цена ozon", "зачеркнутая цена ozon", "старая цена ozon", "цена до скидок ozon"]
+    aliases_en: ["Ozon old price", "Ozon strikethrough price"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_prices
+      field_path: price.old_price
+    source_refs: [ozon_seller_api_postman_mirror_20260923, ozon_mcp_curated_price_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "Смысл old_price подтверждён live-verified curated evidence; exact cabinet wording пока provisional."
+    guardrail: "Не использовать old_price как текущую цену продажи."
+
+  OZON_MIN_PRICE:
+    metric_id: OZON_MIN_PRICE
+    marketplace: ozon
+    label_ru: "Минимально допустимая цена Ozon"
+    definition_ru: "Значение price.min_price — минимальный ценовой порог для управления ценой товара; Ozon не должен принимать цену ниже этого порога."
+    semantic_status: provisional
+    unit: RUB
+    dimensions: [product, current_snapshot]
+    aliases_ru: ["минимальная цена ozon", "минимально допустимая цена ozon", "минимальный порог цены ozon"]
+    aliases_en: ["Ozon minimum price", "Ozon minimum allowed price"]
+    historical_names: []
+    provider_binding:
+      source_id: ozon_current_prices
+      field_path: price.min_price
+    source_refs: [ozon_seller_api_postman_mirror_20260923, ozon_mcp_curated_price_semantics_20260413]
+    source_checked_at: "2026-09-25"
+    verification_note: "Смысл min_price подтверждён live-verified curated evidence; exact cabinet wording пока provisional."
+    guardrail: "Не подменять min_price текущей ценой продажи или зачёркнутой ценой."
