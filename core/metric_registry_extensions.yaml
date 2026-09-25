@@ -124,6 +124,64 @@ metrics:
     guardrail: >-
       Only stock rows with type=fbs are included. This is reserved quantity,
       not available stock.
+  OZON_ORDERS:
+    canonical_name_ru: Заказы Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - заказы ozon
+      - заказы озон
+      - количество заказов ozon
+      - сколько заказов ozon
+      - заказы fbo ozon
+      - заказы fbs ozon
+    aliases_en:
+      - Ozon orders
+      - Ozon order count
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_ORDERS}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_order_postings
+        fields: [order_number, order_id, posting_number, in_process_at]
+        provider_aliases: [order_number, order_id]
+    guardrail: >-
+      Count distinct order_number across the selected FBO/FBS posting feeds.
+      FBO and FBS order counts may overlap and must not be added without
+      deduplication. Provider status/substatus belongs to posting_number, not
+      to an order as a whole. Monetary order totals are not approved here.
+
+  OZON_POSTINGS:
+    canonical_name_ru: Отправления Ozon
+    abbreviation: null
+    kind: BUSINESS
+    units: [UNITS]
+    aliases_ru:
+      - отправления ozon
+      - отправления озон
+      - количество отправлений ozon
+      - сколько отправлений ozon
+      - отправления fbo ozon
+      - отправления fbs ozon
+    aliases_en:
+      - Ozon postings
+      - Ozon shipments
+      - Ozon posting count
+    semantic_target: {type: BUSINESS_METRIC, id: OZON_POSTINGS}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_order_postings
+        fields: [posting_number, order_number, order_id, status, substatus, in_process_at]
+        provider_aliases: [posting_number, status, substatus]
+    guardrail: >-
+      Count distinct posting_number. FBO and FBS are separate fulfillment
+      feeds. status/substatus are posting-level dimensions and must not be
+      promoted to one synthetic order status.
+
   CURRENT_SELLING_PRICE:
     canonical_name_ru: Текущая цена продажи
     abbreviation: null
