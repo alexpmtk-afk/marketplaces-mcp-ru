@@ -1,5 +1,12 @@
 version: 2026-09-15.v1
 sources:
+  ozon_current_accruals:
+    marketplace: ozon
+    kind: archive_dataset
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    execution_status: APPROVED_CURRENT_FINANCE_CAPABILITY
+    dataset_id: ozon_current_accruals
+    purpose: Канонический CURRENT-архив финансовых начислений Ozon открытого месяца.
   wb_ads_data:
     marketplace: wb
     kind: archive_dataset
@@ -15,6 +22,73 @@ sources:
     dataset_id: ads_campaign_roster_snapshots
     purpose: Наблюдения состава рекламных кампаний, используемые для доказательства полноты advertising fullstats.
 datasets:
+  ozon_current_accruals:
+    marketplace: ozon
+    report_name_ru: Ozon CURRENT — финансовые начисления
+    database_presence: AVAILABLE_IN_CANONICAL_ARCHIVE
+    canonical_storage: google_drive
+    delimiter: ';'
+    file_pattern: '{cabinet}__accruals__{year}-{month}.csv'
+    schema_status: OZON_CURRENT_ACCRUALS_CANONICAL_2026_09_25
+    field_count: 10
+    fields:
+      - accrual_id
+      - accrued_category
+      - container_fees
+      - date
+      - item_fees
+      - non_item_fee
+      - posting
+      - total_amount
+      - unit_number
+      - _raw_json
+    field_catalog:
+      accrual_id:
+        meaning_ru: Уникальный идентификатор финансового начисления Ozon.
+        role: identifier
+        safe_uses: [дедупликация и идентификация начисления]
+      accrued_category:
+        meaning_ru: Категория начисления Ozon, например POSTING ITEM или NON_ITEM.
+        role: dimension
+        safe_uses: [разделение классов финансовых начислений]
+      container_fees:
+        meaning_ru: Структура дополнительных начислений грузоместа, если она присутствует у провайдера.
+        role: operation
+        safe_uses: [разбор только по отдельному утвержденному контракту]
+      date:
+        meaning_ru: Дата финансового начисления Ozon.
+        role: date
+        safe_uses: [фильтрация начислений по календарному периоду]
+      item_fees:
+        meaning_ru: Структура начислений и услуг, привязанных к товару.
+        role: operation
+        safe_uses: [извлечение только утвержденных type_id и accrued]
+      non_item_fee:
+        meaning_ru: Нетоварное начисление с идентификатором типа услуги и суммой.
+        role: operation
+        safe_uses: [извлечение только утвержденных type_id и accrued]
+      posting:
+        meaning_ru: Структура начисления отправления, включая товарную комиссию и услуги доставки.
+        role: operation
+        safe_uses: [утвержденные семантики комиссии и логистики]
+      total_amount:
+        meaning_ru: Итоговая сумма конкретной строки начисления в валюте провайдера.
+        role: measure
+        safe_uses: [контроль строки; не использовать как универсальный бизнес-показатель без отдельного контракта]
+      unit_number:
+        meaning_ru: Номер или идентификатор единицы расчета, переданный Ozon.
+        role: identifier
+        safe_uses: [идентификация контекста начисления]
+      _raw_json:
+        meaning_ru: Каноническое полное JSON-представление исходной строки Ozon для проверенного разбора вложенных полей.
+        role: operation
+        safe_uses: [воспроизводимый разбор утвержденных вложенных финансовых полей]
+    row_dedup_key: [accrual_id]
+    coverage:
+      registry_file: current_coverage_registry.csv
+      complete_status: COMPLETE
+      period_fields: [date_from, date_to]
+      archive_route_requirement: FULL_COVERAGE
   ads_campaign_daily:
     marketplace: wb
     report_name_ru: Wildberries Advertising — дневная статистика кампаний
@@ -132,13 +206,9 @@ capabilities:
   other_services_cost:
     source_id: ozon_current_accruals
     status: AVAILABLE_WITH_LIMITATION
-    fields:
-      - non_item_fee.type_id
-      - non_item_fee.accrued
-      - item_fees.fees[].fees[].type_id
-      - item_fees.fees[].fees[].accrued
+    fields: [non_item_fee, item_fees]
     scope: ozon_current_other_services_reviewed_allowlist
-    guardrail: Ozon other services use a reviewed non-delivery allowlist; logistics, storage, sales commission, promotion, fines and compensation remain separate.
+    guardrail: Ozon other services use a reviewed non-delivery allowlist inside non_item_fee/item_fees; logistics, storage, sales commission, promotion, fines and compensation remain separate.
   advertising_performance:
     source_id: wb_ads_data
     status: AVAILABLE_WITH_LIMITATION
