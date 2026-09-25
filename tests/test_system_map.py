@@ -144,11 +144,16 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
         "OZON_FBO_RESERVED_STOCK",
         "OZON_FBS_AVAILABLE_STOCK",
         "OZON_FBS_RESERVED_STOCK",
+        "OZON_ORDERS",
+        "OZON_POSTINGS",
     }
     assert "Seller Analytics" in semantic["current_stock_source"]
     assert "Ozon" in semantic["current_stock_source"]
     assert "present includes reserved" in semantic["current_stock_source"]
     assert "present - reserved" in semantic["current_stock_source"]
+    assert "distinct order_number" in semantic["current_order_source"]
+    assert "distinct posting_number" in semantic["current_order_source"]
+    assert "status/substatus belong to postings" in semantic["current_order_source"]
     assert "RUB" in semantic["current_price_source"]
     assert "never be divided by 100" in semantic["current_price_source"]
     assert set(semantic["current_archive_datasets"]) == {
@@ -175,6 +180,8 @@ def test_semantic_core_is_runtime_wired_for_finance_advertising_and_operational_
     assert "operational business metric" in semantic["question_policy"]["current_state_precedence"]
     assert "preserves the original question" in semantic["runtime_integration"]
     assert "CURRENT_STOCK" in semantic["runtime_integration"]
+    assert "Ozon order questions use distinct order_number" in semantic["runtime_integration"]
+    assert "posting/status questions use posting_number" in semantic["runtime_integration"]
     assert "advertising" in semantic["runtime_integration"].lower()
 
 
@@ -185,12 +192,21 @@ def test_current_stock_and_today_routing_boundaries_are_canonical():
     assert "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK" in rules
     assert "Ozon stock semantics use present - reserved" in rules
     assert "FBO and FBS" in rules
+    assert "Ozon order semantics use distinct order_number" in rules
+    assert "Ozon posting semantics use distinct posting_number" in rules
+    assert "monetary order totals are fail-closed" in rules
     assert "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric" in rules
     assert "CURRENT_SELLING_PRICE for WB" in rules
     assert "divide_by_100 is forbidden" in rules
     assert "asynchronous warehouse-remains report fallback" in rules
     assert "historical requests must fail closed" in rules
     assert "generic current-state marker" in rules
+    ozon_orders = SYSTEM_MAP["routing_policy"]["ozon_orders"]
+    assert "distinct order_number" in ozon_orders
+    assert "deduplication" in ozon_orders
+    ozon_postings = SYSTEM_MAP["routing_policy"]["ozon_postings"]
+    assert "distinct posting_number" in ozon_postings
+    assert "status/substatus" in ozon_postings
     routing = SYSTEM_MAP["routing_policy"]["current_stock"]
     assert "WB CURRENT_STOCK" in routing
     assert "Ozon CURRENT_STOCK" in routing

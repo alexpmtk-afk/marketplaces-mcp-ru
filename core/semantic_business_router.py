@@ -23,6 +23,12 @@ from .semantic_current_stock import (
     SemanticCurrentStockExecutionError,
     execute_current_stock_question,
 )
+from .semantic_ozon_orders import (
+    OZON_ORDER_METRICS,
+    SemanticOzonOrdersError,
+    execute_ozon_orders_question,
+    requested_ozon_order_request,
+)
 from .semantic_ozon_snapshot import (
     OZON_PRICE_METRICS,
     OZON_STOCK_METRICS,
@@ -451,6 +457,35 @@ def _marketplace_from_request(marketplace: str, question: str) -> str:
     return explicit
 
 
+def _ozon_orders_resolution(question: str, request: dict[str, Any]) -> dict[str, Any]:
+    metric_id = str(request["metric_id"])
+    dictionary = {item["metric_id"]: item for item in resolve_metric_terms(question)}
+    canonical = deepcopy(dictionary.get(metric_id))
+    return {
+        "resolution_type": "BUSINESS_METRIC",
+        "execution_allowed": True,
+        "status": "AVAILABLE_WITH_LIMITATION",
+        "route_id": "ozon_orders_postings",
+        "metric_id": metric_id,
+        "source_ids": ["ozon_fbo_list", "ozon_fbs_list"],
+        "canonical_metric": canonical,
+        "normalized_query": {
+            "marketplace": "ozon",
+            "temporal_class": "OPERATIONAL_PERIOD",
+            "period": None,
+            "metric": metric_id,
+            "fulfillment": request.get("fulfillment"),
+            "statuses": list(request.get("statuses") or []),
+            "requested_measure": request.get("requested_measure"),
+        },
+        "guardrail": (
+            "Ozon orders use distinct order_number across FBO/FBS. "
+            "Ozon postings use distinct posting_number. status/substatus are posting-level only, "
+            "and monetary order totals are not approved by this executor."
+        ),
+    }
+
+
 def _ozon_snapshot_resolution(question: str, metrics: list[str]) -> dict[str, Any]:
     dictionary = {item["metric_id"]: item for item in resolve_metric_terms(question)}
     canonical = [deepcopy(dictionary[metric]) for metric in metrics if metric in dictionary]
@@ -502,9 +537,43 @@ async def execute_business_query(
     natural_question = str(question or "").strip()
     marketplace_key = _marketplace_from_request(marketplace, natural_question)
 
-    # Ozon current snapshot is intentionally resolved before legacy period
-    # parsing. CURRENT_SNAPSHOT metrics do not require fake date_from/date_to.
+    # Ozon has dedicated operational executors before generic/reference routing.
     if natural_question and marketplace_key == "ozon":
+        order_request = requested_ozon_order_request(natural_question)
+        if order_request:
+            ozon = modules.get("ozon")
+            resolution = _ozon_orders_resolution(natural_question, order_request)
+            if ozon is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Ozon runtime module is required for the approved order/posting metrics.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_orders_question(
+                    ozon,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonOrdersError as exc:
+                result = make_error(
+                    "source_not_suitable",
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
+        # Ozon current snapshot is intentionally resolved before legacy period
+        # parsing. CURRENT_SNAPSHOT metrics do not require fake date_from/date_to.
         snapshot_metrics = requested_snapshot_metrics(natural_question)
         if snapshot_metrics:
             ozon = modules.get("ozon")
@@ -559,6 +628,8 @@ async def execute_business_query(
                     "OZON_FBO_RESERVED_STOCK",
                     "OZON_FBS_AVAILABLE_STOCK",
                     "OZON_FBS_RESERVED_STOCK",
+                    "OZON_ORDERS",
+                    "OZON_POSTINGS",
                 ],
             },
         )
