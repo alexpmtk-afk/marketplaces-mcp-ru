@@ -28,6 +28,11 @@ from .semantic_ozon_commission import (
     execute_ozon_current_commission,
     requested_ozon_commission,
 )
+from .semantic_ozon_logistics import (
+    SemanticOzonLogisticsError,
+    execute_ozon_current_logistics,
+    requested_ozon_logistics,
+)
 from .semantic_ozon_orders import (
     OZON_ORDER_METRICS,
     SemanticOzonOrdersError,
@@ -609,6 +614,58 @@ async def execute_business_query(
                     str(exc),
                     operation_id="marketplace_business_query",
                     retryable=False,
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
+        logistics_request = requested_ozon_logistics(natural_question)
+        if logistics_request:
+            resolution = {
+                "resolution_type": "BUSINESS_METRIC",
+                "execution_allowed": True,
+                "status": "AVAILABLE_WITH_LIMITATION",
+                "route_id": "ozon_current_logistics",
+                "metric_id": "LOGISTICS_COST",
+                "source_ids": ["ozon_current_accruals"],
+                "normalized_query": {
+                    "marketplace": "ozon",
+                    "temporal_class": "CURRENT_OPEN_MONTH",
+                    "metric": "LOGISTICS_COST",
+                    "requested_measure": "RUB",
+                },
+                "guardrail": (
+                    "Ozon logistics/delivery uses only canonical CURRENT accrual "
+                    "posting.products[].delivery.total_accrued with COMPLETE coverage. "
+                    "Commission, storage and other fee buckets are not substituted."
+                ),
+            }
+            store = modules.get("_archive_store")
+            if store is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Canonical Google Drive archive is required for Ozon logistics.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_current_logistics(
+                    store,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonLogisticsError as exc:
+                result = make_error(
+                    "source_not_suitable",
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
                 )
             if isinstance(result, dict):
                 return _attach_semantic_context(
