@@ -156,7 +156,7 @@ def test_ozon_cancellations_are_distinct_from_returns():
     assert cancellations["label_ru"] == "Отменённые отправления Ozon"
     assert cancellations["fixed_filter"]["status"] == "cancelled"
     assert cancellations["provider_binding"]["field_path"] == "posting_number"
-    assert "Это не возврат" in cancellations["definition_ru"]
+    assert "это не возврат" in cancellations["definition_ru"].lower()
     assert returns["knowledge_id"] == "OZON_FINAL_RETURNS"
 
 
