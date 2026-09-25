@@ -80,6 +80,23 @@ def test_storage_charge_vs_detailed_storage_are_separated():
     assert detailed["required_source_id"] == "wb_paid_storage_report"
 
 
+def test_ozon_orders_route_to_provider_specific_operational_metric():
+    result = resolve_semantic_question("Сколько заказов Ozon за месяц?")
+    assert result["resolution_type"] == "BUSINESS_METRIC"
+    assert result["metric_id"] == "OZON_ORDERS"
+    assert result["source_id"] == "ozon_order_postings"
+    assert result["status"] == "AVAILABLE_WITH_LIMITATION"
+    assert result["normalized_query"]["measure"] == "UNITS"
+
+
+def test_ozon_postings_route_separately_from_orders():
+    result = resolve_semantic_question("Сколько отправлений Ozon за месяц?")
+    assert result["resolution_type"] == "BUSINESS_METRIC"
+    assert result["metric_id"] == "OZON_POSTINGS"
+    assert result["source_id"] == "ozon_order_postings"
+    assert result["status"] == "AVAILABLE_WITH_LIMITATION"
+
+
 def test_ozon_question_is_reference_only_because_no_ozon_dataset_exists():
     result = resolve_semantic_question("Какие продажи были на Ozon за месяц?")
     assert result["status"] == "REQUIRES_OTHER_SOURCE"
