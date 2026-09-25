@@ -956,7 +956,8 @@ metrics:
     historical_names: []
     provider_binding:
       source_id: ozon_current_stocks
-      field_paths: [stocks.present, stocks.reserved, stocks.type]
+      field_path: stocks.present
+    calculation_inputs: [stocks.present, stocks.reserved, stocks.type]
     source_refs: [ozon_seller_api_postman_mirror_20260923, ozon_mcp_curated_stock_semantics_20260413]
     source_checked_at: "2026-09-25"
     verification_note: "API binding и правило present включает reserved подтверждены live-verified curated evidence; exact cabinet wording пока provisional."
@@ -981,7 +982,8 @@ metrics:
     historical_names: []
     provider_binding:
       source_id: ozon_current_stocks
-      field_paths: [stocks.present, stocks.reserved, stocks.type]
+      field_path: stocks.present
+    calculation_inputs: [stocks.present, stocks.reserved, stocks.type]
     source_refs: [ozon_mcp_curated_stock_semantics_20260413]
     source_checked_at: "2026-09-25"
     verification_note: "FBO bucket и правило present-reserved подтверждены curated live-verified evidence."
@@ -1000,7 +1002,8 @@ metrics:
     historical_names: []
     provider_binding:
       source_id: ozon_current_stocks
-      field_paths: [stocks.reserved, stocks.type]
+      field_path: stocks.reserved
+    filter_fields: [stocks.type]
     source_refs: [ozon_mcp_curated_stock_semantics_20260413]
     source_checked_at: "2026-09-25"
     verification_note: "Поле reserved и FBO bucket подтверждены curated live-verified evidence."
@@ -1019,7 +1022,8 @@ metrics:
     historical_names: []
     provider_binding:
       source_id: ozon_current_stocks
-      field_paths: [stocks.present, stocks.reserved, stocks.type]
+      field_path: stocks.present
+    calculation_inputs: [stocks.present, stocks.reserved, stocks.type]
     source_refs: [ozon_mcp_curated_stock_semantics_20260413]
     source_checked_at: "2026-09-25"
     verification_note: "FBS bucket и правило present-reserved подтверждены curated live-verified evidence."
@@ -1038,7 +1042,8 @@ metrics:
     historical_names: []
     provider_binding:
       source_id: ozon_current_stocks
-      field_paths: [stocks.reserved, stocks.type]
+      field_path: stocks.reserved
+    filter_fields: [stocks.type]
     source_refs: [ozon_mcp_curated_stock_semantics_20260413]
     source_checked_at: "2026-09-25"
     verification_note: "Поле reserved и FBS bucket подтверждены curated live-verified evidence."
