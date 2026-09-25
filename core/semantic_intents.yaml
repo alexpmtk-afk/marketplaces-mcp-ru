@@ -58,6 +58,58 @@ business_metrics:
     current_only: true
     guardrail: Для WB значения price/discountedPrice уже выражены в currencyIsoCode4217; RUB нельзя делить на 100. Для Ozon отдельный executor использует marketing_seller_price. Историческую цену нельзя подменять текущим снимком.
 
+  OZON_FBO_AVAILABLE_STOCK:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_stocks
+    data_class: CURRENT_OPERATIONAL_STOCK
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Только type=fbo. Доступно = present - reserved, потому что present уже включает резерв.
+
+  OZON_FBO_RESERVED_STOCK:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_stocks
+    data_class: CURRENT_OPERATIONAL_STOCK
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Только type=fbo и только reserved; не выдавать за доступный остаток.
+
+  OZON_FBS_AVAILABLE_STOCK:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_stocks
+    data_class: CURRENT_OPERATIONAL_STOCK
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Только type=fbs. Доступно = present - reserved; не смешивать с FBO.
+
+  OZON_FBS_RESERVED_STOCK:
+    status: AVAILABLE_WITH_LIMITATION
+    marketplace: ozon
+    source_id: ozon_current_stocks
+    data_class: CURRENT_OPERATIONAL_STOCK
+    default_measure: UNITS
+    allowed_measures: [UNITS]
+    allowed_groupings: [TOTAL, PRODUCT]
+    product_filter_supported: true
+    current_period_supported: true
+    current_only: true
+    guardrail: Только type=fbs и только reserved; не выдавать за доступный остаток.
+
   OZON_BASE_PRICE:
     status: AVAILABLE_WITH_LIMITATION
     marketplace: ozon
@@ -137,6 +189,30 @@ business_metrics:
     guardrail: Цена после установленной скидки WB Клуба; не обещает финальную персональную цену покупателя.
 
 routes:
+  - id: ozon_fbo_reserved_stock
+    priority: 2015
+    target_type: business_metric
+    target_id: OZON_FBO_RESERVED_STOCK
+    match_any: [резерв fbo ozon, зарезервировано fbo ozon, резерв на fbo ozon]
+
+  - id: ozon_fbs_reserved_stock
+    priority: 2015
+    target_type: business_metric
+    target_id: OZON_FBS_RESERVED_STOCK
+    match_any: [резерв fbs ozon, зарезервировано fbs ozon, резерв на fbs ozon]
+
+  - id: ozon_fbo_available_stock
+    priority: 2010
+    target_type: business_metric
+    target_id: OZON_FBO_AVAILABLE_STOCK
+    match_any: [остаток fbo ozon, остатки fbo ozon, доступный остаток fbo ozon, доступно fbo ozon]
+
+  - id: ozon_fbs_available_stock
+    priority: 2010
+    target_type: business_metric
+    target_id: OZON_FBS_AVAILABLE_STOCK
+    match_any: [остаток fbs ozon, остатки fbs ozon, доступный остаток fbs ozon, доступно fbs ozon, остаток на складе продавца ozon]
+
   - id: ozon_any
     priority: 2000
     target_type: not_covered
