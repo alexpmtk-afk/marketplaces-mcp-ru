@@ -66,7 +66,23 @@ def _norm(value: Any) -> str:
 def requested_ozon_sales_returns(question: str) -> dict[str, Any] | None:
     text = _norm(question)
     metrics: list[str] = []
-    if any(word in text for word in ("продаж", "реализац")):
+    sales_markers = (
+        "сколько продаж",
+        "количество продаж",
+        "сумма продаж",
+        "продажи ",
+        " продаж ",
+        "продано",
+        "реализация",
+        "реализовано",
+        "реализованные единицы",
+    )
+    has_sales = any(marker in f" {text} " for marker in sales_markers)
+    price_context = any(marker in text for marker in ("цена продажи", "цена продаж", "продажная цена"))
+    if has_sales and not (
+        price_context
+        and not any(marker in text for marker in ("сколько продаж", "количество продаж", "сумма продаж", "продано", "реализац"))
+    ):
         metrics.append("SALES")
     if "возврат" in text:
         metrics.append("RETURNS")
@@ -185,6 +201,18 @@ def _resolve_closed_full_month(
     else:
         named = _named_month(question)
         if named is None:
+            hint = parse_business_query_dimensions(question).get("period_hint")
+            if hint in {"TODAY", "YESTERDAY", "WEEK", "MONTH"}:
+                return None, {
+                    "ok": False,
+                    "error": "ozon_current_sales_returns_not_approved",
+                    "code": "OZON_CURRENT_SALES_RETURNS_NOT_APPROVED",
+                    "complete": False,
+                    "retryable": False,
+                    "message": (
+                        "Current/open-month Ozon sales/returns require a separately approved CURRENT accrual semantic mapping."
+                    ),
+                }
             return None, {
                 "ok": False,
                 "error": "period_required",
