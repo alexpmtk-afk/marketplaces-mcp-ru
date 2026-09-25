@@ -10,7 +10,7 @@ def test_metric_registry_v1_is_canonical_semantic_dictionary_not_execution_autho
     assert registry["policy"]["metric_dictionary_grants_execution"] is False
     assert registry["policy"]["provider_field_is_not_business_name"] is True
     assert registry["policy"]["unknown_provider_mapping_must_not_be_inferred"] is True
-    assert len(registry["metrics"]) == 40
+    assert len(registry["metrics"]) == 41
 
 
 def test_payout_term_change_fee_has_exact_wb_semantics():
@@ -83,7 +83,7 @@ def test_metric_dictionary_is_visible_from_canonical_semantic_core():
     metrics_view = semantic_core_view("metrics")
 
     assert brain["validated"] is True
-    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 40
+    assert brain["summary"]["counts"]["metric_dictionary_entries"] == 41
     assert brain["component_versions"]["metric_registry"] == "marketplace_metric_registry.v1"
     assert metrics_view["metrics"]["AD_DRR"]["abbreviation"] == "ДРР"
     assert brain["summary"]["safety"]["metric_dictionary_is_semantic_only"] is True
@@ -101,6 +101,18 @@ def test_ozon_final_sales_returns_have_separate_unit_bindings():
     assert registry["RETURNS"]["provider_mappings"]["ozon"]["source_id"] == "ozon_final_realization"
     assert registry["RETURNS"]["provider_mappings"]["ozon"]["fields"] == [
         "return_commission.quantity"
+    ]
+
+
+def test_ozon_cancelled_postings_metric_is_posting_scoped():
+    registry = load_metric_registry()["metrics"]
+    metric = registry["OZON_CANCELLED_POSTINGS"]
+
+    assert metric["provider_mappings"]["ozon"]["source_id"] == "ozon_order_postings"
+    assert metric["provider_mappings"]["ozon"]["fields"][0] == "posting_number"
+    assert "status=cancelled" in metric["guardrail"]
+    assert [item["metric_id"] for item in resolve_metric_terms("сколько отмен Ozon")] == [
+        "OZON_CANCELLED_POSTINGS"
     ]
 
 
