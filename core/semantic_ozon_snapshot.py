@@ -14,14 +14,54 @@ from .metric_observation import build_metric_observation
 from .metric_registry import resolve_metric_terms
 from .tools import resolve_named_cabinet
 
-OZON_SNAPSHOT_EXECUTOR_VERSION = "ozon_current_snapshot.v2"
+OZON_SNAPSHOT_EXECUTOR_VERSION = "ozon_current_snapshot.v3"
 OZON_PRICE_METRICS = frozenset({
     "CURRENT_SELLING_PRICE",
     "OZON_BASE_PRICE",
     "OZON_OLD_PRICE",
     "OZON_MIN_PRICE",
 })
-SUPPORTED_METRICS = frozenset({*OZON_PRICE_METRICS, "CURRENT_STOCK"})
+OZON_STOCK_METRICS = frozenset({
+    "CURRENT_STOCK",
+    "OZON_FBO_AVAILABLE_STOCK",
+    "OZON_FBO_RESERVED_STOCK",
+    "OZON_FBS_AVAILABLE_STOCK",
+    "OZON_FBS_RESERVED_STOCK",
+})
+SUPPORTED_METRICS = frozenset({*OZON_PRICE_METRICS, *OZON_STOCK_METRICS})
+
+_OZON_STOCK_METRIC_CONTRACT = {
+    "CURRENT_STOCK": {
+        "result_key": "current_stock",
+        "bucket": None,
+        "measure": "available",
+        "source_field": "sum(stocks.present-stocks.reserved)",
+    },
+    "OZON_FBO_AVAILABLE_STOCK": {
+        "result_key": "ozon_fbo_available_stock",
+        "bucket": "fbo",
+        "measure": "available",
+        "source_field": "stocks.present-stocks.reserved",
+    },
+    "OZON_FBO_RESERVED_STOCK": {
+        "result_key": "ozon_fbo_reserved_stock",
+        "bucket": "fbo",
+        "measure": "reserved",
+        "source_field": "stocks.reserved",
+    },
+    "OZON_FBS_AVAILABLE_STOCK": {
+        "result_key": "ozon_fbs_available_stock",
+        "bucket": "fbs",
+        "measure": "available",
+        "source_field": "stocks.present-stocks.reserved",
+    },
+    "OZON_FBS_RESERVED_STOCK": {
+        "result_key": "ozon_fbs_reserved_stock",
+        "bucket": "fbs",
+        "measure": "reserved",
+        "source_field": "stocks.reserved",
+    },
+}
 
 _OZON_PRICE_FIELD_CONTRACT = {
     "CURRENT_SELLING_PRICE": {
@@ -203,7 +243,11 @@ def requested_snapshot_metrics(question: str) -> list[str]:
     matched = [item["metric_id"] for item in resolve_metric_terms(question)]
     metrics = [metric for metric in matched if metric in SUPPORTED_METRICS]
     lowered = str(question or "").casefold().replace("ё", "е")
-    if "CURRENT_STOCK" not in metrics and "остат" in lowered:
+    has_specific_stock = any(
+        metric in OZON_STOCK_METRICS and metric != "CURRENT_STOCK"
+        for metric in metrics
+    )
+    if "CURRENT_STOCK" not in metrics and not has_specific_stock and "остат" in lowered:
         metrics.append("CURRENT_STOCK")
     has_specific_price = any(
         metric in OZON_PRICE_METRICS and metric != "CURRENT_SELLING_PRICE"
@@ -308,33 +352,109 @@ def _stock_rows(item: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _stock_result(item: dict[str, Any]) -> dict[str, Any]:
-    breakdown = []
+    breakdown: list[dict[str, Any]] = []
+    seen_skus: set[str] = set()
+    buckets: dict[str, dict[str, Any]] = {}
+
     present_total = 0
     reserved_total = 0
-    seen_skus: set[str] = set()
+    available_total = 0
+    invalid_rows: list[dict[str, Any]] = []
+
     for row in _stock_rows(item):
+        bucket_type = str(row.get("type") or "unknown").lower()
         present = int(row.get("present") or 0)
         reserved = int(row.get("reserved") or 0)
+        available = present - reserved
+
+        if present < 0 or reserved < 0 or available < 0:
+            invalid_rows.append({
+                "type": bucket_type,
+                "present": present,
+                "reserved": reserved,
+            })
+
         present_total += present
         reserved_total += reserved
+        available_total += available
+
+        bucket = buckets.setdefault(
+            bucket_type,
+            {"type": bucket_type, "present": 0, "reserved": 0, "available": 0, "row_count": 0},
+        )
+        bucket["present"] += present
+        bucket["reserved"] += reserved
+        bucket["available"] += available
+        bucket["row_count"] += 1
+
         sku = row.get("sku")
         if sku not in (None, ""):
             seen_skus.add(str(sku))
+
         breakdown.append({
-            "type": str(row.get("type") or "unknown").lower(),
+            "type": bucket_type,
             "present": present,
             "reserved": reserved,
+            "available": available,
             "sku": str(sku) if sku not in (None, "") else None,
             "warehouse_ids": list(row.get("warehouse_ids") or []),
         })
+
     return {
         "metric_id": "CURRENT_STOCK",
-        "available_units": present_total,
+        "present_units": present_total,
+        "available_units": available_total,
         "reserved_units": reserved_total,
+        "buckets": buckets,
         "breakdown": breakdown,
         "observed_skus": sorted(seen_skus),
-        "meaning": "sum of provider present across returned Ozon stock buckets",
+        "valid": not invalid_rows,
+        "invalid_rows": invalid_rows,
+        "formula": "available = present - reserved",
+        "meaning": "sellable stock after subtracting reserved units from provider present",
         "limitation": "seller-cabinet operational stock, not public-card availability",
+    }
+
+
+def _stock_metric_result(parsed: dict[str, Any], metric_id: str) -> dict[str, Any] | None:
+    contract = _OZON_STOCK_METRIC_CONTRACT.get(metric_id)
+    if contract is None:
+        return None
+
+    bucket_type = contract["bucket"]
+    measure = str(contract["measure"])
+
+    if bucket_type is None:
+        if metric_id != "CURRENT_STOCK":
+            return None
+        value = int(parsed["available_units"])
+        return {
+            **parsed,
+            "metric_id": metric_id,
+            "value": value,
+            "source_field": str(contract["source_field"]),
+        }
+
+    bucket = (parsed.get("buckets") or {}).get(str(bucket_type))
+    if bucket is None:
+        return None
+
+    value = int(bucket[measure])
+    return {
+        "metric_id": metric_id,
+        "value": value,
+        "available_units": int(bucket["available"]),
+        "present_units": int(bucket["present"]),
+        "reserved_units": int(bucket["reserved"]),
+        "fulfillment_type": str(bucket_type),
+        "row_count": int(bucket["row_count"]),
+        "formula": "available = present - reserved" if measure == "available" else "reserved = provider reserved",
+        "source_field": str(contract["source_field"]),
+        "meaning": (
+            f"Ozon {bucket_type.upper()} available stock"
+            if measure == "available"
+            else f"Ozon {bucket_type.upper()} reserved stock"
+        ),
     }
 
 
@@ -476,7 +596,8 @@ async def execute_ozon_current_snapshot(
         result["price_metrics"] = price_metrics
         leg_states["price"] = "PASS"
 
-    if "CURRENT_STOCK" in metrics:
+    requested_stock_metrics = [metric for metric in metrics if metric in OZON_STOCK_METRICS]
+    if requested_stock_metrics:
         stock_spec = ozon.catalog.get("ozon_stocks_info")
         if stock_spec is None:
             return {"ok": False, "error": "source_contract_missing", "code": "SOURCE_CONTRACT_MISSING", "stage": "stock", "complete": False}
@@ -491,6 +612,18 @@ async def execute_ozon_current_snapshot(
         if stock_error:
             return {**stock_error, "entity": entity, "cabinet": cabinet, "leg_states": {**leg_states, "stock": "FAIL"}}
         parsed_stock = _stock_result(stock_item or {})
+        if not parsed_stock.get("valid"):
+            return {
+                "ok": False,
+                "error": "stock_semantics_invalid",
+                "code": "STOCK_SEMANTICS_INVALID",
+                "stage": "stock",
+                "complete": False,
+                "entity": entity,
+                "cabinet": cabinet,
+                "details": {"invalid_rows": parsed_stock.get("invalid_rows") or []},
+            }
+
         expected_skus = set(entity.get("known_skus") or [])
         observed_skus = set(parsed_stock.get("observed_skus") or [])
         if expected_skus and observed_skus and expected_skus.isdisjoint(observed_skus):
@@ -504,21 +637,42 @@ async def execute_ozon_current_snapshot(
                 "cabinet": cabinet,
                 "details": {"entity_skus": sorted(expected_skus), "stock_skus": sorted(observed_skus)},
             }
-        result["current_stock"] = parsed_stock
-        stock_observation = build_metric_observation(
-            metric_id="CURRENT_STOCK",
-            value=parsed_stock["available_units"],
-            unit="UNITS",
-            marketplace="ozon",
-            source_name="ozon_current_stocks",
-            source_field="stocks.present",
-        ).to_dict()
-        stock_observation["dimensions"] = {
-            "product_id": entity.get("product_id"),
-            "offer_id": entity.get("offer_id"),
-            "sku": entity.get("sku"),
-        }
-        result.setdefault("metric_observations", []).append(stock_observation)
+
+        stock_metrics: dict[str, Any] = {}
+        for metric_id in requested_stock_metrics:
+            metric_result = _stock_metric_result(parsed_stock, metric_id)
+            if metric_result is None:
+                return {
+                    "ok": False,
+                    "error": "stock_bucket_not_reported",
+                    "code": "STOCK_BUCKET_NOT_REPORTED",
+                    "stage": "stock",
+                    "complete": False,
+                    "entity": entity,
+                    "cabinet": cabinet,
+                    "metric_id": metric_id,
+                    "reported_buckets": sorted((parsed_stock.get("buckets") or {}).keys()),
+                }
+            stock_metrics[metric_id] = metric_result
+            result[_OZON_STOCK_METRIC_CONTRACT[metric_id]["result_key"]] = metric_result
+
+            stock_observation = build_metric_observation(
+                metric_id=metric_id,
+                value=metric_result["value"],
+                unit="UNITS",
+                marketplace="ozon",
+                source_name="ozon_current_stocks",
+                source_field=metric_result["source_field"],
+            ).to_dict()
+            stock_observation["dimensions"] = {
+                "product_id": entity.get("product_id"),
+                "offer_id": entity.get("offer_id"),
+                "sku": entity.get("sku"),
+                "fulfillment_type": metric_result.get("fulfillment_type"),
+            }
+            result.setdefault("metric_observations", []).append(stock_observation)
+
+        result["stock_metrics"] = stock_metrics
         leg_states["stock"] = "PASS"
 
     result["leg_states"] = leg_states
@@ -527,13 +681,13 @@ async def execute_ozon_current_snapshot(
         for stage in (
             ["entity"]
             + (["price"] if requested_price_metrics else [])
-            + (["stock"] if "CURRENT_STOCK" in metrics else [])
+            + (["stock"] if requested_stock_metrics else [])
         )
     )
     result["provenance"] = {
         "entity_source": "ozon_product_info_list",
         "price_source": "ozon_prices_get" if requested_price_metrics else None,
-        "stock_source": "ozon_stocks_info" if "CURRENT_STOCK" in metrics else None,
+        "stock_source": "ozon_stocks_info" if requested_stock_metrics else None,
         "named_cabinet": True,
         "join_key": "product_id",
         "entity_lookup_field": identifier_field,
