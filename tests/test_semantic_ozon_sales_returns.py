@@ -107,6 +107,12 @@ def test_parser_recognizes_sales_and_returns_and_amount():
     assert amount["requested_measure"] == "AMOUNT_RUB"
 
 
+def test_price_wording_is_not_misclassified_as_sales():
+    assert requested_ozon_sales_returns(
+        "Какая текущая цена продажи Ozon?"
+    ) is None
+
+
 def test_closed_month_units_are_separate_and_net_is_explicit():
     result = asyncio.run(execute_ozon_final_sales_returns_question(
         build_store(),
