@@ -254,6 +254,7 @@ SYSTEM_MAP: dict[str, Any] = {
             "ordinary ORDERS questions including today use the approved operational Statistics Orders source; explicit complete-order-flow wording remains separate and fail-closed without the full order-feed source",
             "CURRENT_STOCK is CURRENT_OPERATIONAL_STOCK from the live WB Seller Analytics WB-warehouse stock source; Base tokens may use the official asynchronous warehouse-remains report fallback",
             "CURRENT_FBS_STOCK is a separate CURRENT_SELLER_WAREHOUSE_STOCK metric and must use seller warehouses plus the read-only inventory endpoint; never substitute CURRENT_STOCK on WB warehouses",
+            "Ozon stock semantics use present - reserved for available units because present includes reserved; FBO and FBS available/reserved quantities remain separate metrics and may not substitute for one another",
             "CURRENT_SELLING_PRICE for WB uses the provider price fields as major currency units; currencyIsoCode4217=RUB means rubles and divide_by_100 is forbidden",
             "Ozon price semantics are distinct: CURRENT_SELLING_PRICE uses price.marketing_seller_price, OZON_BASE_PRICE uses price.price, OZON_OLD_PRICE uses price.old_price, and OZON_MIN_PRICE uses price.min_price; none may substitute for another",
             "CURRENT_STOCK, CURRENT_FBS_STOCK and CURRENT_SELLING_PRICE are present snapshots only; historical requests must fail closed unless a separate historical source/contract is approved",
