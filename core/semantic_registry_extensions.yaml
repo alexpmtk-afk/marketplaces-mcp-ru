@@ -209,6 +209,12 @@ capabilities:
     fields: [non_item_fee, item_fees]
     scope: ozon_current_other_services_reviewed_allowlist
     guardrail: Ozon other services use a reviewed non-delivery allowlist inside non_item_fee/item_fees; logistics, storage, sales commission, promotion, fines and compensation remain separate.
+  ozon_compensations:
+    source_id: ozon_current_accruals
+    status: AVAILABLE_WITH_LIMITATION
+    fields: [non_item_fee, item_fees, container_fees]
+    scope: ozon_current_compensations_reviewed_allowlist
+    guardrail: Ozon compensations use only reviewed type ids 10, 25 and 104. Delivery-service overlap fails closed because logistics already includes delivery.total_accrued.
   advertising_performance:
     source_id: wb_ads_data
     status: AVAILABLE_WITH_LIMITATION
