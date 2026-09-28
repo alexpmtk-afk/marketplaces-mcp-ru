@@ -269,3 +269,70 @@ def test_builder_keeps_canonical_drive_readable_without_yandex(monkeypatch):
 
     assert isinstance(store, hybrid.CanonicalDriveReadOnlyArchiveStore)
     assert store.drive is drive
+
+
+def test_builder_uses_remote_durable_store_without_yandex(monkeypatch):
+    import core.archive_hybrid as hybrid
+
+    drive = FakeStore("drive")
+    durable = FakeStore("local")
+    monkeypatch.setattr(hybrid, "build_google_archive_store_from_env", lambda: drive)
+    monkeypatch.setattr(hybrid, "build_yandex_archive_store_from_env", lambda: None)
+    monkeypatch.setattr(hybrid, "build_local_archive_store_from_env", lambda: durable)
+
+    store = hybrid.build_hybrid_archive_store_from_env()
+
+    assert isinstance(store, hybrid.RemoteDurableArchiveStore)
+    assert store.reader is drive
+    assert store.writer is drive
+    assert store.durable is durable
+
+
+def test_remote_durable_read_fallback_uses_local_mirror_when_canonical_path_fails():
+    from core.archive_google import ArchiveStorageError
+    from core.archive_hybrid import RemoteDurableArchiveStore
+
+    class FailingDrive(FakeStore):
+        async def ensure_folder_path(self, parts):
+            del parts
+            raise ArchiveStorageError("drive unavailable", code="DRIVE_UNAVAILABLE")
+
+    drive = FailingDrive("drive")
+    durable = FakeStore("local")
+    store = RemoteDurableArchiveStore(drive, drive, durable)
+
+    parts = ["База данных", "Ozon", "ozon_laser_master", "2026", "CURRENT", "2026-09"]
+    local_parent = "local:" + "/".join(parts)
+    name = "ozon_laser_master__accruals__2026-09.csv"
+    durable.files[f"{local_parent}/{name}"] = b"durable-current-accruals"
+
+    locator = asyncio.run(store.ensure_folder_path(parts))
+    item, data = asyncio.run(store.download_named(locator, name))
+
+    assert item is not None
+    assert data == b"durable-current-accruals"
+
+
+def test_remote_durable_read_fallback_blocks_canonical_mutation():
+    from core.archive_google import ArchiveStorageError
+    from core.archive_hybrid import RemoteDurableArchiveStore
+
+    class FailingDrive(FakeStore):
+        async def ensure_folder_path(self, parts):
+            del parts
+            raise ArchiveStorageError("drive unavailable", code="DRIVE_UNAVAILABLE")
+
+    drive = FailingDrive("drive")
+    durable = FakeStore("local")
+    store = RemoteDurableArchiveStore(drive, drive, durable)
+
+    locator = asyncio.run(store.ensure_folder_path([
+        "База данных", "Ozon", "ozon_laser_master", "2026", "CURRENT", "2026-09"
+    ]))
+
+    try:
+        asyncio.run(store.upload_bytes(locator, "x.csv", b"x"))
+    except ArchiveStorageError as exc:
+        assert exc.code == "CANONICAL_ARCHIVE_UNAVAILABLE"
+    else:
+        raise AssertionError("canonical mutation must fail closed in read fallback mode")
