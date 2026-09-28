@@ -33,6 +33,7 @@ _LOCATOR_PREFIX = "hybrid-v1:"
 _YANDEX_ONLY_PREFIX = "yandex-v1:"
 _REMOTE_LOCATOR_PREFIX = "remote-durable-v1:"
 _REMOTE_LOCAL_ONLY_PREFIX = "remote-local-v1:"
+_REMOTE_READ_FALLBACK_PREFIX = "remote-read-fallback-v1:"
 
 
 def _b64_encode(value: str) -> str:
@@ -322,6 +323,10 @@ class RemoteDurableArchiveStore:
         return _REMOTE_LOCAL_ONLY_PREFIX + _b64_encode(str(local_parent))
 
     @staticmethod
+    def _read_fallback_locator(local_parent: str) -> str:
+        return _REMOTE_READ_FALLBACK_PREFIX + _b64_encode(str(local_parent))
+
+    @staticmethod
     def _decode_parent(parent_id: str) -> tuple[str, str | None, str | None, str]:
         value = str(parent_id or "")
         if value.startswith(_REMOTE_LOCAL_ONLY_PREFIX):
@@ -330,6 +335,13 @@ class RemoteDurableArchiveStore:
                 None,
                 None,
                 _b64_decode(value[len(_REMOTE_LOCAL_ONLY_PREFIX):]),
+            )
+        if value.startswith(_REMOTE_READ_FALLBACK_PREFIX):
+            return (
+                "read_fallback",
+                None,
+                None,
+                _b64_decode(value[len(_REMOTE_READ_FALLBACK_PREFIX):]),
             )
         if value.startswith(_REMOTE_LOCATOR_PREFIX):
             payload = json.loads(_b64_decode(value[len(_REMOTE_LOCATOR_PREFIX):]))
@@ -345,8 +357,17 @@ class RemoteDurableArchiveStore:
         local_parent = await self.durable.ensure_folder_path(parts)
         if self._is_job_path(parts):
             return self._local_locator(local_parent)
-        read_parent = await self.reader.ensure_folder_path(parts)
-        write_parent = await self.writer.ensure_folder_path(parts)
+        try:
+            read_parent = await self.reader.ensure_folder_path(parts)
+            if self.reader is self.writer:
+                write_parent = read_parent
+            else:
+                write_parent = await self.writer.ensure_folder_path(parts)
+        except ArchiveStorageError:
+            # REMOTE keeps exact durable mirrors of canonical files. During a
+            # temporary canonical-control-plane outage those mirrors may be read,
+            # but never mutated as if they were canonical.
+            return self._read_fallback_locator(local_parent)
         return self._remote_locator(read_parent, write_parent, local_parent)
 
     async def find_child(
@@ -357,12 +378,18 @@ class RemoteDurableArchiveStore:
         mime_type: str | None = None,
     ):
         mode, read_parent, _write_parent, local_parent = self._decode_parent(parent_id)
-        if mode == "local":
+        if mode in {"local", "read_fallback"}:
             return await self.durable.find_child(local_parent, name, mime_type=mime_type)
         assert read_parent is not None
-        return await self.reader.find_child(read_parent, name, mime_type=mime_type)
+        try:
+            return await self.reader.find_child(read_parent, name, mime_type=mime_type)
+        except ArchiveStorageError:
+            return await self.durable.find_child(local_parent, name, mime_type=mime_type)
 
     async def file_metadata(self, file_id: str) -> dict[str, Any]:
+        value = str(file_id or "")
+        if value.startswith("local-file-v1:"):
+            return await self.durable.file_metadata(value)
         try:
             return await self.reader.file_metadata(file_id)
         except Exception:
@@ -376,24 +403,32 @@ class RemoteDurableArchiveStore:
 
     async def download_named(self, parent_id: str, name: str):
         mode, read_parent, write_parent, local_parent = self._decode_parent(parent_id)
-        if mode == "local":
+        if mode in {"local", "read_fallback"}:
             return await self.durable.download_named(local_parent, name)
 
         assert read_parent is not None and write_parent is not None
 
-        item, data = await self.reader.download_named(read_parent, name)
+        try:
+            item, data = await self.reader.download_named(read_parent, name)
+        except ArchiveStorageError:
+            item, data = None, None
         if item is not None and data is not None:
             return item, data
 
         backup, backup_data = await self.durable.download_named(local_parent, name)
         if backup is None or backup_data is None:
             return None, None
-        restored = await self.writer.upload_bytes(
-            write_parent,
-            name,
-            backup_data,
-            mime_type=getattr(backup, "mime_type", None) or "text/csv",
-        )
+        try:
+            restored = await self.writer.upload_bytes(
+                write_parent,
+                name,
+                backup_data,
+                mime_type=getattr(backup, "mime_type", None) or "text/csv",
+            )
+        except ArchiveStorageError:
+            # Canonical restore is unavailable right now. Keep the operation
+            # strictly read-only and return the verified durable mirror.
+            return backup, backup_data
         return restored, backup_data
 
     async def upload_bytes(
@@ -411,6 +446,11 @@ class RemoteDurableArchiveStore:
                 name,
                 data,
                 mime_type=mime_type,
+            )
+        if mode == "read_fallback":
+            raise ArchiveStorageError(
+                "Canonical archive is unavailable; durable mirror is read-only fallback",
+                code="CANONICAL_ARCHIVE_UNAVAILABLE",
             )
 
         assert write_parent is not None
@@ -583,7 +623,11 @@ def build_hybrid_archive_store_from_env() -> HybridArchiveStore | CanonicalDrive
 
     yandex = build_yandex_archive_store_from_env()
 
-    if yandex is None:
-        return CanonicalDriveReadOnlyArchiveStore(drive)
+    if yandex is not None:
+        return HybridArchiveStore(drive, yandex)
 
-    return HybridArchiveStore(drive, yandex)
+    durable = build_local_archive_store_from_env()
+    if durable is not None:
+        return RemoteDurableArchiveStore(drive, drive, durable)
+
+    return CanonicalDriveReadOnlyArchiveStore(drive)
