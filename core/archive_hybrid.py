@@ -34,6 +34,7 @@ _YANDEX_ONLY_PREFIX = "yandex-v1:"
 _REMOTE_LOCATOR_PREFIX = "remote-durable-v1:"
 _REMOTE_LOCAL_ONLY_PREFIX = "remote-local-v1:"
 _REMOTE_READ_FALLBACK_PREFIX = "remote-read-fallback-v1:"
+_REMOTE_LAZY_CANONICAL_PREFIX = "remote-lazy-canonical-v1:"
 
 
 def _b64_encode(value: str) -> str:
@@ -293,12 +294,20 @@ class RemoteDurableArchiveStore:
 
     read_only = False
 
-    def __init__(self, reader: Any, writer: GoogleDriveArchiveStore, durable: Any) -> None:
+    def __init__(
+        self,
+        reader: Any,
+        writer: GoogleDriveArchiveStore,
+        durable: Any,
+        *,
+        prefer_local_reads: bool = False,
+    ) -> None:
         self.reader = reader
         self.writer = writer
         self.durable = durable
         self.drive = writer
         self.yandex = durable
+        self.prefer_local_reads = bool(prefer_local_reads)
 
     @staticmethod
     def _is_job_path(parts: list[str] | tuple[str, ...]) -> bool:
@@ -327,6 +336,25 @@ class RemoteDurableArchiveStore:
         return _REMOTE_READ_FALLBACK_PREFIX + _b64_encode(str(local_parent))
 
     @staticmethod
+    def _lazy_locator(parts: list[str] | tuple[str, ...], local_parent: str) -> str:
+        payload = json.dumps(
+            {
+                "parts": [str(item) for item in parts],
+                "local": str(local_parent),
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        return _REMOTE_LAZY_CANONICAL_PREFIX + _b64_encode(payload)
+
+    @staticmethod
+    def _lazy_parts(value: str | None) -> list[str]:
+        payload = json.loads(str(value or "[]"))
+        if not isinstance(payload, list):
+            raise ValueError("Invalid lazy canonical archive path")
+        return [str(item) for item in payload]
+
+    @staticmethod
     def _decode_parent(parent_id: str) -> tuple[str, str | None, str | None, str]:
         value = str(parent_id or "")
         if value.startswith(_REMOTE_LOCAL_ONLY_PREFIX):
@@ -343,6 +371,16 @@ class RemoteDurableArchiveStore:
                 None,
                 _b64_decode(value[len(_REMOTE_READ_FALLBACK_PREFIX):]),
             )
+        if value.startswith(_REMOTE_LAZY_CANONICAL_PREFIX):
+            payload = json.loads(
+                _b64_decode(value[len(_REMOTE_LAZY_CANONICAL_PREFIX):])
+            )
+            return (
+                "lazy",
+                json.dumps(payload["parts"], ensure_ascii=False),
+                None,
+                str(payload["local"]),
+            )
         if value.startswith(_REMOTE_LOCATOR_PREFIX):
             payload = json.loads(_b64_decode(value[len(_REMOTE_LOCATOR_PREFIX):]))
             return (
@@ -357,6 +395,8 @@ class RemoteDurableArchiveStore:
         local_parent = await self.durable.ensure_folder_path(parts)
         if self._is_job_path(parts):
             return self._local_locator(local_parent)
+        if self.prefer_local_reads:
+            return self._lazy_locator(parts, local_parent)
         try:
             read_parent = await self.reader.ensure_folder_path(parts)
             if self.reader is self.writer:
@@ -380,6 +420,20 @@ class RemoteDurableArchiveStore:
         mode, read_parent, _write_parent, local_parent = self._decode_parent(parent_id)
         if mode in {"local", "read_fallback"}:
             return await self.durable.find_child(local_parent, name, mime_type=mime_type)
+        if mode == "lazy":
+            item = await self.durable.find_child(local_parent, name, mime_type=mime_type)
+            if item is not None:
+                return item
+            assert read_parent is not None
+            try:
+                canonical_parent = await self.reader.ensure_folder_path(
+                    self._lazy_parts(read_parent)
+                )
+                return await self.reader.find_child(
+                    canonical_parent, name, mime_type=mime_type
+                )
+            except ArchiveStorageError:
+                return None
         assert read_parent is not None
         try:
             return await self.reader.find_child(read_parent, name, mime_type=mime_type)
@@ -405,6 +459,18 @@ class RemoteDurableArchiveStore:
         mode, read_parent, write_parent, local_parent = self._decode_parent(parent_id)
         if mode in {"local", "read_fallback"}:
             return await self.durable.download_named(local_parent, name)
+        if mode == "lazy":
+            backup, backup_data = await self.durable.download_named(local_parent, name)
+            if backup is not None and backup_data is not None:
+                return backup, backup_data
+            assert read_parent is not None
+            try:
+                canonical_parent = await self.reader.ensure_folder_path(
+                    self._lazy_parts(read_parent)
+                )
+                return await self.reader.download_named(canonical_parent, name)
+            except ArchiveStorageError:
+                return None, None
 
         assert read_parent is not None and write_parent is not None
 
@@ -439,7 +505,7 @@ class RemoteDurableArchiveStore:
         *,
         mime_type: str = "text/csv",
     ):
-        mode, _read_parent, write_parent, local_parent = self._decode_parent(parent_id)
+        mode, read_parent, write_parent, local_parent = self._decode_parent(parent_id)
         if mode == "local":
             return await self.durable.upload_bytes(
                 local_parent,
@@ -451,6 +517,11 @@ class RemoteDurableArchiveStore:
             raise ArchiveStorageError(
                 "Canonical archive is unavailable; durable mirror is read-only fallback",
                 code="CANONICAL_ARCHIVE_UNAVAILABLE",
+            )
+        if mode == "lazy":
+            assert read_parent is not None
+            write_parent = await self.writer.ensure_folder_path(
+                self._lazy_parts(read_parent)
             )
 
         assert write_parent is not None
@@ -510,6 +581,7 @@ class RemoteDurableArchiveStore:
             "queue_and_staging": local_status,
             "backup_mirror": local_status,
             "read_only": False,
+            "prefer_local_reads": self.prefer_local_reads,
         }
 
 
@@ -628,6 +700,11 @@ def build_hybrid_archive_store_from_env() -> HybridArchiveStore | CanonicalDrive
 
     durable = build_local_archive_store_from_env()
     if durable is not None:
-        return RemoteDurableArchiveStore(drive, drive, durable)
+        return RemoteDurableArchiveStore(
+            drive,
+            drive,
+            durable,
+            prefer_local_reads=True,
+        )
 
     return CanonicalDriveReadOnlyArchiveStore(drive)
