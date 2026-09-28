@@ -286,6 +286,7 @@ def test_builder_uses_remote_durable_store_without_yandex(monkeypatch):
     assert store.reader is drive
     assert store.writer is drive
     assert store.durable is durable
+    assert store.prefer_local_reads is True
 
 
 def test_remote_durable_read_fallback_uses_local_mirror_when_canonical_path_fails():
@@ -336,3 +337,54 @@ def test_remote_durable_read_fallback_blocks_canonical_mutation():
         assert exc.code == "CANONICAL_ARCHIVE_UNAVAILABLE"
     else:
         raise AssertionError("canonical mutation must fail closed in read fallback mode")
+
+
+def test_remote_durable_preferred_local_read_skips_canonical_lookup():
+    from core.archive_hybrid import RemoteDurableArchiveStore
+
+    drive = FakeStore("drive")
+    durable = FakeStore("local")
+    store = RemoteDurableArchiveStore(
+        drive,
+        drive,
+        durable,
+        prefer_local_reads=True,
+    )
+
+    parts = ["База данных", "Ozon", "ozon_laser_master", "2026", "CURRENT", "2026-09"]
+    local_parent = "local:" + "/".join(parts)
+    name = "ozon_laser_master__accruals__2026-09.csv"
+    durable.files[f"{local_parent}/{name}"] = b"fast-local-read"
+
+    locator = asyncio.run(store.ensure_folder_path(parts))
+    item, data = asyncio.run(store.download_named(locator, name))
+
+    assert item is not None
+    assert data == b"fast-local-read"
+    assert drive.ensure_calls == []
+    assert drive.download_calls == []
+
+
+def test_remote_durable_preferred_local_write_remains_canonical_first():
+    from core.archive_hybrid import RemoteDurableArchiveStore
+
+    drive = FakeStore("drive")
+    durable = FakeStore("local")
+    store = RemoteDurableArchiveStore(
+        drive,
+        drive,
+        durable,
+        prefer_local_reads=True,
+    )
+
+    parts = ["База данных", "Ozon", "ozon_laser_master", "2026", "CURRENT", "2026-09"]
+    locator = asyncio.run(store.ensure_folder_path(parts))
+    item = asyncio.run(store.upload_bytes(locator, "write.csv", b"canonical-first"))
+
+    drive_parent = "drive:" + "/".join(parts)
+    local_parent = "local:" + "/".join(parts)
+    assert item.id == f"{drive_parent}/write.csv"
+    assert drive.files[f"{drive_parent}/write.csv"] == b"canonical-first"
+    assert durable.files[f"{local_parent}/write.csv"] == b"canonical-first"
+    assert drive.upload_calls == [f"{drive_parent}/write.csv"]
+    assert durable.upload_calls == [f"{local_parent}/write.csv"]
