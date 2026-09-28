@@ -268,11 +268,11 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
 
     assert result["ok"] is True
     assert result["status"] == "PASS"
-    assert result["knowledge_record_count"] == 48
-    assert result["semantic_metric_count"] == 42
+    assert result["knowledge_record_count"] == 50
+    assert result["semantic_metric_count"] == 43
     assert result["verified_metric_count"] == 30
     assert result["verified_binding_count"] == 30
-    assert result["provisional_binding_count"] == 18
+    assert result["provisional_binding_count"] == 20
     assert {
         (item["metric_id"], item["marketplace"])
         for item in result["provisional_bindings"]
@@ -295,6 +295,8 @@ def test_knowledge_verify_reports_verified_and_provisional_bindings():
         ("STORAGE_COST", "ozon"),
         ("OTHER_SERVICES_COST", "ozon"),
         ("DEDUCTIONS_ADJUSTMENTS", "ozon"),
+        ("PENALTIES", "ozon"),
+        ("OZON_COMPENSATIONS", "ozon"),
     }
     assert result["stale_sources"] == []
 
@@ -335,7 +337,7 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
     assert wb["metric_coverage_complete"] is False
 
     ozon = coverage["ozon"]
-    assert ozon["registry_mapping_status_counts"]["NOT_MAPPED"] == 19
+    assert ozon["registry_mapping_status_counts"]["NOT_MAPPED"] == 18
     assert set(ozon["knowledge_bound_metric_ids"]) >= {
         "CURRENT_STOCK",
         "CURRENT_SELLING_PRICE",
@@ -359,6 +361,8 @@ def test_knowledge_verify_reports_registry_coverage_gaps_by_marketplace():
         "STORAGE_COST",
         "OTHER_SERVICES_COST",
         "DEDUCTIONS_ADJUSTMENTS",
+        "PENALTIES",
+        "OZON_COMPENSATIONS",
     }
     assert "ORDERS" in ozon["registry_unresolved_metric_ids"]
     assert ozon["metric_coverage_complete"] is False
