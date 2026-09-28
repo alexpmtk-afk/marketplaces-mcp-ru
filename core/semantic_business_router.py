@@ -43,6 +43,11 @@ from .semantic_ozon_other_adjustments import (
     execute_ozon_current_other_adjustments,
     requested_ozon_other_adjustments,
 )
+from .semantic_ozon_fines_compensations import (
+    SemanticOzonFinesCompensationsError,
+    execute_ozon_current_fines_compensations,
+    requested_ozon_fines_compensations,
+)
 from .semantic_ozon_orders import (
     OZON_ORDER_METRICS,
     SemanticOzonOrdersError,
@@ -624,6 +629,66 @@ async def execute_business_query(
                     str(exc),
                     operation_id="marketplace_business_query",
                     retryable=False,
+                )
+            if isinstance(result, dict):
+                return _attach_semantic_context(
+                    result, question=natural_question, resolution=resolution,
+                )
+            return result
+
+        fines_compensations_request = requested_ozon_fines_compensations(natural_question)
+        if fines_compensations_request:
+            metric_id = str(fines_compensations_request["metric"])
+            route_id = (
+                "ozon_current_penalties"
+                if metric_id == "PENALTIES"
+                else "ozon_current_compensations"
+            )
+            resolution = {
+                "resolution_type": "BUSINESS_METRIC",
+                "execution_allowed": True,
+                "status": "AVAILABLE_WITH_LIMITATION",
+                "route_id": route_id,
+                "metric_id": metric_id,
+                "source_ids": ["ozon_current_accruals"],
+                "normalized_query": {
+                    "marketplace": "ozon",
+                    "temporal_class": "CURRENT_OPEN_MONTH",
+                    "metric": metric_id,
+                    "requested_measure": "RUB",
+                },
+                "guardrail": (
+                    "Ozon penalties use reviewed defect-fine type ids 89-94 and "
+                    "compensations use reviewed compensation type ids 10, 25 and 104 "
+                    "from COMPLETE canonical CURRENT accrual coverage. Any overlap "
+                    "with delivery.services fails closed to prevent double-counting "
+                    "against LOGISTICS_COST."
+                ),
+            }
+            store = modules.get("_archive_store")
+            if store is None:
+                return make_error(
+                    "source_not_suitable",
+                    "Canonical Google Drive archive is required for Ozon fines/compensations.",
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
+                )
+            try:
+                result = await execute_ozon_current_fines_compensations(
+                    store,
+                    question=natural_question,
+                    seller=seller,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+            except SemanticOzonFinesCompensationsError as exc:
+                result = make_error(
+                    "source_not_suitable",
+                    str(exc),
+                    operation_id="marketplace_business_query",
+                    retryable=False,
+                    details={"question": natural_question, "semantic_resolution": resolution},
                 )
             if isinstance(result, dict):
                 return _attach_semantic_context(
