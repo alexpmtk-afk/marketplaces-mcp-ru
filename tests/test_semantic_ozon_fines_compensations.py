@@ -124,7 +124,7 @@ def patch_now(monkeypatch):
 
 def test_parser_distinguishes_penalties_and_compensations():
     assert requested_ozon_fines_compensations("Штрафы Ozon")["metric"] == "PENALTIES"
-    assert requested_ozon_fines_compensations("Компенсации Ozon")["metric"] == "COMPENSATIONS"
+    assert requested_ozon_fines_compensations("Компенсации Ozon")["metric"] == "OZON_COMPENSATIONS"
     assert requested_ozon_fines_compensations("Страховое возмещение Ozon")["metric"] == "COMPENSATIONS"
     assert requested_ozon_fines_compensations("Логистика Ozon") is None
 
@@ -153,7 +153,7 @@ def test_compensations_preserve_provider_net_sign(monkeypatch):
         seller="ozon_laser_master",
     ))
     assert result["ok"] is True
-    assert result["metric_id"] == "COMPENSATIONS"
+    assert result["metric_id"] == "OZON_COMPENSATIONS"
     assert result["value"] == 100.0
     assert result["signed_provider_value"] == 100.0
     assert result["approved_type_ids"] == [10, 25, 104]
