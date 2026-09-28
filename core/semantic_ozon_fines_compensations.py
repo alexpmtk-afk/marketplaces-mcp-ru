@@ -76,7 +76,7 @@ def requested_ozon_fines_compensations(question: str) -> dict[str, Any] | None:
     if "штраф" in t or "пенал" in t:
         return {"metric": "PENALTIES", "requested_measure": "RUB"}
     if "компенсац" in t or "возмещ" in t:
-        return {"metric": "COMPENSATIONS", "requested_measure": "RUB"}
+        return {"metric": "OZON_COMPENSATIONS", "requested_measure": "RUB"}
     return None
 
 
