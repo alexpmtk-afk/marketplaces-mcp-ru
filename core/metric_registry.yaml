@@ -326,7 +326,44 @@ metrics:
     semantic_target: {type: CAPABILITY, id: penalties}
     provider_mappings:
       wb: {status: MAPPED, source_id: wb_weekly_finance_main, fields: [penalty, bonusTypeName, sellerOperName]}
-      ozon: {status: NOT_MAPPED, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_current_accruals
+        fields:
+          - "non_item_fee.type_id"
+          - "non_item_fee.accrued"
+          - "item_fees.fees[].fees[].type_id"
+          - "item_fees.fees[].fees[].accrued"
+          - "container_fees"
+    guardrail: >-
+      Ozon penalties use only explicit defect-fine type ids 89, 90, 91, 92, 93
+      and 94 from COMPLETE CURRENT accrual coverage. If an approved fine type is
+      found inside delivery.services, execution fails closed to prevent
+      double-counting against LOGISTICS_COST.
+
+  OZON_COMPENSATIONS:
+    canonical_name_ru: Компенсации Ozon
+    kind: BUSINESS
+    units: [RUB]
+    aliases_ru: [компенсации ozon, компенсация ozon, возмещение ozon, страховое возмещение ozon]
+    aliases_en: [Ozon compensations, Ozon reimbursement]
+    semantic_target: {type: CAPABILITY, id: ozon_compensations}
+    provider_mappings:
+      wb: {status: NOT_APPLICABLE, fields: []}
+      ozon:
+        status: EXECUTOR_OWNED
+        source_id: ozon_current_accruals
+        fields:
+          - "non_item_fee.type_id"
+          - "non_item_fee.accrued"
+          - "item_fees.fees[].fees[].type_id"
+          - "item_fees.fees[].fees[].accrued"
+          - "container_fees"
+    guardrail: >-
+      Ozon compensations use only explicit provider type ids 10, 25 and 104.
+      The value preserves the signed provider net amount. If one of these types
+      appears inside delivery.services, execution fails closed to prevent
+      double-counting against logistics.
 
   STORAGE_COST:
     canonical_name_ru: Платное хранение
