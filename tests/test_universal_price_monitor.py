@@ -93,6 +93,18 @@ def test_latest_and_history_do_not_surface_failed_or_other_job_rows():
     assert history["results"][0]["observation_id"] == "obs-1"
 
 
+
+def test_latest_is_five_distinct_sellers_not_one_row_per_product():
+    db = FakeRedis()
+    rows = [specimen(observation_id=f"obs-{i}", seller=f"Seller {i}")
+            for i in range(7)]
+    rows.append(specimen(observation_id="duplicate", seller="seller 1"))
+    db.kv[f"{PREFIX}:latest:mp-example"] = json.dumps(rows)
+    db.kv[f"{PREFIX}:latest:mp-other"] = json.dumps([])
+    got = asyncio.run(UniversalPriceMonitorReadStore(db).latest("mp-example"))
+    assert got["count"] == 5
+    assert len({(v["marketplace"], v["seller"].casefold()) for v in got["results"]}) == 5
+
 def test_invalid_job_id_rejected_before_key_construction():
     db = FakeRedis()
     store = UniversalPriceMonitorReadStore(db)
