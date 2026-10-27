@@ -12,6 +12,7 @@ from .archive_hybrid import build_hybrid_archive_store_from_env
 from .archive_tools import register_archive_tools
 from .business_registry import resolve_business_cabinet
 from .card_monitor import register_tools as register_card_monitor_tools
+from .universal_price_monitor import register_tools as register_universal_price_monitor_tools
 from .data_catalog import register_data_catalog_tools
 from .marketplace_knowledge import register_marketplace_knowledge_tools
 from .order_history_tools import register_order_history_tools
@@ -254,6 +255,7 @@ def build(**fastmcp_kwargs: Any) -> FastMCP:
     register_order_history_tools(combined, modules, order_history_store)
     register_archive_tools(combined, modules, archive_store)
     register_card_monitor_tools(combined)
+    register_universal_price_monitor_tools(combined)
     return combined
 
 
