@@ -131,10 +131,20 @@ class UniversalPriceMonitorReadStore:
         results = []
         for expected_id, value in zip(jobs, raw):
             try:
-                row = json.loads(value) if value else None
+                payload = json.loads(value) if value else None
             except (ValueError, TypeError):
                 continue
-            if accepted_mirror(row) and row["job_id"] == expected_id:
+            # Snapshot may hold up to five distinct approved sellers per job.
+            # Legacy single-row staging values remain readable, without expansion.
+            offers = payload if isinstance(payload, list) else [payload]
+            seen_sellers = set()
+            for row in offers:
+                if not accepted_mirror(row) or row["job_id"] != expected_id:
+                    continue
+                seller_key = (row["marketplace"], row["seller"].casefold().strip())
+                if seller_key in seen_sellers or len(seen_sellers) >= 5:
+                    continue
+                seen_sellers.add(seller_key)
                 results.append(row)
         return {"status": "PRODUCER_ATTESTED" if results else "NO_VERIFIED_DATA",
                 "count": len(results), "results": results}
