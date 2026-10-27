@@ -71,6 +71,9 @@ def test_combined_contains_exact_services_plus_approved_combined_tools():
         "card_monitor_get_latest",
         "card_monitor_get_history",
         "card_monitor_compare_prices",
+        "universal_price_monitor_status",
+        "universal_price_monitor_latest",
+        "universal_price_monitor_history",
     }
     got = _tool_names(combined.build())
     assert got == per_service | approved_combined, (
